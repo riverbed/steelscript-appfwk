@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2013 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the
+# MIT License set forth at:
+#   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").
+# This software is distributed "AS IS" as set forth in the License.
+-->
+{% endblock %}
+
+{% load url from future %}
+
+{% block title %}Portal: Edit Devices{% endblock %}
+
+{% block header_row %}
+    <h3>Edit Devices</h3>
+    <h4>Update IP addresses and Username/Password for each device</h4>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        {% if invalid %}
+        <div class="block-centered" style="text-align: center">
+            <h4 class="text-error">Ensure all enabled devices have valid credentials</h4>
+        </div>
+        {% endif %}
+        <form action="" method="POST">
+                <input type="hidden" name="_method" value="PUT">
+                {% csrf_token %}
+                {{ formset.management_form }}
+                <table border="0" class="table table-bordered block-centered" style="max-width: 50%">
+                    <thead>
+                    <tr>
+                        <th>Enabled</th>
+                        <th>Name</th>
+                        <th>Module</th>
+                        <th>Host</th>
+                        <th>Port</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {% if not tabledata %}
+                            <tr>
+                                <td colspan="5" style="text-align: center">No devices defined yet.</td>
+                            </tr>
+                        {% endif %}
+                        {% for form, device in tabledata %}
+                            <tr {% if not device.enabled %}class="row-disabled"{% endif %}>
+                                {% for field in form.visible_fields %}
+                                    <td>{{ field }}</td>
+                                {% endfor %}
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+
+                                <td>
+                                    <a href="{% url 'device-detail' device.id %}">{{ device.name }}</a>
+                                    {% if not device.password %}
+                                    <br><span class="text-error">(missing password)</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ device.module }}</td>
+                                <td>{{ device.host }}</td>
+                                <td>{{ device.port }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            <div class="row">
+                <div class="block-centered" style="text-align: center">
+                    <input type="submit" value="Save Changes" class="btn btn-primary">
+                    <a href="{% url 'device-add' %}" class="btn">Add New Device</a>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}

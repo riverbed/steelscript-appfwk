@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2013 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the
+# MIT License set forth at:
+#   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").
+# This software is distributed "AS IS" as set forth in the License.
+-->
+{% endblock %}
+
+{% block title %}Portal: Column Help{% endblock %}
+
+{% block header %}
+    <script type="text/javascript">
+        $(document).ready( function() {
+            {% if results %}
+                YUI().use("datatable-sort", function(Y) {
+                    {% if device == 'Profiler' %}
+                        cols = [
+                            {key:"KeyColumn", label:"Is Key Column", sortable:true},
+                            {key:"Key", label:"Column Key", sortable:true},
+                            {key:"Label", label:"Label", sortable:true},
+                            {key:"ID", label:"Column ID", sortable:true}
+                        ],
+                        data = [
+                            {% for iskey, key, label, id in results %}
+                                {KeyColumn:"{{ iskey }}", Key:"{{ key }}", Label:"{{ label }}", ID:"{{ id }}"},
+                            {% endfor %}
+                        ],
+                    {% elif device == 'Shark' %}
+                        cols = [
+                            {key:"ID", label:"Column ID", sortable:true},
+                            {key:"Description", label:"Description", sortable:true},
+                            {key:"Type", label:"Column Type", sortable:true}
+                        ],
+                        data = [
+                            {% for id, description, type in results %}
+                                {ID:"{{ id }}", Description:"{{ description }}", Type:"{{ type }}"},
+                            {% endfor %}
+                        ],
+                    {% endif %}
+                    table = new Y.DataTable({
+                        columns: cols,
+                        data: data,
+                        summary: "Column List",
+                    }).render('#sort');
+                });
+            {% endif %}
+
+            // enable dropdown choices based on this relationship table
+            //|-----------------------------+------------+----------------------|
+            //| realm                       | centricity | groupby              |
+            //|-----------------------------+------------+----------------------|
+            //| traffic_summary             | hos,int    | all (except thu)     |
+            //| traffic_overall_time_series | hos,int    | tim                  |
+            //| traffic_flow_list           | hos        | hos                  |
+            //| identity_list               | hos        | thu                  |
+            //|-----------------------------+------------+----------------------|
+            
+            var realm_options = $('#id_realm').html();
+            var group_options = $('#id_groupby').html();
+            var centricity_options = $('#id_centricity').html();
+
+            $('#id_realm').change(function(e) {
+                var text = $('#id_realm :selected').attr('value');
+                $('#id_groupby').html(group_options);
+                $('#id_centricity').html(centricity_options);
+
+                if (text == 'traffic_summary') {
+                    $('#id_groupby [value="thu"]').remove();
+                } else if (text == 'traffic_overall_time_series') {
+                    $('#id_groupby :not([value^="tim"])').remove();
+                } else if (text == 'traffic_flow_list') {
+                    $('#id_groupby :not([value^="hos"])').remove();
+                    $('#id_centricity :not([value^="hos"])').remove();
+                } else if (text == 'identity_list') {
+                    $('#id_groupby :not([value^="thu"])').remove();
+                    $('#id_centricity :not([value^="hos"])').remove();
+                }
+            });
+
+
+        });
+    </script>
+
+    <style type="text/css">
+        .form-inline input {
+            margin-bottom: 5px;
+        }
+    </style>
+
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <h3 align="center">{{ device }} Column Helper</h3>
+        <form id="profiler" class="form-inline" action='' method='post' align="center">
+            <div class="row-fluid" align="center">
+                <div class="span10 offset1">
+                    <div class="span">
+                        {% csrf_token %}
+                        <table>{{ form.as_table }}</table>
+                        <br><input id="submit" type="submit" value="Find Columns" class="btn btn-primary">
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% if results %}
+        <div id="results-container" class="container-fluid">
+            <div id="sort" class="row-fluid yui3-skin-sam" align="center">
+            </div>
+        </div>
+    {% endif %}
+    <P></P>
+{% endblock %}
