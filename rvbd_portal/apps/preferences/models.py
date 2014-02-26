@@ -118,3 +118,28 @@ def create_user_profile(sender, instance, created, **kwargs):
         UserProfile.objects.create(user=instance)
 
 post_save.connect(create_user_profile, sender=User)
+
+
+class SystemPreferences(models.Model):
+    """ Global system preferences, configured by admin user. """
+    ignore_cache = models.BooleanField(
+        default=False,
+        help_text='Force all reports to bypass cache'
+    )
+    developer = models.BooleanField(
+        default=False,
+        verbose_name='developer mode',
+        help_text='Enable additional debug features',
+    )
+    maps_version = models.CharField(
+        max_length=30,
+        verbose_name='Maps Version',
+        choices=MAPS_VERSION_CHOICES,
+        default='DISABLED'
+    )
+    maps_api_key = models.CharField(
+        max_length=100,
+        verbose_name='Maps API Key',
+        blank=True,
+        null=True
+    )

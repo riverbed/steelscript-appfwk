@@ -9,7 +9,7 @@ import logging
 
 import pandas
 from rvbd.common.jsondict import JsonDict
-from rvbd_portal.apps.datasource.models import Column, Job, Table, BatchJobRunner
+from rvbd_portal.apps.datasource.models import Column, Table
 
 logger = logging.getLogger(__name__)
 
@@ -19,24 +19,22 @@ class TableOptions(JsonDict):
     _required = ['html']
 
 
-class StaticHTMLTable(object):
+def create_table(name, html):
     """ Takes arbitrary static html and wraps it in a simple table.
 
     When used with the 'raw.TableWidget' output, this can be rendered
     to the report page.
     """
-    @classmethod
-    def create(cls, name, html):
-        logger.debug('Creating StaticHTMLTable %s' % name)
+    logger.debug('Creating StaticHTMLTable %s' % name)
 
-        options = TableOptions(html=html)
+    options = TableOptions(html=html)
 
-        t = Table(name=name, module=__name__, options=options)
-        t.save()
+    t = Table(name=name, module=__name__, options=options)
+    t.save()
 
-        Column.create(t, 'html',  label='html')
+    Column.create(t, 'html',  label='html')
 
-        return t
+    return t
 
 
 class TableQuery(object):

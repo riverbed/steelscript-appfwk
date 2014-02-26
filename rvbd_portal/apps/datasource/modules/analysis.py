@@ -13,6 +13,22 @@ from rvbd_portal.apps.datasource.models import Column, Job, Table, BatchJobRunne
 logger = logging.getLogger(__name__)
 
 
+class AnalysisException(Exception):
+    def _init__(self, message, *args, **kwargs):
+        self.message = message
+        super(AnalysisException, self).__init__(*args, **kwargs)
+
+
+def column(table, name, label=None, datatype='', units='', iskey=False,
+           issortcol=False, options=None, **kwargs):
+    """ Create a column object. """
+    c = Column.create(table, name, label=label, datatype=datatype, units=units,
+                      iskey=iskey, issortcol=issortcol, options=options,
+                      **kwargs)
+    c.save()
+    return c
+
+
 class TableOptions(JsonDict):
     _default = {'tables': None,
                 'func': None,
@@ -21,13 +37,8 @@ class TableOptions(JsonDict):
     _required = ['tables', 'func']
 
 
-class AnalysisException(Exception):
-    def _init__(self, message, *args, **kwargs):
-        self.message = message
-        super(AnalysisException, self).__init__(*args, **kwargs)
-
-
-class AnalysisTable(object):
+def create_table(name, tables, func, columns=None, params=None,
+                 copy_fields=True, **kwargs):
     """
     An AnalysisTable builds on other tables, running them first to collect
     data, then extracting the data as pandas.DataFrame objects.  The
@@ -41,7 +52,7 @@ class AnalysisTable(object):
     `func` is a pointer to the user defined analysis function
 
     `params` is an optional dictionary of parameters to pass to `func`
-    
+
     For example, consider an input of two tables A and B, and an
     AnalysisTable that simply concatenates A and B:
 
@@ -61,7 +72,7 @@ class AnalysisTable(object):
         Column.create(Combined, 'host')
         Column.create(Combined, 'bytes')
         Column.create(Combined, 'pkts')
-       
+
     Then in config/reports/helpers/analysis_func.py
 
         def combine_by_host(dst, srcs):
@@ -71,34 +82,31 @@ class AnalysisTable(object):
 
             # Now create a new DataFrame that joins these
             # two tables by the 'host'
-            df = pandas.merge(t1, t2, left_on='host', right_on='host', how='outer')
+            df = pandas.merge(t1, t2, left_on='host', right_on='host',
+                              how='outer')
             return df
 
-    Note that the function must defined in a separate file in the 'helpers' directory.
+    Note that the function must defined in a separate file in the 'helpers'
+    directory.
     """
+    options = TableOptions(tables=tables, func=func,
+                           params=params)
+    table = Table(name=name, module=__name__,
+                  options=options, **kwargs)
+    table.save()
 
-    @classmethod
-    def create(cls, name, tables, func, columns=None, params=None,
-               copy_fields=True, **kwargs):
-        """ Class method to create an AnalysisTable. """
-        options = TableOptions(tables=tables, func=func,
-                               params=params)
-        table = Table(name=name, module=__name__,
-                      options=options, **kwargs)
-        table.save()
-        
-        if columns:
-            for c in columns:
-                Column.create(table, c)
+    if columns:
+        for c in columns:
+            Column.create(table, c)
 
-        keywords = []
-        if tables and copy_fields:
-            for table_id in tables.values():
-                for f in Table.objects.get(id=table_id).fields.all():
-                    if f.keyword not in keywords:
-                        table.fields.add(f)
-                        keywords.append(f.keyword)
-        return table
+    keywords = []
+    if tables and copy_fields:
+        for table_id in tables.values():
+            for f in Table.objects.get(id=table_id).fields.all():
+                if f.keyword not in keywords:
+                    table.fields.add(f)
+                    keywords.append(f.keyword)
+    return table
 
 
 class TableQuery(object):
