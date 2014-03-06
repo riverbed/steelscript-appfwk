@@ -315,8 +315,11 @@ def fields_add_time_selection(obj, initial_duration=None, durations=None):
 
 
 def fields_add_resolution(obj, initial=None,
-                          resolutions=('1m', '15m', '1h', '6h'),
+                          resolutions=None,
                           special_values=None):
+
+    if resolutions is None:
+        resolutions = ('1m', '15m', '1h', '6h')
 
     field = TableField(keyword='resolution',
                        label='Data Resolution',
