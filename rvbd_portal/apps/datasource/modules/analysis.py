@@ -8,6 +8,7 @@
 import logging
 
 from rvbd.common.jsondict import JsonDict
+from rvbd_portal.apps.datasource.datasource import DatasourceTable
 from rvbd_portal.apps.datasource.models import Column, Job, Table, BatchJobRunner
 
 logger = logging.getLogger(__name__)
@@ -107,6 +108,29 @@ def create_table(name, tables, func, columns=None, params=None,
                     table.fields.add(f)
                     keywords.append(f.keyword)
     return table
+
+
+class AnalysisTable(DatasourceTable):
+    table_options = {'tables': None,        # required, dict of tables
+                     'func': None,          # required, function reference
+                     'params': None}
+
+    field_params = {'copy_fields': True}
+
+    def post_process_table(self):
+        if self.field_params['copy_fields']:
+            keywords = set()
+            for table in self.table_options['tables'].values():
+                # handle direct id's, table references, or table classes
+                if hasattr(table, 'table'):
+                    table_id = table.table.id
+                else:
+                    table_id = getattr(table, 'id', table)
+
+                for f in Table.objects.get(id=table_id).fields.all():
+                    if f.keyword not in keywords:
+                        self.table.fields.add(f)
+                        keywords.add(f.keyword)
 
 
 class TableQuery(object):

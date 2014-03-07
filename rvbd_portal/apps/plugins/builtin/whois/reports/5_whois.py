@@ -6,11 +6,10 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-from rvbd_portal.apps.datasource.models import Column
+from rvbd_portal.apps.datasource.modules.analysis import AnalysisTable
+from rvbd_portal_profiler.datasources.profiler import ProfilerGroupbyTable
 from rvbd_portal.apps.report.models import Report, Section
 import rvbd_portal.apps.report.modules.yui3 as yui3
-from rvbd_portal_profiler.datasources import profiler
-from rvbd_portal.apps.datasource.modules import analysis
 
 # helper libraries
 from rvbd_portal.apps.plugins.builtin.whois.libs.whois import whois
@@ -25,21 +24,22 @@ report.save()
 section = Section.create(report)
 
 # Define a Table that gets external hosts by avg bytes
-table = profiler.create_groupby_table('5-hosts', 'host', duration='1 hour',
-                                      filterexpr='not srv host 10/8 and not srv host 192.168/16')
+table = ProfilerGroupbyTable('5-hosts', groupby='host', duration='1 hour',
+                             filterexpr='not srv host 10/8 and not srv host 192.168/16')
 
-profiler.column(table, 'host_ip', 'IP Addr', iskey=True)
-profiler.column(table, 'avg_bytes', 'Avg Bytes', units='s', issortcol=True)
+table.add_column('host_ip', 'IP Addr', iskey=True)
+table.add_column('avg_bytes', 'Avg Bytes', units='s', issortcol=True)
 
 
 # Create an Analysis table that calls the 'whois' function to craete a link to
 # 'whois'
-whoistable = analysis.create_table('5-whois-hosts',
-                                   tables={'t': table.id},
-                                   func=whois)
+whoistable = AnalysisTable('5-whois-hosts',
+                           tables={'t': table},
+                           func=whois)
 
-analysis.column(whoistable, 'host_ip', label="IP Addr", iskey=True)
-analysis.column(whoistable, 'avg_bytes', 'Avg Bytes', datatype='bytes', issortcol=True)
-analysis.column(whoistable, 'whois', label="Whois link", datatype='html')
+whoistable.add_column('host_ip', label="IP Addr", iskey=True)
+whoistable.add_column('avg_bytes', label='Avg Bytes',
+                      datatype='bytes', issortcol=True)
+whoistable.add_column('whois', label="Whois link", datatype='html')
 
-yui3.TableWidget.create(section, whoistable, "Link table", width=12)
+yui3.TableWidget.create(section, whoistable.table, "Link table", width=12)
