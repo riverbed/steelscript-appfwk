@@ -27,16 +27,19 @@ class AnalysisTable(DatasourceTable):
 
     field_params = {'copy_fields': True}
 
+    def pre_process_table(self):
+        # handle direct id's, table references, or table classes
+        # from tables option and transform to simple table id value
+        for k, v in self.table_options['tables'].iteritems():
+            if hasattr(v, 'table'):
+                self.table_options['tables'][k] = v.table.id
+            else:
+                self.table_options['tables'][k] = getattr(v, 'id', v)
+
     def post_process_table(self):
         if self.field_params['copy_fields']:
             keywords = set()
-            for table in self.table_options['tables'].values():
-                # handle direct id's, table references, or table classes
-                if hasattr(table, 'table'):
-                    table_id = table.table.id
-                else:
-                    table_id = getattr(table, 'id', table)
-
+            for table_id in self.table_options['tables'].values():
                 for f in Table.objects.get(id=table_id).fields.all():
                     if f.keyword not in keywords:
                         self.table.fields.add(f)

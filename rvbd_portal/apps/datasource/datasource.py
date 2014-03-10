@@ -32,9 +32,9 @@ class DatasourceTable(object):
                     'cacheable': True,
                     'resample': False,
                     }
-    table_options = {}
+    table_options = {}                      # can override in subclass
 
-    field_params = {}
+    field_params = {}                       # can override in subclass
 
     column_params = {'label': None,
                      'position': None,
@@ -49,7 +49,7 @@ class DatasourceTable(object):
                      'compute_expression': '',
                      'resample_operation': 'sum',
                      }
-    column_options = {}
+    column_options = {}                     # can override in subclass
 
     def __init__(self, name, **kwargs):
         """ Initialize object. """
@@ -58,16 +58,21 @@ class DatasourceTable(object):
         self.table = None
         self.columns = []
 
-        # handle custom defaults
-        self.set_defaults()
+        # make class vars local to instance
+        self.table_params = copy.deepcopy(self.table_params)
+        self.table_options = copy.deepcopy(self.table_options)
+        self.field_params = copy.deepcopy(self.field_params)
 
         self.validate_args(**kwargs)
+
+        # handle custom defaults
+        self.pre_process_table()
+
         self.create_table()
         self.post_process_table()           # add custom fields, etc
 
-    def set_defaults(self):
-        """ Method to add/override defaults without redefining the
-        whole class dict.
+    def pre_process_table(self):
+        """ Process arguments / defaults before table creation.
         """
         pass
 
@@ -130,4 +135,5 @@ class DatasourceTable(object):
 
         c = Column.create(self.table, name, options=options,
                           **column_params)
+        self.columns.append(c)
         return c
