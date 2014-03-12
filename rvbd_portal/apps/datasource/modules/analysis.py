@@ -21,25 +21,75 @@ class AnalysisException(Exception):
 
 
 class AnalysisTable(DatasourceTable):
-    table_options = {'tables': None,        # required, dict of tables
-                     'func': None,          # required, function reference
-                     'params': None}
+    """
+    An AnalysisTable builds on other tables, running them first to collect
+    data, then extracting the data as pandas.DataFrame objects.  The
+    set of DataFrames is then passed to a user defined function that
+    must return a DataFrame with columns matching the Columns associated
+    with this Table.
 
-    field_params = {'copy_fields': True}
+    `tables` is hashmap of dependent tables, mapping a names expected
+        by the analysis functon to table ids
+
+    `func` is a pointer to the user defined analysis function
+
+    `params` is an optional dictionary of parameters to pass to `func`
+
+    For example, consider an input of two tables A and B, and an
+    AnalysisTable that simply concatenates A and B:
+
+        A = Table.create('A')
+        Column.create(A, 'host')
+        Column.create(A, 'bytes')
+
+        B = Table.create('B')
+        Column.create(B, 'host')
+        Column.create(B, 'pkts')
+
+        from config.reports.helpers.analysis_funcs import combine_by_host
+        Combined = AnalysisTable('Combined',
+                                 tables = {'t1': A,
+                                           't2': B},
+                                 func = combine_by_host)
+        Combined.add_column('host')
+        Combined.add_column('bytes')
+        Combined.add_column('pkts')
+
+    Then in config/reports/helpers/analysis_func.py
+
+        def combine_by_host(dst, srcs):
+            # Get the pandas.DataFrame objects for t1 and t2
+            t1 = srcs['t1']
+            t2 = srcs['t2']
+
+            # Now create a new DataFrame that joins these
+            # two tables by the 'host'
+            df = pandas.merge(t1, t2, left_on='host', right_on='host',
+                              how='outer')
+            return df
+
+    Note that the function must defined in a separate file in the 'helpers'
+    directory.
+    """
+    EXTRA_TABLE_OPTIONS = {'tables': None,  # required, dict of tables
+                           'func': None,    # required, function reference
+                           'params': None}
+
+    TABLE_FIELD_OPTIONS = {'copy_fields': True}
 
     def pre_process_table(self):
         # handle direct id's, table references, or table classes
         # from tables option and transform to simple table id value
-        for k, v in self.table_options['tables'].iteritems():
+        for k, v in self.extra_table_options['tables'].iteritems():
             if hasattr(v, 'table'):
-                self.table_options['tables'][k] = v.table.id
+                self.extra_table_options['tables'][k] = v.table.id
             else:
-                self.table_options['tables'][k] = getattr(v, 'id', v)
+                self.extra_table_options['tables'][k] = getattr(v, 'id', v)
 
     def post_process_table(self):
-        if self.field_params['copy_fields']:
+        if self.table_field_options['copy_fields']:
             keywords = set()
-            for table_id in self.table_options['tables'].values():
+            for table_id in self.extra_table_options['tables'].values():
                 for f in Table.objects.get(id=table_id).fields.all():
                     if f.keyword not in keywords:
                         self.table.fields.add(f)

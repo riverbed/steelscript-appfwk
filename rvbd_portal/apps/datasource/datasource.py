@@ -26,30 +26,30 @@ class ColumnDatasourceOptions(JsonDict):
 class DatasourceTable(object):
     """ Provides base class for Datasources to inherit from.
     """
-    table_params = {'filterexpr': None,
-                    # less often used options
-                    'rows': -1,
-                    'cacheable': True,
-                    'resample': False,
-                    }
-    table_options = {}                      # can override in subclass
-
-    field_params = {}                       # can override in subclass
-
-    column_params = {'label': None,
-                     'position': None,
-                     'iskey': False,
-                     'isnumeric': True,
-                     'datatype': '',
-                     'units': '',
-                     'issortcol': False,
-                     # synthetic options
-                     'synthetic': False,
-                     'compute_post_resample': False,
-                     'compute_expression': '',
-                     'resample_operation': 'sum',
+    TABLE_OPTIONS = {'filterexpr': None,
+                     # less often used options
+                     'rows': -1,
+                     'cacheable': True,
+                     'resample': False,
                      }
-    column_options = {}                     # can override in subclass
+    EXTRA_TABLE_OPTIONS = {}                      # can override in subclass
+
+    TABLE_FIELD_OPTIONS = {}                       # can override in subclass
+
+    COLUMN_OPTIONS = {'label': None,
+                      'position': None,
+                      'iskey': False,
+                      'isnumeric': True,
+                      'datatype': '',
+                      'units': '',
+                      'issortcol': False,
+                      # synthetic options
+                      'synthetic': False,
+                      'compute_post_resample': False,
+                      'compute_expression': '',
+                      'resample_operation': 'sum',
+                      }
+    EXTRA_COLUMN_OPTIONS = {}                     # can override in subclass
 
     def __init__(self, name, **kwargs):
         """ Initialize object. """
@@ -59,9 +59,9 @@ class DatasourceTable(object):
         self.columns = []
 
         # make class vars local to instance
-        self.table_params = copy.deepcopy(self.table_params)
-        self.table_options = copy.deepcopy(self.table_options)
-        self.field_params = copy.deepcopy(self.field_params)
+        self.table_options = copy.deepcopy(self.TABLE_OPTIONS)
+        self.extra_table_options = copy.deepcopy(self.EXTRA_TABLE_OPTIONS)
+        self.table_field_options = copy.deepcopy(self.TABLE_FIELD_OPTIONS)
 
         self.validate_args(**kwargs)
 
@@ -80,14 +80,16 @@ class DatasourceTable(object):
         """ Process keyword arguments and raise error if invalid items found.
         """
         keys = kwargs.keys()
-        tp = dict((k, kwargs.pop(k)) for k in keys if k in self.table_params)
-        self.table_params.update(**tp)
+        tp = dict((k, kwargs.pop(k)) for k in keys if k in self.table_options)
+        self.table_options.update(**tp)
 
-        to = dict((k, kwargs.pop(k)) for k in keys if k in self.table_options)
-        self.table_options.update(**to)
+        to = dict((k, kwargs.pop(k))
+                  for k in keys if k in self.extra_table_options)
+        self.extra_table_options.update(**to)
 
-        fp = dict((k, kwargs.pop(k)) for k in keys if k in self.field_params)
-        self.field_params.update(**fp)
+        fp = dict((k, kwargs.pop(k))
+                  for k in keys if k in self.table_field_options)
+        self.table_field_options.update(**fp)
 
         if kwargs:
             raise AttributeError('Invalid keyword arguments: %s' % str(kwargs))
@@ -97,15 +99,15 @@ class DatasourceTable(object):
 
         logger.debug('Creating table %s' % self.slug)
 
-        if self.table_options:
-            options = TableDatasourceOptions(default=self.table_options,
-                                             **self.table_options)
+        if self.extra_table_options:
+            options = TableDatasourceOptions(default=self.extra_table_options,
+                                             **self.extra_table_options)
         else:
             options = None
 
         self.table = Table.create(name=self.slug, module=self.__module__,
                                   options=options,
-                                  **self.table_params)
+                                  **self.table_options)
 
     def post_process_table(self):
         """ Hook to add custom fields, or other post-table creation operations.
@@ -114,26 +116,26 @@ class DatasourceTable(object):
 
     def add_column(self, name, label=None, **kwargs):
         """ Create a column object. """
-        column_params = copy.deepcopy(self.column_params)
-        column_options = copy.deepcopy(self.column_options)
+        column_options = copy.deepcopy(self.COLUMN_OPTIONS)
+        extra_column_options = copy.deepcopy(self.EXTRA_COLUMN_OPTIONS)
 
         keys = kwargs.keys()
-        cp = dict((k, kwargs.pop(k)) for k in keys if k in column_params)
-        column_params.update(**cp)
+        cp = dict((k, kwargs.pop(k)) for k in keys if k in column_options)
+        column_options.update(**cp)
 
-        co = dict((k, kwargs.pop(k)) for k in keys if k in column_options)
-        column_options.update(**co)
+        co = dict((k, kwargs.pop(k)) for k in keys if k in extra_column_options)
+        extra_column_options.update(**co)
 
         if kwargs:
             raise AttributeError('Invalid keyword arguments: %s' % str(kwargs))
 
-        if self.column_options:
-            options = ColumnDatasourceOptions(default=column_options,
-                                              **column_options)
+        if extra_column_options:
+            options = ColumnDatasourceOptions(default=extra_column_options,
+                                              **extra_column_options)
         else:
             options = None
 
         c = Column.create(self.table, name, options=options,
-                          **column_params)
+                          **column_options)
         self.columns.append(c)
         return c
