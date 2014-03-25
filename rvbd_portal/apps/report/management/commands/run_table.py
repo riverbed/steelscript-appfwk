@@ -125,9 +125,10 @@ class Command(BaseCommand):
 
         if options['table_list']:
             # print out the id's instead of processing anything
-            tables = Table.objects.all()
-            for t in tables:
-                self.console('%5d - %s' % (t.id, t))
+            output = []
+            for t in Table.objects.all():
+                output.append([t.id, t.namespace, t.name, t])
+            Formatter.print_table(output, ['ID', 'Namespace', 'Name', 'Table'])
         elif options['table_list_by_report']:
             # or print them out organized by report/widget/table
             output = []

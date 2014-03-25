@@ -30,6 +30,7 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from rvbd.common.utils import DictObject
 from rvbd.common import timedelta_total_seconds
+from project.utils import get_module
 
 from rvbd_portal.apps.datasource.exceptions import *
 from rvbd_portal.libs.fields import (PickledObjectField, FunctionField,
@@ -186,6 +187,9 @@ class TableField(models.Model):
 class Table(models.Model):
     name = models.CharField(max_length=200)
     module = models.CharField(max_length=200)         # source module name
+    namespace = models.CharField(max_length=100)
+    sourcefile = models.CharField(max_length=200)
+
     sortcol = models.ForeignKey('Column', null=True, related_name='Column')
     rows = models.IntegerField(default=-1)
     filterexpr = models.CharField(null=True, max_length=400)
@@ -201,7 +205,7 @@ class Table(models.Model):
     # that this table needs to run
     fields = models.ManyToManyField(TableField, null=True)
 
-    # Default values for fields assocaited with this table, these
+    # Default values for fields associated with this table, these
     # may be overridden by user criteria at run time
     criteria = PickledObjectField()
     
@@ -213,7 +217,28 @@ class Table(models.Model):
         t = Table(name=name, module=module, **kwargs)
         t.save()
         return t
-    
+
+    def save(self, *args, **kwargs):
+        if not self.sourcefile:
+            modname = get_module()
+            if modname is not None:
+                self.sourcefile = modname
+            else:
+                self.sourcefile = 'default'
+
+        if not self.namespace:
+            if (self.sourcefile == 'default' or
+                    self.sourcefile.startswith('config.')):
+                self.namespace = 'default'
+            else:
+                # sourcefile 'rvbd_portal_wireshark.reports.88_pcap_filefield'
+                # will have namespace 'wireshark'
+                ns = self.sourcefile.split('.')[0]
+                ns = ns.replace('rvbd_portal_', '')
+                self.namespace = ns
+
+        super(Table, self).save(*args, **kwargs)
+
     def __unicode__(self):
         return "<Table %s (%s)>" % (str(self.id), self.name)
 

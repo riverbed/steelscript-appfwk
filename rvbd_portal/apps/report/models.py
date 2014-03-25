@@ -6,23 +6,21 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-import inspect
 import logging
 
 from rvbd.common.jsondict import JsonDict
-
 from django.db import models
 from django.db.models import Max, Sum
 from django.template.defaultfilters import slugify
 from django.db import transaction
-from django.db.models.signals import pre_delete 
+from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.utils.datastructures import SortedDict
 from django.core.exceptions import ObjectDoesNotExist
-
 from model_utils.managers import InheritanceManager
-from rvbd_portal.apps.datasource.models import Table, Job, TableField
 
+from project.utils import get_module
+from rvbd_portal.apps.datasource.models import Table, Job, TableField
 from rvbd_portal.libs.fields import PickledObjectField, SeparatedValuesField
 
 logger = logging.getLogger(__name__)
@@ -34,17 +32,6 @@ class WidgetOptions(JsonDict):
                 'axes': None}
 
 
-def get_caller_name(current_module):
-    """ Determine filename of calling function.
-        Used to determine source of Report class definition.
-    """
-    frame = inspect.stack()[2]
-    frm = frame[0]
-    mod = inspect.getmodule(frm)
-    del frm
-    return mod.__name__
-
-
 class Report(models.Model):
     """ Defines a Report as a collection of Sections and their Widgets. """
     title = models.CharField(max_length=200)
@@ -52,7 +39,7 @@ class Report(models.Model):
     enabled = models.BooleanField(default=True)
 
     slug = models.SlugField(unique=True)
-    namespace = models.CharField(max_length=100, default='default')
+    namespace = models.CharField(max_length=100)
     sourcefile = models.CharField(max_length=200)
 
     fields = models.ManyToManyField(TableField, null=True, blank=True)
@@ -67,25 +54,28 @@ class Report(models.Model):
     hide_criteria = models.BooleanField(default=False)
     reload_minutes = models.IntegerField(default=0)  # 0 means no reloads
 
-    def __init__(self, *args, **kwargs):
-        if 'sourcefile' not in kwargs:
-            kwargs['sourcefile'] = get_caller_name(self)
+    def save(self, *args, **kwargs):
+        if not self.sourcefile:
+            modname = get_module()
+            if modname is not None:
+                self.sourcefile = modname
+            else:
+                self.sourcefile = 'default'
 
-        if 'namespace' not in kwargs:
-            if kwargs['sourcefile'].startswith('config.'):
-                kwargs['namespace'] = 'default'
+        if not self.namespace:
+            if (self.sourcefile == 'default' or
+                    self.sourcefile.startswith('config.')):
+                self.namespace = 'default'
             else:
                 # sourcefile 'rvbd_portal_wireshark.reports.88_pcap_filefield'
                 # will have namespace 'wireshark'
-                ns = kwargs['sourcefile'].split('.')[0]
+                ns = self.sourcefile.split('.')[0]
                 ns = ns.replace('rvbd_portal_', '')
-                kwargs['namespace'] = ns
+                self.namespace = ns
 
-        super(Report, self).__init__(*args, **kwargs)
-        
-    def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.sourcefile.split('.')[-1])
+
         super(Report, self).save(*args, **kwargs)
 
     def __unicode__(self):
