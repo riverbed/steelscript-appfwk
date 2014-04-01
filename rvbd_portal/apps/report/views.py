@@ -441,10 +441,9 @@ class WidgetJobsList(views.APIView):
             timezone = pytz.timezone(profile.timezone)
             form.apply_timezone(timezone)
 
-            form_criteria = form.criteria()
-            logger.debug('Form_criteria: %s' % form_criteria)
-
             try:
+                form_criteria = form.criteria()
+                logger.debug('Form_criteria: %s' % form_criteria)
                 job = Job.create(table=widget.table(),
                                  criteria=form_criteria)
                 job.start()

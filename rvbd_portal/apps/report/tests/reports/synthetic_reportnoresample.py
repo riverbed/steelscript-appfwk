@@ -11,17 +11,17 @@ from . import synthentic_functions as funcs
 report = Report(title='Synthetic No Resampling' )
 report.save()
 
-# Section 
+# Section
 section = Section(report=report, title='Section 0')
 section.save()
 
 # Table
-table = AnalysisTable.create('test-synthetic-noresampling', tables={}, 
+a = AnalysisTable('test-synthetic-noresampling', tables={},
                              func = funcs.analysis_echo_criteria)
 fields_add_time_selection(table)
 fields_add_resolution(table)
 
-Column.create(table, 'time', 'Time', iskey=True, isnumeric=True, datatype='time')
-Column.create(table, 'value', 'Value', isnumeric=True)
+a.add_column('time', 'Time', iskey=True, isnumeric=True, datatype='time')
+a.add_column('value', 'Value', isnumeric=True)
 
-raw.TableWidget.create(section, table, 'Table')
+raw.TableWidget.create(section, a.table, 'Table')

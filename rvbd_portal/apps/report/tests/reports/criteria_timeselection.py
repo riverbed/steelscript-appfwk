@@ -11,11 +11,11 @@ report.save()
 section = Section(report=report, title='Section 0')
 section.save()
 
-table = AnalysisTable.create('test-criteria-timeselection', tables={}, 
-                             func = funcs.analysis_echo_criteria)
-fields_add_time_selection(table, initial_duration='1 day')
+a = AnalysisTable('test-criteria-timeselection', tables={},
+                  func = funcs.analysis_echo_criteria)
+fields_add_time_selection(a.table, initial_duration='1 day')
 
-Column.create(table, 'key', 'Key', iskey=True, isnumeric=False)
-Column.create(table, 'value', 'Value', isnumeric=False)
+a.add_column('key', 'Key', iskey=True, isnumeric=False)
+a.add_column('value', 'Value', isnumeric=False)
 
-raw.TableWidget.create(section, table, 'Table')
+raw.TableWidget.create(section, a.table, 'Table')

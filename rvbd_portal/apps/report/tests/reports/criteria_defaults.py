@@ -13,7 +13,7 @@ report.save()
 TableField.create(keyword='report-1', label='Report 1', obj=report, initial='r1')
 TableField.create(keyword='report-2', label='Report 2', obj=report, required=True)
 
-# Section 
+# Section
 section = Section(report=report, title='Section 0')
 section.save()
 
@@ -22,15 +22,15 @@ TableField.create(keyword='section-1', label='Section 1', obj=section, initial='
 TableField.create(keyword='section-2', label='Section 2', obj=section, required=True, initial='s2')
 
 # Table
-table = AnalysisTable.create('test-criteria-postprocess', tables={}, 
-                             func = funcs.analysis_echo_criteria)
+a = AnalysisTable('test-criteria-postprocess', tables={},
+                      func = funcs.analysis_echo_criteria)
 
 # Table-level criteria
-TableField.create(keyword='table-1', label='Table 1', obj=table, initial='t1')
-TableField.create(keyword='table-2', label='Table 2', obj=table, initial='t2')
+TableField.create(keyword='table-1', label='Table 1', obj=a.table, initial='t1')
+TableField.create(keyword='table-2', label='Table 2', obj=a.table, initial='t2')
 
 
-Column.create(table, 'key', 'Key', iskey=True, isnumeric=False)
-Column.create(table, 'value', 'Value', isnumeric=False)
+a.add_column('key', 'Key', iskey=True, isnumeric=False)
+a.add_column('value', 'Value', isnumeric=False)
 
-raw.TableWidget.create(section, table, 'Table')
+raw.TableWidget.create(section, a.table, 'Table')

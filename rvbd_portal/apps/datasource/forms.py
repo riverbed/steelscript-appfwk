@@ -225,9 +225,9 @@ class DurationField(forms.ChoiceField):
     def __init__(self, **kwargs):
         self._special_values = kwargs.pop('special_values', None)
         initial = kwargs.pop('initial', None)
-        if (initial is not None and
-                self._special_values is None or
-                initial not in self._special_values):
+        if ((initial is not None) and
+              ((self._special_values is None) or
+               (initial not in self._special_values))):
             initial_td = parse_timedelta(initial)
             initial_valid = False
         else:

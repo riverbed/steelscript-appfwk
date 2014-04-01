@@ -28,9 +28,9 @@ TableField.create ('choices_with_params', 'Choices with params', section,
                                     'end': 3,
                                     'prefix': 'pre'}))
 
-table = AnalysisTable.create('test-criteria-preprocess', tables={}, 
+a = AnalysisTable('test-criteria-preprocess', tables={},
                              func = funcs.analysis_echo_criteria)
-Column.create(table, 'key', 'Key', iskey=True, isnumeric=False)
-Column.create(table, 'value', 'Value', isnumeric=False)
+a.add_column('key', 'Key', iskey=True, isnumeric=False)
+a.add_column('value', 'Value', isnumeric=False)
 
-raw.TableWidget.create(section, table, 'Table')
+raw.TableWidget.create(section, a.table, 'Table')
