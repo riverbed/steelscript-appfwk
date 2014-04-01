@@ -83,11 +83,17 @@ class AnalysisTable(DatasourceTable):
     def pre_process_table(self):
         # handle direct id's, table references, or table classes
         # from tables option and transform to simple table id value
-        for k, v in self.extra_table_options['tables'].iteritems():
-            if hasattr(v, 'table'):
-                self.extra_table_options['tables'][k] = v.table.id
-            else:
-                self.extra_table_options['tables'][k] = getattr(v, 'id', v)
+        for name in ['tables', 'related_tables']:
+            if not extra_opts[name]:
+                continue
+            for k, v in extra_opts[name].iteritems():
+                if hasattr(v, 'table'):
+                    extra_opts[name][k] = v.table.id
+                else:
+                    extra_opts[name][k] = getattr(v, 'id', v)
+
+        if not isinstance(extra_opts['function'], Function):
+            extra_opts['function'] = Function(extra_opts['function'])
 
     def post_process_table(self):
         if self.table_field_options['copy_fields']:
