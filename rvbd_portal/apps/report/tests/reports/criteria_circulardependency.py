@@ -18,7 +18,7 @@ section = Section(report=report, title='Section 0')
 section.save()
 
 a = AnalysisTable('test-criteria-circulardependency', tables={},
-                      func = funcs.analysis_echo_criteria)
+                  function = funcs.analysis_echo_criteria)
 
 TableField.create(keyword='t1', obj=a.table,
                   post_process_template='table_computed:{t2}',

@@ -1,11 +1,12 @@
 # Copyright (c) 2013 Riverbed Technology, Inc.
 #
-# This software is licensed under the terms and conditions of the 
+# This software is licensed under the terms and conditions of the
 # MIT License set forth at:
-#   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").  
+#   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").
 # This software is distributed "AS IS" as set forth in the License.
 
 import logging
+import importlib
 
 from copy import deepcopy
 from base64 import b64encode, b64decode
@@ -23,18 +24,21 @@ logger = logging.getLogger(__name__)
 # see http://djangosnippets.org/snippets/1694/
 # and http://djangosnippets.org/snippets/2346/
 
+class FunctionError(Exception):
+    pass
+
 class PickledObject(str):
     """
     A subclass of string so it can be told whether a string is a pickled
     object or not (if the object is an instance of this class then it must
     [well, should] be a pickled one).
-    
+
     Only really useful for passing pre-encoded values to ``default``
     with ``dbsafe_encode``, not that doing so is necessary. If you
     remove PickledObject and its references, you won't be able to pass
     in pre-encoded values anymore, but you can always just pass in the
     python objects themselves.
-    
+
     """
     pass
 
@@ -42,8 +46,8 @@ def dbsafe_encode(value, compress_object=False):
     """
     We use deepcopy() here to avoid a problem with cPickle, where dumps
     can generate different character streams for same lookup value if
-    they are referenced differently. 
-    
+    they are referenced differently.
+
     The reason this is important is because we do all of our lookups as
     simple string matches, thus the character streams must be the same
     for the lookups to work properly. See tests.py for more information.
@@ -66,34 +70,34 @@ class PickledObjectField(models.Field):
     A field that will accept *any* python object and store it in the
     database. PickledObjectField will optionally compress it's values if
     declared with the keyword argument ``compress=True``.
-    
+
     Does not actually encode and compress ``None`` objects (although you
     can still do lookups using None). This way, it is still possible to
     use the ``isnull`` lookup type correctly. Because of this, the field
     defaults to ``null=True``, as otherwise it wouldn't be able to store
     None values since they aren't pickled and encoded.
-    
+
     """
     __metaclass__ = models.SubfieldBase
-    
+
     def __init__(self, *args, **kwargs):
         self.compress = kwargs.pop('compress', False)
         self.protocol = kwargs.pop('protocol', 2)
         kwargs.setdefault('null', True)
         kwargs.setdefault('editable', False)
         super(PickledObjectField, self).__init__(*args, **kwargs)
-    
+
     def get_default(self):
         """
         Returns the default value for this field.
-        
+
         The default implementation on models.Field calls force_unicode
         on the default, which means you can't set arbitrary Python
         objects as the default. To fix this, we just return the value
         without calling force_unicode on it. Note that if you set a
         callable as a default, the field will still call it. It will
         *not* try to pickle and encode it.
-        
+
         """
         if self.has_default():
             if callable(self.default):
@@ -105,12 +109,12 @@ class PickledObjectField(models.Field):
     def to_python(self, value):
         """
         B64decode and unpickle the object, optionally decompressing it.
-        
+
         If an error is raised in de-pickling and we're sure the value is
         a definite pickle, the error is allowed to propogate. If we
         aren't sure if the value is a pickle or not, then we catch the
         error and return the original value instead.
-        
+
         """
         if value is not None:
             try:
@@ -118,7 +122,7 @@ class PickledObjectField(models.Field):
 
             except (AttributeError, SyntaxError, ImportError):
                 raise
-                    
+
             except Exception as e:
                 # If the value is a definite pickle; and an error is raised in
                 # de-pickling it should be allowed to propogate.
@@ -130,13 +134,13 @@ class PickledObjectField(models.Field):
     def get_prep_value(self, value):
         """
         Pickle and b64encode the object, optionally compressing it.
-        
+
         The pickling protocol is specified explicitly (by default 2),
         rather than as -1 or HIGHEST_PROTOCOL, because we don't want the
         protocol to change over time. If it did, ``exact`` and ``in``
         lookups would likely fail, since pickle would now be generating
-        a different string. 
-        
+        a different string.
+
         """
         if value is not None and not isinstance(value, PickledObject):
             # We call force_unicode here explicitly, so that the encoded string
@@ -152,39 +156,76 @@ class PickledObjectField(models.Field):
         value = self._get_val_from_obj(obj)
         return self.get_prep_value(value)
 
-    def get_internal_type(self): 
+    def get_internal_type(self):
         return 'TextField'
-    
+
     def get_prep_lookup(self, lookup_type, value):
         if lookup_type not in ['exact', 'isnull']:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
         return self.get_prep_value(value)
 
 class Function(object):
-    def __init__(self, function, params=None):
-        self.function = function
+
+    def __init__(self, function=None, params=None):
+        if function:
+            self.module = function.__module__
+            self.function = function.func_name
+        else:
+            self.module = None
+            self.function = None
+
         self.params = params
+
+    def __repr__(self):
+        return "<Function %s:%s>" % (self.module, self.function)
+
+    @classmethod
+    def from_dict(cls, d):
+        self = Function()
+
+        self.module = d['module']
+        self.function = d['function']
+        self.params = d['params']
+
+        return self
+
+    def to_dict(self):
+        return {'module': self.module,
+                'function': self.function,
+                'params': self.params}
+
+    def __call__(self, *args, **kwargs):
+        try:
+            mod = importlib.import_module(self.module)
+            func = mod.__dict__[self.function]
+        except ImportError:
+            raise FunctionError(
+                "Function reference is invalid, could not import module <%s>"
+                % self.module)
+        except KeyError:
+            raise FunctionError(
+                "Function reference is invalid, could not find function <%s> in module <%s>"
+                % (self.function, self.module))
+
+        return func(*args, params=self.params, **kwargs)
 
 class FunctionField(PickledObjectField):
 
     __metaclass__ = models.SubfieldBase
-    
+
     def to_python(self, value):
         if isinstance(value, Function):
             return value
-        
+
         value = super(FunctionField, self).to_python(value)
         if value is not None:
-            return Function(value['function'], value['params'])
+            return Function.from_dict(value)
         else:
             return None
 
     def get_prep_value(self, value):
         if value is not None:
-            d = {'function': value.function,
-                 'params': value.params}
-
-            value = super(FunctionField, self).get_prep_value(d)
+            value = super(FunctionField, self).get_prep_value(value.to_dict())
         return value
 
 

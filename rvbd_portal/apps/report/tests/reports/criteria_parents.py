@@ -30,7 +30,7 @@ TableField.create(keyword='section_computed', obj=section,
 
 # Table
 a = AnalysisTable('test-criteria-postprocess', tables={},
-                             func = funcs.analysis_echo_criteria)
+                  function = funcs.analysis_echo_criteria)
 
 # Table-level computed
 TableField.create(keyword='table_computed', obj=a.table,

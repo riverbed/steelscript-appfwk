@@ -23,7 +23,7 @@ TableField.create(keyword='section-2', label='Section 2', obj=section, required=
 
 # Table
 a = AnalysisTable('test-criteria-postprocess', tables={},
-                      func = funcs.analysis_echo_criteria)
+                  function = funcs.analysis_echo_criteria)
 
 # Table-level criteria
 TableField.create(keyword='table-1', label='Table 1', obj=a.table, initial='t1')

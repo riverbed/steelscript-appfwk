@@ -29,7 +29,7 @@ TableField.create ('choices_with_params', 'Choices with params', section,
                                     'prefix': 'pre'}))
 
 a = AnalysisTable('test-criteria-preprocess', tables={},
-                             func = funcs.analysis_echo_criteria)
+                  function = funcs.analysis_echo_criteria)
 a.add_column('key', 'Key', iskey=True, isnumeric=False)
 a.add_column('value', 'Value', isnumeric=False)
 

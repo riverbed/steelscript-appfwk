@@ -4,6 +4,7 @@ from rvbd_portal.apps.datasource.models import Column
 from rvbd_portal.apps.report.models import Report, Section
 from rvbd_portal.apps.report.modules import raw
 from rvbd_portal.apps.datasource.forms import fields_add_time_selection, fields_add_resolution
+from rvbd_portal.libs.fields import Function
 
 # Report
 from rvbd_portal.apps.report.tests.reports import synthetic_functions as funcs
@@ -17,9 +18,9 @@ section.save()
 
 # Table
 a = AnalysisTable('test-synthetic-resampling', tables={},
-                  func = funcs.analysis_generate_data,
-                  resample = True,
-                  params = {'source_resolution': 60 })
+                  function = Function(funcs.analysis_generate_data,
+                                      params = {'source_resolution': 60 }),
+                  resample = True)
 fields_add_time_selection(a.table)
 fields_add_resolution(a.table)
 

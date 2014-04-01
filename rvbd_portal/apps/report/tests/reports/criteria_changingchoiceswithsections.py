@@ -18,7 +18,7 @@ section = Section.create(report=report, title='Section 0', section_keywords=['fi
 section.save()
 
 a = AnalysisTable('test-criteria-changingchoiceswithsections-0', tables={},
-                  func = funcs.analysis_echo_criteria)
+                  function = funcs.analysis_echo_criteria)
 TableField.create ('first', 'First Choice', a.table,
                    field_cls = forms.ChoiceField,
                    field_kwargs = {'choices': (('a', 'Option A'),
@@ -26,8 +26,7 @@ TableField.create ('first', 'First Choice', a.table,
 
 TableField.create ('second', 'Second Choice', a.table,
                    field_cls = forms.ChoiceField,
-                   pre_process_func =
-                   Function(funcs.preprocess_changesecond),
+                   pre_process_func = Function(funcs.preprocess_changesecond),
                    dynamic=True)
 
 a.add_column('key', 'Key', iskey=True, isnumeric=False)
@@ -39,7 +38,7 @@ section = Section.create(report=report, title='Section 1', section_keywords=['fi
 section.save()
 
 a = AnalysisTable('test-criteria-changingchoiceswithsections-1', tables={},
-                             func = funcs.analysis_echo_criteria)
+                  function = funcs.analysis_echo_criteria)
 TableField.create ('first', 'First Choice', a.table,
                    field_cls = forms.ChoiceField,
                    field_kwargs = {'choices': (('a', 'Option A'),

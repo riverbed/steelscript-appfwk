@@ -29,7 +29,7 @@ TableField.create ('second', 'Second Choice', section,
                    dynamic=True)
 
 a = AnalysisTable('test-criteria-changingchoices', tables={},
-                  func = funcs.analysis_echo_criteria)
+                  function = funcs.analysis_echo_criteria)
 a.add_column('key', 'Key', iskey=True, isnumeric=False)
 a.add_column('value', 'Value', isnumeric=False)
 

@@ -14,7 +14,7 @@ section = Section(report=report, title='Section 0')
 section.save()
 
 a = AnalysisTable('test-criteria-postprocess', tables={},
-                  func = funcs.analysis_echo_criteria)
+                  function = funcs.analysis_echo_criteria)
 
 TableField.create('error', 'Error type', a.table)
 TableField.create('x', 'X Value', a.table, hidden=True,

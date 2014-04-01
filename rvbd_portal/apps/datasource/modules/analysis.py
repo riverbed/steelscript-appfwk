@@ -11,6 +11,7 @@ import pandas
 from rvbd.common.jsondict import JsonDict
 from rvbd_portal.apps.datasource.datasource import DatasourceTable
 from rvbd_portal.apps.datasource.models import Column, Job, Table, BatchJobRunner
+from rvbd_portal.libs.fields import Function
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +33,8 @@ class AnalysisTable(DatasourceTable):
     `tables` is hashmap of dependent tables, mapping a names expected
         by the analysis functon to table ids
 
-    `func` is a pointer to the user defined analysis function
-
-    `params` is an optional dictionary of parameters to pass to `func`
+    `function` is a pointer to the user defined analysis function, or
+        a Function object which includes parameters
 
     For example, consider an input of two tables A and B, and an
     AnalysisTable that simply concatenates A and B:
@@ -52,7 +52,7 @@ class AnalysisTable(DatasourceTable):
         Combined = AnalysisTable('Combined',
                                  tables = {'t1': A,
                                            't2': B},
-                                 func = combine_by_host)
+                                 function = combine_by_host)
         Combined.add_column('host')
         Combined.add_column('bytes')
         Combined.add_column('pkts')
@@ -75,12 +75,13 @@ class AnalysisTable(DatasourceTable):
     """
     EXTRA_TABLE_OPTIONS = {'tables': None,         # required, dict of tables
                            'related_tables': None, # additional tables
-                           'func': None,           # required, function reference
-                           'params': None}
+                           'function': None}       # Function object
 
     TABLE_FIELD_OPTIONS = {'copy_fields': True}
 
     def pre_process_table(self):
+        extra_opts = self.extra_table_options
+
         # handle direct id's, table references, or table classes
         # from tables option and transform to simple table id value
         for name in ['tables', 'related_tables']:
@@ -170,21 +171,20 @@ class TableQuery(object):
                 return False
 
         logger.debug("%s: Calling analysis function %s"
-                     % (self, str(options.func)))
+                     % (self, options.function))
 
         try:
-            df = options.func(self, dfs, self.job.criteria,
-                              params=options.params)
+            df = options.function(self, dfs, self.job.criteria)
         except AnalysisException as e:
             self.job.mark_error("Analysis function %s failed: %s" %
-                                (options.func, e.message))
+                                (options.function, e.message))
             logger.exception("%s raised an exception" % self)
             return False
         except Exception as e:
             self.job.mark_error("Analysis function %s failed: %s" %
-                                (options.func, str(e)))
+                                (options.function, str(e)))
             logger.exception("%s: Analysis function %s raised an exception" %
-                             (self, options.func))
+                             (self, options.function))
             return False
 
         # Sort according to the defined sort columns
@@ -216,7 +216,7 @@ def analysis_echo_criteria(query, tables, criteria, params):
 
 def create_criteria_table(name):
     table = AnalysisTable.create('name', tables={},
-                                 func = analysis_echo_criteria)
+                                 function = analysis_echo_criteria)
 
     Column.create(table, 'key', 'Criteria Key', iskey=True, isnumeric=False)
     Column.create(table, 'value', 'Criteria Value', isnumeric=False)

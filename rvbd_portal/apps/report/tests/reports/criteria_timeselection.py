@@ -12,7 +12,7 @@ section = Section(report=report, title='Section 0')
 section.save()
 
 a = AnalysisTable('test-criteria-timeselection', tables={},
-                  func = funcs.analysis_echo_criteria)
+                  function = funcs.analysis_echo_criteria)
 fields_add_time_selection(a.table, initial_duration='1 day')
 
 a.add_column('key', 'Key', iskey=True, isnumeric=False)

@@ -35,7 +35,7 @@ table.add_column('avg_bytes', 'Avg Bytes', units='s', issortcol=True)
 # 'whois'
 whoistable = AnalysisTable('5-whois-hosts',
                            tables={'t': table},
-                           func=whois)
+                           function=whois)
 
 whoistable.add_column('host_ip', label="IP Addr", iskey=True)
 whoistable.add_column('avg_bytes', label='Avg Bytes',

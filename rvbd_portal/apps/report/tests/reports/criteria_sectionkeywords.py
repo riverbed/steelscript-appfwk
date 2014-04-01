@@ -20,7 +20,7 @@ section.save()
 
 # Table
 a = AnalysisTable('test-criteria-sectionkeywords-1', tables={},
-                             func = funcs.analysis_echo_criteria)
+                  function = funcs.analysis_echo_criteria)
 TableField.create(keyword='k1', label='Key 1', obj=a.table, initial='r1')
 
 a.add_column('key', 'Key', iskey=True, isnumeric=False)
@@ -34,7 +34,7 @@ section.save()
 
 # Table
 a = AnalysisTable('test-criteria-sectionkeywords-2', tables={},
-                             func = funcs.analysis_echo_criteria)
+                  function = funcs.analysis_echo_criteria)
 TableField.create(keyword='k1', label='Key 1', obj=a.table, initial='r1')
 
 a.add_column('key', 'Key', iskey=True, isnumeric=False)

@@ -397,11 +397,11 @@ class TableFieldForm(forms.Form):
         func = tablefield.pre_process_func
         if func is not None:
             try:
-                func.function(self, field_id, fkwargs, func.params)
+                func(self, field_id, fkwargs)
             except Exception as e:
                 logger.exception('Pre processing failed: %s' % field_id)
                 msg = ("Pre-process function '%s' returned an exception: %s" %
-                       (str(func.function.func_name), str(e)))
+                       (str(func), str(e)))
                 self.add_field_error(field_id, msg)
 
         field = field_cls(**fkwargs)
@@ -546,18 +546,18 @@ class TableFieldForm(forms.Form):
 
             elif tablefield.post_process_func is not None:
                 # Call the post process function
-                f = tablefield.post_process_func
+                func = tablefield.post_process_func
                 try:
-                    f.function(self, tablefield.keyword, criteria, f.params)
+                    func(self, tablefield.keyword, criteria)
                 except Exception as e:
                     msg = ('Field %s function %s raised an exception: %s %s' %
-                           (tablefield, f.function, type(e), e))
+                           (tablefield, str(func), type(e), e))
                     raise CriteriaPostProcessError(msg)
 
                 if tablefield.keyword not in criteria:
                     msg = ('Field %s function %s failed to set '
                            'criteria.%s value' %
-                           (tablefield, f.function, tablefield.keyword))
+                           (tablefield, str(func), tablefield.keyword))
                     raise CriteriaPostProcessError(msg)
             elif tablefield.keyword not in criteria:
                 raise CriteriaError('Field %s has no value and no post-process '

@@ -17,7 +17,7 @@ x = TableField.create('x', 'X Value')
 for i in range(2):
 
     a = AnalysisTable('test-criteria-sharedfields-%d' % i, tables={},
-                      func = funcs.analysis_echo_criteria)
+                      function = funcs.analysis_echo_criteria)
     a.add_column('key', 'Key', iskey=True, isnumeric=False)
     a.add_column('value', 'Value', isnumeric=False)
 
