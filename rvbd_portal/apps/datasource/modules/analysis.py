@@ -1,11 +1,12 @@
 # Copyright (c) 2013 Riverbed Technology, Inc.
 #
-# This software is licensed under the terms and conditions of the 
+# This software is licensed under the terms and conditions of the
 # MIT License set forth at:
-#   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").  
+#   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").
 # This software is distributed "AS IS" as set forth in the License.
 
 import logging
+import pandas
 
 from rvbd.common.jsondict import JsonDict
 from rvbd_portal.apps.datasource.datasource import DatasourceTable
@@ -47,6 +48,7 @@ class AnalysisTable(DatasourceTable):
         Column.create(B, 'pkts')
 
         from config.reports.helpers.analysis_funcs import combine_by_host
+
         Combined = AnalysisTable('Combined',
                                  tables = {'t1': A,
                                            't2': B},
@@ -71,8 +73,9 @@ class AnalysisTable(DatasourceTable):
     Note that the function must defined in a separate file in the 'helpers'
     directory.
     """
-    EXTRA_TABLE_OPTIONS = {'tables': None,  # required, dict of tables
-                           'func': None,    # required, function reference
+    EXTRA_TABLE_OPTIONS = {'tables': None,         # required, dict of tables
+                           'related_tables': None, # additional tables
+                           'func': None,           # required, function reference
                            'params': None}
 
     TABLE_FIELD_OPTIONS = {'copy_fields': True}
@@ -89,11 +92,15 @@ class AnalysisTable(DatasourceTable):
     def post_process_table(self):
         if self.table_field_options['copy_fields']:
             keywords = set()
-            for table_id in self.extra_table_options['tables'].values():
-                for f in Table.objects.get(id=table_id).fields.all():
-                    if f.keyword not in keywords:
-                        self.table.fields.add(f)
-                        keywords.add(f.keyword)
+            for name in ['tables', 'related_tables']:
+                table_ids = self.extra_table_options[name]
+                if not table_ids:
+                    continue
+                for table_id in table_ids.values():
+                    for f in Table.objects.get(id=table_id).fields.all():
+                        if f.keyword not in keywords:
+                            self.table.fields.add(f)
+                            keywords.add(f.keyword)
 
 
 class TableQuery(object):
@@ -110,48 +117,51 @@ class TableQuery(object):
     def mark_progress(self, progress):
         # Called by the analysis function
         self.job.mark_progress(70 + (progress * 30)/100)
-        
+
     def run(self):
         # Collect all dependent tables
         options = self.table.options
-        logger.debug("%s: dependent tables: %s" % (self, options.tables))
-        deptables = options.tables
-        depjobids = {}
-        batch = BatchJobRunner(self.job, max_progress=70)
-        for name, id in deptables.items():
-            id = int(id)
-            deptable = Table.objects.get(id=id)
-            job = Job.create(
-                table=deptable,
-                criteria=self.job.criteria.build_for_table(deptable)
-            )
-            batch.add_job(job)
-            logger.debug("%s: starting dependent job %s" % (self, job))
-            depjobids[name] = job.id
-                    
-        batch.run()
 
-        logger.debug("%s: All dependent jobs complete, collecting data"
-                     % str(self))
         # Create dataframes for all tables
         dfs = {}
-        
-        failed = False
-        for name, id in depjobids.items():
-            job = Job.objects.get(id=id)
-                
-            if job.status == job.ERROR:
-                self.job.mark_error("Dependent Job failed: %s" % job.message)
-                failed = True
-                break
-            
-            f = job.data()
-            dfs[name] = f
-            logger.debug("%s: Table[%s] - %d rows" %
-                         (self, name, len(f) if f is not None else 0))
 
-        if failed:
-            return False
+        deptables = options.tables
+        if deptables and (len(deptables) > 0):
+            logger.debug("%s: dependent tables: %s" % (self, deptables))
+            depjobids = {}
+            batch = BatchJobRunner(self.job, max_progress=70)
+            for (name, id) in deptables.items():
+                id = int(id)
+                deptable = Table.objects.get(id=id)
+                job = Job.create(
+                    table=deptable,
+                    criteria=self.job.criteria.build_for_table(deptable)
+                )
+                batch.add_job(job)
+                logger.debug("%s: starting dependent job %s" % (self, job))
+                depjobids[name] = job.id
+
+            batch.run()
+
+            logger.debug("%s: All dependent jobs complete, collecting data"
+                         % str(self))
+
+            failed = False
+            for (name, id) in depjobids.items():
+                job = Job.objects.get(id=id)
+
+                if job.status == job.ERROR:
+                    self.job.mark_error("Dependent Job failed: %s" % job.message)
+                    failed = True
+                    break
+
+                f = job.data()
+                dfs[name] = f
+                logger.debug("%s: Table[%s] - %d rows" %
+                             (self, name, len(f) if f is not None else 0))
+
+            if failed:
+                return False
 
         logger.debug("%s: Calling analysis function %s"
                      % (self, str(options.func)))
@@ -170,7 +180,7 @@ class TableQuery(object):
             logger.exception("%s: Analysis function %s raised an exception" %
                              (self, options.func))
             return False
-            
+
         # Sort according to the defined sort columns
         if df is not None:
             if self.table.sortcol:
@@ -186,6 +196,22 @@ class TableQuery(object):
                 self.data = df
         else:
             self.data = None
-        
+
         logger.debug("%s: completed successfully" % (self))
         return True
+
+def analysis_echo_criteria(query, tables, criteria, params):
+    values = [[str(k),str(v)]
+              for k,v in criteria.iteritems()]
+    values.append(['criteria.starttime', str(criteria.starttime)])
+    df = pandas.DataFrame(values,
+                          columns=['key', 'value'])
+    return df
+
+def create_criteria_table(name):
+    table = AnalysisTable.create('name', tables={},
+                                 func = analysis_echo_criteria)
+
+    Column.create(table, 'key', 'Criteria Key', iskey=True, isnumeric=False)
+    Column.create(table, 'value', 'Criteria Value', isnumeric=False)
+    return table

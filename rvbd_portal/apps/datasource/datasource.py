@@ -119,6 +119,9 @@ class DatasourceTable(object):
         column_options = copy.deepcopy(self.COLUMN_OPTIONS)
         extra_column_options = copy.deepcopy(self.EXTRA_COLUMN_OPTIONS)
 
+        if label:
+            column_options['label'] = label
+
         keys = kwargs.keys()
         cp = dict((k, kwargs.pop(k)) for k in keys if k in column_options)
         column_options.update(**cp)
@@ -135,7 +138,6 @@ class DatasourceTable(object):
         else:
             options = None
 
-        c = Column.create(self.table, name, options=options,
-                          **column_options)
+        c = Column.create(self.table, name, options=options, **column_options)
         self.columns.append(c)
         return c

@@ -348,9 +348,11 @@ class Widget(models.Model):
                 fields[common_fields[k].keyword] = v
             elif k in section_fields:
                 fields[section_fields[k].keyword] = v
+            elif k in ['debug', 'ignore_cache']:
+                fields[k] = v
 
         return fields
-        
+
     def collect_fields(self):
         # Gather up all fields
         fields = SortedDict()
@@ -364,9 +366,10 @@ class Widget(models.Model):
             fields[f.keyword] = f
 
         # All fields attached to any Widget's Tables
-        for t in self.tables.all():
-            for f in t.fields.all().order_by('id'):
-                fields[f.keyword] = f
+        for w in self.section.widget_set.all().order_by('id'):
+            for t in w.tables.all():
+                for f in t.fields.all().order_by('id'):
+                    fields[f.keyword] = f
 
         return fields
 

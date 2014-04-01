@@ -7,8 +7,9 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-import optparse
 import os
+import logging
+import optparse
 
 from django.core.management.base import BaseCommand
 
@@ -21,6 +22,9 @@ from rvbd_portal.apps.datasource.models import Job
 # for this script, so ignore them all
 import warnings
 warnings.filterwarnings("ignore")
+
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -67,15 +71,17 @@ class Command(BaseCommand):
 
         if options['job_list']:
             # print out the id's instead of processing anything
-            columns = ['ID', 'Table', 'Created', 'Touched', 'Sts', 'Refs',
-                       'Progress', 'Data file']
+            columns = ['ID', 'PID', 'Table', 'Created', 'Touched', 'Sts',
+                       'Refs', 'Progress', 'Data file']
             data = []
-            for j in Job.objects.all():
+            for j in Job.objects.all().order_by('id'):
                 datafile = j.datafile()
                 if not os.path.exists(datafile):
                     datafile += " (missing)"
-                data.append([j.id, j.table.name, j.created, j.touched,
-                             j.status, j.refcount, j.progress, datafile])
+                parent_id = j.parent.id if j.parent else '--'
+                data.append([j.id, parent_id, j.table.name, j.created,
+                             j.touched, j.status, j.refcount, j.progress,
+                             datafile])
 
             Formatter.print_table(data, columns)
 
@@ -88,7 +94,11 @@ class Command(BaseCommand):
                 Formatter.print_table(job.values(), columns)
 
         elif options['job_age']:
+            logger.debug('Aging all jobs.')
             Job.age_jobs(force=True)
-                
+
         elif options['job_flush']:
-            Job.objects.all().delete()
+            logger.debug('Flushing all jobs.')
+            while Job.objects.count():
+                ids = Job.objects.values_list('pk', flat=True)[:100]
+                Job.objects.filter(pk__in=ids).delete()
