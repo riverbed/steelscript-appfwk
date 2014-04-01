@@ -457,7 +457,7 @@ class Column(models.Model):
                    (UNITS_SECS, "s"),
                    (UNITS_MSECS, "ms"),
                    (UNITS_BYTES, "B"),
-                   (UNITS_BYTES, "B/s"),
+                   (UNITS_BYTES_PER_SEC, "B/s"),
                    (UNITS_PCT, "pct")))
 
     def __unicode__(self):
@@ -791,7 +791,7 @@ class Job(models.Model):
                                table.get_columns()]))
 
             if table.criteria_handle_func:
-                criteria = table.criteria_handle_func.function(criteria)
+                criteria = table.criteria_handle_func(criteria)
 
             for k, v in criteria.iteritems():
                 #logger.debug("Updating hash from %s -> %s" % (k,v))

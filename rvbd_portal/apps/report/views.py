@@ -513,8 +513,8 @@ class WidgetJobDetail(views.APIView):
                     data = widget_func(widget, job, tabledata)
                     resp = job.json(data)
                     logger.debug("%s complete" % str(wjob))
-                    with open('/tmp/widget-job-%d.txt' % job.id, 'w') as f:
-                        f.write(json.dumps(resp))
+                    #with open('/tmp/widget-job-%d.txt' % job.id, 'w') as f:
+                    #    f.write(json.dumps(resp))
             except:
                 logger.exception("Widget %s Job %s processing failed" %
                                  (widget.id, job.id))
