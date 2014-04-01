@@ -30,7 +30,7 @@ TableField.create ('second', 'Second Choice', section,
 
 a = AnalysisTable('test-criteria-changingchoices', tables={},
                   function = funcs.analysis_echo_criteria)
-a.add_column('key', 'Key', iskey=True, isnumeric=False)
-a.add_column('value', 'Value', isnumeric=False)
+a.add_column('key', 'Key', iskey=True, datatype="string")
+a.add_column('value', 'Value', datatype="string")
 
 raw.TableWidget.create(section, a.table, 'Table')

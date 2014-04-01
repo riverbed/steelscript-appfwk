@@ -29,8 +29,8 @@ TableField.create ('second', 'Second Choice', a.table,
                    pre_process_func = Function(funcs.preprocess_changesecond),
                    dynamic=True)
 
-a.add_column('key', 'Key', iskey=True, isnumeric=False)
-a.add_column('value', 'Value', isnumeric=False)
+a.add_column('key', 'Key', iskey=True, datatype="string")
+a.add_column('value', 'Value', datatype="string")
 
 raw.TableWidget.create(section, a.table, 'Table 0')
 
@@ -50,7 +50,7 @@ TableField.create ('second', 'Second Choice', a.table,
                    Function(funcs.preprocess_changesecond),
                    dynamic=True)
 
-a.add_column('key', 'Key', iskey=True, isnumeric=False)
-a.add_column('value', 'Value', isnumeric=False)
+a.add_column('key', 'Key', iskey=True, datatype="string")
+a.add_column('value', 'Value', datatype="string")
 
 raw.TableWidget.create(section, a.table, 'Table 1')

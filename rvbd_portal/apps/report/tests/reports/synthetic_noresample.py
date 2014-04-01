@@ -23,7 +23,7 @@ a = AnalysisTable('test-synthetic-noresampling', tables={},
 fields_add_time_selection(a.table)
 fields_add_resolution(a.table)
 
-a.add_column('time', 'Time', iskey=True, isnumeric=True, datatype='time')
-a.add_column('value', 'Value', isnumeric=True)
+a.add_column('time', 'Time', iskey=True, datatype='time')
+a.add_column('value', 'Value')
 
 raw.TableWidget.create(section, a.table, 'Table')

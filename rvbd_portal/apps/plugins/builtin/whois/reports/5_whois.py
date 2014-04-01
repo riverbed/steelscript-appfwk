@@ -27,8 +27,8 @@ section = Section.create(report)
 table = ProfilerGroupbyTable('5-hosts', groupby='host', duration='1 hour',
                              filterexpr='not srv host 10/8 and not srv host 192.168/16')
 
-table.add_column('host_ip', 'IP Addr', iskey=True)
-table.add_column('avg_bytes', 'Avg Bytes', units='s', issortcol=True)
+table.add_column('host_ip', 'IP Addr', iskey=True, datatype='string')
+table.add_column('avg_bytes', 'Avg Bytes', units='B/s', issortcol=True)
 
 
 # Create an Analysis table that calls the 'whois' function to craete a link to
@@ -36,10 +36,7 @@ table.add_column('avg_bytes', 'Avg Bytes', units='s', issortcol=True)
 whoistable = AnalysisTable('5-whois-hosts',
                            tables={'t': table},
                            function=whois)
-
-whoistable.add_column('host_ip', label="IP Addr", iskey=True)
-whoistable.add_column('avg_bytes', label='Avg Bytes',
-                      datatype='bytes', issortcol=True)
+whoistable.table.copy_columns(table.table)
 whoistable.add_column('whois', label="Whois link", datatype='html')
 
 yui3.TableWidget.create(section, whoistable.table, "Link table", width=12)

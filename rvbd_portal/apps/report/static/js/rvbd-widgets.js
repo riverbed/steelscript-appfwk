@@ -27,14 +27,14 @@ function resize() {
 window.onresize = resize;
 
 function Widget (posturl, divid, options, criteria) {
-    this.posturl = posturl, 
+    this.posturl = posturl,
     this.divid = divid;
     this.options = options;
 
     this.container = document.getElementById(divid);
 
     this.container.innerHTML = '<p>Loading...</p>';
-    
+
     //debugger;
     if (options.height) {
         $('#' + divid).height(options.height);
@@ -51,7 +51,7 @@ function Widget (posturl, divid, options, criteria) {
             self.joburl = data.joburl,
             setTimeout(function() { self.getData(criteria) }, 1000);
         },
-        error: function(jqXHR, textStatus, errorThrown) { 
+        error: function(jqXHR, textStatus, errorThrown) {
             $('#' + self.divid).hideLoading();
             var message = $("<div/>").html(textStatus + " : " + errorThrown).text()
             $('#' + self.divid).html("<p>Server error: <pre>" + message + "</pre></p>");
@@ -64,12 +64,12 @@ Widget.prototype.getData = function(criteria) {
     var self = this;
     $.ajax({
         dataType: "json",
-        url: self.joburl, 
+        url: self.joburl,
         data: null,
-        success: function(data, textStatus) { 
-            self.processResponse(criteria, data, textStatus); 
+        success: function(data, textStatus) {
+            self.processResponse(criteria, data, textStatus);
         },
-        error: function(jqXHR, textStatus, errorThrown) { 
+        error: function(jqXHR, textStatus, errorThrown) {
             $('#' + self.divid).hideLoading();
             var message = $("<div/>").html(textStatus + " : " + errorThrown).text()
             $('#' + self.divid).html("<p>Server error: <pre>" + message + "</pre></p>");
@@ -112,7 +112,7 @@ function padzeros(n, p) {
 
 Widget.prototype.formatTimeMs = function(t, precision) {
     var d = new Date(t);
-    return d.getHours() + 
+    return d.getHours() +
         ':' + padzeros(d.getMinutes(),2) +
         ':' + padzeros(d.getSeconds(),2) +
         '.' + padzeros(d.getMilliseconds(),3);
@@ -124,7 +124,7 @@ Widget.prototype.formatTime = function(t, precision) {
     return date.toString();
 }
 
-Widget.prototype.formatBytes = function(bytes, precision) {
+Widget.prototype.formatMetric = function(bytes, precision) {
     if (bytes == undefined) return '';
     if (bytes == 0) return '0';
     var e = parseInt(Math.floor(Math.log(bytes) / Math.log(1000)));
@@ -143,10 +143,8 @@ Widget.prototype.formatBytes = function(bytes, precision) {
         return vs + ['', 'k', 'M', 'G', 'T'][e];
     } else {
         return vs + ['', 'm', 'u', 'n'][-e];
-    }    
+    }
 }
-
-Widget.prototype.formatMetric = Widget.prototype.formatBytes;
 
 Widget.prototype.formatPct = function(num, precision) {
     if (num == undefined) return '';
@@ -181,7 +179,7 @@ rvbd_raw.TableWidget.prototype.render = function(data)
         append('<table id="' + contentid + '-table"></table>')
 
     var div= $('#' + this.divid);
-    
+
     var table = $('#' + contentid + '-table');
     table.width('100%');
 
@@ -194,4 +192,3 @@ rvbd_raw.TableWidget.prototype.render = function(data)
         table.append(rowstr);
         });
 }
-

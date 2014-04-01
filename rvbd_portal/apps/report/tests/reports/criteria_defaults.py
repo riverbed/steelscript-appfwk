@@ -30,7 +30,7 @@ TableField.create(keyword='table-1', label='Table 1', obj=a.table, initial='t1')
 TableField.create(keyword='table-2', label='Table 2', obj=a.table, initial='t2')
 
 
-a.add_column('key', 'Key', iskey=True, isnumeric=False)
-a.add_column('value', 'Value', isnumeric=False)
+a.add_column('key', 'Key', iskey=True, datatype="string")
+a.add_column('value', 'Value', datatype="string")
 
 raw.TableWidget.create(section, a.table, 'Table')

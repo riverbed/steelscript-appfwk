@@ -46,19 +46,19 @@ class TableWidget(object):
         w_columns = []   # Widget column definitions
 
         for i,wc in enumerate(job.get_columns()):
-            ci = ColInfo(wc, i, wc.datatype == 'time')
+            ci = ColInfo(wc, i, wc.istime())
             colinfo[ci.key] = ci
             w_keys.append(ci.key)
             w_column = {'key': ci.key, 'label': wc.label, "sortable": True}
-            if wc.datatype == 'bytes':
-                w_column['formatter'] = 'formatBytes'
-            elif wc.datatype == 'metric':
-                w_column['formatter'] = 'formatMetric'
-            elif wc.datatype == 'time':
+
+            if wc.isnumeric():
+                if wc.units == wc.UNITS_PCT:
+                    w_column['formatter'] = 'formatPct'
+                else:
+                    w_column['formatter'] = 'formatMetric'
+            elif wc.istime():
                 w_column['formatter'] = 'formatTime'
-            elif wc.datatype == 'pct':
-                w_column['formatter'] = 'formatPct'
-            elif wc.datatype == 'html':
+            elif wc.datatype == wc.DATATYPE_HTML:
                 w_column['allowHTML'] = True
             w_columns.append(w_column)
 
@@ -158,12 +158,12 @@ class TimeSeriesWidget(object):
                    module=__name__, uiwidget=cls.__name__)
         w.compute_row_col()
         timecols = [col.name for col in table.get_columns()
-                    if col.datatype == 'time']
+                    if col.istime()]
         if len(timecols) == 0:
             raise ValueError("Table %s must have a datatype 'time' column for "
                              "a timeseries widget" % str(table))
         cols = cols or [col.name for col in table.get_columns()
-                        if col.datatype != 'time']
+                        if not col.istime()]
         if altaxis:
             axes = {'0': {'position': 'left',
                           'columns': [col for col in cols if col not in altaxis]},
@@ -197,7 +197,7 @@ class TimeSeriesWidget(object):
         # defined columns other than time
         if widget.options.columns == '*':
             valuecolnames = [col.name for col in t_cols
-                             if col.datatype != 'time']
+                             if not col.istime()]
         else:
             valuecolnames = widget.options.columns
 
@@ -207,11 +207,19 @@ class TimeSeriesWidget(object):
         # Retrieve the desired value columns
         # ...and the indices for the value values
         # (as the 'data' has *all* columns)
+        time_colinfo = None
         for i, c in enumerate(t_cols):
-            if c.datatype == 'time':
+            if c.istime():
                 ci = ColInfo(c, i, -1, istime=True)
+                time_colinfo = ci
             elif c.name in valuecolnames:
-                ci = ColInfo(c, i, -1, istime=False)
+                if c.isnumeric():
+                    ci = ColInfo(c, i, -1, istime=False)
+                else:
+                    raise KeyError(
+                        "Cannot graph non-numeric data in timeseries widget: column %s"
+                        % c.name)
+
             colinfo[ci.key] = ci
 
         w_series = []
@@ -225,7 +233,7 @@ class TimeSeriesWidget(object):
                                                 "rotation": "-45"}}}}
 
         # Create a better time format depending on t0/t1
-        t_dataindex = colinfo['time'].dataindex
+        t_dataindex = time_colinfo.dataindex
 
         t0 = data[0][t_dataindex]
         t1 = data[-1][t_dataindex]
@@ -327,9 +335,9 @@ class TimeSeriesWidget(object):
                 w_axes[axis_name]['tickExponent'] = 1
                 w_axes[axis_name]['styles'] = {'majorUnit': {'count': 1}}
 
-            if ci.col.datatype == 'bytes':
-                w_axes[axis_name]['formatter'] = 'formatBytes'
-            elif ci.col.datatype == 'metric':
+            if ci.col.units == ci.col.UNITS_PCT:
+                w_axes[axis_name]['formatter'] = 'formatPct'
+            else:
                 w_axes[axis_name]['formatter'] = 'formatMetric'
 
         data = {

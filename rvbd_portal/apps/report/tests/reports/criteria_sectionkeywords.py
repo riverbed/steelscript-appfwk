@@ -23,8 +23,8 @@ a = AnalysisTable('test-criteria-sectionkeywords-1', tables={},
                   function = funcs.analysis_echo_criteria)
 TableField.create(keyword='k1', label='Key 1', obj=a.table, initial='r1')
 
-a.add_column('key', 'Key', iskey=True, isnumeric=False)
-a.add_column('value', 'Value', isnumeric=False)
+a.add_column('key', 'Key', iskey=True, datatype="string")
+a.add_column('value', 'Value', datatype="string")
 
 raw.TableWidget.create(section, a.table, 'Table 1')
 
@@ -37,7 +37,7 @@ a = AnalysisTable('test-criteria-sectionkeywords-2', tables={},
                   function = funcs.analysis_echo_criteria)
 TableField.create(keyword='k1', label='Key 1', obj=a.table, initial='r1')
 
-a.add_column('key', 'Key', iskey=True, isnumeric=False)
-a.add_column('value', 'Value', isnumeric=False)
+a.add_column('key', 'Key', iskey=True, datatype="string")
+a.add_column('value', 'Value', datatype="string")
 
 raw.TableWidget.create(section, a.table, 'Table 2')

@@ -175,20 +175,21 @@ class MapWidget(object):
         circles = []
 
         if data:
+            valmin = None
             valmax = None
-            if valuecol.col.isnumeric:
+            if valuecol.col.isnumeric():
                 values = zip(*data)[valuecol.dataindex]
                 filtered = filter(bool, values)
                 if filtered:
+                    valmin = min(filtered)
                     valmax = max(filtered)
                 else:
+                    valmin = 1
                     valmax = 1
 
             geolookup = None
 
-            if valuecol.col.datatype == 'bytes':
-                formatter = 'formatBytes'
-            elif valuecol.col.datatype == 'metric':
+            if valuecol.col.isnumeric():
                 formatter = 'formatMetric'
             else:
                 formatter = None
@@ -201,7 +202,8 @@ class MapWidget(object):
                     continue
 
                 if valmax:
-                    marker_size = 15 * (val / valmax)
+                    normalized = float(val - valmin) / float(valmax - valmin)
+                    marker_size = 5 + normalized * 20
                 else:
                     marker_size = 5
 
@@ -210,7 +212,7 @@ class MapWidget(object):
 
                     # XXXCJ - this is a hack for Profiler based host groups,
                     # need to generalize this, probably via options
-                    if widget.table().options['groupby'] == 'host_group':
+                    if widget.table().options.get('groupby') == 'host_group':
                         try:
                             geo = Location.objects.get(name=key)
                         except ObjectDoesNotExist:
@@ -229,7 +231,7 @@ class MapWidget(object):
                                         long=geo.longitude,
                                         value=val,
                                         size=marker_size,
-                                        units=valuecol.col.units,
+                                        units=valuecol.col.units_str(),
                                         formatter=formatter)
                         circles.append(circle)
                 else:
@@ -243,7 +245,7 @@ class MapWidget(object):
                                     long=long,
                                     value=val,
                                     size=marker_size,
-                                    units=valuecol.col.units,
+                                    units=valuecol.col.units_str(),
                                     formatter=formatter)
                     circles.append(circle)
 

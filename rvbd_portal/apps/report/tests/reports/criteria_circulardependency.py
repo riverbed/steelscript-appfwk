@@ -32,7 +32,7 @@ TableField.create(keyword='t3', obj=a.table,
                   post_process_template='table_computed:{t1}',
                   hidden=False)
 
-a.add_column('key', 'Key', iskey=True, isnumeric=False)
-a.add_column('value', 'Value', isnumeric=False)
+a.add_column('key', 'Key', iskey=True, datatype="string")
+a.add_column('value', 'Value', datatype="string")
 
 raw.TableWidget.create(section, a.table, 'Table')

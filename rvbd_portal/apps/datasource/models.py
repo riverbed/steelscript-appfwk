@@ -35,7 +35,8 @@ from project.utils import get_module
 
 from rvbd_portal.apps.datasource.exceptions import *
 from rvbd_portal.libs.fields import (PickledObjectField, FunctionField,
-                                     SeparatedValuesField)
+                                     SeparatedValuesField, check_field_choice,
+                                     field_choice_str)
 from django.conf import settings
 
 
@@ -365,7 +366,7 @@ class Table(models.Model):
         timecol = None
         for col in all_columns:
             colmap[col.name] = col
-            if col.datatype == "time":
+            if col.istime():
                 timecol = col.name
 
         if self.resample:
@@ -420,7 +421,6 @@ class Column(models.Model):
     options = PickledObjectField()
 
     iskey = models.BooleanField(default=False)
-    isnumeric = models.BooleanField(default=True)
 
     synthetic = models.BooleanField(default=False)
 
@@ -431,11 +431,34 @@ class Column(models.Model):
     compute_expression = models.CharField(max_length=300)
     resample_operation = models.CharField(max_length=300, default='sum')
 
-    # datatype should be an enumeration:
-    # metric, bytes, time  XXXCJ make enumeration
-    datatype = models.CharField(max_length=50, default='')
+    DATATYPE_FLOAT = 0
+    DATATYPE_INTEGER = 1
+    DATATYPE_TIME = 2
+    DATATYPE_STRING = 3
+    DATATYPE_HTML = 4
 
-    units = models.CharField(max_length=50, default='')
+    datatype = models.IntegerField(
+        default = DATATYPE_FLOAT,
+        choices = ((DATATYPE_FLOAT, "float"),
+                   (DATATYPE_INTEGER, "integer"),
+                   (DATATYPE_TIME, "time"),
+                   (DATATYPE_STRING, "string"),
+                   (DATATYPE_HTML, "html")))
+
+    UNITS_NONE = 0
+    UNITS_SECS = 1
+    UNITS_MSECS = 2
+    UNITS_BYTES = 3
+    UNITS_BYTES_PER_SEC = 4
+    UNITS_PCT = 5
+    units = models.IntegerField(
+        default=UNITS_NONE,
+        choices = ((UNITS_NONE, "none"),
+                   (UNITS_SECS, "s"),
+                   (UNITS_MSECS, "ms"),
+                   (UNITS_BYTES, "B"),
+                   (UNITS_BYTES, "B/s"),
+                   (UNITS_PCT, "pct")))
 
     def __unicode__(self):
         return self.label
@@ -449,14 +472,18 @@ class Column(models.Model):
         super(Column, self).save()
 
     @classmethod
-    def create(cls, table, name, label=None, datatype='', units='',
-               iskey=False, issortcol=False, options=None, **kwargs):
+    def create(cls, table, name, label=None, datatype=DATATYPE_FLOAT,
+               units=UNITS_NONE, iskey=False, issortcol=False,
+               options=None, **kwargs):
 
         ephemeral=kwargs.get('ephemeral', None)
         if len(Column.objects.filter(table=table, name=name,
                                      ephemeral=ephemeral)) > 0:
             raise ValueError("Column %s already in use for table %s" %
                              (name, str(table)))
+
+        datatype = check_field_choice(cls, 'datatype', datatype)
+        units = check_field_choice(cls, 'units', units)
 
         c = Column(table=table, name=name, label=label, datatype=datatype,
                    units=units, iskey=iskey, options=options, **kwargs)
@@ -468,6 +495,16 @@ class Column(models.Model):
             table.save()
         return c
 
+    def isnumeric(self):
+        return self.datatype in [self.DATATYPE_FLOAT, self.DATATYPE_INTEGER]
+
+    def istime(self):
+        return self.datatype == self.DATATYPE_TIME
+
+    def units_str(self):
+        if self.units == self.UNITS_NONE:
+            return None
+        return field_choice_str(self, 'units', self.units)
 
 class Criteria(DictObject):
     """ Manage a collection of criteria values. """
@@ -1131,7 +1168,7 @@ class Worker(base_worker_class):
         job = self.job
         for col in job.get_columns(synthetic=False):
             s = df[col.name]
-            if col.datatype == 'time':
+            if col.istime():
                 # The column is supposed to be time,
                 # make sure all values are datetime objects
                 if str(s.dtype).startswith(str(pandas.np.dtype('datetime64'))):
@@ -1150,7 +1187,7 @@ class Worker(base_worker_class):
                     # hopefully astype() can figure it out
                     df[col.name] = s.astype('datetime64[ms]')
 
-            elif (col.isnumeric and
+            elif (col.isnumeric() and
                   s.dtype == pandas.np.dtype('object')):
                 # The column is supposed to be numeric but must have
                 # some strings.  Try replacing empty strings with NaN

@@ -47,7 +47,7 @@ class ColumnSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Column
-        fields = ('id', 'name', 'label', 'position', 'options', 'iskey', 'isnumeric', 
+        fields = ('id', 'name', 'label', 'position', 'options', 'iskey',
                   'synthetic', 'datatype', 'units')
 
 
@@ -74,4 +74,3 @@ class JobDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = ('data',)
-

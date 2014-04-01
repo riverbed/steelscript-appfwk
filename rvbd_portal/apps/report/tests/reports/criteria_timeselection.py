@@ -15,7 +15,7 @@ a = AnalysisTable('test-criteria-timeselection', tables={},
                   function = funcs.analysis_echo_criteria)
 fields_add_time_selection(a.table, initial_duration='1 day')
 
-a.add_column('key', 'Key', iskey=True, isnumeric=False)
-a.add_column('value', 'Value', isnumeric=False)
+a.add_column('key', 'Key', iskey=True, datatype="string")
+a.add_column('value', 'Value', datatype="string")
 
 raw.TableWidget.create(section, a.table, 'Table')

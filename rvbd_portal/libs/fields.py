@@ -251,3 +251,17 @@ class SeparatedValuesField(models.TextField):
 
     def value_to_string(self, obj):
         value = self._get_val_from_obj(obj)
+
+def check_field_choice(model, field, value):
+    field_choices = model._meta.get_field(field).choices
+    try:
+        return [c[0] for c in field_choices if value in c][0]
+    except IndexError:
+        raise IndexError("Invalid choice '%s' for field '%s'" % (value, field))
+
+def field_choice_str(model, field, value):
+    field_choices = model._meta.get_field(field).choices
+    try:
+        return [c[1] for c in field_choices if value == c[0]][0]
+    except IndexError:
+        raise IndexError("Invalid choice '%s' for field '%s'" % (value, field))

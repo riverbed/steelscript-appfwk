@@ -218,6 +218,6 @@ def create_criteria_table(name):
     table = AnalysisTable.create('name', tables={},
                                  function = analysis_echo_criteria)
 
-    Column.create(table, 'key', 'Criteria Key', iskey=True, isnumeric=False)
-    Column.create(table, 'value', 'Criteria Value', isnumeric=False)
+    Column.create(table, 'key', 'Criteria Key', iskey=True)
+    Column.create(table, 'value', 'Criteria Value')
     return table

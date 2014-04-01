@@ -27,7 +27,7 @@ for (f1,f2) in [('w', 'x'), ('w', 'y'), ('x', 'y')]:
        post_process_func = Function(funcs.postprocess_field_compute,
                                     params={'fields': [f1, f2]})))
 
-a.add_column('key', 'Key', iskey=True, isnumeric=False)
-a.add_column('value', 'Value', isnumeric=False)
+a.add_column('key', 'Key', iskey=True, datatype="string")
+a.add_column('value', 'Value', datatype="string")
 
 raw.TableWidget.create(section, a.table, 'Table')

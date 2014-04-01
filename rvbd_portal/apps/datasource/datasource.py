@@ -39,9 +39,8 @@ class DatasourceTable(object):
     COLUMN_OPTIONS = {'label': None,
                       'position': None,
                       'iskey': False,
-                      'isnumeric': True,
-                      'datatype': '',
-                      'units': '',
+                      'datatype': 'float',
+                      'units': 'none',
                       'issortcol': False,
                       # synthetic options
                       'synthetic': False,
