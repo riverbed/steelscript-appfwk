@@ -64,8 +64,10 @@ class Report(models.Model):
 
         if not self.namespace:
             if (self.sourcefile == 'default' or
-                    self.sourcefile.startswith('config.')):
+                    self.sourcefile.startswith('config.reports')):
                 self.namespace = 'default'
+            elif self.sourcefile.startswith('config.custom_reports'):
+                self.namespace = 'custom'
             else:
                 # sourcefile 'rvbd_portal_wireshark.reports.88_pcap_filefield'
                 # will have namespace 'wireshark'
