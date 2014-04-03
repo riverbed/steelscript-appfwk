@@ -123,14 +123,20 @@ class ReportView(views.APIView):
 
         logging.debug('Received request for report page: %s' % report_slug)
 
+        devices = Device.objects.all()
+        if len(devices) == 0:
+            # redirect if no devices defined
+            return HttpResponseRedirect(reverse('device-list'))
+
         # search across all enabled devices
-        for device in Device.objects.all():
+        for device in devices:
             if (device.enabled and ('host.or.ip' in device.host or
                                     device.username == '<username>' or
                                     device.password == '<password>' or
                                     device.password == '')):
                 return HttpResponseRedirect('%s?invalid=true' %
                                             reverse('device-list'))
+
 
         profile = request.user.userprofile
         if not profile.profile_seen:
