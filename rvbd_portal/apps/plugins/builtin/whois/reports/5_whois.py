@@ -24,8 +24,8 @@ report.save()
 section = Section.create(report)
 
 # Define a Table that gets external hosts by avg bytes
-table = ProfilerGroupbyTable('5-hosts', groupby='host', duration='1 hour',
-                             filterexpr='not srv host 10/8 and not srv host 192.168/16')
+table = ProfilerGroupbyTable.create('5-hosts', groupby='host', duration='1 hour',
+                                    filterexpr='not srv host 10/8 and not srv host 192.168/16')
 
 table.add_column('host_ip', 'IP Addr', iskey=True, datatype='string')
 table.add_column('avg_bytes', 'Avg Bytes', units='B/s', issortcol=True)
@@ -36,7 +36,7 @@ table.add_column('avg_bytes', 'Avg Bytes', units='B/s', issortcol=True)
 whoistable = AnalysisTable('5-whois-hosts',
                            tables={'t': table},
                            function=whois)
-whoistable.table.copy_columns(table.table)
+whoistable.table.copy_columns(table)
 whoistable.add_column('whois', label="Whois link", datatype='html')
 
 yui3.TableWidget.create(section, whoistable.table, "Link table", width=12)

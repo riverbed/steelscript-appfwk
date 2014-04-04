@@ -18,6 +18,7 @@ from StringIO import StringIO
 import random
 import datetime
 import string
+from django.utils.text import slugify
 import pytz
 import pandas
 import numpy
@@ -29,6 +30,7 @@ from django.db import transaction
 from django.db.models import F
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
+from rvbd.common.jsondict import JsonDict
 from rvbd.common.utils import DictObject
 from rvbd.common import timedelta_total_seconds
 from project.utils import get_module
@@ -414,6 +416,74 @@ class Table(models.Model):
         return df
 
 
+class DatasourceTableOptions(JsonDict):
+    pass
+
+
+class DatasourceTable(Table):
+    class Meta:
+        proxy = True
+
+    TABLE_OPTIONS = {}
+    FIELD_OPTIONS = {}
+
+    _column_class = 'DatasourceColumn'  # must be real class ref in subclass
+
+    @classmethod
+    def create(cls, name, **kwargs):
+        slug = '%s_%s' % (cls.__class__.__name__, slugify(unicode(name)))
+
+        # process subclass assigned options
+        table_options = copy.deepcopy(cls.TABLE_OPTIONS)
+        field_options = copy.deepcopy(cls.FIELD_OPTIONS)
+
+        keys = kwargs.keys()
+        to = dict((k, kwargs.pop(k)) for k in keys if k in table_options)
+        table_options.update(**to)
+
+        fo = dict((k, kwargs.pop(k)) for k in keys if k in field_options)
+        field_options.update(**fo)
+
+        if table_options:
+            options = DatasourceTableOptions(default=table_options)
+        else:
+            options = None
+
+        # process normal model kwargs
+        keys = kwargs.keys()
+        tkeys = [f.name for f in Table._meta.local_fields]
+        table_kwargs = dict((k, kwargs.pop(k)) for k in keys if k in tkeys)
+
+        if kwargs:
+            raise AttributeError('Invalid keyword arguments: %s' % str(kwargs))
+
+        logger.debug('Creating table %s' % slug)
+        t = cls(name=slug, module=cls.__module__,
+                options=options, **table_kwargs)
+        t.save()
+
+        # post process table *instance* now that its been initialized
+        t.post_process_table(field_options)
+
+        return t
+
+    def post_process_table(self, field_options):
+        """ Hook to add custom fields, or other post-table creation operations.
+        """
+        pass
+
+    def add_column(self, name, label=None, **kwargs):
+        sortcol = kwargs.pop('issortcol', None)
+
+        c = self._column_class.create(self, name, label, **kwargs)
+
+        if sortcol:
+            self.sortcol = c
+            self.save()
+
+        return c
+
+
 class Column(models.Model):
 
     table = models.ForeignKey(Table)
@@ -440,12 +510,13 @@ class Column(models.Model):
     DATATYPE_HTML = 4
 
     datatype = models.IntegerField(
-        default = DATATYPE_FLOAT,
-        choices = ((DATATYPE_FLOAT, "float"),
-                   (DATATYPE_INTEGER, "integer"),
-                   (DATATYPE_TIME, "time"),
-                   (DATATYPE_STRING, "string"),
-                   (DATATYPE_HTML, "html")))
+        default=DATATYPE_FLOAT,
+        choices=((DATATYPE_FLOAT, "float"),
+                 (DATATYPE_INTEGER, "integer"),
+                 (DATATYPE_TIME, "time"),
+                 (DATATYPE_STRING, "string"),
+                 (DATATYPE_HTML, "html"))
+    )
 
     UNITS_NONE = 0
     UNITS_SECS = 1
@@ -455,12 +526,13 @@ class Column(models.Model):
     UNITS_PCT = 5
     units = models.IntegerField(
         default=UNITS_NONE,
-        choices = ((UNITS_NONE, "none"),
-                   (UNITS_SECS, "s"),
-                   (UNITS_MSECS, "ms"),
-                   (UNITS_BYTES, "B"),
-                   (UNITS_BYTES_PER_SEC, "B/s"),
-                   (UNITS_PCT, "pct")))
+        choices=((UNITS_NONE, "none"),
+                 (UNITS_SECS, "s"),
+                 (UNITS_MSECS, "ms"),
+                 (UNITS_BYTES, "B"),
+                 (UNITS_BYTES_PER_SEC, "B/s"),
+                 (UNITS_PCT, "pct"))
+    )
 
     def __unicode__(self):
         return self.label
@@ -478,7 +550,7 @@ class Column(models.Model):
                units=UNITS_NONE, iskey=False, issortcol=False,
                options=None, **kwargs):
 
-        ephemeral=kwargs.get('ephemeral', None)
+        ephemeral = kwargs.get('ephemeral', None)
         if len(Column.objects.filter(table=table, name=name,
                                      ephemeral=ephemeral)) > 0:
             raise ValueError("Column %s already in use for table %s" %
@@ -507,6 +579,44 @@ class Column(models.Model):
         if self.units == self.UNITS_NONE:
             return None
         return field_choice_str(self, 'units', self.units)
+
+
+class DatasourceColumnOptions(JsonDict):
+    pass
+
+
+class DatasourceColumn(Column):
+    class Meta:
+        proxy = True
+
+    COLUMN_OPTIONS = {}
+
+    @classmethod
+    def create(cls, table, name, label=None, **kwargs):
+        column_options = copy.deepcopy(cls.COLUMN_OPTIONS)
+
+        if label:
+            column_options['label'] = label
+
+        keys = kwargs.keys()
+        cp = dict((k, kwargs.pop(k)) for k in keys if k in column_options)
+        column_options.update(**cp)
+
+        if column_options:
+            options = DatasourceColumnOptions(default=column_options)
+        else:
+            options = None
+
+        keys = kwargs.keys()
+        ckeys = [f.name for f in Column._meta.local_fields]
+        col_kwargs = dict((k, kwargs.pop(k)) for k in keys if k in ckeys)
+
+        if kwargs:
+            raise AttributeError('Invalid keyword arguments: %s' % str(kwargs))
+
+        c = Column.create(table, name, options=options, **col_kwargs)
+        return c
+
 
 class Criteria(DictObject):
     """ Manage a collection of criteria values. """
