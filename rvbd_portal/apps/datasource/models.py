@@ -416,10 +416,6 @@ class Table(models.Model):
         return df
 
 
-class DatasourceTableOptions(JsonDict):
-    pass
-
-
 class DatasourceTable(Table):
     class Meta:
         proxy = True
@@ -431,7 +427,7 @@ class DatasourceTable(Table):
 
     @classmethod
     def create(cls, name, **kwargs):
-        slug = '%s_%s' % (cls.__class__.__name__, slugify(unicode(name)))
+        slug = '%s_%s' % (cls.__name__, slugify(unicode(name)))
 
         # process subclass assigned options
         table_options = copy.deepcopy(cls.TABLE_OPTIONS)
@@ -445,7 +441,7 @@ class DatasourceTable(Table):
         field_options.update(**fo)
 
         if table_options:
-            options = DatasourceTableOptions(default=table_options)
+            options = JsonDict(default=table_options)
         else:
             options = None
 
@@ -581,10 +577,6 @@ class Column(models.Model):
         return field_choice_str(self, 'units', self.units)
 
 
-class DatasourceColumnOptions(JsonDict):
-    pass
-
-
 class DatasourceColumn(Column):
     class Meta:
         proxy = True
@@ -603,7 +595,7 @@ class DatasourceColumn(Column):
         column_options.update(**cp)
 
         if column_options:
-            options = DatasourceColumnOptions(default=column_options)
+            options = JsonDict(default=column_options)
         else:
             options = None
 
