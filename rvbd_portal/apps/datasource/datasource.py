@@ -115,28 +115,10 @@ class DatasourceTable(object):
 
     def add_column(self, name, label=None, **kwargs):
         """ Create a column object. """
-        column_options = copy.deepcopy(self.COLUMN_OPTIONS)
         extra_column_options = copy.deepcopy(self.EXTRA_COLUMN_OPTIONS)
 
-        if label:
-            column_options['label'] = label
-
-        keys = kwargs.keys()
-        cp = dict((k, kwargs.pop(k)) for k in keys if k in column_options)
-        column_options.update(**cp)
-
-        co = dict((k, kwargs.pop(k)) for k in keys if k in extra_column_options)
-        extra_column_options.update(**co)
-
-        if kwargs:
-            raise AttributeError('Invalid keyword arguments: %s' % str(kwargs))
-
-        if extra_column_options:
-            options = ColumnDatasourceOptions(default=extra_column_options,
-                                              **extra_column_options)
-        else:
-            options = None
-
-        c = Column.create(self.table, name, options=options, **column_options)
+        # XXX temp hack until remaining Datasources are converted to new approach
+        Column.COLUMN_OPTIONS = extra_column_options
+        c = Column.create(self.table, name, label, **kwargs)
         self.columns.append(c)
         return c

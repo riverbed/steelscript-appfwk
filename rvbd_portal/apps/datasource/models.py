@@ -288,13 +288,10 @@ class Table(models.Model):
     def copy_columns(self, table, columns=None, except_columns=None):
         """ Copy the columns from `table` into this table.
 
-        This method will copy all the columsn from another table, including
+        This method will copy all the columns from another table, including
         all attributes as well as sorting.
 
         """
-
-        posmax = Column.objects.filter(table=table).aggregate(Max('position'))
-        pos = (posmax['position__max'] or 0) + 1
 
         for c in table.get_columns():
             if columns is not None and c.name not in columns:
@@ -304,8 +301,7 @@ class Table(models.Model):
             issortcol = (c == c.table.sortcol)
             c.pk = None
             c.table = self
-            c.position = pos
-            pos = pos + 1
+            c.position = Column.get_position()
             c.save()
             if issortcol:
                 self.sortcol = c
@@ -530,8 +526,12 @@ class Column(models.Model):
                  (UNITS_PCT, "pct"))
     )
 
+    # default options to populate options field
+    COLUMN_OPTIONS = {}
+    POS_MAX = 0
+
     def __unicode__(self):
-        return self.label
+        return "<Column %s (%s)>" % (str(self.id), self.name)
 
     def __repr__(self):
         return unicode(self)
@@ -542,53 +542,22 @@ class Column(models.Model):
         super(Column, self).save()
 
     @classmethod
-    def create(cls, table, name, label=None, datatype=DATATYPE_FLOAT,
-               units=UNITS_NONE, iskey=False, issortcol=False,
-               options=None, **kwargs):
+    def get_position(cls):
+        """ Get position value to use for model object. """
 
-        ephemeral = kwargs.get('ephemeral', None)
-        if len(Column.objects.filter(table=table, name=name,
-                                     ephemeral=ephemeral)) > 0:
-            raise ValueError("Column %s already in use for table %s" %
-                             (name, str(table)))
-
-        datatype = check_field_choice(cls, 'datatype', datatype)
-        units = check_field_choice(cls, 'units', units)
-
-        c = Column(table=table, name=name, label=label, datatype=datatype,
-                   units=units, iskey=iskey, options=options, **kwargs)
-        posmax = Column.objects.filter(table=table).aggregate(Max('position'))
-        c.position = (posmax['position__max'] or 0) + 1
-        c.save()
-        if issortcol:
-            table.sortcol = c
-            table.save()
-        return c
-
-    def isnumeric(self):
-        return self.datatype in [self.DATATYPE_FLOAT, self.DATATYPE_INTEGER]
-
-    def istime(self):
-        return self.datatype == self.DATATYPE_TIME
-
-    def units_str(self):
-        if self.units == self.UNITS_NONE:
-            return None
-        return field_choice_str(self, 'units', self.units)
-
-
-class DatasourceColumn(Column):
-    class Meta:
-        proxy = True
-
-    COLUMN_OPTIONS = {}
+        # This value will reset on server restarts or when the class goes
+        # out of scope/reloaded, but since we are only looking for positions
+        # relative to other columns in a given table, we don't need
+        # to be too precise.
+        cls.POS_MAX += 1
+        return cls.POS_MAX
 
     @classmethod
-    def create(cls, table, name, label=None, **kwargs):
-        column_options = copy.deepcopy(cls.COLUMN_OPTIONS)
+    def create(cls, table, name, label=None,
+               datatype=DATATYPE_FLOAT, units=UNITS_NONE,
+               iskey=False, issortcol=False, **kwargs):
 
-        if label:
-            column_options['label'] = label
+        column_options = copy.deepcopy(cls.COLUMN_OPTIONS)
 
         keys = kwargs.keys()
         cp = dict((k, kwargs.pop(k)) for k in keys if k in column_options)
@@ -606,8 +575,36 @@ class DatasourceColumn(Column):
         if kwargs:
             raise AttributeError('Invalid keyword arguments: %s' % str(kwargs))
 
-        c = Column.create(table, name, options=options, **col_kwargs)
+        ephemeral = col_kwargs.get('ephemeral', None)
+        if len(Column.objects.filter(table=table, name=name,
+                                     ephemeral=ephemeral)) > 0:
+            raise ValueError("Column %s already in use for table %s" %
+                             (name, str(table)))
+
+        datatype = check_field_choice(cls, 'datatype', datatype)
+        units = check_field_choice(cls, 'units', units)
+
+        c = Column(table=table, name=name, label=label, datatype=datatype,
+                   units=units, iskey=iskey, options=options, **col_kwargs)
+
+        c.position = cls.get_position()
+        c.save()
+
+        if issortcol:
+            table.sortcol = c
+            table.save()
         return c
+
+    def isnumeric(self):
+        return self.datatype in [self.DATATYPE_FLOAT, self.DATATYPE_INTEGER]
+
+    def istime(self):
+        return self.datatype == self.DATATYPE_TIME
+
+    def units_str(self):
+        if self.units == self.UNITS_NONE:
+            return None
+        return field_choice_str(self, 'units', self.units)
 
 
 class Criteria(DictObject):
