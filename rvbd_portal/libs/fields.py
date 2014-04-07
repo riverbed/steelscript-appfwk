@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 class FunctionError(Exception):
     pass
 
+class ClassError(Exception):
+    pass
+
 class PickledObject(str):
     """
     A subclass of string so it can be told whether a string is a pickled
@@ -229,6 +232,65 @@ class FunctionField(PickledObjectField):
         return value
 
 
+class Class(object):
+
+    def __init__(self, cls=None):
+        if cls:
+            self.module = cls.__module__
+            self.name = cls.__name__
+        else:
+            self.module = None
+            self.name = None
+
+    def __repr__(self):
+        return "<Class %s:%s>" % (self.module, self.name)
+
+    @classmethod
+    def from_dict(cls, d):
+        self = Class()
+
+        self.module = d['module']
+        self.name = d['name']
+
+        return self
+
+    def to_dict(self):
+        return {'module': self.module,
+                'name': self.name}
+
+    def __call__(self, *args, **kwargs):
+        try:
+            mod = importlib.import_module(self.module)
+            cls = mod.__dict__[self.name]
+        except ImportError:
+            raise ClassError(
+                "Class reference is invalid, could not import module <%s>"
+                % self.module)
+        except KeyError:
+            raise ClassError(
+                "Class reference is invalid, could not find class <%s> in module <%s>"
+                % (self.name, self.module))
+
+        return cls(*args, **kwargs)
+
+class FunctionField(PickledObjectField):
+
+    __metaclass__ = models.SubfieldBase
+
+    def to_python(self, value):
+        if isinstance(value, Function):
+            return value
+
+        value = super(FunctionField, self).to_python(value)
+        if value is not None:
+            return Function.from_dict(value)
+        else:
+            return None
+
+    def get_prep_value(self, value):
+        if value is not None:
+            value = super(FunctionField, self).get_prep_value(value.to_dict())
+        return value
 # See http://stackoverflow.com/questions/1110153/what-is-the-most-efficent-way-to-store-a-list-in-the-django-models
 
 class SeparatedValuesField(models.TextField):

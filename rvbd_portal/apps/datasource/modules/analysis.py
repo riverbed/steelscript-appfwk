@@ -87,13 +87,8 @@ class AnalysisTable(DatasourceTable):
         # handle direct id's, table references, or table classes
         # from tables option and transform to simple table id value
         for name in ['tables', 'related_tables']:
-            if not table_options[name]:
-                continue
-            for k, v in table_options[name].iteritems():
-                if hasattr(v, 'table'):
-                    table_options[name][k] = v.table.id
-                else:
-                    table_options[name][k] = getattr(v, 'id', v)
+            for k, v in (table_options[name] or {}).iteritems():
+                table_options[name][k] = Table.to_ref(v)
 
         if not isinstance(table_options['function'], Function):
             table_options['function'] = Function(table_options['function'])
@@ -104,11 +99,10 @@ class AnalysisTable(DatasourceTable):
         if field_options['copy_fields']:
             keywords = set()
             for name in ['tables', 'related_tables']:
-                table_ids = self.options[name]
-                if not table_ids:
-                    continue
-                for table_id in table_ids.values():
-                    for f in Table.objects.get(id=table_id).fields.all():
+                refs = self.options[name] or {}
+                for ref in refs.values():
+                    table = Table.from_ref(ref)
+                    for f in table.fields.all():
                         if f.keyword not in keywords:
                             self.fields.add(f)
                             keywords.add(f.keyword)
@@ -141,9 +135,8 @@ class TableQuery(object):
             logger.debug("%s: dependent tables: %s" % (self, deptables))
             depjobids = {}
             batch = BatchJobRunner(self.job, max_progress=70)
-            for (name, id) in deptables.items():
-                id = int(id)
-                deptable = Table.objects.get(id=id)
+            for (name, ref) in deptables.items():
+                deptable = Table.from_ref(ref)
                 job = Job.create(
                     table=deptable,
                     criteria=self.job.criteria.build_for_table(deptable)

@@ -30,6 +30,8 @@ from django.db import transaction
 from django.db.models import F
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
+from django.core.exceptions import ObjectDoesNotExist
+
 from rvbd.common.jsondict import JsonDict
 from rvbd.common.utils import DictObject
 from rvbd.common import timedelta_total_seconds
@@ -226,6 +228,37 @@ class Table(models.Model):
         t = Table(name=name, module=module, **kwargs)
         t.save()
         return t
+
+    @classmethod
+    def to_ref(cls, arg):
+        """ Generate a table reference.
+
+        :param arg: may be either a Table object, table id,
+            or dictionary reference.
+
+        """
+
+        if isinstance(arg, dict):
+            if 'namespace' not in arg or 'name' not in arg:
+                raise KeyError('Invalid table ref as dict, expected namespace/name')
+            return arg
+
+        if isinstance(arg, Table):
+            table = arg
+        elif hasattr(arg, 'table'):
+            # Datasource table
+            table = arg.table
+        elif isinstance(arg, int):
+            table = Table.objects.get(id=arg)
+        else:
+            raise ValueError('No way to handle Table arg of type %s' % type(arg))
+        return {'namespace': table.namespace,
+                'name': table.name}
+
+    @classmethod
+    def from_ref(cls, ref):
+        return Table.objects.get(namespace=ref['namespace'],
+                                 name=ref['name'])
 
     def save(self, *args, **kwargs):
         if not self.sourcefile:

@@ -99,20 +99,16 @@ class Command(BaseCommand):
             rid = options['report_id']
 
             def del_table(tbl):
-                if (  tbl.options and
-                      'related_tables' in tbl.options and
-                      tbl.options['related_tables'] is not None):
-                    #__import__('IPython').core.debugger.Pdb().set_trace()
-                    for related_id in tbl.options['related_tables'].values():
-                        del_table(Table.objects.get(id=related_id))
+                related_tables = (tbl.options or {}).get('related_tables', {})
+                for ref in related_tables.values():
+                    del_table(Table.from_ref(ref))
 
                 Column.objects.filter(table=tbl.id).delete()
                 Job.objects.filter(table=tbl.id).delete()
 
-                if (tbl.options is not None) and ('tables' in tbl.options):
-                    for (name, tid) in tbl.options.tables.items():
-                        for deptable in Table.objects.filter(id=int(tid)):
-                            del_table(deptable)
+                tables = (tbl.options or {}).get('tables', {})
+                for ref in tables.values():
+                    del_table(Table.from_ref(ref))
 
                 tbl.delete()
 
