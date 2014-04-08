@@ -13,16 +13,16 @@ report.save()
 section = Section(report=report, title='Section 0')
 section.save()
 
-a = AnalysisTable('test-criteria-postprocess', tables={},
-                  function = funcs.analysis_echo_criteria)
+a = AnalysisTable.create('test-criteria-postprocess', tables={},
+                         function=funcs.analysis_echo_criteria)
 
-TableField.create('w', 'W Value', a.table)
-TableField.create('x', 'X Value', a.table)
-TableField.create('y', 'Y Value', a.table)
+TableField.create('w', 'W Value', a)
+TableField.create('x', 'X Value', a)
+TableField.create('y', 'Y Value', a)
 
 for (f1,f2) in [('w', 'x'), ('w', 'y'), ('x', 'y')]:
     ( TableField.create
-      ('%s%s' % (f1, f2), '%s+%s Value' % (f1, f2), a.table,
+      ('%s%s' % (f1, f2), '%s+%s Value' % (f1, f2), a,
        hidden = True, parent_keywords=[f1, f2],
        post_process_func = Function(funcs.postprocess_field_compute,
                                     params={'fields': [f1, f2]})))
@@ -30,4 +30,4 @@ for (f1,f2) in [('w', 'x'), ('w', 'y'), ('x', 'y')]:
 a.add_column('key', 'Key', iskey=True, datatype="string")
 a.add_column('value', 'Value', datatype="string")
 
-raw.TableWidget.create(section, a.table, 'Table')
+raw.TableWidget.create(section, a, 'Table')

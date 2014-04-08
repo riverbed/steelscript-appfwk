@@ -13,14 +13,14 @@ report.save()
 section = Section(report=report, title='Section 0')
 section.save()
 
-a = AnalysisTable('test-criteria-postprocess', tables={},
-                  function = funcs.analysis_echo_criteria)
+a = AnalysisTable.create('test-criteria-postprocess', tables={},
+                         function=funcs.analysis_echo_criteria)
 
-TableField.create('error', 'Error type', a.table)
-TableField.create('x', 'X Value', a.table, hidden=True,
+TableField.create('error', 'Error type', a)
+TableField.create('x', 'X Value', a, hidden=True,
                   post_process_func = Function(funcs.postprocesserrors_compute))
 
 a.add_column('key', 'Key', iskey=True, datatype="string")
 a.add_column('value', 'Value', datatype="string")
 
-raw.TableWidget.create(section, a.table, 'Table')
+raw.TableWidget.create(section, a, 'Table')

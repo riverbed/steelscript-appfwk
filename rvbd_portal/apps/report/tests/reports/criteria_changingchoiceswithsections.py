@@ -17,14 +17,14 @@ report.save()
 section = Section.create(report=report, title='Section 0', section_keywords=['first','second'])
 section.save()
 
-a = AnalysisTable('test-criteria-changingchoiceswithsections-0', tables={},
-                  function = funcs.analysis_echo_criteria)
-TableField.create ('first', 'First Choice', a.table,
+a = AnalysisTable.create('test-criteria-changingchoiceswithsections-0', tables={},
+                         function=funcs.analysis_echo_criteria)
+TableField.create ('first', 'First Choice', a,
                    field_cls = forms.ChoiceField,
                    field_kwargs = {'choices': (('a', 'Option A'),
                                                ('b', 'Option B') ) })
 
-TableField.create ('second', 'Second Choice', a.table,
+TableField.create ('second', 'Second Choice', a,
                    field_cls = forms.ChoiceField,
                    pre_process_func = Function(funcs.preprocess_changesecond),
                    dynamic=True)
@@ -32,19 +32,19 @@ TableField.create ('second', 'Second Choice', a.table,
 a.add_column('key', 'Key', iskey=True, datatype="string")
 a.add_column('value', 'Value', datatype="string")
 
-raw.TableWidget.create(section, a.table, 'Table 0')
+raw.TableWidget.create(section, a, 'Table 0')
 
 section = Section.create(report=report, title='Section 1', section_keywords=['first','second'])
 section.save()
 
-a = AnalysisTable('test-criteria-changingchoiceswithsections-1', tables={},
-                  function = funcs.analysis_echo_criteria)
-TableField.create ('first', 'First Choice', a.table,
+a = AnalysisTable.create('test-criteria-changingchoiceswithsections-1', tables={},
+                         function=funcs.analysis_echo_criteria)
+TableField.create ('first', 'First Choice', a,
                    field_cls = forms.ChoiceField,
                    field_kwargs = {'choices': (('a', 'Option A'),
                                                ('b', 'Option B') ) })
 
-TableField.create ('second', 'Second Choice', a.table,
+TableField.create ('second', 'Second Choice', a,
                    field_cls = forms.ChoiceField,
                    pre_process_func =
                    Function(funcs.preprocess_changesecond),
@@ -53,4 +53,4 @@ TableField.create ('second', 'Second Choice', a.table,
 a.add_column('key', 'Key', iskey=True, datatype="string")
 a.add_column('value', 'Value', datatype="string")
 
-raw.TableWidget.create(section, a.table, 'Table 1')
+raw.TableWidget.create(section, a, 'Table 1')

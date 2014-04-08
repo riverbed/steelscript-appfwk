@@ -17,13 +17,13 @@ section = Section(report=report, title='Section 0')
 section.save()
 
 # Table
-a = AnalysisTable('test-synthetic-noresampling', tables={},
-                  function = Function(funcs.analysis_generate_data,
-                                      params = {'source_resolution': 60 }))
-fields_add_time_selection(a.table)
-fields_add_resolution(a.table)
+a = AnalysisTable.create('test-synthetic-noresampling', tables={},
+                         function=Function(funcs.analysis_generate_data,
+                                           params={'source_resolution': 60}))
+fields_add_time_selection(a)
+fields_add_resolution(a)
 
 a.add_column('time', 'Time', iskey=True, datatype='time')
 a.add_column('value', 'Value')
 
-raw.TableWidget.create(section, a.table, 'Table')
+raw.TableWidget.create(section, a, 'Table')

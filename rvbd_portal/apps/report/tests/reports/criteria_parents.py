@@ -29,15 +29,15 @@ TableField.create(keyword='section_computed', obj=section,
                   hidden=False)
 
 # Table
-a = AnalysisTable('test-criteria-postprocess', tables={},
-                  function = funcs.analysis_echo_criteria)
+a = AnalysisTable.create('test-criteria-postprocess', tables={},
+                         function=funcs.analysis_echo_criteria)
 
 # Table-level computed
-TableField.create(keyword='table_computed', obj=a.table,
+TableField.create(keyword='table_computed', obj=a,
                   post_process_template='table_computed:{section_computed}',
                   hidden=False)
 
 a.add_column('key', 'Key', iskey=True, datatype="string")
 a.add_column('value', 'Value', datatype="string")
 
-raw.TableWidget.create(section, a.table, 'Table')
+raw.TableWidget.create(section, a, 'Table')

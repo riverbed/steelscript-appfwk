@@ -16,18 +16,16 @@ section.save()
 x = TableField.create('x', 'X Value')
 for i in range(2):
 
-    a = AnalysisTable('test-criteria-sharedfields-%d' % i, tables={},
-                      function = funcs.analysis_echo_criteria)
+    a = AnalysisTable.create('test-criteria-sharedfields-%d' % i, tables={},
+                             function=funcs.analysis_echo_criteria)
     a.add_column('key', 'Key', iskey=True, datatype="string")
     a.add_column('value', 'Value', datatype="string")
 
-    a.table.fields.add(x)
-    y = TableField.create('y', 'Y Value', a.table,
+    a.fields.add(x)
+    y = TableField.create('y', 'Y Value', a,
                           hidden=True,
                           parent_keywords = ['x'],
                           post_process_func = Function(funcs.sharedfields_compute,
                                                        params={'factor': 10*(i+1)}))
 
-
-
-    raw.TableWidget.create(section, a.table, 'Table %d' % i)
+    raw.TableWidget.create(section, a, 'Table %d' % i)
