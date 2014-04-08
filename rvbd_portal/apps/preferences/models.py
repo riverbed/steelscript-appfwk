@@ -13,7 +13,7 @@ from cStringIO import StringIO
 from django.db import models
 from django.db.models.signals import post_save
 from django.core import management
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AbstractUser
 from django.conf import settings
 import pytz
 
@@ -120,6 +120,17 @@ def create_user_profile(sender, instance, created, **kwargs):
         UserProfile.objects.create(user=instance)
 
 post_save.connect(create_user_profile, sender=User)
+
+
+class PortalUser(AbstractUser):
+    """ Extend base user class with additional profile prefs. """
+    timezone = models.CharField(max_length=50,
+                                default='UTC',
+                                choices=TIMEZONE_CHOICES)
+
+    # hidden fields
+    timezone_changed = models.BooleanField(default=False)
+    profile_seen = models.BooleanField(default=False)
 
 
 class SystemPreferences(models.Model):
