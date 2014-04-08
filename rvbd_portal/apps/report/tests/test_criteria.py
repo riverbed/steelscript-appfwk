@@ -151,9 +151,9 @@ class CriteriaSharedFields(CriteriaTest):
     report = 'criteria_sharedfields' 
 
     def test(self):
-        self.run_with_criteria({'x': '1'},
-                               [ {'x': '1', 'y': '12'},
-                                 {'x': '1', 'y': '22'} ])
+        self.run_with_criteria({'x': '2'},
+                               [ {'x': '2', 'y': '14'},
+                                 {'x': '2', 'y': '24'} ])
 
 class CriteriaPostProcessErrors(CriteriaTest):
 
