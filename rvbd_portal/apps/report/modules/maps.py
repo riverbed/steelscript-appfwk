@@ -23,7 +23,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from rvbd_portal.apps.report.models import Widget
 from rvbd_portal.apps.geolocation.models import Location
-from rvbd_portal.apps.geolocation.geoip import Lookup
+from rvbd_portal.apps.geolocation.geoip import LookupIP
 from project.utils import get_request
 
 from .maps_providers import google_postprocess, openstreetmaps_postprocess
@@ -221,7 +221,7 @@ class MapWidget(object):
                         # Perform geolookup on the key
                         # (should be an IP address...)
                         if geolookup is None:
-                            geolookup = Lookup.instance()
+                            geolookup = LookupIP.instance()
                         geo = geolookup.lookup(key)
 
                     if geo:

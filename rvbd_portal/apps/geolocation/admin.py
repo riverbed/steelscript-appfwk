@@ -6,10 +6,15 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 from django.contrib import admin
-from rvbd_portal.apps.geolocation.models import Location
+from rvbd_portal.apps.geolocation.models import Location, LocationIP
 
 
 class LocationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'address', 'mask', 'latitude', 'longitude')
+    list_display = ('name', 'latitude', 'longitude')
 
 admin.site.register(Location, LocationAdmin)
+
+class LocationIPAdmin(admin.ModelAdmin):
+    list_display = ('location', 'address', 'mask')
+
+admin.site.register(LocationIP, LocationIPAdmin)
