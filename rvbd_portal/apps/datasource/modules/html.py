@@ -9,32 +9,24 @@ import logging
 
 import pandas
 from rvbd.common.jsondict import JsonDict
-from rvbd_portal.apps.datasource.models import Column, Table
+from rvbd_portal.apps.datasource.models import Column, Table, DatasourceTable
 
 logger = logging.getLogger(__name__)
 
 
-class TableOptions(JsonDict):
-    _default = {'html': None}
-    _required = ['html']
-
-
-def create_table(name, html):
+class HTMLTable(DatasourceTable):
     """ Takes arbitrary static html and wraps it in a simple table.
 
     When used with the 'raw.TableWidget' output, this can be rendered
     to the report page.
     """
-    logger.debug('Creating StaticHTMLTable %s' % name)
+    class Meta:
+        proxy = True
 
-    options = TableOptions(html=html)
+    TABLE_OPTIONS = {'html': None}
 
-    t = Table(name=name, module=__name__, options=options)
-    t.save()
-
-    Column.create(t, 'html',  label='html')
-
-    return t
+    def post_process_table(self, field_options):
+        self.add_column(name='html', label='html')
 
 
 class TableQuery(object):
@@ -59,5 +51,5 @@ class TableQuery(object):
         # create simple 1x1 table with html
         self.data = pandas.DataFrame([options.html], columns=['html'])
 
-        logger.debug("%s: completed successfully" % (self))
+        logger.debug("%s: completed successfully" % self)
         return True

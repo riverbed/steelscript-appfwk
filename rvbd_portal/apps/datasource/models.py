@@ -419,7 +419,7 @@ class DatasourceTable(Table):
     TABLE_OPTIONS = {}
     FIELD_OPTIONS = {}
 
-    _column_class = 'DatasourceColumn'  # must be real class ref in subclass
+    _column_class = None  # override in subclass if needed, defaults to Column
 
     @classmethod
     def create(cls, name, **kwargs):
@@ -435,6 +435,8 @@ class DatasourceTable(Table):
 
         fo = dict((k, kwargs.pop(k)) for k in keys if k in field_options)
         field_options.update(**fo)
+
+        table_options = cls.process_options(table_options)
 
         if table_options:
             options = JsonDict(default=table_options)
@@ -459,6 +461,12 @@ class DatasourceTable(Table):
 
         return t
 
+    @classmethod
+    def process_options(cls, table_options):
+        """ Hook to process options before Table saved to database.
+        """
+        return table_options
+
     def post_process_table(self, field_options):
         """ Hook to add custom fields, or other post-table creation operations.
         """
@@ -467,7 +475,8 @@ class DatasourceTable(Table):
     def add_column(self, name, label=None, **kwargs):
         sortcol = kwargs.pop('issortcol', None)
 
-        c = self._column_class.create(self, name, label, **kwargs)
+        klass = self._column_class or Column
+        c = klass.create(self, name, label, **kwargs)
 
         if sortcol:
             self.sortcol = c

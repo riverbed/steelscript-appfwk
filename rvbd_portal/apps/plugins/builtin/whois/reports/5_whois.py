@@ -33,10 +33,10 @@ table.add_column('avg_bytes', 'Avg Bytes', units='B/s', issortcol=True)
 
 # Create an Analysis table that calls the 'whois' function to craete a link to
 # 'whois'
-whoistable = AnalysisTable('5-whois-hosts',
-                           tables={'t': table},
-                           function=whois)
-whoistable.table.copy_columns(table)
+whoistable = AnalysisTable.create('5-whois-hosts',
+                                  tables={'t': table},
+                                  function=whois)
+whoistable.copy_columns(table)
 whoistable.add_column('whois', label="Whois link", datatype='html')
 
-yui3.TableWidget.create(section, whoistable.table, "Link table", width=12)
+yui3.TableWidget.create(section, whoistable, "Link table", width=12)

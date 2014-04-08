@@ -9,8 +9,8 @@ import logging
 import pandas
 
 from rvbd.common.jsondict import JsonDict
-from rvbd_portal.apps.datasource.datasource import DatasourceTable
-from rvbd_portal.apps.datasource.models import Column, Job, Table, BatchJobRunner
+from rvbd_portal.apps.datasource.models import (DatasourceTable, Column, Job,
+                                                Table,  BatchJobRunner)
 from rvbd_portal.libs.fields import Function
 
 logger = logging.getLogger(__name__)
@@ -73,40 +73,44 @@ class AnalysisTable(DatasourceTable):
     Note that the function must defined in a separate file in the 'helpers'
     directory.
     """
-    EXTRA_TABLE_OPTIONS = {'tables': None,         # required, dict of tables
-                           'related_tables': None, # additional tables
-                           'function': None}       # Function object
+    class Meta:
+        proxy = True
 
-    TABLE_FIELD_OPTIONS = {'copy_fields': True}
+    TABLE_OPTIONS = {'tables': None,           # required, dict of table ids
+                     'related_tables': None,   # additional table ids
+                     'function': None}         # Function object
 
-    def pre_process_table(self):
-        extra_opts = self.extra_table_options
+    FIELD_OPTIONS = {'copy_fields': True}
 
+    @classmethod
+    def process_options(cls, table_options):
         # handle direct id's, table references, or table classes
         # from tables option and transform to simple table id value
         for name in ['tables', 'related_tables']:
-            if not extra_opts[name]:
+            if not table_options[name]:
                 continue
-            for k, v in extra_opts[name].iteritems():
+            for k, v in table_options[name].iteritems():
                 if hasattr(v, 'table'):
-                    extra_opts[name][k] = v.table.id
+                    table_options[name][k] = v.table.id
                 else:
-                    extra_opts[name][k] = getattr(v, 'id', v)
+                    table_options[name][k] = getattr(v, 'id', v)
 
-        if not isinstance(extra_opts['function'], Function):
-            extra_opts['function'] = Function(extra_opts['function'])
+        if not isinstance(table_options['function'], Function):
+            table_options['function'] = Function(table_options['function'])
 
-    def post_process_table(self):
-        if self.table_field_options['copy_fields']:
+        return table_options
+
+    def post_process_table(self, field_options):
+        if field_options['copy_fields']:
             keywords = set()
             for name in ['tables', 'related_tables']:
-                table_ids = self.extra_table_options[name]
+                table_ids = self.options[name]
                 if not table_ids:
                     continue
                 for table_id in table_ids.values():
                     for f in Table.objects.get(id=table_id).fields.all():
                         if f.keyword not in keywords:
-                            self.table.fields.add(f)
+                            self.fields.add(f)
                             keywords.add(f.keyword)
 
 
