@@ -99,15 +99,15 @@ class Command(BaseCommand):
             rid = options['report_id']
 
             def del_table(tbl):
-                related_tables = (tbl.options or {}).get('related_tables', {})
-                for ref in related_tables.values():
+                related_tables = ((tbl.options or {}).get('related_tables'))
+                for ref in (related_tables or {}).values():
                     del_table(Table.from_ref(ref))
 
                 Column.objects.filter(table=tbl.id).delete()
                 Job.objects.filter(table=tbl.id).delete()
 
-                tables = (tbl.options or {}).get('tables', {})
-                for ref in tables.values():
+                tables = (tbl.options or {}).get('tables')
+                for ref in (tables or {}).values():
                     del_table(Table.from_ref(ref))
 
                 tbl.delete()
