@@ -6,8 +6,8 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 from django import forms
-
-from rvbd_portal.apps.preferences.models import UserProfile
+from django.contrib.auth import get_user_model
+from rvbd_portal.apps.preferences.models import SystemSettings
 
 
 class UserProfileForm(forms.ModelForm):
@@ -15,14 +15,22 @@ class UserProfileForm(forms.ModelForm):
         super(UserProfileForm, self).__init__(*args, **kwargs)
 
     class Meta:
-        model = UserProfile
-        exclude = ['user', 'timezone_changed', 'profile_seen']
+        model = get_user_model()
+        fields = ('email', 'timezone')
+
+
+class SystemSettingsForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(SystemSettingsForm, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = SystemSettings
         widgets = {'maps_version': forms.HiddenInput(),
                    'maps_api_key': forms.HiddenInput()}
 
     def clean(self):
         # check for API key if maps are either FREE or BUSINESS
-        cleaned_data = super(UserProfileForm, self).clean()
+        cleaned_data = super(SystemSettingsForm, self).clean()
         version = cleaned_data.get('maps_version')
         api_key = cleaned_data.get('maps_api_key')
 

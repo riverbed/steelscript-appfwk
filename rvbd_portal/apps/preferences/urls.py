@@ -11,5 +11,6 @@ import rvbd_portal.apps.preferences.views as views
 
 urlpatterns = patterns(
     'rvbd_portal.apps.report.views',
-    url(r'^$', views.PreferencesView.as_view(), name='preferences'),
+    url(r'^user/$', views.PreferencesView.as_view(), name='preferences'),
+    url(r'^system/$', views.SystemSettingsView.as_view(), name='system_settings'),
 )

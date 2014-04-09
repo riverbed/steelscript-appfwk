@@ -82,44 +82,44 @@ def create_preference_fixture(initial_admin_only=True):
                                                               fname))
 
 
-class UserProfile(models.Model):
-    user = models.OneToOneField(User)
-    timezone = models.CharField(max_length=50,
-                                default='UTC',
-                                choices=TIMEZONE_CHOICES)
-    ignore_cache = models.BooleanField(default=False,
-                                       help_text='Force all reports to '
-                                                 'bypass cache')
-    developer = models.BooleanField(default=False,
-                                    verbose_name='developer mode')
-    maps_version = models.CharField(max_length=30,
-                                    verbose_name='Maps Version',
-                                    choices=MAPS_VERSION_CHOICES,
-                                    default='DISABLED')
-    maps_api_key = models.CharField(max_length=100,
-                                    verbose_name='Maps API Key',
-                                    blank=True,
-                                    null=True)
-
-    # hidden fields
-    timezone_changed = models.BooleanField(default=False)
-    profile_seen = models.BooleanField(default=False)
-
-    def save(self, *args, **kwargs):
-        if self.timezone != 'UTC':
-            self.timezone_changed = True
-        super(UserProfile, self).save(*args, **kwargs)
-
-        if self.profile_seen:
-            # only save as a result of user save
-            create_preference_fixture()
-
-
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        UserProfile.objects.create(user=instance)
-
-post_save.connect(create_user_profile, sender=User)
+#class UserProfile(models.Model):
+#    user = models.OneToOneField(User)
+#    timezone = models.CharField(max_length=50,
+#                                default='UTC',
+#                                choices=TIMEZONE_CHOICES)
+#    ignore_cache = models.BooleanField(default=False,
+#                                       help_text='Force all reports to '
+#                                                 'bypass cache')
+#    developer = models.BooleanField(default=False,
+#                                    verbose_name='developer mode')
+#    maps_version = models.CharField(max_length=30,
+#                                    verbose_name='Maps Version',
+#                                    choices=MAPS_VERSION_CHOICES,
+#                                    default='DISABLED')
+#    maps_api_key = models.CharField(max_length=100,
+#                                    verbose_name='Maps API Key',
+#                                    blank=True,
+#                                    null=True)
+#
+#    # hidden fields
+#    timezone_changed = models.BooleanField(default=False)
+#    profile_seen = models.BooleanField(default=False)
+#
+#    def save(self, *args, **kwargs):
+#        if self.timezone != 'UTC':
+#            self.timezone_changed = True
+#        super(UserProfile, self).save(*args, **kwargs)
+#
+#        if self.profile_seen:
+#            # only save as a result of user save
+#            create_preference_fixture()
+#
+#
+#def create_user_profile(sender, instance, created, **kwargs):
+#    if created:
+#        UserProfile.objects.create(user=instance)
+#
+#post_save.connect(create_user_profile, sender=User)
 
 
 class PortalUser(AbstractUser):
@@ -133,8 +133,11 @@ class PortalUser(AbstractUser):
     profile_seen = models.BooleanField(default=False)
 
 
-class SystemPreferences(models.Model):
+class SystemSettings(models.Model):
     """ Global system preferences, configured by admin user. """
+    # implemented as a singleton instance
+    # investigate using package like django-solo for more features
+
     ignore_cache = models.BooleanField(
         default=False,
         help_text='Force all reports to bypass cache'
@@ -148,7 +151,7 @@ class SystemPreferences(models.Model):
         max_length=30,
         verbose_name='Maps Version',
         choices=MAPS_VERSION_CHOICES,
-        default='DISABLED'
+        default='OPEN_STREET_MAPS'
     )
     maps_api_key = models.CharField(
         max_length=100,
@@ -156,3 +159,15 @@ class SystemPreferences(models.Model):
         blank=True,
         null=True
     )
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super(SystemSettings, self).save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        pass
+
+    @classmethod
+    def get_system_settings(cls):
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj

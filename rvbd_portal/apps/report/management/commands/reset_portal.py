@@ -12,8 +12,9 @@ import optparse
 
 from django.core.management.base import BaseCommand
 from django.core import management
-
 from django.conf import settings
+
+from rvbd_portal.apps.preferences.models import SystemSettings
 
 # list of files/directories to ignore
 IGNORE_FILES = ['helpers']
@@ -69,5 +70,9 @@ class Command(BaseCommand):
                                               '*.json'))
         initial_data.sort()
         management.call_command('loaddata', *initial_data)
+
+        # if we don't have a settings fixture, create new default item
+        if not SystemSettings.objects.all():
+            SystemSettings().save()
 
         management.call_command('reload', report_id=None)

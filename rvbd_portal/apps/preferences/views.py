@@ -10,38 +10,39 @@ import logging
 
 from django.http import HttpResponseRedirect
 from django.utils import timezone
+from django.contrib.auth import get_user_model
+from rest_framework.permissions import IsAdminUser
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from rvbd_portal.apps.preferences.models import UserProfile
-from rvbd_portal.apps.preferences.forms import UserProfileForm
+from rvbd_portal.apps.preferences.forms import UserProfileForm, \
+    SystemSettingsForm
+from rvbd_portal.apps.preferences.models import SystemSettings
 
 logger = logging.getLogger(__name__)
 
 
 class PreferencesView(APIView):
-    """ Display and update user preferences
-    """
+    """ Display and update user preferences. """
     renderer_classes = (TemplateHTMLRenderer, )
 
     def get(self, request):
-        profile = UserProfile.objects.get(user=request.user)
-        if not profile.profile_seen:
-            profile.profile_seen = True
-            profile.save()
-        form = UserProfileForm(instance=profile)
+        user = request.user
+        if not user.profile_seen:
+            user.profile_seen = True
+            user.save()
+        form = UserProfileForm(instance=user)
         return Response({'form': form}, template_name='preferences.html')
 
     def post(self, request):
-        profile = UserProfile.objects.get(user=request.user)
-        form = UserProfileForm(request.DATA, instance=profile)
+        user = request.user
+        form = UserProfileForm(request.DATA, instance=user)
         if form.is_valid():
             form.save()
-            profile = UserProfile.objects.get(user=request.user)
-            if profile.timezone_changed:
-                request.session['django_timezone'] = profile.timezone
-                timezone.activate(profile.timezone)
+            if user.timezone_changed:
+                request.session['django_timezone'] = user.timezone
+                timezone.activate(user.timezone)
 
             try:
                 return HttpResponseRedirect(request.QUERY_PARAMS['next'])
@@ -51,3 +52,25 @@ class PreferencesView(APIView):
             return Response({'form': form}, template_name='preferences.html')
 
 
+class SystemSettingsView(APIView):
+    """ Display and update system settings. """
+    renderer_classes = (TemplateHTMLRenderer, )
+    permission_classes = (IsAdminUser, )
+
+    def get(self, request):
+        instance = SystemSettings.get_system_settings()
+        form = SystemSettingsForm(instance=instance)
+        return Response({'form': form}, template_name='system_settings.html')
+
+    def post(self, request):
+        instance = SystemSettings.get_system_settings()
+        form = SystemSettingsForm(request.DATA, instance=instance)
+        if form.is_valid():
+            form.save()
+
+            try:
+                return HttpResponseRedirect(request.QUERY_PARAMS['next'])
+            except KeyError:
+                return HttpResponseRedirect(request.META['HTTP_REFERER'])
+        else:
+            return Response({'form': form}, template_name='system_settings.html')

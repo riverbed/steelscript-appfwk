@@ -22,9 +22,9 @@ from rvbd.common.jsondict import JsonDict
 from django.core.exceptions import ObjectDoesNotExist
 
 from rvbd_portal.apps.report.models import Widget
+from rvbd_portal.apps.preferences.models import SystemSettings
 from rvbd_portal.apps.geolocation.models import Location
 from rvbd_portal.apps.geolocation.geoip import LookupIP
-from project.utils import get_request
 
 from .maps_providers import google_postprocess, openstreetmaps_postprocess
 
@@ -39,20 +39,20 @@ POST_PROCESS_MAP = {'DISABLED': google_postprocess,
                     }
 
 
-def authorized(userprofile):
+def authorized():
     """ Verifies the Maps API can be used given the version selected
         and the API key supplied.
 
         Returns True/False, and an error message if applicable
     """
-    maps_version = userprofile.maps_version
-    api_key = userprofile.maps_api_key
+    settings = SystemSettings.get_system_settings()
 
-    if maps_version == 'DISABLED':
+    if settings.maps_version == 'DISABLED':
         msg = (u'Maps API has been disabled.\n'
-               'See Configure->Preferences to update.')
+               'See Admin User for changes.')
         return False, msg
-    elif maps_version in ('FREE', 'BUSINESS') and not api_key:
+    elif (settings.maps_version in ('FREE', 'BUSINESS') and
+          not settings.maps_api_key):
         msg = (u'A valid API_KEY must be provided for either \n'
                '"Free" or "Business" Google Maps API choices.\n'
                'See Configure->Preferences to update.')
@@ -143,8 +143,8 @@ class MapWidget(object):
         JSON structures as needed.
         """
 
-        request = get_request()
-        maps_version = request.user.userprofile.maps_version
+        settings = SystemSettings.get_system_settings()
+        maps_version = settings.maps_version
         post_process = POST_PROCESS_MAP[maps_version]
 
         columns = job.get_columns()

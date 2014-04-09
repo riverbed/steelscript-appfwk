@@ -7,8 +7,6 @@
 
 from django.utils import timezone
 
-from rvbd_portal.apps.preferences.models import UserProfile
-
 
 class TimezoneMiddleware(object):
     def process_request(self, request):
@@ -16,4 +14,4 @@ class TimezoneMiddleware(object):
         if tz:
             timezone.activate(tz)
         elif request.user.is_authenticated():
-            timezone.activate(request.user.userprofile.timezone)
+            timezone.activate(request.user.timezone)

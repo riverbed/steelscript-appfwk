@@ -8,6 +8,7 @@
 import logging
 
 from django.core.urlresolvers import reverse
+from django.contrib.auth import get_user_model
 from django.forms.models import modelformset_factory
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -20,7 +21,6 @@ from rvbd_portal.apps.devices.devicemanager import DeviceManager
 from rvbd_portal.apps.devices.forms import DeviceListForm, DeviceDetailForm
 from rvbd_portal.apps.devices.models import Device
 from rvbd_portal.apps.devices.serializers import DeviceSerializer
-from rvbd_portal.apps.preferences.models import UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -109,8 +109,7 @@ class DeviceList(generics.ListAPIView):
         if formset.is_valid():
             formset.save()
             DeviceManager.clear()
-            profile = UserProfile.objects.get(user=request.user)
-            if not profile.profile_seen:
+            if not request.user.profile_seen:
                 # only redirect if first login
                 return HttpResponseRedirect(
                     reverse('preferences') + '?next=/report')

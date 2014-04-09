@@ -23,6 +23,7 @@ from django.core.urlresolvers import reverse
 from django.core.servers.basehttp import FileWrapper
 from django.core import management
 from django.utils.datastructures import SortedDict
+from django.contrib.auth import get_user_model
 from rest_framework import generics, views
 from rest_framework.compat import View
 from rest_framework.response import Response
@@ -35,6 +36,7 @@ from rvbd_portal.apps.datasource.models import Job, Table
 from rvbd_portal.apps.datasource.serializers import TableSerializer
 from rvbd_portal.apps.datasource.forms import TableFieldForm
 from rvbd_portal.apps.devices.models import Device
+from rvbd_portal.apps.preferences.models import SystemSettings
 from rvbd_portal.apps.report.models import Report, Section, Widget, WidgetJob
 from rvbd_portal.apps.report.serializers import ReportSerializer
 from rvbd_portal.apps.report.utils import create_debug_zipfile
@@ -137,14 +139,14 @@ class ReportView(views.APIView):
                 return HttpResponseRedirect('%s?invalid=true' %
                                             reverse('device-list'))
 
-
-        profile = request.user.userprofile
-        if not profile.profile_seen:
+        if not request.user.profile_seen:
             # only redirect if first login
             return HttpResponseRedirect(reverse('preferences')+'?next=/report')
 
         # factory this to make it extensible
-        form_init = {'ignore_cache': request.user.userprofile.ignore_cache}
+
+        system_settings = SystemSettings.get_system_settings()
+        form_init = {'ignore_cache': system_settings.ignore_cache}
 
         # Collect all fields organized by section, with section id 0
         # representing common report level fields
@@ -177,9 +179,9 @@ class ReportView(views.APIView):
 
         return render_to_response('report.html',
                                   {'report': report,
-                                   'developer': profile.developer,
-                                   'maps_version': profile.maps_version,
-                                   'maps_api_key': profile.maps_api_key,
+                                   'developer': system_settings.developer,
+                                   'maps_version': system_settings.maps_version,
+                                   'maps_api_key': system_settings.maps_api_key,
                                    'endtime': 'endtime' in form.fields,
                                    'form': form,
                                    'section_map': section_map,
@@ -212,8 +214,7 @@ class ReportView(views.APIView):
             logger.debug('Form cleaned data: %s' % formdata)
 
             # parse time and localize to user profile timezone
-            profile = request.user.userprofile
-            timezone = pytz.timezone(profile.timezone)
+            timezone = pytz.timezone(request.user.timezone)
             form.apply_timezone(timezone)
 
             if formdata['debug']:
@@ -349,8 +350,7 @@ class ReportWidgets(views.APIView):
             raise Http404
 
         # parse time and localize to user profile timezone
-        profile = request.user.userprofile
-        timezone = pytz.timezone(profile.timezone)
+        timezone = pytz.timezone(request.user.timezone)
         now = datetime.datetime.now(timezone)
 
         # pin the endtime to a round interval if we are set to
@@ -447,8 +447,7 @@ class WidgetJobsList(views.APIView):
             logger.debug('Form cleaned data: %s' % formdata)
 
             # parse time and localize to user profile timezone
-            profile = request.user.userprofile
-            timezone = pytz.timezone(profile.timezone)
+            timezone = pytz.timezone(request.user.timezone)
             form.apply_timezone(timezone)
 
             try:
@@ -510,9 +509,8 @@ class WidgetJobDetail(views.APIView):
                     resp['message'] = "No data returned"
                     logger.debug("%s marked Error: No data returned" %
                                  str(wjob))
-                elif (hasattr(i, 'authorized') and
-                      not i.authorized(request.user.userprofile)[0]):
-                    _, msg = i.authorized(request.user.userprofile)
+                elif hasattr(i, 'authorized') and not i.authorized()[0]:
+                    _, msg = i.authorized()
                     resp = job.json()
                     resp['data'] = None
                     resp['status'] = Job.ERROR
