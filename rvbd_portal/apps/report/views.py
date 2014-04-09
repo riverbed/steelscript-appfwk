@@ -207,7 +207,6 @@ class ReportView(views.APIView):
                               data=request.POST, files=request.FILES)
 
         if form.is_valid():
-
             logger.debug('Form passed validation: %s' % form)
             formdata = form.cleaned_data
             logger.debug('Form cleaned data: %s' % formdata)
@@ -356,8 +355,13 @@ class ReportWidgets(views.APIView):
 
         # pin the endtime to a round interval if we are set to
         # reload periodically
-        if report.reload_minutes:
-            now = round_time(dt=now, round_to=60*report.reload_minutes)
+        minutes = report.reload_minutes
+        if minutes:
+            trimmed = round_time(dt=now, round_to=60*minutes, trim=True)
+            if now - trimmed > datetime.timedelta(minutes=15):
+                now = trimmed
+            else:
+                now = round_time(dt=now, round_to=60*report.reload_minutes)
 
         widget_defs = []
 
