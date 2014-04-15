@@ -11,9 +11,8 @@ import logging
 from cStringIO import StringIO
 
 from django.db import models
-from django.db.models.signals import post_save
 from django.core import management
-from django.contrib.auth.models import User, AbstractUser
+from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 import pytz
 
@@ -80,46 +79,6 @@ def create_preference_fixture(initial_admin_only=True):
 
     logger.debug('Wrote %d preferences to fixture file %s' % (len(preferences),
                                                               fname))
-
-
-#class UserProfile(models.Model):
-#    user = models.OneToOneField(User)
-#    timezone = models.CharField(max_length=50,
-#                                default='UTC',
-#                                choices=TIMEZONE_CHOICES)
-#    ignore_cache = models.BooleanField(default=False,
-#                                       help_text='Force all reports to '
-#                                                 'bypass cache')
-#    developer = models.BooleanField(default=False,
-#                                    verbose_name='developer mode')
-#    maps_version = models.CharField(max_length=30,
-#                                    verbose_name='Maps Version',
-#                                    choices=MAPS_VERSION_CHOICES,
-#                                    default='DISABLED')
-#    maps_api_key = models.CharField(max_length=100,
-#                                    verbose_name='Maps API Key',
-#                                    blank=True,
-#                                    null=True)
-#
-#    # hidden fields
-#    timezone_changed = models.BooleanField(default=False)
-#    profile_seen = models.BooleanField(default=False)
-#
-#    def save(self, *args, **kwargs):
-#        if self.timezone != 'UTC':
-#            self.timezone_changed = True
-#        super(UserProfile, self).save(*args, **kwargs)
-#
-#        if self.profile_seen:
-#            # only save as a result of user save
-#            create_preference_fixture()
-#
-#
-#def create_user_profile(sender, instance, created, **kwargs):
-#    if created:
-#        UserProfile.objects.create(user=instance)
-#
-#post_save.connect(create_user_profile, sender=User)
 
 
 class PortalUser(AbstractUser):

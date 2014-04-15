@@ -7,38 +7,27 @@
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.forms import UserChangeForm, UserCreationForm
-from django.contrib.auth.models import User
-from django.conf import settings
 
 from rvbd_portal.apps.preferences.models import PortalUser
-
-#from rvbd_portal.apps.preferences.models import UserProfile
-#
-#
-#class UserProfileInline(admin.StackedInline):
-#    model = UserProfile
-#    can_delete = False
-#
-#
-#class UserAdmin(UserAdmin):
-#    inlines = (UserProfileInline, )
-#
-#admin.site.unregister(User)
-#admin.site.register(settings.AUTH_USER_MODEL, UserAdmin)
+from rvbd_portal.apps.preferences.forms import (PortalUserCreationForm,
+                                                PortalUserChangeForm)
 
 
 class PortalUserAdmin(UserAdmin):
-    form = UserChangeForm
-    add_form = UserCreationForm
+    form = PortalUserChangeForm
+    add_form = PortalUserCreationForm
 
-    #fieldsets = (
-     #   (None, {'fields': ('username', 'password')}),
-     #   ('Personal info', {'fields': ('email', 'first_name',
-     #                                 'last_name', 'timezone',)}),
-     #   ('Permissions', {'fields': ('is_admin',)}),
-     #   ('Important dates', {'fields': ('last_login',)}),
-    #)
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Preferences', {'fields': ('timezone',)}),
+        ('Personal info', {'fields': ('email', 'first_name', 'last_name')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser',
+                                    'groups', 'user_permissions')}),
+        ('Important dates', {'fields': ('last_login', 'date_joined')}),
+    )
+
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff')
+    search_fields = ('username', 'email', 'first_name', 'last_name')
+    ordering = ('username',)
 
 admin.site.register(PortalUser, PortalUserAdmin)
-
