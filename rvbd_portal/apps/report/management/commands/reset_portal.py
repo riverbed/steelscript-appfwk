@@ -5,6 +5,7 @@
 # MIT License set forth at:
 #   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").
 # This software is distributed "AS IS" as set forth in the License.
+from cStringIO import StringIO
 
 import os
 import glob
@@ -13,6 +14,9 @@ import optparse
 from django.core.management.base import BaseCommand
 from django.core import management
 from django.conf import settings
+from django import db
+from django.db import transaction, DatabaseError
+import imp
 
 from rvbd_portal.apps.preferences.models import SystemSettings
 
@@ -31,7 +35,48 @@ class Command(BaseCommand):
                              dest='force',
                              default=False,
                              help='Ignore reset confirmation.'),
+        optparse.make_option('--drop-users',
+                             action='store_true',
+                             dest='drop_users',
+                             default=False,
+                             help='Drop all locally created users, only '
+                                  'default admin account will be enabled '
+                                  'afterwards. Default will keep all user '
+                                  'accounts across reset.'),
     )
+
+    def save_users(self):
+        """ Store user definitions to buffer in memory rather than disk. """
+        self.stdout.write('Saving existing users ... ', ending='')
+        try:
+            buf = StringIO()
+            management.call_command('dumpscript', 'preferences', stdout=buf)
+            buf.seek(0)
+            clean_buf = buf.read().replace('<UTC>', 'pytz.UTC')
+            clean_buf = clean_buf.replace('import datetime\n',
+                                          'import datetime\nimport pytz\n')
+            self.user_buffer = clean_buf
+        except DatabaseError:
+            self.user_buffer = None
+
+        db.close_connection()
+        self.stdout.write('done.')
+
+    def load_users(self):
+        """ Load stored user module and run it, creating new user objects.
+
+        This script is run under a transaction to avoid committing partial
+        settings in case of some exception.
+        """
+        # ref http://stackoverflow.com/a/14192708/2157429
+        if self.user_buffer is not None:
+            self.stdout.write('Loading saved users ... ', ending='')
+            m = imp.new_module('runscript')
+            exec self.user_buffer in m.__dict__
+            with transaction.commit_on_success():
+                m.run()
+            db.close_connection()
+            self.stdout.write('done.')
 
     def handle(self, *args, **options):
         if not options['force']:
@@ -46,6 +91,10 @@ class Command(BaseCommand):
         if confirm != 'yes':
             self.stdout.write('Aborting.')
             return
+
+        self.user_buffer = None
+        if not options['drop_users']:
+            self.save_users()
 
         # lets clear it
         self.stdout.write('Resetting database ... ', ending='')
@@ -69,7 +118,14 @@ class Command(BaseCommand):
                                               'initial_data',
                                               '*.json'))
         initial_data.sort()
-        management.call_command('loaddata', *initial_data)
+        if options['drop_users'] or self.user_buffer is None:
+            # load all fixtures, including default admin user
+            management.call_command('loaddata', *initial_data)
+        else:
+            # filter out default admin user fixure and reload previous users
+            initial_data = [f for f in initial_data if 'admin_user' not in f]
+            management.call_command('loaddata', *initial_data)
+            self.load_users()
 
         # if we don't have a settings fixture, create new default item
         if not SystemSettings.objects.all():
