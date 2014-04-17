@@ -118,14 +118,13 @@ class Command(BaseCommand):
                                               'initial_data',
                                               '*.json'))
         initial_data.sort()
-        if options['drop_users'] or self.user_buffer is None:
-            # load all fixtures, including default admin user
-            management.call_command('loaddata', *initial_data)
-        else:
+        if not options['drop_users']:
             # filter out default admin user fixure and reload previous users
             initial_data = [f for f in initial_data if 'admin_user' not in f]
+
+        if initial_data:
             management.call_command('loaddata', *initial_data)
-            self.load_users()
+        self.load_users()
 
         # if we don't have a settings fixture, create new default item
         if not SystemSettings.objects.all():
