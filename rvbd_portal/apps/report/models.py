@@ -54,6 +54,17 @@ class Report(models.Model):
     hide_criteria = models.BooleanField(default=False)
     reload_minutes = models.IntegerField(default=0)  # 0 means no reloads
 
+    @classmethod
+    def create(cls, report_title, **kwargs):
+        logger.debug('Creating report %s' % report_title)
+        r = cls(title=report_title, **kwargs)
+        r.save()
+        return r
+
+    def __init__(self, *args, **kwargs):
+        super(Report, self).__init__(*args, **kwargs)
+        self._sections = []
+
     def save(self, *args, **kwargs):
         if not self.sourcefile:
             modname = get_module()
@@ -85,6 +96,18 @@ class Report(models.Model):
 
     def __repr__(self):
         return unicode(self)
+
+    def add_section(self, title, **kwargs):
+        s = Section.create(report=self, title=title, **kwargs)
+        self._sections.append(s)
+        return s
+
+    def add_widget(self, cls, table, title, **kwargs):
+        if len(self._sections) == 0:
+            raise ValueError('Widgets can only be added to Sections. '
+                             'Add section using "add_section" method first.')
+        s = kwargs.pop('section', self._sections[-1])
+        return cls.create(s, table, title, **kwargs)
 
     def collect_fields_by_section(self):
         """ Return a dict of all fields related to this report by section id.
@@ -148,7 +171,7 @@ class Section(models.Model):
     """ Define a section of a report.
 
     Sections provide a means to control how fields and criteria are
-    handled.  The critieria is a Criteria object filled in with values
+    handled.  The criteria is a Criteria object filled in with values
     provided by the end user based on a set of TableFields.  
 
     All tables (via Widgets) in the same section will all be passed
@@ -169,7 +192,7 @@ class Section(models.Model):
     Each section has a default mode that applies to all field
     keywords that are not called out explicitly.  If the section
     default mode is INHERIT, specific keywords can be set to SECTION
-    by createing SectionFieldMode entries.
+    by creating SectionFieldMode entries.
 
     """
 
