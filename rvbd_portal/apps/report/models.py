@@ -97,7 +97,9 @@ class Report(models.Model):
     def __repr__(self):
         return unicode(self)
 
-    def add_section(self, title, **kwargs):
+    def add_section(self, title=None, **kwargs):
+        if title is None:
+            title = 'section%d' % len(self._sections)
         s = Section.create(report=self, title=title, **kwargs)
         self._sections.append(s)
         return s

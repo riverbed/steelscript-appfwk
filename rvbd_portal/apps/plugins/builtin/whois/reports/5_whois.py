@@ -8,7 +8,7 @@
 
 from rvbd_portal.apps.datasource.modules.analysis import AnalysisTable
 from rvbd_portal_profiler.datasources.profiler import ProfilerGroupbyTable
-from rvbd_portal.apps.report.models import Report, Section
+from rvbd_portal.apps.report.models import Report
 import rvbd_portal.apps.report.modules.yui3 as yui3
 
 # helper libraries
@@ -18,10 +18,9 @@ from rvbd_portal.apps.plugins.builtin.whois.libs.whois import whois
 # Profiler report
 #
 
-report = Report(title="Whois", position=5)
-report.save()
+report = Report.create("Whois", position=5)
 
-section = Section.create(report)
+report.add_section()
 
 # Define a Table that gets external hosts by avg bytes
 table = ProfilerGroupbyTable.create('5-hosts', groupby='host', duration='1 hour',
@@ -39,4 +38,4 @@ whoistable = AnalysisTable.create('5-whois-hosts',
 whoistable.copy_columns(table)
 whoistable.add_column('whois', label="Whois link", datatype='html')
 
-yui3.TableWidget.create(section, whoistable, "Link table", width=12)
+report.add_widget(yui3.TableWidget, whoistable, "Link table", width=12)
