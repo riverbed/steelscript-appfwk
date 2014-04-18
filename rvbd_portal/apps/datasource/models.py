@@ -32,9 +32,9 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.core.exceptions import ObjectDoesNotExist
 
-from rvbd.common.jsondict import JsonDict
-from rvbd.common.utils import DictObject
-from rvbd.common import timedelta_total_seconds
+from steelscript.common.jsondict import JsonDict
+from steelscript.common.utils import DictObject
+from steelscript.common import timedelta_total_seconds
 from project.utils import get_module
 
 from rvbd_portal.apps.datasource.exceptions import *

@@ -1,7 +1,7 @@
 import logging
 
 import pandas
-from rvbd.common.timeutils import datetime_to_seconds
+from steelscript.common.timeutils import datetime_to_seconds
 
 
 logger = logging.getLogger(__name__)

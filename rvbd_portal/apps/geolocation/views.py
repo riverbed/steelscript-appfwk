@@ -11,7 +11,7 @@ import json
 from django.http import HttpResponse, Http404
 from django.core.exceptions import ObjectDoesNotExist
 
-from rvbd.common.utils import DictObject
+from steelscript.common.utils import DictObject
 
 from rvbd_portal.apps.geolocation.models import *
 from rvbd_portal.apps.geolocation.geoip import LookupIP

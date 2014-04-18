@@ -7,7 +7,7 @@
 
 
 from rvbd_portal.apps.datasource.modules.analysis import AnalysisTable
-from rvbd_portal_profiler.datasources.profiler import ProfilerGroupbyTable
+from steelscript.profiler.appfw.datasources.profiler import ProfilerGroupbyTable
 from rvbd_portal.apps.report.models import Report
 import rvbd_portal.apps.report.modules.yui3 as yui3
 

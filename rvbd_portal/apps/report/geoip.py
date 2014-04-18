@@ -10,7 +10,7 @@
 from django.http import HttpResponse, HttpResponseRedirect
 import json
 from math import sin,cos
-from rvbd.common import UserAuth
+from steelscript.common import UserAuth
 from rvbd.profiler import Profiler
 from rvbd.profiler.filters import TimeFilter, TrafficFilter
 

@@ -10,7 +10,7 @@ import logging
 import importlib
 import threading
 
-from rvbd.common import UserAuth
+from steelscript.common import UserAuth
 
 from rvbd_portal.apps.devices.models import Device
 from rvbd_portal.apps.devices.exceptions import DeviceModuleNotFound

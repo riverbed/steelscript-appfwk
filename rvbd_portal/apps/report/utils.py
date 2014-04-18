@@ -18,7 +18,7 @@ from datetime import datetime
 import pytz
 from django.contrib.auth.models import User
 
-from rvbd.common.timeutils import datetime_to_seconds
+from steelscript.common.timeutils import datetime_to_seconds
 
 from django.conf import settings
 

@@ -30,7 +30,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 
-from rvbd.common.timeutils import round_time
+from steelscript.common.timeutils import round_time
 
 from rvbd_portal.apps.datasource.models import Job, Table
 from rvbd_portal.apps.datasource.serializers import TableSerializer

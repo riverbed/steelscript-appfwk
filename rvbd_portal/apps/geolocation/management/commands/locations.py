@@ -16,7 +16,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 
-from rvbd.common.utils import Formatter
+from steelscript.common.utils import Formatter
 
 from rvbd_portal.apps.geolocation.models import Location, LocationIP
 

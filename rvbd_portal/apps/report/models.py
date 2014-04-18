@@ -8,7 +8,7 @@
 
 import logging
 
-from rvbd.common.jsondict import JsonDict
+from steelscript.common.jsondict import JsonDict
 from django.db import models
 from django.db.models import Max, Sum
 from django.template.defaultfilters import slugify

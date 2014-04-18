@@ -17,7 +17,7 @@ from collections import namedtuple
 import pygeoip
 from pygeoip.util import ip2long
 
-from rvbd.common.jsondict import JsonDict
+from steelscript.common.jsondict import JsonDict
 
 from django.core.exceptions import ObjectDoesNotExist
 

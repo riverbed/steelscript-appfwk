@@ -7,7 +7,7 @@
 
 import datetime
 
-from rvbd.common.timeutils import datetime_to_seconds
+from steelscript.common.timeutils import datetime_to_seconds
 
 from rvbd_portal.apps.report.models import Widget
 

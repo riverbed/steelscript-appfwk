@@ -11,7 +11,7 @@ import threading
 
 import pygeoip
 from pygeoip.util import ip2long
-from rvbd.common.utils import DictObject
+from steelscript.common.utils import DictObject
 
 from rvbd_portal.apps.geolocation.models import Location
 

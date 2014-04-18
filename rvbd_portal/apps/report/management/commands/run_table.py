@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 from django.core.management.base import BaseCommand
 
-from rvbd.common.utils import Formatter
+from steelscript.common.utils import Formatter
 
 from rvbd_portal.apps.datasource.models import Table, Job
 from rvbd_portal.apps.datasource.forms import TableFieldForm

@@ -8,7 +8,7 @@
 import logging
 import pandas
 
-from rvbd.common.jsondict import JsonDict
+from steelscript.common.jsondict import JsonDict
 from rvbd_portal.apps.datasource.models import (DatasourceTable, Column, Job,
                                                 Table,  BatchJobRunner)
 from rvbd_portal.libs.fields import Function

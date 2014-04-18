@@ -24,8 +24,8 @@ import datetime
 from rvbd.profiler.app import ProfilerApp
 from rvbd.profiler.filters import TrafficFilter
 from rvbd.profiler.report import TrafficSummaryReport
-from rvbd.common.utils import Formatter
-from rvbd.common import timeutils
+from steelscript.common.utils import Formatter
+from steelscript.common import timeutils
 
 from pysnmp.entity.rfc3413.oneliner import ntforg
 from pysnmp.proto import rfc1902

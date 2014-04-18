@@ -24,7 +24,7 @@ from django.core import validators
 from django.core.exceptions import ValidationError
 from django.forms.widgets import FileInput, TextInput
 from django.forms import widgets
-from rvbd.common.timeutils import (parse_timedelta, timedelta_total_seconds,
+from steelscript.common.timeutils import (parse_timedelta, timedelta_total_seconds,
                                    timedelta_str)
 
 from rvbd_portal.apps.datasource.models import Criteria, TableField
