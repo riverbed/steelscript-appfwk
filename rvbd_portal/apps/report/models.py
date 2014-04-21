@@ -66,6 +66,13 @@ class Report(models.Model):
         self._sections = []
 
     def save(self, *args, **kwargs):
+        """ Apply sourcefile and namespaces to newly created Reports.
+
+        Sourcefiles will be parsed into the following namespaces:
+        'config.reports.1_overall' --> 'default'
+        'steelscript.shark.appfw.reports.3_shark' --> 'shark'
+        'steelscript.appfw.business_hours.reports.x_report' --> 'business_hours'
+        """
         if not self.sourcefile:
             modname = get_module()
             if modname is not None:
@@ -75,16 +82,17 @@ class Report(models.Model):
 
         if not self.namespace:
             if (self.sourcefile == 'default' or
-                    self.sourcefile.startswith('config.reports')):
+                    self.sourcefile.startswith('config.reports') or
+                    'builtin' in self.sourcefile):
                 self.namespace = 'default'
             elif self.sourcefile.startswith('config.custom_reports'):
                 self.namespace = 'custom'
             else:
-                # sourcefile 'rvbd_portal_wireshark.reports.88_pcap_filefield'
-                # will have namespace 'wireshark'
-                ns = self.sourcefile.split('.')[0]
-                ns = ns.replace('rvbd_portal_', '')
-                self.namespace = ns
+                ns = self.sourcefile.split('.')
+                if ns[1] != 'appfw':
+                    self.namespace = ns[1]
+                else:
+                    self.namespace = ns[2]
 
         if not self.slug:
             self.slug = slugify(self.sourcefile.split('.')[-1])
