@@ -13,10 +13,10 @@ import dateutil.parser
 
 from django.test import Client
 
-from rvbd_portal.apps.datasource.models import Job
-from rvbd_portal.apps.report.models import Report, Widget, Section
+from steelscript.appfw.core.apps.datasource.models import Job
+from steelscript.appfw.core.apps.report.models import Report, Widget, Section
 from . import reportrunner
-from rvbd_portal.libs.call_command import call_command
+from steelscript.appfw.core.libs.call_command import call_command
 
 
 logger = logging.getLogger(__name__)

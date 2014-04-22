@@ -18,7 +18,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from steelscript.common.utils import Formatter
 
-from rvbd_portal.apps.geolocation.models import Location, LocationIP
+from steelscript.appfw.core.apps.geolocation.models import Location, LocationIP
 
 # not pretty, but pandas insists on warning about
 # some deprecated behavior we really don't care about

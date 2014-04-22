@@ -9,7 +9,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 
-from rvbd_portal.apps.preferences.models import PortalUser, SystemSettings
+from steelscript.appfw.core.apps.preferences.models import PortalUser, SystemSettings
 
 
 class UserProfileForm(forms.ModelForm):

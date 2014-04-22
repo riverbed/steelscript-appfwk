@@ -37,8 +37,8 @@ from steelscript.common.utils import DictObject
 from steelscript.common import timedelta_total_seconds
 from project.utils import get_module
 
-from rvbd_portal.apps.datasource.exceptions import *
-from rvbd_portal.libs.fields import (PickledObjectField, FunctionField,
+from steelscript.appfw.core.apps.datasource.exceptions import *
+from steelscript.appfw.core.libs.fields import (PickledObjectField, FunctionField,
                                      SeparatedValuesField, check_field_choice,
                                      field_choice_str)
 from django.conf import settings

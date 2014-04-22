@@ -1,12 +1,12 @@
 from django import forms
 
-from rvbd_portal.apps.datasource.forms import fields_add_time_selection
-from rvbd_portal.apps.datasource.modules.analysis import AnalysisTable
-from rvbd_portal.apps.datasource.models import TableField, Table, Column
-from rvbd_portal.libs.fields import Function
+from steelscript.appfw.core.apps.datasource.forms import fields_add_time_selection
+from steelscript.appfw.core.apps.datasource.modules.analysis import AnalysisTable
+from steelscript.appfw.core.apps.datasource.models import TableField, Table, Column
+from steelscript.appfw.core.libs.fields import Function
 
-from rvbd_portal.apps.report.models import Report, Section
-from rvbd_portal.apps.report.modules import raw
+from steelscript.appfw.core.apps.report.models import Report, Section
+from steelscript.appfw.core.apps.report.modules import raw
 
 from . import criteria_functions as funcs
 

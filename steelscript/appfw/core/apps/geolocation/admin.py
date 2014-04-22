@@ -6,7 +6,7 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 from django.contrib import admin
-from rvbd_portal.apps.geolocation.models import Location, LocationIP
+from steelscript.appfw.core.apps.geolocation.models import Location, LocationIP
 
 
 class LocationAdmin(admin.ModelAdmin):

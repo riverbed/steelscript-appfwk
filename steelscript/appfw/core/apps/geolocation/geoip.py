@@ -13,7 +13,7 @@ import pygeoip
 from pygeoip.util import ip2long
 from steelscript.common.utils import DictObject
 
-from rvbd_portal.apps.geolocation.models import Location
+from steelscript.appfw.core.apps.geolocation.models import Location
 
 
 GEOLOCATION_DATA_FILE = '/tmp/GeoLiteCity.dat1'

@@ -1,9 +1,9 @@
-from rvbd_portal.apps.report.models import Report, Section
-import rvbd_portal.apps.report.modules.raw as raw
-from rvbd_portal.apps.datasource.forms import fields_add_time_selection
-from rvbd_portal.apps.datasource.modules.analysis import AnalysisTable
-from rvbd_portal.apps.datasource.models import Column
-from rvbd_portal.apps.report.tests.reports import criteria_functions as funcs
+from steelscript.appfw.core.apps.report.models import Report, Section
+import steelscript.appfw.core.apps.report.modules.raw as raw
+from steelscript.appfw.core.apps.datasource.forms import fields_add_time_selection
+from steelscript.appfw.core.apps.datasource.modules.analysis import AnalysisTable
+from steelscript.appfw.core.apps.datasource.models import Column
+from steelscript.appfw.core.apps.report.tests.reports import criteria_functions as funcs
 
 report = Report(title='Criteria Time Selection' )
 report.save()

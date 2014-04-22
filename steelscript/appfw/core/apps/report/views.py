@@ -32,14 +32,14 @@ from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 
 from steelscript.common.timeutils import round_time
 
-from rvbd_portal.apps.datasource.models import Job, Table
-from rvbd_portal.apps.datasource.serializers import TableSerializer
-from rvbd_portal.apps.datasource.forms import TableFieldForm
-from rvbd_portal.apps.devices.models import Device
-from rvbd_portal.apps.preferences.models import SystemSettings
-from rvbd_portal.apps.report.models import Report, Section, Widget, WidgetJob
-from rvbd_portal.apps.report.serializers import ReportSerializer
-from rvbd_portal.apps.report.utils import create_debug_zipfile
+from steelscript.appfw.core.apps.datasource.models import Job, Table
+from steelscript.appfw.core.apps.datasource.serializers import TableSerializer
+from steelscript.appfw.core.apps.datasource.forms import TableFieldForm
+from steelscript.appfw.core.apps.devices.models import Device
+from steelscript.appfw.core.apps.preferences.models import SystemSettings
+from steelscript.appfw.core.apps.report.models import Report, Section, Widget, WidgetJob
+from steelscript.appfw.core.apps.report.serializers import ReportSerializer
+from steelscript.appfw.core.apps.report.utils import create_debug_zipfile
 
 logger = logging.getLogger(__name__)
 

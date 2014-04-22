@@ -13,8 +13,8 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from steelscript.common.utils import DictObject
 
-from rvbd_portal.apps.geolocation.models import *
-from rvbd_portal.apps.geolocation.geoip import LookupIP
+from steelscript.appfw.core.apps.geolocation.models import *
+from steelscript.appfw.core.apps.geolocation.geoip import LookupIP
 
 # Create your views here.
 

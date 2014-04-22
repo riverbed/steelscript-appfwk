@@ -18,7 +18,7 @@ from django import db
 from django.db import transaction, DatabaseError
 import imp
 
-from rvbd_portal.apps.preferences.models import SystemSettings
+from steelscript.appfw.core.apps.preferences.models import SystemSettings
 
 # list of files/directories to ignore
 IGNORE_FILES = ['helpers']

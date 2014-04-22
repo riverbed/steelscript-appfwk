@@ -8,8 +8,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from rvbd_portal.apps.preferences.models import PortalUser
-from rvbd_portal.apps.preferences.forms import (PortalUserCreationForm,
+from steelscript.appfw.core.apps.preferences.models import PortalUser
+from steelscript.appfw.core.apps.preferences.forms import (PortalUserCreationForm,
                                                 PortalUserChangeForm)
 
 

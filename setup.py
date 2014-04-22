@@ -22,7 +22,7 @@ except ImportError:
 from gitpy_versioning import get_version
 
 setup_args = {
-    'name':               'steelscript-appfw-core',
+    'name':               'steelscript.appfw.core',
     'namespace_packages': ['steelscript'],
     'version':            get_version(),
     'author':             'Riverbed Technology',

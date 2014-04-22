@@ -17,8 +17,8 @@ from django.db import DatabaseError, connection
 from django.db.models import get_app, get_models, Count
 
 from django.conf import settings
-from rvbd_portal.apps.report.models import Report, WidgetJob
-from rvbd_portal.apps.datasource.models import Table, TableField, Column, Job
+from steelscript.appfw.core.apps.report.models import Report, WidgetJob
+from steelscript.appfw.core.apps.datasource.models import Table, TableField, Column, Job
 
 
 class Command(BaseCommand):

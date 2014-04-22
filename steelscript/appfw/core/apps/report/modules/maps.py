@@ -21,10 +21,10 @@ from steelscript.common.jsondict import JsonDict
 
 from django.core.exceptions import ObjectDoesNotExist
 
-from rvbd_portal.apps.report.models import Widget
-from rvbd_portal.apps.preferences.models import SystemSettings
-from rvbd_portal.apps.geolocation.models import Location
-from rvbd_portal.apps.geolocation.geoip import LookupIP
+from steelscript.appfw.core.apps.report.models import Widget
+from steelscript.appfw.core.apps.preferences.models import SystemSettings
+from steelscript.appfw.core.apps.geolocation.models import Location
+from steelscript.appfw.core.apps.geolocation.geoip import LookupIP
 
 from .maps_providers import google_postprocess, openstreetmaps_postprocess
 

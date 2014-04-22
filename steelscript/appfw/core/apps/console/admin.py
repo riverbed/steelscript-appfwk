@@ -7,7 +7,7 @@
 
 from django.contrib import admin
 
-from rvbd_portal.apps.console.models import Utility, Results, Parameter, ConsoleJob
+from steelscript.appfw.core.apps.console.models import Utility, Results, Parameter, ConsoleJob
 
 
 class UtilityAdmin(admin.ModelAdmin):

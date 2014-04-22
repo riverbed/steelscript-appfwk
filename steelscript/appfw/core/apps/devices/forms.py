@@ -7,12 +7,12 @@
 
 from django import forms
 
-from rvbd_portal.libs.fields import Function
+from steelscript.appfw.core.libs.fields import Function
 
-from rvbd_portal.apps.datasource.models import TableField
+from steelscript.appfw.core.apps.datasource.models import TableField
 
-from rvbd_portal.apps.devices.models import Device
-from rvbd_portal.apps.devices.devicemanager import DeviceManager
+from steelscript.appfw.core.apps.devices.models import Device
+from steelscript.appfw.core.apps.devices.devicemanager import DeviceManager
 
 
 class DeviceForm(forms.ModelForm):

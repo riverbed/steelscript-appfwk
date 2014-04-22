@@ -8,8 +8,8 @@ from django.test import TestCase, Client
 from django.core import management
 from django.utils.datastructures import SortedDict
 
-from rvbd_portal.apps.datasource.models import Job
-from rvbd_portal.apps.report.models import Report, Widget
+from steelscript.appfw.core.apps.datasource.models import Job
+from steelscript.appfw.core.apps.report.models import Report, Widget
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class ReportRunnerTestCase(TestCase):
 
     @classmethod
     def load_report(cls, report):
-            path = 'rvbd_portal.apps.report.tests.reports.' + report
+            path = 'steelscript.appfw.core.apps.report.tests.reports.' + report
             logger.info("Loading report: %s" % path)
             management.call_command('reload', report_name=path)
 

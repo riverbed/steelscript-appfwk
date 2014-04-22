@@ -11,7 +11,7 @@ import optparse
 
 from django.core.management.base import BaseCommand
 
-from rvbd_portal.apps.report.utils import create_debug_zipfile
+from steelscript.appfw.core.apps.report.utils import create_debug_zipfile
 
 
 class Command(BaseCommand):

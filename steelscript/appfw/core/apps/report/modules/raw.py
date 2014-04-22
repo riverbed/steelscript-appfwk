@@ -9,7 +9,7 @@ import datetime
 
 from steelscript.common.timeutils import datetime_to_seconds
 
-from rvbd_portal.apps.report.models import Widget
+from steelscript.appfw.core.apps.report.models import Widget
 
 import logging
 logger = logging.getLogger(__name__)

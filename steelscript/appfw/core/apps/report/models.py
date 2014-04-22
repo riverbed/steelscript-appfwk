@@ -20,8 +20,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from model_utils.managers import InheritanceManager
 
 from project.utils import get_module
-from rvbd_portal.apps.datasource.models import Table, Job, TableField
-from rvbd_portal.libs.fields import PickledObjectField, SeparatedValuesField
+from steelscript.appfw.core.apps.datasource.models import Table, Job, TableField
+from steelscript.appfw.core.libs.fields import PickledObjectField, SeparatedValuesField
 
 logger = logging.getLogger(__name__)
 

@@ -13,8 +13,8 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response
 from django.views.generic.base import View
 
-from rvbd_portal.apps.devices.devicemanager import DeviceManager
-from rvbd_portal.apps.help.forms import ProfilerInputForm, SharkInputForm
+from steelscript.appfw.core.apps.devices.devicemanager import DeviceManager
+from steelscript.appfw.core.apps.help.forms import ProfilerInputForm, SharkInputForm
 logger = logging.getLogger(__name__)
 
 

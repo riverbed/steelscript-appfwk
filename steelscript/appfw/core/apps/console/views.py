@@ -21,8 +21,8 @@ except ImportError:
     # even be visible - this will silence code error checkers though
     from django.http import HttpResponse as StreamingHttpResponse
 
-from rvbd_portal.apps.console.models import Utility, Results, Parameter
-from rvbd_portal.apps.console.forms import ( UtilityDetailForm, ParameterStringForm,
+from steelscript.appfw.core.apps.console.models import Utility, Results, Parameter
+from steelscript.appfw.core.apps.console.forms import ( UtilityDetailForm, ParameterStringForm,
                                              get_utility_formset)
 
 

@@ -8,7 +8,7 @@
 from django.conf.urls import patterns, url
 from rest_framework.urlpatterns import format_suffix_patterns
 
-from rvbd_portal.apps.devices.views import DeviceList, DeviceDetail, DeviceDelete
+from steelscript.appfw.core.apps.devices.views import DeviceList, DeviceDetail, DeviceDelete
 
 urlpatterns = patterns(
     '',

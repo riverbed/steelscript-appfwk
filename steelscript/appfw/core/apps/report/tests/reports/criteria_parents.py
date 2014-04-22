@@ -1,10 +1,10 @@
-from rvbd_portal.apps.datasource.modules.analysis import AnalysisTable
-from rvbd_portal.apps.datasource.models import TableField, Column
+from steelscript.appfw.core.apps.datasource.modules.analysis import AnalysisTable
+from steelscript.appfw.core.apps.datasource.models import TableField, Column
 
-from rvbd_portal.apps.report.models import Report, Section
-from rvbd_portal.apps.report.modules import raw
+from steelscript.appfw.core.apps.report.models import Report, Section
+from steelscript.appfw.core.apps.report.modules import raw
 
-from rvbd_portal.apps.report.tests.reports import criteria_functions as funcs
+from steelscript.appfw.core.apps.report.tests.reports import criteria_functions as funcs
 
 report = Report(title='Criteria Parents', hidden_fields = ['report_computed',
                                                            'section_computed',

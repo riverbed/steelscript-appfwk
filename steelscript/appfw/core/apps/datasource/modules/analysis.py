@@ -9,9 +9,9 @@ import logging
 import pandas
 
 from steelscript.common.jsondict import JsonDict
-from rvbd_portal.apps.datasource.models import (DatasourceTable, Column, Job,
+from steelscript.appfw.core.apps.datasource.models import (DatasourceTable, Column, Job,
                                                 Table,  BatchJobRunner)
-from rvbd_portal.libs.fields import Function
+from steelscript.appfw.core.libs.fields import Function
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,7 @@ from django import forms
 
 from steelscript.profiler.core import _constants
 
-from rvbd_portal.apps.devices.models import Device
+from steelscript.appfw.core.apps.devices.models import Device
 
 
 def get_device_choices(device_type):

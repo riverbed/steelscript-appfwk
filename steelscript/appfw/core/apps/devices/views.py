@@ -17,10 +17,10 @@ from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
-from rvbd_portal.apps.devices.devicemanager import DeviceManager
-from rvbd_portal.apps.devices.forms import DeviceListForm, DeviceDetailForm
-from rvbd_portal.apps.devices.models import Device
-from rvbd_portal.apps.devices.serializers import DeviceSerializer
+from steelscript.appfw.core.apps.devices.devicemanager import DeviceManager
+from steelscript.appfw.core.apps.devices.forms import DeviceListForm, DeviceDetailForm
+from steelscript.appfw.core.apps.devices.models import Device
+from steelscript.appfw.core.apps.devices.serializers import DeviceSerializer
 
 logger = logging.getLogger(__name__)
 

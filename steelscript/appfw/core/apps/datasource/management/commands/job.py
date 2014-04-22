@@ -15,7 +15,7 @@ from django.core.management.base import BaseCommand
 
 from steelscript.common.utils import Formatter
 
-from rvbd_portal.apps.datasource.models import Job
+from steelscript.appfw.core.apps.datasource.models import Job
 
 # not pretty, but pandas insists on warning about
 # some deprecated behavior we really don't care about

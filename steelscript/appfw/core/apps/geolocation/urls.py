@@ -12,7 +12,7 @@ urlpatterns = patterns(
     '',
 
     url(r'^ipaddr/(?P<addr>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)$',
-        'rvbd_portal.apps.geolocation.views.getIPAddress'),
+        'steelscript.appfw.core.apps.geolocation.views.getIPAddress'),
     url(r'^location/(?P<name>.+)$',
-        'rvbd_portal.apps.geolocation.views.getLocation')
+        'steelscript.appfw.core.apps.geolocation.views.getLocation')
     )

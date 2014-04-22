@@ -9,7 +9,7 @@ import logging
 
 import pandas
 from steelscript.common.jsondict import JsonDict
-from rvbd_portal.apps.datasource.models import Column, Table, DatasourceTable
+from steelscript.appfw.core.apps.datasource.models import Column, Table, DatasourceTable
 
 logger = logging.getLogger(__name__)
 

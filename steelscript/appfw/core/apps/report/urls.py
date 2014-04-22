@@ -7,10 +7,10 @@
 
 
 from django.conf.urls import patterns, url
-import rvbd_portal.apps.report.views as views
+import steelscript.appfw.core.apps.report.views as views
 
 urlpatterns = patterns(
-    'rvbd_portal.apps.report.views',
+    'steelscript.appfw.core.apps.report.views',
     url(r'^$', views.ReportView.as_view(),
         name='report-view-root'),
 

@@ -8,7 +8,7 @@
 
 from django import forms
 
-from rvbd_portal.apps.report.models import Report, Widget
+from steelscript.appfw.core.apps.report.models import Report, Widget
 
 import logging
 logger = logging.getLogger(__name__)

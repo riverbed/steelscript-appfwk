@@ -1,13 +1,13 @@
-from rvbd_portal.apps.datasource.modules.analysis import AnalysisTable
-from rvbd_portal.apps.datasource.models import Column
+from steelscript.appfw.core.apps.datasource.modules.analysis import AnalysisTable
+from steelscript.appfw.core.apps.datasource.models import Column
 
-from rvbd_portal.apps.report.models import Report, Section
-from rvbd_portal.apps.report.modules import raw
-from rvbd_portal.apps.datasource.forms import fields_add_time_selection, fields_add_resolution
-from rvbd_portal.libs.fields import Function
+from steelscript.appfw.core.apps.report.models import Report, Section
+from steelscript.appfw.core.apps.report.modules import raw
+from steelscript.appfw.core.apps.datasource.forms import fields_add_time_selection, fields_add_resolution
+from steelscript.appfw.core.libs.fields import Function
 
 # Report
-from rvbd_portal.apps.report.tests.reports import synthetic_functions as funcs
+from steelscript.appfw.core.apps.report.tests.reports import synthetic_functions as funcs
 
 report = Report(title='Synthetic No Resampling')
 report.save()

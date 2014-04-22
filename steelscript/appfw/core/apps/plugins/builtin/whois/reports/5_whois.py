@@ -6,13 +6,13 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-from rvbd_portal.apps.datasource.modules.analysis import AnalysisTable
+from steelscript.appfw.core.apps.datasource.modules.analysis import AnalysisTable
 from steelscript.profiler.appfw.datasources.profiler import ProfilerGroupbyTable
-from rvbd_portal.apps.report.models import Report
-import rvbd_portal.apps.report.modules.yui3 as yui3
+from steelscript.appfw.core.apps.report.models import Report
+import steelscript.appfw.core.apps.report.modules.yui3 as yui3
 
 # helper libraries
-from rvbd_portal.apps.plugins.builtin.whois.libs.whois import whois
+from steelscript.appfw.core.apps.plugins.builtin.whois.libs.whois import whois
 
 #
 # Profiler report

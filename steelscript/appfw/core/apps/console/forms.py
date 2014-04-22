@@ -8,7 +8,7 @@
 from django import forms
 from django.forms.models import inlineformset_factory
 
-from rvbd_portal.apps.console.models import Utility, Parameter
+from steelscript.appfw.core.apps.console.models import Utility, Parameter
 
 
 class ExecuteForm(forms.ModelForm):

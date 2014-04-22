@@ -8,7 +8,7 @@
 import sys
 import pkg_resources
 
-from rvbd_portal.apps.plugins import register
+from steelscript.appfw.core.apps.plugins import register
 
 
 def load_plugins():

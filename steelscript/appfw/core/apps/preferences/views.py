@@ -16,9 +16,9 @@ from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from rvbd_portal.apps.preferences.forms import UserProfileForm, \
+from steelscript.appfw.core.apps.preferences.forms import UserProfileForm, \
     SystemSettingsForm
-from rvbd_portal.apps.preferences.models import SystemSettings
+from steelscript.appfw.core.apps.preferences.models import SystemSettings
 
 logger = logging.getLogger(__name__)
 

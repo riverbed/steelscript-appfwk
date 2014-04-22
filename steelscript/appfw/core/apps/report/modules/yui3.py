@@ -13,8 +13,8 @@ import logging
 from steelscript.common import timeutils
 from steelscript.common.jsondict import JsonDict
 
-from rvbd_portal.libs.nicescale import NiceScale
-from rvbd_portal.apps.report.models import Axes, Widget
+from steelscript.appfw.core.libs.nicescale import NiceScale
+from steelscript.appfw.core.apps.report.models import Axes, Widget
 
 logger = logging.getLogger(__name__)
 

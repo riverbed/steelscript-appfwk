@@ -7,10 +7,10 @@
 
 
 from django.conf.urls import patterns, url
-import rvbd_portal.apps.plugins.views as views
+import steelscript.appfw.core.apps.plugins.views as views
 
 urlpatterns = patterns(
-    'rvbd_portal.apps.plugins.views',
+    'steelscript.appfw.core.apps.plugins.views',
     url(r'^$', views.PluginsListView.as_view(), name='plugins-list'),
     url(r'^(?P<slug>[-\w]+)/$', views.PluginsDetailView.as_view(), name='plugins-detail'),
 )

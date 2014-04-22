@@ -12,9 +12,9 @@ import threading
 
 from steelscript.common import UserAuth
 
-from rvbd_portal.apps.devices.models import Device
-from rvbd_portal.apps.devices.exceptions import DeviceModuleNotFound
-from rvbd_portal.apps.plugins import plugins
+from steelscript.appfw.core.apps.devices.models import Device
+from steelscript.appfw.core.apps.devices.exceptions import DeviceModuleNotFound
+from steelscript.appfw.core.apps.plugins import plugins
 
 logger = logging.getLogger(__name__)
 

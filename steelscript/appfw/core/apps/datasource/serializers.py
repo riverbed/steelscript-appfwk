@@ -7,7 +7,7 @@
 
 
 from rest_framework import serializers
-from rvbd_portal.apps.datasource.models import Table, Column, Job
+from steelscript.appfw.core.apps.datasource.models import Table, Column, Job
 
 
 #

@@ -12,12 +12,12 @@ from django.core.management.base import BaseCommand
 from django.core import management
 from django.core.exceptions import ObjectDoesNotExist
 
-from rvbd_portal.apps.report.models import Report
-from rvbd_portal.apps.devices.devicemanager import DeviceManager
+from steelscript.appfw.core.apps.report.models import Report
+from steelscript.appfw.core.apps.devices.devicemanager import DeviceManager
 
 from django.conf import settings
 from project.utils import Importer
-from rvbd_portal.apps.plugins import plugins
+from steelscript.appfw.core.apps.plugins import plugins
 
 
 class Command(BaseCommand):

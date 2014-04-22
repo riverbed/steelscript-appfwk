@@ -27,7 +27,7 @@ from django.forms import widgets
 from steelscript.common.timeutils import (parse_timedelta, timedelta_total_seconds,
                                    timedelta_str)
 
-from rvbd_portal.apps.datasource.models import Criteria, TableField
+from steelscript.appfw.core.apps.datasource.models import Criteria, TableField
 
 logger = logging.getLogger(__name__)
 
