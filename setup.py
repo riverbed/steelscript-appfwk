@@ -1,56 +1,79 @@
 #!/usr/bin/env python
 """
-rvbd_portal
-==========
+steelscript-appfw-core
+======================
 
-Core apps for Riverbed FlyScript Portal
+Core apps for Riverbed SteelScript Application Framework
 
 """
-from setuptools import setup, find_packages
+import os
 
+try:
+    from setuptools import setup, find_packages, Command
+    packagedata = True
+except ImportError:
+    from distutils.core import setup
+    from distutils.cmd import Command
+    packagedata = False
 
-tests_require = []
+    def find_packages(path='steelscript'):
+        return [p for p, files, dirs in os.walk(path) if '__init__.py' in files]
 
-install_requires = [
-    'Django>=1.5.1,<1.6',
-    # flyscript-portal should be here too
-]
+from gitpy_versioning import get_version
 
-LICENSE = """\
-Copyright (c) 2013 Riverbed Technology, Inc.
+setup_args = {
+    'name':               'steelscript-appfw-core',
+    'namespace_packages': ['steelscript'],
+    'version':            get_version(),
+    'author':             'Riverbed Technology',
+    'author_email':       'eng-github@riverbed.com',
+    'url':                'http://pythonhosted.org/steelscript',
+    'description':        'Core apps for Riverbed SteelScript Application Framework',
 
-This software is licensed under the terms and conditions of the
-MIT License set forth at:
+    'long_description': """Core apps for SteelScript Application Framework
+====================================================
 
-https://github.com/riverbed/flyscript/blob/master/LICENSE ("License").
+SteelScript is a collection of libraries and scripts in Python and JavaScript for
+interacting with Riverbed Technology devices.
 
-This software is distributed "AS IS" as set forth in the License.
-"""
+For a complete guide to installation, see:
 
-setup(
-    name='rvbd-portal',
-    version='0.1',
+http://pythonhosted.org/steelscript/install.html
+    """,
+    'license': 'MIT',
 
-    author='Riverbed Technology',
-    author_email='eng-github@riverbed.com',
-    url='',
-    description='Core apps for FlyScript Portal',
-    long_description=__doc__,
-    license=LICENSE,
+    'platforms': 'Linux, Mac OS, Windows',
 
-    packages=find_packages(),
-    zip_safe=False,
-    install_requires=install_requires,
-    tests_require=tests_require,
-    extras_require=None,
-    test_suite='',
-    include_package_data=True,
-
-    classifiers=[
+    'classifiers': (
+        'Development Status :: 4 - Beta',
         'Framework :: Django',
         'Intended Audience :: Developers',
+        'Intended Audience :: Information Technology',
         'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: System :: Networking',
         'Topic :: Software Development'
-    ],
-)
+    ),
+
+    'packages': find_packages(),
+
+    'scripts': None,
+
+    'install_requires': (
+        'Django>=1.5.1,<1.6',
+        'steelscript.common>=0.6',
+        'steelscript.netprofiler>=0.1',
+    ),
+
+    'tests_require': (),
+
+}
+
+if packagedata:
+    setup_args['include_package_data'] = True
+
+setup(**setup_args)
+
