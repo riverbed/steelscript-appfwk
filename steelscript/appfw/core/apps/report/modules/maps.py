@@ -210,7 +210,7 @@ class MapWidget(object):
                 if keycol:
                     key = rawrow[keycol.dataindex]
 
-                    # XXXCJ - this is a hack for Profiler based host groups,
+                    # XXXCJ - this is a hack for NetProfiler based host groups,
                     # need to generalize this, probably via options
                     if widget.table().options.get('groupby') == 'host_group':
                         try:

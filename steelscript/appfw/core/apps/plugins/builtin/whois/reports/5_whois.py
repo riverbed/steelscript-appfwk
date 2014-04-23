@@ -7,7 +7,7 @@
 
 
 from steelscript.appfw.core.apps.datasource.modules.analysis import AnalysisTable
-from steelscript.profiler.appfw.datasources.profiler import ProfilerGroupbyTable
+from steelscript.netprofiler.appfw.datasources.netprofiler import NetProfilerGroupbyTable
 from steelscript.appfw.core.apps.report.models import Report
 import steelscript.appfw.core.apps.report.modules.yui3 as yui3
 
@@ -15,7 +15,7 @@ import steelscript.appfw.core.apps.report.modules.yui3 as yui3
 from steelscript.appfw.core.apps.plugins.builtin.whois.libs.whois import whois
 
 #
-# Profiler report
+# NetProfiler report
 #
 
 report = Report.create("Whois", position=5)
@@ -23,7 +23,7 @@ report = Report.create("Whois", position=5)
 report.add_section()
 
 # Define a Table that gets external hosts by avg bytes
-table = ProfilerGroupbyTable.create('5-hosts', groupby='host', duration='1 hour',
+table = NetProfilerGroupbyTable.create('5-hosts', groupby='host', duration='1 hour',
                                     filterexpr='not srv host 10/8 and not srv host 192.168/16')
 
 table.add_column('host_ip', 'IP Addr', iskey=True, datatype='string')

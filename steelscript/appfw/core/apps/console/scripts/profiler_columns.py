@@ -8,11 +8,11 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-"""This program retrieves a list of valid columns for the current profiler.
+"""This program retrieves a list of valid columns for the current netprofiler.
 
 Example:
 
- python profiler-columns.py dev-staging2.lab.nbttech.com -r traffic_summary --centricity hos 
+ python netprofiler-columns.py dev-staging2.lab.nbttech.com -r traffic_summary --centricity hos
 
 Column                                 Label                                  Id
 app_name                               Application                            17
@@ -25,7 +25,7 @@ avg_bytes_rtx                          Avg Retrans Bytes/s                    39
 avg_conns_active                       Avg Active Connections/s               532
 avg_conns_new                          Avg New Connections/s                 
 
-python profiler-columns.py -i 729,848,40,41,158,4,14,44,10,45,46,47,50,124,48,49,51,123,39 dev-staging2.lab.nbttech.com
+python netprofiler-columns.py -i 729,848,40,41,158,4,14,44,10,45,46,47,50,124,48,49,51,123,39 dev-staging2.lab.nbttech.com
 Column                      Label                       Id                          
 
 c2s_flags                   C2S_FLAGS                   50                          

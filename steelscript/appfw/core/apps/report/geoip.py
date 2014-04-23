@@ -54,7 +54,7 @@ rvbd_nets = (
 def test(request):
     return HttpResponse("Test succeeded")
 
-p = Profiler("eng-profiler.lab.nbttech.com", auth=UserAuth("admin", "admin"))
+p = Profiler("eng-netprofiler.lab.nbttech.com", auth=UserAuth("admin", "admin"))
 print "connected"
 
 def data(request):

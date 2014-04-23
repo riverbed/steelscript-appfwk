@@ -7,7 +7,7 @@
 
 from django import forms
 
-from steelscript.profiler.core import _constants
+from steelscript.netprofiler.core import _constants
 
 from steelscript.appfw.core.apps.devices.models import Device
 
@@ -30,7 +30,7 @@ def get_centricities():
 
 
 class ProfilerInputForm(forms.Form):
-    device = forms.ChoiceField(choices=get_device_choices('profiler'))
+    device = forms.ChoiceField(choices=get_device_choices('netprofiler'))
     realm = forms.ChoiceField(choices=get_realms())
     centricity = forms.ChoiceField(choices=get_centricities())
     groupby = forms.ChoiceField(choices=get_groupbys())

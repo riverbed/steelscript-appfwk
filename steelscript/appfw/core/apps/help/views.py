@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class ColumnHelper(View):
     
     def get(self, request, device_type):
-        if device_type == 'profiler':
+        if device_type == 'netprofiler':
             form = ProfilerInputForm()
         elif device_type == 'shark':
             form = SharkInputForm()
@@ -33,7 +33,7 @@ class ColumnHelper(View):
                                   context_instance=RequestContext(request))
 
     def post(self, request, device_type):
-        if device_type == 'profiler':
+        if device_type == 'netprofiler':
             form = ProfilerInputForm(request.POST)
         elif device_type == 'shark':
             form = SharkInputForm(request.POST)
@@ -43,7 +43,7 @@ class ColumnHelper(View):
         results = None
         if form.is_valid():
             data = form.cleaned_data
-            if device_type == 'profiler':
+            if device_type == 'netprofiler':
                 profiler = DeviceManager.get_device(data['device'])
 
                 results = profiler.search_columns(realms=[data['realm']],
