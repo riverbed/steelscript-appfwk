@@ -29,7 +29,7 @@ def get_centricities():
     return ('', '---'), ('hos', 'host'), ('int', 'interface')
 
 
-class ProfilerInputForm(forms.Form):
+class NetProfilerInputForm(forms.Form):
     device = forms.ChoiceField(choices=get_device_choices('netprofiler'))
     realm = forms.ChoiceField(choices=get_realms())
     centricity = forms.ChoiceField(choices=get_centricities())

@@ -17,7 +17,7 @@
         $(document).ready( function() {
             {% if results %}
                 YUI().use("datatable-sort", function(Y) {
-                    {% if device == 'Profiler' %}
+                    {% if device == 'NetProfiler' %}
                         cols = [
                             {key:"KeyColumn", label:"Is Key Column", sortable:true},
                             {key:"Key", label:"Column Key", sortable:true},

@@ -14,7 +14,7 @@ from django.shortcuts import render_to_response
 from django.views.generic.base import View
 
 from steelscript.appfw.core.apps.devices.devicemanager import DeviceManager
-from steelscript.appfw.core.apps.help.forms import ProfilerInputForm, SharkInputForm
+from steelscript.appfw.core.apps.help.forms import NetProfilerInputForm, SharkInputForm
 logger = logging.getLogger(__name__)
 
 
@@ -22,20 +22,26 @@ class ColumnHelper(View):
     
     def get(self, request, device_type):
         if device_type == 'netprofiler':
-            form = ProfilerInputForm()
+            device = 'NetProfiler'
+            form = NetProfilerInputForm()
         elif device_type == 'shark':
+            device = 'Shark'
             form = SharkInputForm()
         else:
             raise Http404
 
         return render_to_response('help.html',
-                                  {'device': device_type.title(), 'form': form},
+                                  {'device': device,
+                                   'form': form,
+                                   'results': None},
                                   context_instance=RequestContext(request))
 
     def post(self, request, device_type):
         if device_type == 'netprofiler':
-            form = ProfilerInputForm(request.POST)
+            device = 'NetProfiler'
+            form = NetProfilerInputForm(request.POST)
         elif device_type == 'shark':
+            device = 'Shark'
             form = SharkInputForm(request.POST)
         else:
             raise Http404
@@ -59,7 +65,7 @@ class ColumnHelper(View):
                 results.sort(key=operator.itemgetter(0))
 
         return render_to_response('help.html',
-                                  {'device': device_type.title(),
+                                  {'device': device,
                                    'form': form,
                                    'results': results},
                                   context_instance=RequestContext(request))
