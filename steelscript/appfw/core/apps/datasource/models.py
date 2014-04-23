@@ -265,7 +265,7 @@ class Table(models.Model):
 
         Sourcefiles will be parsed into the following namespaces:
         'config.reports.1_overall' --> 'default'
-        'steelscript.shark.appfw.reports.3_shark' --> 'shark'
+        'steelscript.netshark.appfw.reports.3_shark' --> 'netshark'
         'steelscript.appfw.business_hours.reports.x_report' --> 'business_hours'
         """
         if not self.sourcefile:

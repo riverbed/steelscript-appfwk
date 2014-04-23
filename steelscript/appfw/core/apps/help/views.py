@@ -14,7 +14,7 @@ from django.shortcuts import render_to_response
 from django.views.generic.base import View
 
 from steelscript.appfw.core.apps.devices.devicemanager import DeviceManager
-from steelscript.appfw.core.apps.help.forms import NetProfilerInputForm, SharkInputForm
+from steelscript.appfw.core.apps.help.forms import NetProfilerInputForm, NetSharkInputForm
 logger = logging.getLogger(__name__)
 
 
@@ -24,9 +24,9 @@ class ColumnHelper(View):
         if device_type == 'netprofiler':
             device = 'NetProfiler'
             form = NetProfilerInputForm()
-        elif device_type == 'shark':
-            device = 'Shark'
-            form = SharkInputForm()
+        elif device_type == 'netshark':
+            device = 'NetShark'
+            form = NetSharkInputForm()
         else:
             raise Http404
 
@@ -40,9 +40,9 @@ class ColumnHelper(View):
         if device_type == 'netprofiler':
             device = 'NetProfiler'
             form = NetProfilerInputForm(request.POST)
-        elif device_type == 'shark':
-            device = 'Shark'
-            form = SharkInputForm(request.POST)
+        elif device_type == 'netshark':
+            device = 'NetShark'
+            form = NetSharkInputForm(request.POST)
         else:
             raise Http404
 
@@ -58,7 +58,7 @@ class ColumnHelper(View):
                 results.sort(key=operator.attrgetter('key'))
                 results.sort(key=operator.attrgetter('iskey'), reverse=True)
                 results = [(c.iskey, c.key, c.label, c.id) for c in results]
-            elif device_type == 'shark':
+            elif device_type == 'netshark':
                 shark = DeviceManager.get_device(data['device'])
 
                 results = [(f.id, f.description, f.type) for f in shark.get_extractor_fields()]

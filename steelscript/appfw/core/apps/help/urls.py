@@ -17,7 +17,7 @@ urlpatterns = patterns(
     url(r'^(?P<device_type>[a-z]+)/$',
         views.ColumnHelper.as_view()),
 
-#    url(r'^shark/$',
+#    url(r'^netshark/$',
 #        views.SharkColumns.as_view()),
 
 )
