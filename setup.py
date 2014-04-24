@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-steelscript-appfw-core
+steelscript-appfwk-core
 ======================
 
 Core apps for Riverbed SteelScript Application Framework
@@ -22,7 +22,7 @@ except ImportError:
 from gitpy_versioning import get_version
 
 setup_args = {
-    'name':               'steelscript.appfw.core',
+    'name':               'steelscript.appfwk.core',
     'namespace_packages': ['steelscript'],
     'version':            get_version(),
     'author':             'Riverbed Technology',
