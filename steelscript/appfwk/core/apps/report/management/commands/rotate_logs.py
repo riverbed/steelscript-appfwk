@@ -18,11 +18,19 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         db_logger = logging.getLogger('django.db.backends')
-        db_logger.info('rolling db log')
-        db_logger.handlers[0].doRollover()
+        db_logger.info('*** rolling db log ***')
+        for h in db_logger.handlers:
+            try:
+                h.doRollover()
+            except AttributeError:
+                pass
 
         # there seems to be a hierarchy so we need to call
         # the module parent logger to get to the actual logHandler
         logger = logging.getLogger(__name__)
-        logger.info('rolling default log')
-        logger.parent.handlers[0].doRollover()
+        logger.info('*** rolling default log ***')
+        for h in logger.parent.handlers:
+            try:
+                h.doRollover()
+            except AttributeError:
+                pass
