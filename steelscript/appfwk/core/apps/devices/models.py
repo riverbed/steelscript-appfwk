@@ -32,7 +32,7 @@ def create_device_fixture(strip_passwords=True):
 
     buf.close()
 
-    fname = os.path.join(settings.PROJECT_ROOT, 'initial_data', 'initial_devices.json')
+    fname = os.path.join(settings.INITIAL_DATA, 'initial_devices.json')
     with open(fname, 'w') as f:
         f.write(json.dumps(devices, indent=2))
 

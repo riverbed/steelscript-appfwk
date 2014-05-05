@@ -1,6 +1,4 @@
 include RELEASE-VERSION
 include README.rst
-include MANIFEST.in
 include LICENSE
-include gitpy_versioning/*.py
 global-include *.html *.js *.css

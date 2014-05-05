@@ -114,9 +114,7 @@ class Command(BaseCommand):
         management.call_command('syncdb', interactive=False)
 
         self.stdout.write('Loading initial data ... ', ending='')
-        initial_data = glob.glob(os.path.join(settings.PROJECT_ROOT,
-                                              'initial_data',
-                                              '*.json'))
+        initial_data = glob.glob(os.path.join(settings.INITIAL_DATA, '*.json'))
         initial_data.sort()
         if not options['drop_users']:
             # filter out default admin user fixure and reload previous users
