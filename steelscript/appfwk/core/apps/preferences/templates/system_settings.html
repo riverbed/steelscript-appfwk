@@ -11,19 +11,19 @@
 {% endblock %}
 {% load url from future %}
 
-{% block title %}Portal: System Settings{% endblock %}
+{% block title %}App Framework: System Settings{% endblock %}
 
 {% block header %}
     <script type="text/javascript">
         $(document).ready( function() {
             version = $('#id_maps_version').val();
             if ( version == 'DISABLED') {
-                $('#mapsEnable').prop('checked', false); 
+                $('#mapsEnable').prop('checked', false);
                 $('#osmDiv').hide();
                 $('#mapsDiv').hide();
                 $('#googleDiv').hide();
             } else {
-                $('#mapsEnable').prop('checked', true); 
+                $('#mapsEnable').prop('checked', true);
                 $('#mapsDiv').show();
                 if (version == 'OPEN_STREET_MAPS') {
                     $('#osmDiv').show();
@@ -110,7 +110,7 @@
 {% endblock %}
 
 {% block header_row %}<h3>User Preferences</h3>{% endblock %}
-          
+
 {% block content %}
     <div class="container">
       <div class="row">

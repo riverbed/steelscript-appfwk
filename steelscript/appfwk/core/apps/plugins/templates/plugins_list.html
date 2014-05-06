@@ -29,7 +29,7 @@
     function reloadButton() {
         modal = loadingModal('Reloading All Reports', 'Please wait ...');
         modal.modal('show');
-        
+
         window.location.href = "{% url 'reload-all' %}";
     }
 
@@ -38,11 +38,11 @@
 
 {% endblock %}
 
-{% block title %}Portal: Plugins List{% endblock %}
+{% block title %}App Framework: Plugins List{% endblock %}
 
 {% block header_row %}
     <h3>Plugins List</h3>
-    <h4>List of installed Portal plugins</h4>
+    <h4>List of installed Application Framework plugins</h4>
 {% endblock %}
 
 {% block content %}
