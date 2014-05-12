@@ -1,0 +1,49 @@
+{% extends "site_base.html" %}
+
+{% block comments %}{% endblock %}
+
+{% load url from future %}
+
+<title>{% block title %}App Framework: {{ report.title }} Report{% endblock %}</title>
+
+{% block header %}{% endblock %}
+
+{% block navbar_left %}
+              {% if reports %}
+              <li class="dropdown active">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"> Reports <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  {% for d in reports %}
+                  <li><a href="{% url 'report-view' d.namespace d.slug %}">{{ d.title }}</a></li>
+                  {% endfor %}
+                </ul>
+              </li>
+              {% else %}
+                <li class="active">
+                    <a href="{% url 'report-view-root' %}"> Reports </a>
+                </li>
+              {% endif %}
+              <li class="dropdown active">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown"> Help <b class="caret"></b></a>
+                  <ul class="dropdown-menu">
+                      <li><a href="/help/netprofiler">NetProfiler Columns</a></li>
+                      <li><a href="/help/netshark">NetShark Columns</a></li>
+                  </ul>
+              </li>
+{% endblock %}
+
+{% block extra_nav_left %}
+{% endblock %}
+
+{% block extra_nav_right %}
+{% endblock %}
+
+{% block header_row %}{% endblock %}
+
+        {% block login %}
+                <small id="report_datetime" class="text-info pull-right">{% now "jS F Y H:i:s" %}</small><br>
+                <small class="text-info pull-right"><span id="report_timezone">{{ TIME_ZONE }}</span>&nbsp;<span class="text-info"><a href='/preferences/user/?next={{ request.path }}'>(update)</a></span></small>
+        {% endblock %}
+
+{% block content %}{% endblock %}
+

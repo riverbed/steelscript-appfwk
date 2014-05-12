@@ -2,10 +2,26 @@
 
 *.pyc
 
+widget_data*
+*.db
+*.data
+log.txt*
+log-db.txt*
+static/
+
+initial_preferences.json
+initial_devices.json
+
 build
 dist
 *.egg-info
 RELEASE-VERSION
+plugins/sdist
+project/settings/active.py
+project/settings/development.py
+project/settings/production.py
+
+docs/html
 
 *.swp
 .DS_Store

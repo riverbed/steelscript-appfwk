@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+
+{% block comments %}{% endblock %}
+
+{% load url from future %}
+<html>
+  <head>
+    <title>{% block title %}SteelScript App Framework{% endblock %}</title>
+
+    {% block site_header %}
+    <link href="{{ STATIC_URL }}bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen, print"/>
+    <link href="{{ STATIC_URL }}css/main.css" rel="stylesheet"/>
+    <link href="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.css" rel="stylesheet"/>
+    <link href="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.css" rel="stylesheet"/>
+    <link href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" rel="stylesheet"/>
+
+    <script type="text/javascript" src="{{ STATIC_URL }}js/portal.js"></script>
+
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.js"></script>
+
+    {% comment %}
+    need to call yui-s separately since it seems to be less efficient
+    with the network requests than the regular unsecured site - four combo
+    requests versus upwards of 50 individual requests under https
+    {% endcomment %}
+    {% if request.is_secure %}
+    <script type="text/javascript" src="https://yui-s.yahooapis.com/3.8.1/build/yui/yui-min.js"></script>
+    {% else %}
+    <script type="text/javascript" src="http://yui.yahooapis.com/3.8.1/build/yui/yui-min.js"></script>
+    {% endif %}
+    {% endblock %}
+    {% block header %}{% endblock %}
+
+  </head>
+  <body>
+    <div class="navbar navbar-inverse ">
+      <div class="navbar-inner">
+        <div class="container">
+          {% block brand_logo %}
+          <a class="brand" style="vertical-align: bottom;padding-top: 8px;" href="/" alt="Riverbed"><img src='{{ STATIC_URL }}images/riverbed_r_small.png' style="height: 18px; width: 18px; max-width:None;"> SteelScript </a>
+          {% endblock %}
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              {% block navbar_left %}
+              {% endblock %}
+
+              {% block extra_nav_left %}
+              {% endblock %}
+            </ul>
+            <ul class="nav pull-right">
+              {% block extra_nav_right %}
+              {% endblock %}
+
+              {% block navbar_right %}
+                  {% if user.is_authenticated %}
+                  <li class="active">
+                      <div class="btn-group pull-right">
+                          <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
+                              <i class="icon-edit icon-white"></i> {{ user.username }} <span class="caret"></span>
+                          </a>
+                          <ul class="dropdown-menu">
+                              <li><a href="{% url 'preferences' %}"><i class="icon-list"></i> Preferences</a></li>
+                              {% if user.is_superuser %}
+                                  <li class="divider"></li>
+                                  <li><a href="{% url 'system_settings' %}"><i class="icon-list"></i> System Settings</a></li>
+                                  <li><a href="{% url 'device-list' %}"><i class="icon-pencil"></i> Edit Devices</a></li>
+                                  <li><a href="{% url 'plugins-list' %}"><i class="icon-resize-small"></i> Edit Plugins</a></li>
+                                  <li><a href="/admin"><i class="icon-wrench"></i> Enter Admin Panel</a></li>
+                                  <li class="divider"></li>
+                                  {% if reports and 'report' in request.path %}
+                                      <li><a href="#" onClick="reloadingModal('reload', false)"><i class="icon-repeat"></i> Reload This Report</a></li>
+                                  {% endif %}
+                                  <li><a href="#" onClick="reloadingModal('{% url 'reload-all' %}', true)"><i class="icon-retweet"></i> Reload All Reports</a></li>
+                              {% endif %}
+                              <li class="divider"></li>
+                              <li><a href="/accounts/logout/"><i class="icon-off"></i> Logout</a></li>
+                          </ul>
+                      </div>
+                  </li>
+                  {% endif %}
+              {% endblock %}
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    {% comment %}
+    XXX comment out until updated django-annoucements available
+    {% load announcements_tags %}
+    {% announcements as announcements_list %}
+
+    {% if announcements_list %}
+        {% include "annoucements.html" %}
+    {% endif %}
+    {% endcomment %}
+
+    {% block login_row %}
+    <div class="container-fluid">
+      <div class="row-fluid">
+        <div class="span6">
+          {% block header_row %}{% endblock %}
+        </div>
+        <div class="span6">
+            <div class="pull-right" style="margin: 10px 0">
+                {% block login %}
+                {% endblock %}
+            </div>
+        </div>
+      </div>
+    </div>
+    {% endblock %}
+
+    {% if messages %}
+        <ul id="messages">
+            {% for message in messages %}
+                <li id="message_{{ forloop.counter }}"><a href="#" onclick="$('#message_{{ forloop.counter }}').fadeOut(); return false;"><small>clear</small></a> {{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+    <div class="container">
+        <div class="row block-centered" style="text-align: center">
+            <small>Powered by </small><a style="vertical-align: bottom;padding-top: 8px;" href="http://www.riverbed.com" alt="Riverbed"><img src='{{ STATIC_URL }}images/riverbed-logo.png' style="max-width:None;"></a>
+        </div>
+    </div>
+  </body>
+</html>
+
