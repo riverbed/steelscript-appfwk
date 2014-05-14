@@ -59,6 +59,12 @@ http://pythonhosted.org/steelscript/install.html
 
     'packages': find_packages(exclude=('gitpy_versioning',)),
 
+    'entry_points': {
+        'steel.commands': [
+            'appfwk = steelscript.appfwk.commands'
+        ],
+    },
+
     'scripts': None,
 
     'install_requires': (
