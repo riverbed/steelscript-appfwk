@@ -9,7 +9,7 @@ from steelscript.commands.steel import BaseCommand, prompt, console, debug
 
 
 LOCAL_CONTENT = """
-from steelscript.appfwk.project.settings.base import *
+from steelscript.appfwk.project.settings import *
 
 DATAHOME = os.getenv('DATAHOME', os.getcwd())
 DATA_CACHE = os.path.join(DATAHOME, 'data', 'datacache')
