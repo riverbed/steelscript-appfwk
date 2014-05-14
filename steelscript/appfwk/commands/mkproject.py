@@ -5,15 +5,19 @@ import shutil
 import pkg_resources
 from random import choice
 
-from steelscript.commands.steel import BaseCommand, prompt, console, debug
+from steelscript.commands.steel import BaseCommand, prompt, console, debug, shell
 
 
 LOCAL_CONTENT = """
 from steelscript.appfwk.project.settings import *
 
-DATAHOME = os.getenv('DATAHOME', os.getcwd())
+PROJECT_ROOT = os.getcwd()
+DATAHOME = os.getenv('DATAHOME', PROJECT_ROOT)
 DATA_CACHE = os.path.join(DATAHOME, 'data', 'datacache')
 INITIAL_DATA = os.path.join(DATAHOME, 'data', 'initial_data')
+
+STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
+MEDIA_ROOT = DATA_CACHE
 
 # Optionally add additional applications specific to this project instance
 
@@ -85,6 +89,9 @@ class Command(BaseCommand):
                                help='Replace links and directories without prompting')
         self.parser.add_option('--force-settings', action='store_true',
                                help='Reset local_settings file')
+        self.parser.add_option('--no-init', action='store_true',
+                               help="Don't initialize the site using default settings")
+
         self.parser.add_option('-v', '--verbose', action='store_true',
                                help='Extra verbose output')
 
@@ -189,3 +196,14 @@ class Command(BaseCommand):
 
         self.create_project_directory(dirpath)
         self.create_local_settings(dirpath)
+
+        if not self.options.no_init:
+            shell('python manage.py reset_portal --force --drop-users --trace',
+                  msg='Initializing project using default settings',
+                  cwd=dirpath)
+            console('\n*****\n')
+            console('App Framework project created and initialized with '
+                    'default settings.')
+        else:
+            console('\n*****\n')
+            console('App Framework project created.')
