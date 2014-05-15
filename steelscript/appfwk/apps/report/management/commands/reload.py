@@ -16,8 +16,7 @@ from django.conf import settings
 from steelscript.appfwk.apps.report.models import Report
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 from steelscript.appfwk.apps.plugins import plugins
-
-from project.utils import Importer
+from steelscript.appfwk.project.utils import Importer
 
 
 class Command(BaseCommand):

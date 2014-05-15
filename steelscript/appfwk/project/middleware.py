@@ -12,7 +12,7 @@ from django.conf import settings
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import NotAuthenticated
 
-from project.utils import get_request
+from steelscript.appfwk.project.utils import get_request
 
 
 #

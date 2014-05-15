@@ -19,7 +19,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from model_utils.managers import InheritanceManager
 
 from steelscript.common.jsondict import JsonDict
-from project.utils import get_module
+from steelscript.appfwk.project.utils import get_module
 from steelscript.appfwk.apps.datasource.models import Table, Job, TableField
 from steelscript.appfwk.libs.fields import PickledObjectField, SeparatedValuesField
 

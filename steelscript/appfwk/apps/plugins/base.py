@@ -7,7 +7,7 @@
 
 import os
 
-from project.utils import Importer
+from steelscript.appfwk.project.utils import Importer
 
 # portions and concepts used from sentry project:
 # https://getsentry.com/welcome/

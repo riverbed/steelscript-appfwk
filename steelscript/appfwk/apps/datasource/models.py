@@ -34,7 +34,7 @@ from django.conf import settings
 from steelscript.common.jsondict import JsonDict
 from steelscript.common.utils import DictObject
 from steelscript.common import timedelta_total_seconds
-from project.utils import get_module
+from steelscript.appfwk.project.utils import get_module
 from steelscript.appfwk.apps.datasource.exceptions import *
 from steelscript.appfwk.libs.fields import (PickledObjectField, FunctionField,
                                      SeparatedValuesField, check_field_choice,
