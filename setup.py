@@ -71,6 +71,21 @@ http://pythonhosted.org/steelscript/install.html
         'Django>=1.5.1,<1.6',
         'steelscript>=0.6',
         'steelscript.netprofiler>=0.1',
+
+        'djangorestframework==2.3.13',
+        'django-extensions==1.3.7',
+        'django-model-utils==2.0.3',
+        'jsonfield==0.9.20',
+        'numpy>=1.8.0,<1.9',
+        'pandas==0.13.1',
+        'pygeoip>=0.2.6',
+        'python-dateutil>=2.2',
+        'pytz>=2013.8',
+        'six>=1.3.0',
+        'wsgiref>=0.1.2',
+        'django-announcements==1.0.2',
+
+        'django-admin-tools==0.5.1',
     ),
 
     'tests_require': (),
