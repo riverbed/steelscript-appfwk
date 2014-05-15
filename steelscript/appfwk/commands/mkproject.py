@@ -82,18 +82,18 @@ class Command(BaseCommand):
     help = 'Install new local App Framework project'
     submodule = 'steelscript.appfwk.commands'
 
-    def add_args(self):
-        self.parser.add_option('-p', '--path', action='store',
-                               help='Optional path for new project location')
-        self.parser.add_option('--force', action='store_true',
-                               help='Replace links and directories without prompting')
-        self.parser.add_option('--force-settings', action='store_true',
-                               help='Reset local_settings file')
-        self.parser.add_option('--no-init', action='store_true',
-                               help="Don't initialize the site using default settings")
+    def add_options(self, parser):
+        parser.add_option('-p', '--path', action='store',
+                          help='Optional path for new project location')
+        parser.add_option('--force', action='store_true',
+                          help='Replace links and directories without prompting')
+        parser.add_option('--force-settings', action='store_true',
+                          help='Reset local_settings file')
+        parser.add_option('--no-init', action='store_true',
+                          help="Don't initialize the site using default settings")
 
-        self.parser.add_option('-v', '--verbose', action='store_true',
-                               help='Extra verbose output')
+        parser.add_option('-v', '--verbose', action='store_true',
+                          help='Extra verbose output')
 
     def debug(self, msg, newline=True):
         if self.options.verbose:
@@ -179,7 +179,13 @@ class Command(BaseCommand):
                           symlink=False)
         self.mkdir(os.path.join(datapath, 'datacache'))
 
-    def execute(self):
+        # copy default reports
+        self.link_pkg_dir('steelscript.appfwk.apps',
+                          '../reports',
+                          os.path.join(dirpath, 'reports'),
+                          symlink=False)
+
+    def main(self):
         console('Generating new Application Framework project ...')
 
         dirpath = self.options.path

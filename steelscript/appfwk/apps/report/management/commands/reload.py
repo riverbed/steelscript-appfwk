@@ -146,7 +146,7 @@ class Command(BaseCommand):
             DeviceManager.clear()
 
             report_dir = os.path.join(settings.PROJECT_ROOT,
-                                      options['report_dir'] or 'config')
+                                      options['report_dir'] or 'reports')
 
             self.importer.import_directory(report_dir, report_name=None)
 

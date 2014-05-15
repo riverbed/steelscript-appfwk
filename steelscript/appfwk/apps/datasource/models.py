@@ -274,10 +274,10 @@ class Table(models.Model):
 
         if not self.namespace:
             if (self.sourcefile == 'default' or
-                    self.sourcefile.startswith('config.reports') or
+                    self.sourcefile.startswith('reports') or
                     'builtin' in self.sourcefile):
                 self.namespace = 'default'
-            elif self.sourcefile.startswith('config.custom_reports'):
+            elif self.sourcefile.startswith('custom_reports'):
                 self.namespace = 'custom'
             else:
                 ns = self.sourcefile.split('.')
