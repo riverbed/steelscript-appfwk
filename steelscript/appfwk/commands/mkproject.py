@@ -83,15 +83,8 @@ class Command(BaseCommand):
     submodule = 'steelscript.appfwk.commands'
 
     def add_options(self, parser):
-        parser.add_option('-p', '--path', action='store',
+        parser.add_option('-d', '--dir', action='store',
                           help='Optional path for new project location')
-        parser.add_option('--force', action='store_true',
-                          help='Replace links and directories without prompting')
-        parser.add_option('--force-settings', action='store_true',
-                          help='Reset local_settings file')
-        parser.add_option('--no-init', action='store_true',
-                          help="Don't initialize the site using default settings")
-
         parser.add_option('-v', '--verbose', action='store_true',
                           help='Extra verbose output')
 
@@ -105,7 +98,7 @@ class Command(BaseCommand):
             os.mkdir(dirname)
 
     def create_local_settings(self, dirname):
-        """Creates local settings configuration if none exists."""
+        """Creates local settings configuration."""
 
         secret = ''.join([
             choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)')
@@ -113,7 +106,7 @@ class Command(BaseCommand):
         ])
 
         fname = os.path.join(dirname, 'local_settings.py')
-        if self.options.force_settings or not os.path.exists(fname):
+        if not os.path.exists(fname):
             console('Writing local settings %s ... ' % fname, newline=False)
             with open(fname, 'w') as f:
                 f.write(LOCAL_CONTENT)
@@ -188,28 +181,20 @@ class Command(BaseCommand):
     def main(self):
         console('Generating new Application Framework project ...')
 
-        dirpath = self.options.path
+        dirpath = self.options.dir
         while not dirpath or not os.path.isabs(dirpath):
+            default = os.path.join(os.getcwd(), 'appfwk_project')
             dirpath = prompt('\nEnter absolute path for project files',
-                             default=os.getcwd())
+                             default=default)
 
-        if os.path.exists(dirpath) and not self.options.force:
-            check = prompt('\nDirectory already exists, overwrite?',
-                           choices=('yes', 'no'), default='no')
-            if check == 'no':
-                console('Okay - aborting.')
-                return
+        if os.path.exists(dirpath):
+            console('Project directory already exists, aborting.')
+            return
 
         self.create_project_directory(dirpath)
         self.create_local_settings(dirpath)
 
-        if not self.options.no_init:
-            shell('python manage.py reset_portal --force --drop-users --trace',
-                  msg='Initializing project using default settings',
-                  cwd=dirpath)
-            console('\n*****\n')
-            console('App Framework project created and initialized with '
-                    'default settings.')
-        else:
-            console('\n*****\n')
-            console('App Framework project created.')
+        console('\n*****\n')
+        console('App Framework project created.')
+        console("Change to that directory and run "
+                "'steel appfwk init' to initialize the project.")
