@@ -1,0 +1,35 @@
+# Copyright (c) 2013 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the
+# MIT License set forth at:
+#   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").
+# This software is distributed "AS IS" as set forth in the License.
+
+from steelscript.appfwk.apps.report.models import Report, Section
+import steelscript.appfwk.apps.report.modules.yui3 as yui3
+
+from rvbd_portal_sharepoint.datasources.sharepoint import SharepointTable
+
+#
+# SharePoint report
+#
+
+report = Report(title="Sharepoint", position=2)
+report.save()
+
+section = Section.create(report)
+
+
+# Define a Sharepoint Table
+s = SharepointTable.create('Shared Documents',
+                           site_url='/',
+                           list_name='Shared Documents')
+
+s.add_column('BaseName', issortcol=True, datatype='string')
+s.add_column('Created', datatype='time')
+s.add_column('Modified', datatype='time')
+s.add_column('ID', datatype='string')
+s.add_column('EncodedAbsUrl', datatype='string')
+
+yui3.TableWidget.create(section, s, "Sharepoint Documents List",
+                        height=300, width=12)

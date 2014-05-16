@@ -67,7 +67,7 @@
                     <tr {% if not plugin.enabled %}class="row-disabled"{% endif %}>
                         <td style="text-align: center"><input id="id_{{plugin.slug}}" name="{{plugin.slug}}" type="checkbox" {% if plugin.is_enabled %}checked{% endif %}></td>
                         <td>{{ plugin.title }}</td>
-                        <td>{{ plugin.description }}</td>
+                        <td>{{ plugin.description|safe }}</td>
                         <td>{{ plugin.version }}</td>
                         <td>{{ plugin.author }}</td>
                     </tr>
