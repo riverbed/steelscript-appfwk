@@ -187,6 +187,7 @@ INSTALLED_APPS = (
 
     # 'standard' plugins
     'steelscript.appfwk.apps.plugins.builtin.whois',
+    'steelscript.appfwk.apps.plugins.builtin.solarwinds',
 )
 
 ADMIN_TOOLS_MENU = 'steelscript.appfwk.project.menu.CustomMenu'

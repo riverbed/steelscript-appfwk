@@ -8,17 +8,18 @@
 from steelscript.appfwk.apps.plugins import Plugin, register
 
 
-class WhoisReport(Plugin):
-    title = 'Whois Report Plugin'
-    description = 'Example Plugin providing report and helper script'
+class SolarwindsPlugin(Plugin):
+    title = 'Solarwinds Datasource Plugin'
+    description = 'A Portal datasource plugin with example report'
     version = '0.1'
     author = 'Riverbed Technology'
 
-    enabled = True
+    enabled = False        # turn this off by default
     can_disable = True
 
+    devices = ['devices']
+    datasources = ['datasources']
     reports = ['reports']
-    libraries = ['libs']
 
 
-register(WhoisReport)
+register(SolarwindsPlugin)
