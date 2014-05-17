@@ -1,0 +1,212 @@
+# Copyright (c) 2014 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+
+import logging
+import math
+
+from steelscript.common.timeutils import \
+    datetime_to_seconds, timedelta_total_seconds, parse_timedelta
+from steelscript.common.jsondict import JsonDict
+
+from steelscript.appfwk.apps.datasource.models import Table as BaseTable
+from steelscript.appfwk.apps.datasource.models import DatasourceTable
+from steelscript.appfwk.apps.datasource.models import TableField, Column
+from steelscript.appfwk.apps.devices.forms import fields_add_device_selection
+from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
+from steelscript.appfwk.apps.datasource.forms import (fields_add_time_selection,
+                                                      fields_add_resolution)
+
+logger = logging.getLogger(__name__)
+
+
+# Use of this class is entirely optional, it may be deleted
+# if there are no custom column options
+class {{Name}}Column(Column):
+    class Meta:
+        proxy = True
+
+    # COLUMN_OPTIONS is a dictionary of options that
+    # are specific to columns for tables in this file.
+    # The column options are available when the query is run.
+    # The values are stored with the column definition at
+    # table / column defintiion time.
+    COLUMN_OPTIONS = { 'func': 'sin',
+                       'period': '1m',
+                       'alpha': 1 }
+
+
+# Define a Table.create() method
+class WaveTable(DatasourceTable):
+    class Meta:
+        proxy = True
+
+    _column_class = {{Name}}Column
+
+    # TABLE_OPTIONS is a dictionary of options that are specific to
+    # TableQuery objects in this file.  These by be overriden by
+    # keyword arguments to the WaveTable.create() call in a report
+    # file
+
+    TABLE_OPTIONS = { 'beta': 10 }
+
+    # FIELD_OPTIONS is a dictionary of default values for field
+    # options.  These by be overriden by keyword arguments to the
+    # WaveTable.create() call in a report file
+    FIELD_OPTIONS = { 'duration': '1h',
+                      'durations': ('1m', '15m', '1h', '6h'),
+                      'resolution': '1m',
+                      'resolutions': ('1s', '1m', '15m') }
+
+    def post_process_table(self, field_options):
+
+        #
+        # Add criteria fields that are required by this table
+        #
+
+        # Add a device selection criteria to the table,
+        # listing only devices from {{name}}_device module that are
+        # enabled
+        fields_add_device_selection(self, keyword='{{name}}_device',
+                                    label='{{Name}}', module='{{name}}_device',
+                                    enabled=True)
+
+        # Add a time selection field
+        fields_add_time_selection(self,
+                                  initial_duration=field_options['duration'],
+                                  durations=field_options['durations'])
+        fields_add_resolution(self,
+                              initial=field_options['resolution'],
+                              resolutions=field_options['resolutions'])
+
+        # Add a custom field
+        TableField.create(obj=self, keyword='min', initial=-100, label='Min value',
+                          help_text=('Clip all wave forms at this minimum value'),
+                          required=False)
+
+        # Add a custom field
+        TableField.create(obj=self, keyword='max', initial=100, label='Max value',
+                          help_text=('Clip all wave forms at this maximum value'),
+                          required=False)
+
+
+# The TableQuery class must be defined with the __init__ and run
+# method taking the defined arguments
+class TableQuery(object):
+
+    def __init__(self, table, job):
+        self.table = table
+        self.job = job
+
+        # Perform any additional query initialization here
+
+    # This method is called to actually execute the query
+    # for the given table and job.  This is executed in a separate
+    # thread and must not return until either the query completes
+    # and data is available, or the query fails and returns an error.
+    #
+    # On success, this function should return either a list of lists
+    # of data aligned to the set of non-synthetic columns associated
+    # with this table or a pandas DataFrame with matching columns.
+    # (synthetic columns are computed by automatically one the query
+    # completes)
+    #
+    # On error, any errors that are not programmatic (like bad
+    # criteria values) should be reported by calling
+    # self.job.mark_error() with a user-friendly error message
+    # indicating the cause of the failure.
+    #
+    # Any programmatic errors should be raised as exceptions.
+    #
+    # For long running queries self.job.mark_progress() should
+    # be called to update the progress from 0 to 100 percent complete.
+    def run(self):
+        # All user entered criteria is available directly from this object.
+        # Values for any fields added to the table will appear as
+        # attributes according to the field keyword.
+        criteria = self.job.criteria
+
+        # Check that a {{name}}_device was selected
+        if criteria.{{name}}_device == '':
+            logger.debug('%s: No {{name}} device selected' % self.table)
+            self.job.mark_error("No {{Name}} Device Selected")
+            return False
+        {{name}}_device = DeviceManager.get_device(criteria.{{name}}_device)
+
+        # Get the columns for this report
+        columns = self.table.get_columns(synthetic=False)
+
+        sortcol = None
+        if self.table.sortcol is not None:
+            sortcol = self.table.sortcol.name
+
+        # Time selection is available via criterai.starttime and endtime.
+        # These are both datetime objects.
+        t0 = criteria.starttime
+        t1 = criteria.endtime
+
+        # Time resolution is a timedelta object
+        resolution = criteria.resolution
+
+        # Grab the custom min and max criteria
+        cmin = float(criteria.min)
+        cmax = float(criteria.max)
+
+        # Grab the table options
+        beta = self.table.options.beta
+
+        # Now, do some computation -- create table with a 'time' column
+        # ranging from t0 to t1 with the defined resolution.  Then
+        # for each additional column do some math function on the
+        # data
+
+        t = t0
+        rows = []
+        while t < t1:
+            row = []
+            for col in columns:
+                if col.name == 'time':
+                    row.append(t)
+                else:
+                    period_td = parse_timedelta(col.options.period)
+                    period_secs = timedelta_total_seconds(period_td)
+                    alpha = col.options.alpha
+                    funcname = col.options.func
+
+                    # seconds since the t0
+                    secs = timedelta_total_seconds(t - t0)
+                    rad = (secs / period_secs) * 2 * math.pi
+
+                    funcmap = {
+                        'sin': math.sin,
+                        'cos': math.cos,
+                        }
+
+                    # Compute!
+                    val = beta + alpha * funcmap[funcname](rad)
+
+                    # Clip by the min/max criteria
+                    val = max(cmin, val)
+                    val = min(cmax, val)
+
+                    # Add the value to the row
+                    row.append(val)
+
+            # Add the row
+            rows.append(row)
+
+            # This function runs pretty fast, but this shows how to mark
+            # progress
+            self.job.mark_progress(100 * (timedelta_total_seconds(t-t0) /
+                                          timedelta_total_seconds(t1-t0)))
+            t = t + resolution
+
+        # Save the result in self.data
+        self.data = rows
+        if self.table.rows > 0:
+            self.data = self.data[:self.table.rows]
+
+        logger.info("Report %s returned %s rows" % (self.job, len(self.data)))
+        return True

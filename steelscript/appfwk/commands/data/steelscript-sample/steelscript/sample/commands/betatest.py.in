@@ -1,0 +1,21 @@
+# Copyright (c) 2014 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+
+from steelscript.commands.steel import BaseCommand
+
+
+class Command(BaseCommand):
+    help = 'Simple command'
+
+    def add_options(self, parser):
+        # Add OptParse style options for your command
+        parser.add_option(
+            '-b', '--beta', default=10,
+            help='Show more detailed Python installation information')
+
+    def main(self):
+        # Main execution.  Options are available via self.options
+        print('Running with beta: {beta}'.format(beta=self.options.beta))

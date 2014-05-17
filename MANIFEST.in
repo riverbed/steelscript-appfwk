@@ -3,4 +3,5 @@ include README.rst
 include LICENSE
 include gitpy_versioning/*
 include steelscript/appfwk/initial_data/*
+recursive-include steelscript/appfwk/commands/data *.py.in LICENSE MANIFEST.in README.rst
 global-include *.html *.js *.css

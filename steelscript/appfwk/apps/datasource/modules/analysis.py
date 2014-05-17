@@ -209,13 +209,16 @@ def analysis_echo_criteria(query, tables, criteria, params):
               for k,v in criteria.iteritems()]
     values.append(['criteria.starttime', str(criteria.starttime)])
     df = pandas.DataFrame(values,
-                          columns=['key', 'value'])
+                          columns=['key', 'value']).sort('key')
+
     return df
 
 def create_criteria_table(name):
     table = AnalysisTable.create('name', tables={},
                                  function = analysis_echo_criteria)
 
-    Column.create(table, 'key', 'Criteria Key', iskey=True)
-    Column.create(table, 'value', 'Criteria Value')
+    Column.create(table, 'key', 'Criteria Key', iskey=True,
+                  datatype=Column.DATATYPE_STRING)
+    Column.create(table, 'value', 'Criteria Value',
+                  datatype=Column.DATATYPE_STRING)
     return table

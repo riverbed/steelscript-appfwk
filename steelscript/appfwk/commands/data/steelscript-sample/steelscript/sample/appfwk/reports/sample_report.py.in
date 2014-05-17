@@ -1,0 +1,40 @@
+# Copyright (c) 2014 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+
+import steelscript.appfwk.apps.datasource.modules.analysis as analysis
+from steelscript.appfwk.apps.datasource.models import Column
+from steelscript.appfwk.apps.report.models import Report, Section
+import steelscript.appfwk.apps.report.modules.yui3 as yui3
+
+import steelscript.{{name}}.appfwk.datasources.{{name}}_source as {{name}}
+
+#
+# {{title}} report
+#
+
+report = Report.create("{{title}} Wave Report")
+
+report.add_section()
+
+# Criteria table
+table = analysis.create_criteria_table('{{name}}-criteria')
+report.add_widget(yui3.TableWidget, table, "Report Criteria", width=12, height=200)
+
+# Simple table
+table = {{name}}.WaveTable.create(
+    name='{{name}}-table', duration='15min', resolution='1s',
+    beta=4)
+#                              beta=4=options)
+
+table.add_column('time', 'Time', datatype='time', iskey=True)
+table.add_column('sin1', 'Sine Wave 1',
+                 func='sin', period='5min', alpha=3)
+table.add_column('sin2', 'Sine Wave 2',
+                 func='sin', period='8min', alpha=5)
+table.add_column('cos', 'Cosine Wave',
+                 func='cos', period='3min', alpha=2.5)
+
+report.add_widget(yui3.TimeSeriesWidget, table, "Waves", width=12)

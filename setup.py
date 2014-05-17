@@ -63,7 +63,7 @@ http://pythonhosted.org/steelscript/install.html
         'Topic :: Software Development'
     ),
 
-    'packages': find_packages(exclude=('gitpy_versioning',)),
+    'packages': find_packages(exclude=('gitpy_versioning','data')),
 
     'entry_points': {
         'steel.commands': [
@@ -97,6 +97,18 @@ http://pythonhosted.org/steelscript/install.html
     'tests_require': (),
 
 }
+
+data_files = []
+
+for path, subdirs, files in os.walk('steelscript/appfwk/commands/data'):
+    for n in files:
+        if n.endswith('~') or n.endswith('.pyc') or n.endswith('#'):
+            continue
+
+        data_files.append(
+            os.path.join(path.replace('steelscript/appfwk/commands/', ''), n))
+
+setup_args['package_data'] = {'steelscript.appfwk.commands' : data_files}
 
 if packagedata:
     setup_args['include_package_data'] = True
