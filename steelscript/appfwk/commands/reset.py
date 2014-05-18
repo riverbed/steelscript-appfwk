@@ -20,7 +20,7 @@ class Command(BaseCommand):
     def main(self):
         cwd = os.getcwd()
         if not os.path.exists('manage.py'):
-            console('This command must be run inside the project directory to initialize.')
+            console('This command must be run inside the project directory.')
             return
 
         if self.options.interactive:
@@ -30,6 +30,6 @@ class Command(BaseCommand):
                 console('Aborting.')
                 sys.exit()
 
-        shell('python manage.py reset_portal --force',
+        shell('python manage.py reset_portal --force --trace',
               msg='Resetting project database',
               cwd=cwd)

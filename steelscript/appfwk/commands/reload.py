@@ -6,15 +6,15 @@ from steelscript.commands.steel import BaseCommand, console, shell
 
 
 class Command(BaseCommand):
-    help = 'Initialize App Framework project'
+    help = 'Reload installed reports within an App Framework project'
     submodule = 'steelscript.appfwk.commands'
 
     def main(self):
         cwd = os.getcwd()
         if not os.path.exists('manage.py'):
-            console('This command must be run inside the project directory to initialize.')
+            console('This command must be run inside the project directory.')
             return
 
-        shell('python manage.py initialize --trace',
-              msg='Initializing project using default settings',
+        shell('python manage.py reload --trace',
+              msg='Reloading app framework reports',
               cwd=cwd)
