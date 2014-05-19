@@ -13,6 +13,7 @@ from django.core.management.base import BaseCommand
 from django.core import management
 from django.db import DatabaseError, connection
 from django.db.models import get_app, get_models, Count
+from django.core.exceptions import ObjectDoesNotExist
 
 from django.conf import settings
 from steelscript.appfwk.apps.report.models import Report, WidgetJob
@@ -99,14 +100,22 @@ class Command(BaseCommand):
             def del_table(tbl):
                 related_tables = ((tbl.options or {}).get('related_tables'))
                 for ref in (related_tables or {}).values():
-                    del_table(Table.from_ref(ref))
+                    try:
+                        del_table(Table.from_ref(ref))
+                    except ObjectDoesNotExist:
+                        # already deleted
+                        pass
 
                 Column.objects.filter(table=tbl.id).delete()
                 Job.objects.filter(table=tbl.id).delete()
 
                 tables = (tbl.options or {}).get('tables')
                 for ref in (tables or {}).values():
-                    del_table(Table.from_ref(ref))
+                    try:
+                        del_table(Table.from_ref(ref))
+                    except ObjectDoesNotExist:
+                        # already deleted
+                        pass
 
                 tbl.delete()
 

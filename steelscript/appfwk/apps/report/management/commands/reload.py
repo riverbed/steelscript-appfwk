@@ -56,8 +56,8 @@ class Command(BaseCommand):
         try:
             self.importer.import_file(report_name, module)
         except ImportError as e:
-            msg = "Failed to import module '%s': %s" % (report_name,
-                                                        str(e))
+            msg = ("Failed to import module '%s (%s)': %s"
+                   % (report_name, module, str(e)))
             raise ImportError(msg)
 
     def capture_enabled(self, reports=None):
@@ -104,14 +104,13 @@ class Command(BaseCommand):
             name = options['report_name']
             try:
                 report = Report.objects.get(sourcefile__endswith=name)
-                report_id = report.id
-
+                sourcefile = report.sourcefile
                 management.call_command('clean',
                                         applications=False,
-                                        report_id=report_id,
+                                        report_id=report.id,
                                         clear_cache=False,
                                         clear_logs=False)
-                self.import_module(report.sourcefile)
+                self.import_module(sourcefile)
             except ObjectDoesNotExist:
                 self.import_module(name)
 

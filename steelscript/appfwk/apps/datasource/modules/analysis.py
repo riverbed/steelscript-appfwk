@@ -218,7 +218,7 @@ def analysis_echo_criteria(query, tables, criteria, params):
     return df
 
 def create_criteria_table(name):
-    table = AnalysisTable.create('name', tables={},
+    table = AnalysisTable.create(name, tables={},
                                  function = analysis_echo_criteria)
 
     Column.create(table, 'key', 'Criteria Key', iskey=True,
