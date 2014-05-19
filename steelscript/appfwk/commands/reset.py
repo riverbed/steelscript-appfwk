@@ -8,7 +8,6 @@ from steelscript.commands.steel import BaseCommand, console, shell, prompt_yn
 
 class Command(BaseCommand):
     help = 'Reset App Framework project database'
-    submodule = 'steelscript.appfwk.commands'
 
     def add_options(self, parser):
         parser.add_option('--noinput', action='store_false',

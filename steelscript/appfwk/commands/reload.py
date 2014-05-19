@@ -7,7 +7,6 @@ from steelscript.commands.steel import BaseCommand, console, shell
 
 class Command(BaseCommand):
     help = 'Reload installed reports within an App Framework project'
-    submodule = 'steelscript.appfwk.commands'
 
     def main(self):
         cwd = os.getcwd()

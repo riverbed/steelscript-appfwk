@@ -84,7 +84,6 @@ LOCAL_FOOTER = """
 
 class Command(BaseCommand):
     help = 'Install new local App Framework project'
-    submodule = 'steelscript.appfwk.commands'
 
     def add_options(self, parser):
         parser.add_option('-d', '--dir', action='store',
