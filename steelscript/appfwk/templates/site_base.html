@@ -68,7 +68,7 @@
                                   <li><a href="{% url 'system_settings' %}"><i class="icon-list"></i> System Settings</a></li>
                                   <li><a href="{% url 'device-list' %}"><i class="icon-pencil"></i> Edit Devices</a></li>
                                   <li><a href="{% url 'plugins-list' %}"><i class="icon-resize-small"></i> Edit Plugins</a></li>
-                                  <li><a href="/admin"><i class="icon-wrench"></i> Enter Admin Panel</a></li>
+                                  <li><a href="/admin"><i class="icon-wrench"></i> Admin Panel</a></li>
                                   <li class="divider"></li>
                                   {% if reports and 'report' in request.path %}
                                       <li><a href="#" onClick="reloadingModal('reload', false)"><i class="icon-repeat"></i> Reload This Report</a></li>
@@ -130,4 +130,3 @@
     </div>
   </body>
 </html>
-

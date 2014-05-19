@@ -17,6 +17,7 @@ import pytz
 from django.contrib.auth.models import User
 
 from steelscript.common.timeutils import datetime_to_seconds
+from steelscript.commands.steel import shell
 
 from django.conf import settings
 
@@ -31,58 +32,11 @@ def debug_fileinfo(fname):
                                                     datetime.fromtimestamp(st.st_ctime)))
 
 
-def system_info():
-    """ Local version of the flyscript_about.py script
-    """
-    output = []
-    try:
-        dist = pkg_resources.get_distribution("flyscript")
-        output.append("Package 'flyscript' version %s installed" % dist.version)
-    except pkg_resources.DistributionNotFound:
-        output.append("Package not found: 'flyscript'")
-        output.append("Check the installation")
-        
-    import rvbd
-    import pkgutil
-
-    pkgpath = os.path.dirname(rvbd.__file__)
-
-    output.append("")
-    output.append("Path to source:\n  %s" % pkgpath)
-    output.append("")
-    output.append("Modules provided:")
-    for (loader, name, ispkg) in pkgutil.walk_packages([pkgpath]):
-        output.append("  rvbd.%s" % name)
-
-    output.append("")
-    output.append("Python information:")
-    output.append('Version      : %s' % str(platform.python_version()))
-    output.append('Version tuple: %s' % str(platform.python_version_tuple()))
-    output.append('Compiler     : %s' % str(platform.python_compiler()))
-    output.append('Build        : %s' % str(platform.python_build()))
-    output.append('Architecture : %s' % str(platform.architecture()))
-
-    output.append("")
-    output.append("Platform information:")
-    output.append(platform.platform())
-    output.append('system   : %s' % str(platform.system()))
-    output.append('node     : %s' % str(platform.node()))
-    output.append('release  : %s' % str(platform.release()))
-    output.append('version  : %s' % str(platform.version()))
-    output.append('machine  : %s' % str(platform.machine()))
-    output.append('processor: %s' % str(platform.processor()))
-
-    output.append("")
-    output.append("Python path:")
-    output.append('\n'.join(sys.path))
-    return output
-
-
 def create_debug_zipfile(no_summary=False):
     """ Collects logfiles and system info into a zipfile for download/email
 
         `no_summary` indicates whether to include system information from
-                     the helper script `flyscript_about.py` as part of the
+                     the helper script `steel about` as part of the
                      zipped package.  Default is to include the file.
     """
     # setup correct timezone based on admin settings
@@ -119,7 +73,7 @@ def create_debug_zipfile(no_summary=False):
 
             if not no_summary:
                 logging.debug('running about script')
-                response = '\n'.join(system_info())
+                response = '\n'.join(shell('steel about', save_output=True))
                 logging.debug('zipping about script')
                 myzip.writestr('system_summary.txt', response)
         finally:

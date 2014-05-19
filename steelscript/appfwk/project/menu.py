@@ -2,8 +2,6 @@
 This file was generated with the custommenu management command, it contains
 the classes for the admin menu, you can customize this class as you want.
 
-To activate your custom menu add the following to your settings.py::
-    ADMIN_TOOLS_MENU = 'flyscript-portal.menu.CustomMenu'
 """
 
 from django.core.urlresolvers import reverse
@@ -14,7 +12,7 @@ from admin_tools.menu import items, Menu
 
 class CustomMenu(Menu):
     """
-    Custom Menu for flyscript-portal admin site.
+    Custom Menu for steelscrip-appfwk admin site.
     """
     def __init__(self, **kwargs):
         Menu.__init__(self, **kwargs)

@@ -3,11 +3,6 @@ This file was generated with the customdashboard management command, it
 contains the two classes for the main dashboard and app index dashboard.
 You can customize these classes as you want.
 
-To activate your index dashboard add the following to your settings.py::
-    ADMIN_TOOLS_INDEX_DASHBOARD = 'flyscript-portal.dashboard.CustomIndexDashboard'
-
-And to activate the app index dashboard::
-    ADMIN_TOOLS_APP_INDEX_DASHBOARD = 'flyscript-portal.dashboard.CustomAppIndexDashboard'
 """
 
 from django.utils.translation import ugettext_lazy as _
@@ -19,7 +14,7 @@ from admin_tools.utils import get_admin_site_name
 
 class CustomIndexDashboard(Dashboard):
     """
-    Custom index dashboard for flyscript-portal.
+    Custom index dashboard for SteelScript Application Framework.
     """
     def init_with_context(self, context):
         site_name = get_admin_site_name(context)
@@ -75,18 +70,18 @@ class CustomIndexDashboard(Dashboard):
             _('Support'),
             children=[
                 {
-                    'title': _('FlyScript Splash Page'),
-                    'url': 'https://splash.riverbed.com/community/product-lines/flyscript',
+                    'title': _('SteelScript Community Page'),
+                    'url': 'https://splash.riverbed.com/steelscript',
                     'external': True,
                 },
                 {
-                    'title': _('FlyScript Portal Github'),
-                    'url': 'http://pythonhosted.org/flyscript/index.html',
+                    'title': _('SteelScript on Github'),
+                    'url': 'https://github.com/riverbed/steelscript',
                     'external': True,
                 },
                 {
-                    'title': _('FlyScript Documentation'),
-                    'url': 'https://github.com/riverbed/flyscript-portal',
+                    'title': _('SteelScript Documentation'),
+                    'url': 'http://support.riverbed.com/apis/steelscript',
                     'external': True,
                     },
                 {
@@ -100,7 +95,7 @@ class CustomIndexDashboard(Dashboard):
 
 class CustomAppIndexDashboard(AppIndexDashboard):
     """
-    Custom app index dashboard for flyscript-portal.
+    Custom app index dashboard for steelscript-appfwk.
     """
 
     # we disable title because its redundant with the model list module

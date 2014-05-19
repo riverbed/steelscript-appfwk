@@ -21,7 +21,7 @@ class Command(BaseCommand):
                              action='store_true',
                              dest='no_summary',
                              default=False,
-                             help='Do not include summary created from flyscript-about.py'),
+                             help='Do not include summary created from steel about'),
     )
 
     def handle(self, *args, **options):
