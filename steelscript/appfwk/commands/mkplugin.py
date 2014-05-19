@@ -61,47 +61,66 @@ class Command(BaseCommand):
         parser.add_option('-d', '--dir', default='.',
                           help='Location to create the new package')
 
+        parser.add_option('-s', '--sample', action='store_true',
+                          help='Create the sample plugin rather than empty')
+
     def main(self):
         options = self.options
         interactive = not options.non_interactive
 
-        # Ask questions
-        if options.name:
-            if not re.match('^[a-z0-9_]+$', options.name):
-                parser.error('Invalid name, please use only lower case letters, '
-                             'numbers, and underscores.\n')
+        if not options.sample and interactive:
+            options.sample = prompt_yn("Create the sample WaveGenerator plugin")
+
+        if options.sample:
+            if options.name and options.name != 'wave':
+                print("Name may not be specified for the sample WaveGenerator plugin")
+                sys.exit(1)
+
+            options.name = 'wave'
+            options.title = 'Sample WaveGenerator'
+            options.description = 'Generate sine and cosine waves'
+            options.author = ''
+            options.author_email = ''
         else:
-            done = False
-            while not done:
-                options.name = prompt(
-                    'Give a simple name for your plugin (a-z, 0-9, _)')
-
+            # Ask questions
+            if options.name:
                 if not re.match('^[a-z0-9_]+$', options.name):
-                    print ('Invalid name, please use only lower case letters, \n'
-                           'numbers, and underscores.\n')
-                else:
-                    done = True
+                    parser.error('Invalid name, please use only lower case letters, '
+                                 'numbers, and underscores.\n')
+            else:
+                done = False
+                while not done:
+                    options.name = prompt(
+                        'Give a simple name for your plugin (a-z, 0-9, _)')
 
-        if not options.title and interactive:
-            options.title = prompt('Give your plugin a title', default='')
+                    if not re.match('^[a-z0-9_]+$', options.name):
+                        print ('Invalid name, please use only lower case letters, \n'
+                               'numbers, and underscores.\n')
+                    else:
+                        done = True
 
-        if not options.description and interactive:
-            options.description = prompt('Briefly describe your plugin', default='')
+            if not options.title and interactive:
+                options.title = prompt('Give your plugin a title', default='')
 
-        if not options.author and interactive:
-            options.author = prompt("Author's name", default='')
+            if not options.description and interactive:
+                options.description = prompt('Briefly describe your plugin', default='')
 
-        if not options.author_email and interactive:
-            options.author_email = prompt("Author's email", default='')
+            if not options.author and interactive:
+                options.author = prompt("Author's name", default='')
+
+            if not options.author_email and interactive:
+                options.author_email = prompt("Author's email", default='')
 
         options.Name = options.name[0:1].upper() + options.name[1:]
         if not options.title:
             options.title = options.name
 
+        which = 'sample' if options.sample else 'plugin'
+
         basedir = os.path.join(os.path.dirname(steelscript.appfwk.commands.__file__),
-                               'data', 'steelscript-sample')
+                               'data', 'steelscript-' + which)
         targetbasedir = os.path.join(os.path.abspath(options.dir),
-                                     'steelscript-{name}'.format(name=options.name))
+                                     'steelscript-{which}')
         for (dir, subdirs, files) in os.walk(basedir):
             targetdir = dir.replace(basedir, targetbasedir)
             if dir == basedir:
@@ -109,8 +128,8 @@ class Command(BaseCommand):
                     self.parser.error('Target directory already exists: {targetdir}'
                                       .format(targetdir=targetdir))
 
-            targetdir = targetdir.replace('sample', options.name)
-            os.mkdir(targetdir)
+            targetdir = targetdir.replace(which, '{which}')
+            os.mkdir(targetdir.replace('{which}', options.name))
 
             for f in files:
                 if (  f.endswith('~') or
@@ -119,13 +138,15 @@ class Command(BaseCommand):
                     continue
 
                 srcfile = os.path.join(dir, f)
-                dstfile = os.path.join(targetdir, f.replace('.py.in', '.py'))
-                dstfile = dstfile.replace('sample', options.name)
+                dstfile = os.path.join(targetdir, (f.replace('.py.in', '.py')
+                                                   .replace(which, '{which}')))
+                dstfile = dstfile.replace('{which}', options.name)
 
                 process_file(srcfile, dstfile, vars(options))
                 print('Writing:  {dstfile}'
                       .format(srcfile=srcfile, dstfile=dstfile))
 
+        targetbasedir = targetbasedir.replace('{which}', options.name)
         relver = open(os.path.join(targetbasedir, 'RELEASE-VERSION'), 'w')
         relver.write('0.0.1')
         relver.close()
