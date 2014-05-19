@@ -16,7 +16,7 @@ import steelscript.{{name}}.appfwk.libs.{{name}}_helpers as helpers
 # {{title}} report
 #
 
-report = Report.create("{{Name}} Report")
+report = Report.create("{{Name}} Report", position=1)
 
 report.add_section()
 

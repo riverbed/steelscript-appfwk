@@ -115,21 +115,21 @@ class Command(BaseCommand):
         if not options.title:
             options.title = options.name
 
-        which = 'sample' if options.sample else 'plugin'
+        which = 'wave' if options.sample else '__plugin__'
 
         basedir = os.path.join(os.path.dirname(steelscript.appfwk.commands.__file__),
                                'data', 'steelscript-' + which)
         targetbasedir = os.path.join(os.path.abspath(options.dir),
-                                     'steelscript-{which}')
+                                     'steelscript-' + options.name)
         for (dir, subdirs, files) in os.walk(basedir):
             targetdir = dir.replace(basedir, targetbasedir)
+            targetdir = targetdir.replace(which, options.name)
             if dir == basedir:
                 if os.path.exists(targetdir):
                     self.parser.error('Target directory already exists: {targetdir}'
                                       .format(targetdir=targetdir))
 
-            targetdir = targetdir.replace(which, '{which}')
-            os.mkdir(targetdir.replace('{which}', options.name))
+            os.mkdir(targetdir.format(which=options.name))
 
             for f in files:
                 if (  f.endswith('~') or
@@ -138,15 +138,13 @@ class Command(BaseCommand):
                     continue
 
                 srcfile = os.path.join(dir, f)
+                dstfile = os.path.join(targetdir, f.replace('.py.in', '.py'))
                 dstfile = os.path.join(targetdir, (f.replace('.py.in', '.py')
-                                                   .replace(which, '{which}')))
-                dstfile = dstfile.replace('{which}', options.name)
+                                                   .replace(which, options.name)))
 
                 process_file(srcfile, dstfile, vars(options))
-                print('Writing:  {dstfile}'
-                      .format(srcfile=srcfile, dstfile=dstfile))
+                print('Writing:  {dst}'.format(dst=dstfile))
 
-        targetbasedir = targetbasedir.replace('{which}', options.name)
         relver = open(os.path.join(targetbasedir, 'RELEASE-VERSION'), 'w')
         relver.write('0.0.1')
         relver.close()

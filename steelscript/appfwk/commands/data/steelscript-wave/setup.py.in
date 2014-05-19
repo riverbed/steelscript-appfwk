@@ -43,7 +43,7 @@ setup(
             '{{name}} = steelscript.{{name}}.commands'
         ],
         'portal.plugins': [
-            '{name} = steelscript.{{name}}.appfwk.plugin:Plugin'
+            '{{name}} = steelscript.{{name}}.appfwk.plugin:Plugin'
         ],
     },
 
