@@ -36,7 +36,7 @@ class WidgetOptions(JsonDict):
 class Report(models.Model):
     """ Defines a Report as a collection of Sections and their Widgets. """
     title = models.CharField(max_length=200)
-    position = models.IntegerField(default=0)
+    position = models.DecimalField(max_digits=7, decimal_places=3, default=10)
     enabled = models.BooleanField(default=True)
 
     slug = models.SlugField(unique=True)
@@ -214,11 +214,11 @@ class Section(models.Model):
 
     report = models.ForeignKey(Report)
     title = models.CharField(max_length=200, blank=True)
-    position = models.IntegerField(default=0)
+    position = models.DecimalField(max_digits=7, decimal_places=3, default=10)
     fields = models.ManyToManyField(TableField, null=True)
 
     @classmethod
-    def create(cls, report, title='', position=0,
+    def create(cls, report, title='', position=None,
                section_keywords=None,
                default_field_mode=None,
                keyword_field_modes=None):
@@ -229,7 +229,7 @@ class Section(models.Model):
         :param title: section title to display
 
         :param position: relative position for ordering on display,
-            if 0 (default), this will be added as the last
+            if None (default), this will be added as the last
             section of the current report
 
         :param default_field_mode: the default mode for how to
@@ -240,7 +240,7 @@ class Section(models.Model):
             dict will result in a SectionFieldMode object
 
         """
-        if position == 0:
+        if position is None:
             posmax = Section.objects.filter(report=report).aggregate(Max('position'))
             position = (posmax['position__max'] or 0) + 1
 

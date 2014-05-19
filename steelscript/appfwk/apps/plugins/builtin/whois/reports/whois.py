@@ -18,7 +18,7 @@ import steelscript.appfwk.apps.report.modules.yui3 as yui3
 # NetProfiler report
 #
 
-report = Report.create("Whois", position=5)
+report = Report.create("Whois", position=11)
 
 report.add_section()
 

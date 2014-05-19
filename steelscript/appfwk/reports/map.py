@@ -14,7 +14,7 @@ from steelscript.netprofiler.appfwk.datasources.netprofiler import NetProfilerGr
 # Google Map example
 #
 
-report = Report.create("Response Time Map", position=4)
+report = Report.create("Response Time Map", position=10)
 
 report.add_section()
 

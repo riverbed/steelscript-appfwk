@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # HTML Example Report
 #
 
-report = Report.create("Landing Page Example", position=1, 
+report = Report.create("Landing Page Example", position=9.1,
                        hide_criteria=True, reload_minutes=5)
 
 report.add_section('Raw HTML')

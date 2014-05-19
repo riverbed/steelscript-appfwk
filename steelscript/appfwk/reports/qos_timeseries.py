@@ -12,7 +12,7 @@ import steelscript.appfwk.apps.report.modules.yui3 as yui3
 from steelscript.netprofiler.appfwk.datasources.netprofiler import (NetProfilerTimeseriesTable,
                                                                    NetProfilerGroupbyTable)
 
-report = Report.create("QoS Report", position=15)
+report = Report.create("QoS Report", position=11)
 
 interface_field = TableField.create(keyword='interface', label='Interface',
                                     required=True)

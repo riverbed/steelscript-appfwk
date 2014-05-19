@@ -18,7 +18,7 @@ from steelscript.netshark.appfwk.datasources.netshark import NetSharkTable
 #
 
 report = Report.create("Overall",
-                       position=1,
+                       position=9,
                        field_order=['endtime', 'netprofiler_filterexpr',
                                     'netshark_filterexpr'],
                        hidden_fields=['resolution', 'duration'])

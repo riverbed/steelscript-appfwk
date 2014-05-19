@@ -111,7 +111,7 @@ class ReportView(views.APIView):
                 namespace = queryset[0].namespace
 
             if report_slug is None:
-                qs = queryset.filter(namespace=namespace).order_by('position')
+                qs = queryset.filter(namespace=namespace).order_by('position', 'title')
                 kwargs = {'report_slug': qs[0].slug,
                           'namespace': namespace}
                 return HttpResponseRedirect(reverse('report-view',
@@ -164,7 +164,7 @@ class ReportView(views.APIView):
             section_map.append({'title': 'Common',
                                 'parameters': fields_by_section[0]})
 
-        for s in Section.objects.filter(report=report).order_by('position'):
+        for s in Section.objects.filter(report=report).order_by('position', 'title'):
             show = False
             for v in fields_by_section[s.id].values():
                 if v.keyword not in (report.hidden_fields or []):

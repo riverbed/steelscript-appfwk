@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # HTML Example Report
 #
 
-report = Report.create("HTML Example", position=1)
+report = Report.create("HTML Example", position=10)
 
 report.add_section('Raw HTML')
 

@@ -14,7 +14,7 @@ from rvbd_portal_sharepoint.datasources.sharepoint import SharepointTable
 # SharePoint report
 #
 
-report = Report(title="Sharepoint", position=2)
+report = Report(title="Sharepoint", position=11)
 report.save()
 
 section = Section.create(report)

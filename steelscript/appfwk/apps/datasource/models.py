@@ -313,7 +313,7 @@ class Table(models.Model):
         """
 
         filtered = []
-        for c in Column.objects.filter(table=self).order_by('position'):
+        for c in Column.objects.filter(table=self).order_by('position', 'name'):
             if synthetic is not None and c.synthetic != synthetic:
                 continue
             if c.ephemeral is not None and c.ephemeral != ephemeral:
@@ -536,7 +536,7 @@ class Column(models.Model):
     table = models.ForeignKey(Table)
     name = models.CharField(max_length=300)
     label = models.CharField(max_length=300, null=True)
-    position = models.IntegerField()
+    position = models.DecimalField(max_digits=7, decimal_places=3, default=1)
     options = PickledObjectField()
 
     iskey = models.BooleanField(default=False)
