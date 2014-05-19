@@ -270,13 +270,3 @@ class subnet(object):
 
     def match(self, a):
         return (ip2long(a) & self.mask) == self.addr
-
-try:
-    geolite_dat = os.path.expanduser('/tmp/GeoLiteCity.dat')
-    gi = pygeoip.GeoIP(geolite_dat, pygeoip.MEMORY_CACHE)
-    gi_lock = threading.Lock()
-except IOError:
-    # need to install GeoLiteCity
-    print 'Geo database not found at /tmp/GeoLiteCity.dat'
-    print 'Downloads may be found here: http://dev.maxmind.com/geoip/geolite#Downloads-5'
-    print 'GeoIP support will be disabled without this file.'

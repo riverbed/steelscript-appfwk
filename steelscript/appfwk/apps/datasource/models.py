@@ -1203,6 +1203,7 @@ def _my_job_delete(sender, instance, **kwargs):
 class AsyncWorker(threading.Thread):
     def __init__(self, job, queryclass):
         threading.Thread.__init__(self)
+        self.daemon = True
         self.job = job
         self.queryclass = queryclass
 

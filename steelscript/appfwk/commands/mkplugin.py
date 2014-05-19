@@ -8,7 +8,7 @@ import re
 import os
 import sys
 
-from steelscript.commands.steel import BaseCommand, shell, prompt
+from steelscript.commands.steel import BaseCommand, shell, prompt, prompt_yn
 import steelscript.appfwk.commands
 
 def process_file(src, dst, options):
@@ -69,7 +69,8 @@ class Command(BaseCommand):
         interactive = not options.non_interactive
 
         if not options.sample and interactive:
-            options.sample = prompt_yn("Create the sample WaveGenerator plugin")
+            options.sample = prompt_yn("Create the sample WaveGenerator plugin",
+                                       default_yes=False)
 
         if options.sample:
             if options.name and options.name != 'wave':
