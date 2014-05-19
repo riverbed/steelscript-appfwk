@@ -4,13 +4,6 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-"""
-steelscript-appfwk
-======================
-
-Core apps for Riverbed SteelScript Application Framework
-
-"""
 import os
 
 try:
@@ -33,6 +26,7 @@ setup_args = {
     'author':             'Riverbed Technology',
     'author_email':       'eng-github@riverbed.com',
     'url':                'http://pythonhosted.org/steelscript',
+    'license':            'MIT',
     'description':        'Core apps for Riverbed SteelScript Application Framework',
 
     'long_description': """Core apps for SteelScript Application Framework
@@ -45,7 +39,6 @@ For a complete guide to installation, see:
 
 http://pythonhosted.org/steelscript/install.html
     """,
-    'license': 'MIT',
 
     'platforms': 'Linux, Mac OS, Windows',
 
