@@ -128,8 +128,8 @@ class TableQuery(object):
         # Collect all dependent tables
         options = self.table.options
 
-        # Create dataframes for all tables
-        dfs = {}
+        # Create dataframes for all dependent tables
+        tables = {}
 
         deptables = options.tables
         if deptables and (len(deptables) > 0):
@@ -161,7 +161,7 @@ class TableQuery(object):
                     break
 
                 f = job.data()
-                dfs[name] = f
+                tables[name] = f
                 logger.debug("%s: Table[%s] - %d rows" %
                              (self, name, len(f) if f is not None else 0))
 
@@ -171,8 +171,12 @@ class TableQuery(object):
         logger.debug("%s: Calling analysis function %s"
                      % (self, options.function))
 
+        reltables = (self.table.options['related_tables'] or {})
+        for table_name in reltables:
+            tables[table_name] = Table.from_ref(reltables[table_name])
+
         try:
-            df = options.function(self, dfs, self.job.criteria)
+            df = options.function(self, tables, self.job.criteria)
         except AnalysisException as e:
             self.job.mark_error("Analysis function %s failed: %s" %
                                 (options.function, e.message))

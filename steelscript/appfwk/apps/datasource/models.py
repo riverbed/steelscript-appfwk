@@ -19,6 +19,7 @@ import random
 import datetime
 import string
 import copy
+import inspect
 
 from django.utils.text import slugify
 import pytz
@@ -458,6 +459,13 @@ class DatasourceTable(Table):
     FIELD_OPTIONS = {}
 
     _column_class = None  # override in subclass if needed, defaults to Column
+
+    def __init__(self, *args, **kwargs):
+        #parent_frame = inspect.stack()[1]
+        #if not __file__.startswith(parent_frame[1]):
+        #    raise Exception(
+        #        'Cannot instantiate Table directly, use Table.create()')
+        super(DatasourceTable, self).__init__(*args, **kwargs)
 
     @classmethod
     def create(cls, name, **kwargs):

@@ -39,13 +39,13 @@
 # not thread safe, DeviceManager would not cache the result, but
 # would simply always create a new instance.
 #
-def new_device_instance(host, port, auth):
-    return SampleDevice(host, port, auth)
+from steelscript.{{name}}.core.wave import WaveGenerator
 
-class SampleDevice(object):
-    # Dummy class that doesn't do anything but save the connection
-    # credentials
-    def __init__(self, host, port, auth):
-        self.host = host
-        self.port = port
-        self.auth = auth
+def new_device_instance(host, port, auth):
+    """This function returns a WaveGenerator object.
+
+    In general this will establish a connection to the remote device
+    which will then be used by multiple tables.
+
+    """
+    return WaveGenerator()

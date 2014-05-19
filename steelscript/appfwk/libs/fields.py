@@ -182,6 +182,9 @@ class Function(object):
     def __repr__(self):
         return "<Function %s:%s>" % (self.module, self.function)
 
+    def __str__(self):
+        return "Function %s:%s" % (self.module, self.function)
+
     @classmethod
     def from_dict(cls, d):
         self = Function()

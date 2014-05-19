@@ -110,8 +110,6 @@ class Command(BaseCommand):
                                       .format(targetdir=targetdir))
 
             targetdir = targetdir.replace('sample', options.name)
-            print ('Creating: {targetdir}/'
-                   .format(targetdir=targetdir))
             os.mkdir(targetdir)
 
             for f in files:

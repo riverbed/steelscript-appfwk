@@ -5,28 +5,33 @@
 # as set forth in the License.
 
 import logging
-import math
+import pandas
 
 from steelscript.common.timeutils import \
     datetime_to_seconds, timedelta_total_seconds, parse_timedelta
-from steelscript.common.jsondict import JsonDict
 
-from steelscript.appfwk.apps.datasource.models import Table as BaseTable
 from steelscript.appfwk.apps.datasource.models import DatasourceTable
-from steelscript.appfwk.apps.datasource.models import TableField, Column
+from steelscript.appfwk.apps.datasource.models import Column
 from steelscript.appfwk.apps.devices.forms import fields_add_device_selection
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 from steelscript.appfwk.apps.datasource.forms import (fields_add_time_selection,
                                                       fields_add_resolution)
 
+from steelscript.{{name}}.core.wave import Wave
+
 logger = logging.getLogger(__name__)
 
 
+#
+# Define a cusotm WaveColumn class
+#
+# This allows defintion of custom column options that may
+# be set in reports.
+#
 # Use of this class is entirely optional, it may be deleted
 # if there are no custom column options
-class {{Name}}Column(Column):
-    class Meta:
-        proxy = True
+class WaveColumn(Column):
+    class Meta: proxy = True
 
     # COLUMN_OPTIONS is a dictionary of options that
     # are specific to columns for tables in this file.
@@ -38,18 +43,19 @@ class {{Name}}Column(Column):
                        'alpha': 1 }
 
 
-# Define a Table.create() method
+#
+# Define a custom WaveTable
+#
 class WaveTable(DatasourceTable):
-    class Meta:
-        proxy = True
+    class Meta: proxy = True
 
-    _column_class = {{Name}}Column
+    # When a custom column is used, it must be linked
+    _column_class = WaveColumn
 
     # TABLE_OPTIONS is a dictionary of options that are specific to
     # TableQuery objects in this file.  These by be overriden by
     # keyword arguments to the WaveTable.create() call in a report
     # file
-
     TABLE_OPTIONS = { 'beta': 10 }
 
     # FIELD_OPTIONS is a dictionary of default values for field
@@ -61,7 +67,6 @@ class WaveTable(DatasourceTable):
                       'resolutions': ('1s', '1m', '15m') }
 
     def post_process_table(self, field_options):
-
         #
         # Add criteria fields that are required by this table
         #
@@ -77,23 +82,17 @@ class WaveTable(DatasourceTable):
         fields_add_time_selection(self,
                                   initial_duration=field_options['duration'],
                                   durations=field_options['durations'])
+
+        # Add time resolution selection
         fields_add_resolution(self,
                               initial=field_options['resolution'],
                               resolutions=field_options['resolutions'])
 
-        # Add a custom field
-        TableField.create(obj=self, keyword='min', initial=-100, label='Min value',
-                          help_text=('Clip all wave forms at this minimum value'),
-                          required=False)
 
-        # Add a custom field
-        TableField.create(obj=self, keyword='max', initial=100, label='Max value',
-                          help_text=('Clip all wave forms at this maximum value'),
-                          required=False)
-
-
+#
 # The TableQuery class must be defined with the __init__ and run
 # method taking the defined arguments
+#
 class TableQuery(object):
 
     def __init__(self, table, job):
@@ -102,27 +101,28 @@ class TableQuery(object):
 
         # Perform any additional query initialization here
 
-    # This method is called to actually execute the query
-    # for the given table and job.  This is executed in a separate
-    # thread and must not return until either the query completes
-    # and data is available, or the query fails and returns an error.
-    #
-    # On success, this function should return either a list of lists
-    # of data aligned to the set of non-synthetic columns associated
-    # with this table or a pandas DataFrame with matching columns.
-    # (synthetic columns are computed by automatically one the query
-    # completes)
-    #
-    # On error, any errors that are not programmatic (like bad
-    # criteria values) should be reported by calling
-    # self.job.mark_error() with a user-friendly error message
-    # indicating the cause of the failure.
-    #
-    # Any programmatic errors should be raised as exceptions.
-    #
-    # For long running queries self.job.mark_progress() should
-    # be called to update the progress from 0 to 100 percent complete.
     def run(self):
+        # This method is called to actually execute the query
+        # for the given table and job.  This is executed in a separate
+        # thread and must not return until either the query completes
+        # and data is available, or the query fails and returns an error.
+        #
+        # On success, this function should return either a list of lists
+        # of data aligned to the set of non-synthetic columns associated
+        # with this table or a pandas DataFrame with matching columns.
+        # (synthetic columns are computed by automatically one the query
+        # completes)
+        #
+        # On error, any errors that are not programmatic (like bad
+        # criteria values) should be reported by calling
+        # self.job.mark_error() with a user-friendly error message
+        # indicating the cause of the failure.
+        #
+        # Any programmatic errors should be raised as exceptions.
+        #
+        # For long running queries self.job.mark_progress() should
+        # be called to update the progress from 0 to 100 percent complete.
+
         # All user entered criteria is available directly from this object.
         # Values for any fields added to the table will appear as
         # attributes according to the field keyword.
@@ -162,51 +162,43 @@ class TableQuery(object):
         # for each additional column do some math function on the
         # data
 
-        t = t0
-        rows = []
-        while t < t1:
-            row = []
-            for col in columns:
-                if col.name == 'time':
-                    row.append(t)
-                else:
-                    period_td = parse_timedelta(col.options.period)
-                    period_secs = timedelta_total_seconds(period_td)
-                    alpha = col.options.alpha
-                    funcname = col.options.func
+        # Create a list of Waves based on columns defined
+        waves = []
+        labels = []
+        for col in columns:
+            labels.append(col.name)
+            if col.name == 'time':
+                continue
 
-                    # seconds since the t0
-                    secs = timedelta_total_seconds(t - t0)
-                    rad = (secs / period_secs) * 2 * math.pi
+            period_td = parse_timedelta(col.options.period)
+            period_secs = timedelta_total_seconds(period_td)
+            alpha = col.options.alpha
+            waves.append(Wave(period=period_secs,
+                              alpha = col.options.alpha,
+                              beta = self.table.options.beta,
+                              func = col.options.func))
 
-                    funcmap = {
-                        'sin': math.sin,
-                        'cos': math.cos,
-                        }
+        # Retrieve the wavegen device that was selected
+        # (There's probably only one, but in general there may
+        # by multiple devices defined that the user can select
+        # from).
+        wavegen = DeviceManager.get_device(criteria.{{name}}_device)
 
-                    # Compute!
-                    val = beta + alpha * funcmap[funcname](rad)
+        # Incoming resolution is a timedelta
+        resolution = timedelta_total_seconds(criteria.resolution)
 
-                    # Clip by the min/max criteria
-                    val = max(cmin, val)
-                    val = min(cmax, val)
+        # Call off to the wave generator to generate our waves
+        rows = wavegen.generate(datetime_to_seconds(t0),
+                                datetime_to_seconds(t1), waves,
+                                resolution=resolution,
+                                progress=lambda p: self.job.mark_progress(p))
 
-                    # Add the value to the row
-                    row.append(val)
+        # Convert to a pandas dataframe to ensure we have the right labels
+        if rows:
+            self.data = pandas.DataFrame(rows, columns=labels)
+            logger.info("Report %s returned %s rows" % (self.job, len(self.data)))
+        else:
+            self.data = None
+            logger.info("Report %s returned no data" % (self.job))
 
-            # Add the row
-            rows.append(row)
-
-            # This function runs pretty fast, but this shows how to mark
-            # progress
-            self.job.mark_progress(100 * (timedelta_total_seconds(t-t0) /
-                                          timedelta_total_seconds(t1-t0)))
-            t = t + resolution
-
-        # Save the result in self.data
-        self.data = rows
-        if self.table.rows > 0:
-            self.data = self.data[:self.table.rows]
-
-        logger.info("Report %s returned %s rows" % (self.job, len(self.data)))
         return True

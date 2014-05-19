@@ -5,36 +5,64 @@
 # as set forth in the License.
 
 import steelscript.appfwk.apps.datasource.modules.analysis as analysis
-from steelscript.appfwk.apps.datasource.models import Column
-from steelscript.appfwk.apps.report.models import Report, Section
+from steelscript.appfwk.apps.report.models import Report
+from steelscript.appfwk.apps.datasource.models import Column, TableField
 import steelscript.appfwk.apps.report.modules.yui3 as yui3
 
 import steelscript.{{name}}.appfwk.datasources.{{name}}_source as {{name}}
+import steelscript.{{name}}.appfwk.libs.{{name}}_helpers as helpers
 
 #
 # {{title}} report
 #
 
-report = Report.create("{{title}} Wave Report")
+report = Report.create("{{Name}} Report")
 
 report.add_section()
 
-# Criteria table
+#
+# Define a waves table with 3 separate waves.
+#
+table = {{name}}.WaveTable.create(
+    name='{{name}}-table', duration='15min', resolution='1s', beta=4)
+
+# Add columns for time and the related waves
+table.add_column('time', 'Time', datatype=Column.DATATYPE_TIME, iskey=True)
+table.add_column('sin1', 'Sine Wave 1', func='sin', period='5min', alpha=3)
+table.add_column('sin2', 'Sine Wave 2', func='sin', period='8min', alpha=5)
+table.add_column('cos',  'Cosine Wave', func='cos', period='3min', alpha=2.5)
+
+# Bind the table to a widget for display
+report.add_widget(yui3.TimeSeriesWidget, table, "Waves", width=12)
+
+#
+# Define a clipped version of the above table.  The function
+# func_{{name}}_table_limits processes the rows and clips to
+# the criteria parameters 'min' and 'max'
+#
+limits_table = analysis.AnalysisTable.create(
+    name='{{name}}-table-limits', tables = {'waves': table},
+    function=helpers.func_{{name}}_table_limits)
+
+# Copy all columns from the input table
+limits_table.copy_columns(table)
+
+# Add a custom field for 'min'
+TableField.create(obj=limits_table, keyword='min', initial=2, label='Min value',
+                  help_text=('Clip all wave forms at this minimum value'),
+                  required=False)
+
+# Add a custom field for 'max'
+TableField.create(obj=limits_table, keyword='max', initial=7, label='Max value',
+                  help_text=('Clip all wave forms at this maximum value'),
+                  required=False)
+
+# Bind to a timeseries widget
+report.add_widget(yui3.TimeSeriesWidget, limits_table, "Clipped Waves", width=12)
+
+#
+# Define a criteria table that just displays all criteria for a
+# given report run
+#
 table = analysis.create_criteria_table('{{name}}-criteria')
 report.add_widget(yui3.TableWidget, table, "Report Criteria", width=12, height=200)
-
-# Simple table
-table = {{name}}.WaveTable.create(
-    name='{{name}}-table', duration='15min', resolution='1s',
-    beta=4)
-#                              beta=4=options)
-
-table.add_column('time', 'Time', datatype='time', iskey=True)
-table.add_column('sin1', 'Sine Wave 1',
-                 func='sin', period='5min', alpha=3)
-table.add_column('sin2', 'Sine Wave 2',
-                 func='sin', period='8min', alpha=5)
-table.add_column('cos', 'Cosine Wave',
-                 func='cos', period='3min', alpha=2.5)
-
-report.add_widget(yui3.TimeSeriesWidget, table, "Waves", width=12)
