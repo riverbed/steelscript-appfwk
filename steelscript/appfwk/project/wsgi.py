@@ -6,7 +6,7 @@
 
 
 """
-WSGI config for flybox project.
+WSGI config for a SteelScript Application Framework project.
 
 This module contains the WSGI application used by Django's development server
 and any production WSGI deployments. It should expose a module-level variable
@@ -33,4 +33,3 @@ application = get_wsgi_application()
 # Apply WSGI middleware here.
 # from helloworld.wsgi import HelloWorldApplication
 # application = HelloWorldApplication(application)
-
