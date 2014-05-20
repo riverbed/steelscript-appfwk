@@ -25,7 +25,7 @@ s = SharepointTable.create('Shared Documents',
                            site_url='/',
                            list_name='Shared Documents')
 
-s.add_column('BaseName', issortcol=True, datatype='string')
+s.add_column('BaseName', sortasc=True, datatype='string')
 s.add_column('Created', datatype='time')
 s.add_column('Modified', datatype='time')
 s.add_column('ID', datatype='string')

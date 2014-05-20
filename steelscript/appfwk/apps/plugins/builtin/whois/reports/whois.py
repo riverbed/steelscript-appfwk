@@ -27,7 +27,7 @@ table = NetProfilerGroupbyTable.create('5-hosts', groupby='host', duration='1 ho
                                     filterexpr='not srv host 10/8 and not srv host 192.168/16')
 
 table.add_column('host_ip', 'IP Addr', iskey=True, datatype='string')
-table.add_column('avg_bytes', 'Avg Bytes', units='B/s', issortcol=True)
+table.add_column('avg_bytes', 'Avg Bytes', units='B/s', sortdesc=True)
 
 
 # Create an Analysis table that calls the 'whois' function to craete a link to

@@ -189,21 +189,7 @@ class TableQuery(object):
                              (self, options.function))
             return False
 
-        # Sort according to the defined sort columns
-        if df is not None:
-            if self.table.sortcol:
-                n = self.table.sortcol.name
-                sorted = df.sort(n, ascending=False)
-                # Move NaN rows to the end
-                df = (sorted[sorted[n].notnull()]
-                      .append(sorted[sorted[n].isnull()]))
-
-            if self.table.rows > 0:
-                self.data = df[:self.table.rows]
-            else:
-                self.data = df
-        else:
-            self.data = None
+        self.data = df
 
         logger.debug("%s: completed successfully" % (self))
         return True

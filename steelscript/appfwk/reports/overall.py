@@ -29,9 +29,8 @@ report.add_section('Locations', section_keywords=['resolution', 'duration'])
 p = NetProfilerGroupbyTable.create('maploc', groupby='host_group', duration=60,
                                    resolution='auto')
 
-p.add_column('group_name',    label='Group Name', iskey=True, datatype="string",
-             issortcol=True)
-p.add_column('response_time', label='Resp Time',  units='ms')
+p.add_column('group_name',    label='Group Name', iskey=True, datatype="string")
+p.add_column('response_time', label='Resp Time',  units='ms', sortdesc=True)
 p.add_column('network_rtt',   label='Net RTT',    units='ms')
 p.add_column('server_delay',  label='Srv Delay',  units='ms')
 

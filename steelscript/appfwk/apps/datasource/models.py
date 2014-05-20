@@ -41,7 +41,6 @@ from steelscript.appfwk.libs.fields import (PickledObjectField, FunctionField,
                                      SeparatedValuesField, check_field_choice,
                                      field_choice_str)
 
-
 logger = logging.getLogger(__name__)
 
 if settings.DATABASES['default']['ENGINE'].endswith('sqlite3'):
@@ -194,7 +193,16 @@ class Table(models.Model):
     namespace = models.CharField(max_length=100)
     sourcefile = models.CharField(max_length=200)
 
-    sortcol = models.ForeignKey('Column', null=True, related_name='Column')
+    # list of column names
+    sortcols = SeparatedValuesField(null=True)
+
+    # list of asc/desc - must match len of sortcols
+    sortdir = SeparatedValuesField(null=True)
+    # Valid values for sort kwarg
+    SORT_NONE = None
+    SORT_ASC = 'asc'
+    SORT_DESC = 'desc'
+
     rows = models.IntegerField(default=-1)
     filterexpr = models.CharField(null=True, max_length=400)
 
@@ -332,19 +340,28 @@ class Table(models.Model):
 
         """
 
+        sortcols = []
+        sortdir = []
         for c in table.get_columns():
             if columns is not None and c.name not in columns:
                 continue
             if except_columns is not None and c.name in except_columns:
                 continue
-            issortcol = (c == c.table.sortcol)
+
+            if table.sortcols and (c.name in table.sortcols):
+                sortcols.append(c.name)
+                sortdir.append(table.sortdir[table.sortcols.index(c.name)])
+
             c.pk = None
             c.table = self
             c.position = Column.get_position()
+
             c.save()
-            if issortcol:
-                self.sortcol = c
-                self.save()
+
+        if sortcols:
+            self.sortcols = sortcols
+            self.sortdir = sortdir
+            self.save()
 
     def compute_synthetic(self, job, df):
         """ Compute the synthetic columns from DF a two-dimensional array
@@ -518,14 +535,26 @@ class DatasourceTable(Table):
         """
         pass
 
-    def add_column(self, name, label=None, **kwargs):
-        sortcol = kwargs.pop('issortcol', None)
-
+    def add_column(self, name, label=None,
+                   sortasc=False, sortdesc=False, **kwargs):
         klass = self._column_class or Column
         c = klass.create(self, name, label, **kwargs)
 
-        if sortcol:
-            self.sortcol = c
+        if sortasc or sortdesc:
+            if self.sortcols is None:
+                self.sortcols = [c.name]
+            else:
+                self.sortcols.append(c.name)
+
+            if sortasc and sortdesc:
+                raise AttributeError('Cannot set both sortasc and sortdesc')
+
+            sortdir = Table.SORT_ASC if sortasc else Table.SORT_DESC
+            if self.sortdir is None:
+                self.sortdir = [sortdir]
+            else:
+                self.sortdir.append(sortdir)
+
             self.save()
 
         return c
@@ -610,7 +639,7 @@ class Column(models.Model):
     @classmethod
     def create(cls, table, name, label=None,
                datatype=DATATYPE_FLOAT, units=UNITS_NONE,
-               iskey=False, issortcol=False, **kwargs):
+               iskey=False, **kwargs):
 
         column_options = copy.deepcopy(cls.COLUMN_OPTIONS)
 
@@ -645,9 +674,6 @@ class Column(models.Model):
         c.position = cls.get_position()
         c.save()
 
-        if issortcol:
-            table.sortcol = c
-            table.save()
         return c
 
     def isnumeric(self):
@@ -1278,8 +1304,21 @@ class Worker(base_worker_class):
                                      type(query.data))
 
                 if df is not None:
-                    self.fix_dataframe(df)
+                    df = self.normalize_types(df)
                     df = job.table.compute_synthetic(job, df)
+
+                    # Sort according to the defined sort columns
+                    if job.table.sortcols:
+                        sorted = df.sort(job.table.sortcols,
+                                         ascending=[b == Table.SORT_ASC
+                                                    for b in job.table.sortdir])
+                        # Move NaN rows of the first sortcol to the end
+                        n = job.table.sortcols[0]
+                        df = (sorted[sorted[n].notnull()]
+                              .append(sorted[sorted[n].isnull()]))
+
+                    if job.table.rows > 0:
+                        df = df[job.table.rows]
 
                 if df is not None:
                     df.save(job.datafile())
@@ -1321,7 +1360,7 @@ class Worker(base_worker_class):
         finally:
             job.dereference("Worker exiting")
 
-    def fix_dataframe(self, df):
+    def normalize_types(self, df):
         job = self.job
         for col in job.get_columns(synthetic=False):
             s = df[col.name]
@@ -1356,6 +1395,7 @@ class Worker(base_worker_class):
                     # This may incorrectly be tagged as numeric
                     pass
 
+        return df
 
 
 class BatchJobRunner(object):

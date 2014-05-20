@@ -140,10 +140,6 @@ class TableQuery(object):
         # Get the columns for this report
         columns = self.table.get_columns(synthetic=False)
 
-        sortcol = None
-        if self.table.sortcol is not None:
-            sortcol = self.table.sortcol.name
-
         # Time selection is available via criterai.starttime and endtime.
         # These are both datetime objects.
         t0 = criteria.starttime

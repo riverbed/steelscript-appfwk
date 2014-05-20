@@ -101,12 +101,12 @@ class PieWidget(object):
             raise ValueError("Table %s does not have any key columns defined" %
                              str(table))
 
-        if table.sortcol is None:
+        if table.sortcols is None:
             raise ValueError("Table %s does not have a sort column defined" %
                              str(table))
 
         w.options = JsonDict(key=keycols[0],
-                             value=table.sortcol.name)
+                             value=table.sortcols[0])
         w.save()
         w.tables.add(table)
 
