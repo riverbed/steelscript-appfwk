@@ -98,7 +98,7 @@ class CriteriaTest(reportrunner.ReportRunnerTestCase):
             with tempfile.NamedTemporaryFile() as outfile:
                 filename = outfile.name
 
-            r = call_command('run_table',
+            r = call_command('table',
                              table_id=t.id,
                              as_csv=True,
                              output_file=filename,
