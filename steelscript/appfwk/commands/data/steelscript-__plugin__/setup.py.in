@@ -13,32 +13,32 @@ steelscript.{{name}}
 from setuptools import setup, find_packages
 from gitpy_versioning import get_version
 
-install_requires = [
+install_requires = (
     'steelscript.appfwk',
 
     # Add any special python package requirements below this line
-]
+)
 
-setup(
-    name='steelscript.{{name}}',
-    namespace_packages= ['steelscript'],
-    version=get_version(),
+setup_args = {
+    'name':                'steelscript.{{name}}',
+    'namespace_packages':  ['steelscript'],
+    'version':             get_version(),
 
     # Update the following as needed
-    author='{{author}}',
-    author_email='{{author_email}}',
-    url='',
-    description='{{description}}',
-    long_description=__doc__,
-    license='MIT',
+    'author':              '{{author}}',
+    'author_email':        '{{author_email}}',
+    'url':                 '',
+    'license':             'MIT',
+    'description':         '{{description}}',
+    'long_description':    __doc__,
 
-    packages=find_packages(exclude=('gitpy_versioning',)),
-    zip_safe=False,
-    install_requires=install_requires,
-    extras_require=None,
-    test_suite='',
-    include_package_data=True,
-    entry_points={
+    'packages': find_packages(exclude=('gitpy_versioning',)),
+    'zip_safe': False,
+    'install_requires': install_requires,
+    'extras_require': None,
+    'test_suite': '',
+    'include_package_data': True,
+    'entry_points': {
         # Uncomment these lines to enable steel commands for this module
         # 'steel.commands': [
         #     '{{name}} = steelscript.{{name}}.commands'
@@ -48,11 +48,13 @@ setup(
         ],
     },
 
-    classifiers=[
+    'classifiers': (
         'Framework :: Django',
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
         'Operating System :: OS Independent',
         'Topic :: Software Development'
-    ],
-)
+    ),
+}
+
+setup(**setup_args)
