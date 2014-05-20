@@ -38,8 +38,8 @@ from steelscript.common import timedelta_total_seconds
 from steelscript.appfwk.project.utils import get_module
 from steelscript.appfwk.apps.datasource.exceptions import *
 from steelscript.appfwk.libs.fields import (PickledObjectField, FunctionField,
-                                     SeparatedValuesField, check_field_choice,
-                                     field_choice_str)
+                                            SeparatedValuesField, check_field_choice,
+                                            field_choice_str)
 
 logger = logging.getLogger(__name__)
 
@@ -190,6 +190,7 @@ class TableField(models.Model):
 class Table(models.Model):
     name = models.CharField(max_length=200)
     module = models.CharField(max_length=200)         # source module name
+    datasource = models.CharField(max_length=200)     # class name of datasource
     namespace = models.CharField(max_length=100)
     sourcefile = models.CharField(max_length=200)
 
@@ -478,15 +479,11 @@ class DatasourceTable(Table):
     _column_class = None  # override in subclass if needed, defaults to Column
 
     def __init__(self, *args, **kwargs):
-        #parent_frame = inspect.stack()[1]
-        #if not __file__.startswith(parent_frame[1]):
-        #    raise Exception(
-        #        'Cannot instantiate Table directly, use Table.create()')
         super(DatasourceTable, self).__init__(*args, **kwargs)
 
     @classmethod
     def create(cls, name, **kwargs):
-        slug = '%s_%s' % (cls.__name__, slugify(unicode(name)))
+        name = slugify(unicode(name))
 
         # process subclass assigned options
         table_options = copy.deepcopy(cls.TABLE_OPTIONS)
@@ -514,8 +511,8 @@ class DatasourceTable(Table):
         if kwargs:
             raise AttributeError('Invalid keyword arguments: %s' % str(kwargs))
 
-        logger.debug('Creating table %s' % slug)
-        t = cls(name=slug, module=cls.__module__,
+        logger.debug('Creating table %s' % name)
+        t = cls(name=name, module=cls.__module__, datasource=cls.__name__,
                 options=options, **table_kwargs)
         t.save()
 

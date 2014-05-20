@@ -63,11 +63,6 @@ class Report(models.Model):
         return r
 
     def __init__(self, *args, **kwargs):
-        #parent_frame = inspect.stack()[1]
-        #if os.path.dirname(parent_frame[1]).endswith('reports'):
-        #    __import__('IPython').core.debugger.Pdb().set_trace()
-        #    raise Exception(
-        #        'Cannot instantiate Report directly, use Report.create()')
         super(Report, self).__init__(*args, **kwargs)
         self._sections = []
 
