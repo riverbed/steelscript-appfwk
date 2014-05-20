@@ -183,7 +183,6 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.devices',
     'steelscript.appfwk.apps.report',
     'steelscript.appfwk.apps.geolocation',
-    'steelscript.appfwk.apps.console',
     'steelscript.appfwk.apps.help',
     'steelscript.appfwk.apps.preferences',
     'steelscript.appfwk.apps.plugins',

@@ -26,7 +26,6 @@ urlpatterns = patterns('',
     url(r'^geolocation/', include(
         'steelscript.appfwk.apps.geolocation.urls')),
     url(r'^help/', include('steelscript.appfwk.apps.help.urls')),
-    url(r'^console/', include('steelscript.appfwk.apps.console.urls')),
     url(r'^preferences/', include(
         'steelscript.appfwk.apps.preferences.urls')),
     url(r'^plugins/', include('steelscript.appfwk.apps.plugins.urls')),

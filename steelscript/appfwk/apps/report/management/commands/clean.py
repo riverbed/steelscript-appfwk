@@ -88,7 +88,7 @@ class Command(BaseCommand):
 
         if options['applications']:
             # reset objects from main applications
-            apps = ['report', 'datasource', 'console']
+            apps = ['report', 'datasource']
             for app in apps:
                 for model in get_models(get_app(app)):
                     self.stdout.write('Deleting objects from %s\n' % model)
