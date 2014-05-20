@@ -5,7 +5,7 @@
 # as set forth in the License.
 
 
-# Django settings for FlyScript project project.
+# Django settings for SteelScript project project.
 import os
 import sys
 
@@ -250,7 +250,7 @@ LOGGING = {
     'handlers': {
         'null': {
             'level': 'DEBUG',
-            'class': 'logging.NullHandler',
+            'class': 'steelscript.appfwk.project.nullhandler.NullHandler',
         },
         'mail_admins': {
             'level': 'ERROR',
