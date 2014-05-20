@@ -29,6 +29,6 @@ class Command(BaseCommand):
                 console('Aborting.')
                 sys.exit()
 
-        shell('python manage.py reset_portal --force --trace',
+        shell('python manage.py reset_appfwk --force --trace',
               msg='Resetting project database',
               cwd=cwd)

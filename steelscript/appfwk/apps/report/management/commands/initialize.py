@@ -24,6 +24,6 @@ class Command(BaseCommand):
             sys.exit(1)
 
         db.close_connection()
-        management.call_command('reset_portal',
+        management.call_command('reset_appfwk',
                                 force=True,
                                 drop_users=True)

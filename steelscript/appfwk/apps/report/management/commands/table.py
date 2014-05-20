@@ -125,8 +125,9 @@ class Command(BaseCommand):
             # print out the id's instead of processing anything
             output = []
             for t in Table.objects.all():
-                output.append([t.id, t.namespace, t.name, t])
-            Formatter.print_table(output, ['ID', 'Namespace', 'Name', 'Table'])
+                output.append([t.id, t.namespace, t.datasource, t.name, t])
+            Formatter.print_table(output, ['ID', 'Namespace', 'Datasource',
+                                           'Name', 'Table'])
         elif options['table_list_by_report']:
             # or print them out organized by report/widget/table
             output = []

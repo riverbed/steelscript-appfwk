@@ -17,9 +17,6 @@ dist
 *.egg-info
 RELEASE-VERSION
 plugins/sdist
-project/settings/active.py
-project/settings/development.py
-project/settings/production.py
 
 docs/html
 
