@@ -61,18 +61,14 @@ class Command(BaseCommand):
         parser.add_option('-d', '--dir', default='.',
                           help='Location to create the new package')
 
-        parser.add_option('-s', '--sample', action='store_true',
-                          help='Create the sample plugin rather than empty')
+        parser.add_option('-w', '--wave', action='store_true',
+                          help='Create the sample wave plugin rather than empty')
 
     def main(self):
         options = self.options
         interactive = not options.non_interactive
 
-        if not options.sample and interactive:
-            options.sample = prompt_yn("Create the sample WaveGenerator plugin",
-                                       default_yes=False)
-
-        if options.sample:
+        if options.wave:
             if options.name and options.name != 'wave':
                 print("Name may not be specified for the sample WaveGenerator plugin")
                 sys.exit(1)
@@ -80,8 +76,8 @@ class Command(BaseCommand):
             options.name = 'wave'
             options.title = 'Sample WaveGenerator'
             options.description = 'Generate sine and cosine waves'
-            options.author = ''
-            options.author_email = ''
+            options.author = 'Riverbed'
+            options.author_email = 'eng-github@riverbed.com'
         else:
             # Ask questions
             if options.name:
