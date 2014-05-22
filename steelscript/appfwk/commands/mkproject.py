@@ -34,12 +34,12 @@ INSTALLED_APPS += LOCAL_APPS
 
 DATABASES = {
     'default': {
-         # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
         'ENGINE': 'django.db.backends.sqlite3',
 
         # Path to database file if using sqlite3.
         # Database name for others
-        'NAME': os.path.join(DATAHOME, 'project.db'),
+        'NAME': os.path.join(DATAHOME, 'data', 'project.db'),
 
         'USER': '',     # Not used with sqlite3.
         'PASSWORD': '', # Not used with sqlite3.
@@ -184,6 +184,13 @@ class Command(BaseCommand):
                           '../reports',
                           os.path.join(dirpath, 'reports'),
                           symlink=False)
+
+        # copy example-configs
+        self.link_pkg_dir('steelscript.appfwk.apps',
+                          '../project/example-configs',
+                          os.path.join(dirpath, 'example-configs'),
+                          symlink=False)
+
 
     def main(self):
         console('Generating new Application Framework project ...')
