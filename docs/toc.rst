@@ -5,3 +5,4 @@ SteelScript Application Framework
 
    overview
    install
+   projects

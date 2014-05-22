@@ -76,15 +76,14 @@ Documentation
   * SteelScript VM
   * Upgrade
 
-* Projects
+* :doc:`projects`
 
   * Creating a new project
   * Directory layout
 
-* Configuration
+* :doc:`configuration`
 
   * Setting up the database
-  * Enabling HTTPS
   * Using LDAP for Authentication
   * Managing users
   * Devices
@@ -98,6 +97,8 @@ Documentation
     * Rebuilding
 
   * Apache
+
+    * Enabling HTTPS
 
 * Using the Application Framework
 
@@ -127,7 +128,7 @@ Documentation
   * Creating a new plugin
   * Tour of the plugin files and directories
 
-     * Core (core)
+    * Core (core)
     * Devices (appfwk/devices)
     * DataSources (appfwk/datasources)
     * Reports (appfwk/reports)
