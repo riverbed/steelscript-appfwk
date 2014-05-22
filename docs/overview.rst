@@ -84,8 +84,8 @@ Documentation
 * :doc:`configuration`
 
   * Setting up the database
-  * Using LDAP for Authentication
   * Managing users
+  * Using LDAP for Authentication
   * Devices
   * Locations
 
