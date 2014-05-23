@@ -9,7 +9,8 @@ import shutil
 import pkg_resources
 from random import choice
 
-from steelscript.commands.steel import BaseCommand, prompt, console, debug, shell
+from steelscript.commands.steel import (BaseCommand, prompt, console, debug,
+                                        shell, check_git, ShellFailed)
 
 
 LOCAL_CONTENT = """
@@ -85,6 +86,19 @@ LOCAL_FOOTER = """
 # `project/ldap_example.py`.
 """
 
+GITIGNORE = """
+*~
+*.pyc
+*.swp
+.DS_Store
+
+data/
+example-configs/
+logs/
+media
+thirdparty
+static/
+"""
 
 class Command(BaseCommand):
     help = 'Install new local App Framework project'
@@ -191,6 +205,26 @@ class Command(BaseCommand):
                           os.path.join(dirpath, 'example-configs'),
                           symlink=False)
 
+    def initialize_git(self, dirpath):
+        """If git installed, initialize project folder as new repo.
+        """
+        try:
+            check_git()
+        except ShellFailed:
+            return
+
+        # we have git, lets make a repo
+        shell('git init', msg='Initializing project as git repo',
+              cwd=dirpath)
+        fname = os.path.join(dirpath, '.gitignore')
+        with open(fname, 'w') as f:
+            f.write(GITIGNORE)
+        shell('git add .',
+              msg=None,
+              cwd=dirpath)
+        shell('git commit -a -m "Initial commit."',
+              msg='Creating initial git commit',
+              cwd=dirpath)
 
     def main(self):
         console('Generating new Application Framework project ...')
@@ -207,6 +241,7 @@ class Command(BaseCommand):
 
         self.create_project_directory(dirpath)
         self.create_local_settings(dirpath)
+        self.initialize_git(dirpath)
 
         console('\n*****\n')
         console('App Framework project created.')
