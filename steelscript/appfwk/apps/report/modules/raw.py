@@ -20,7 +20,7 @@ class TableWidget(object):
     def create(cls, section, table, title, width=6, rows=1000, height=300):
         """Create a widget displaying data in a two dimensional table.
 
-        This is similar to ``yui3.TableWidget` except the key and data
+        This is similar to ``yui3.TableWidget`` except the key and data
         values are minimally formatted to show raw data values.  Usually
         only used for testing and debug.
 

@@ -218,7 +218,7 @@ UI Widget Class                                  Description
 .. _MapWidget:
 
 :py:class:`maps.MapWidget <steelscript.appfwk.apps.report.modules.maps.MapWidget>`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. currentmodule:: steelscript.appfwk.apps.report.modules.maps
 .. automethod:: MapWidget.create

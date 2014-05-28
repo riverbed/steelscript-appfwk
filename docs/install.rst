@@ -70,13 +70,15 @@ Framework.
 
 There are two packages dependencies that deserve special attention:
 
-* `Python Pandas <http://pandas.pydata.org/>`_ (`PyPI
-  <https://pypi.python.org/pypi/pandas/0.13.1/>`__) - Python Data
-  Analysis Library
+* `NumPy <http://www.numpy.org/>`_ (
+  `PyPI <https://pypi.python.org/pypi/numpy>`__
+  `downloads <http://sourceforge.net/projects/numpy/files/>`__) -
+  scientific computing with Python
 
-* `NumPy <http://www.numpy.org/>`_ (`PyPI
-  <https://pypi.python.org/pypi/numpy>`__) - scientific computing with
-  Python
+* `Python Pandas <http://pandas.pydata.org/>`_ (
+  `PyPI <https://pypi.python.org/pypi/pandas/0.13.1/>`__
+  `Windows binaries <http://www.lfd.uci.edu/~gohlke/pythonlibs/#pandas>`__) -
+  Python Data Analysis Library
 
 These packages are heavily used for data tables and manipulation.
 Both packages have large portions written in C for performance, thus
@@ -91,8 +93,11 @@ their respective web sites).
    significant amount of time (~10 minutes).  During compilation
    it is normal to see numerous warnings go by.
 
-For complete instructions for your platform, follow the installation
-instructions for SteelScript adding ``steelscript.appfwk`` to your list:
+Other than the special cases described above, the installation is identical
+to installation for core SteelScript.  Follow the directions described in
+one of the guides below to install ``steelscript`` along with any
+product specific packages.   Then install ``steelscript.appfwk`` in the
+same manner:
 
 * :doc:`/install/quick`
 * :doc:`/install/linuxmac`
