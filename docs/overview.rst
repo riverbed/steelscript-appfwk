@@ -89,7 +89,7 @@ Documentation
   * Devices
   * Locations
 
-* Managing the server
+* :doc:`managing`
 
   * Development server
 

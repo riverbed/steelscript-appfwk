@@ -11,7 +11,7 @@ the sequence of steel subcommands, ``steel appfwk mkproject``, and
 First create a new project directory using ``steel appfwk mkproject``.  The
 options include:
 
-.. code-block:: bash
+.. code-block:: console
 
    $ steel appfwk mkproject -h
    Usage: steel appfwk mkproject [options]
@@ -30,7 +30,7 @@ Feel free to choose any name you'd like - there is no limit on the number of
 projects you can create, for instance you could have one for development, and one
 for demonstrations.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ steel appfwk mkproject
     Generating new Application Framework project ...
@@ -49,7 +49,7 @@ be located there, which we will go over in the next section.  To start, just
 initialize the project using the default settings, and the new project will
 be ready for use!
 
-.. code-block:: bash
+.. code-block:: console
 
     $ steel appfwk init
     Initializing project using default settings....done
@@ -61,7 +61,7 @@ Directory layout
 With the a new project created and initialized, the following items should
 be present:
 
-.. code-block:: bash
+.. code-block:: console
 
     - manage.py <symlink>
     - reports
