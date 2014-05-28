@@ -15,7 +15,7 @@ from steelscript.appfwk.project.utils import link_pkg_dir
 LOCAL_CONTENT = """
 from steelscript.appfwk.project.settings import *
 
-PROJECT_ROOT = os.getcwd()
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 DATAHOME = os.getenv('DATAHOME', PROJECT_ROOT)
 DATA_CACHE = os.path.join(DATAHOME, 'data', 'datacache')
 INITIAL_DATA = os.path.join(DATAHOME, 'data', 'initial_data')
