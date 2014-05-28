@@ -11,7 +11,9 @@ import logging
 from django.http import Http404
 from django.template import RequestContext
 from django.shortcuts import render_to_response
-from django.views.generic.base import View
+from rest_framework import views
+from rest_framework.response import Response
+from rest_framework.renderers import TemplateHTMLRenderer
 
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 from steelscript.appfwk.apps.help.forms import NetProfilerInputForm, NetSharkInputForm
@@ -20,8 +22,9 @@ from steelscript.appfwk.apps.help.forms import NetProfilerInputForm, NetSharkInp
 logger = logging.getLogger(__name__)
 
 
-class ColumnHelper(View):
-    
+class ColumnHelper(views.APIView):
+    renderer_classes = (TemplateHTMLRenderer, )
+
     def get(self, request, device_type):
         if device_type == 'netprofiler':
             device = 'NetProfiler'
