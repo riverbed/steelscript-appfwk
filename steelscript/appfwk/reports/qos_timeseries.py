@@ -9,7 +9,7 @@ from steelscript.appfwk.apps.datasource.models import TableField
 from steelscript.appfwk.apps.report.models import Report
 import steelscript.appfwk.apps.report.modules.yui3 as yui3
 
-from steelscript.netprofiler.appfwk.datasources.netprofiler import (NetProfilerTimeseriesTable,
+from steelscript.netprofiler.appfwk.datasources.netprofiler import (NetProfilerTimeSeriesTable,
                                                                    NetProfilerGroupbyTable)
 
 report = Report.create("QoS Report", position=11)
@@ -22,7 +22,7 @@ datafilter_field = TableField.create(keyword='datafilter', hidden=True,
 report.add_section("Overall")
 
 # Define a Overall TimeSeries showing In/Out Utilization
-p = NetProfilerTimeseriesTable.create('qos-overall-util',
+p = NetProfilerTimeSeriesTable.create('qos-overall-util',
                                       duration=15, resolution=60,
                                       interface=True)
 p.fields.add(interface_field)
@@ -35,7 +35,7 @@ p.add_column('out_avg_util', 'Avg Outbound Util %', units='B/s')
 report.add_widget(yui3.TimeSeriesWidget, p, "Overall Utilization", width=12)
 
 # Define a Overall TimeSeries showing In/Out Totals
-p = NetProfilerTimeseriesTable.create('qos-overall-total',
+p = NetProfilerTimeSeriesTable.create('qos-overall-total',
                                       duration=15, resolution=15 * 60,
                                       interface=True)
 p.fields.add(interface_field)
@@ -48,7 +48,7 @@ p.add_column('out_total_bytes', 'Total Outbound Bytes', units='B/s')
 report.add_widget(yui3.TimeSeriesWidget, p, "Overall In/Out Bandwidth", width=6)
 
 # Define a Overall TimeSeries showing In/Out Totals
-p = NetProfilerTimeseriesTable.create('qos-overall-avg',
+p = NetProfilerTimeSeriesTable.create('qos-overall-avg',
                                       duration=15, resolution=60,
                                       interface=True)
 p.fields.add(interface_field)
@@ -98,7 +98,7 @@ for i, qos in enumerate(['AF11', 'EF', 'Default']):
     # QOS Tables
 
     for direction in ['inbound', 'outbound']:
-        p = NetProfilerTimeseriesTable.create('qos-%d-%s' % (i, direction),
+        p = NetProfilerTimeSeriesTable.create('qos-%d-%s' % (i, direction),
                                               duration=15, resolution=60,
                                               interface=True)
         p.fields.add(interface_field)

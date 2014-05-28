@@ -6,3 +6,5 @@ SteelScript Application Framework
    overview
    install
    projects
+   configuration
+   reports

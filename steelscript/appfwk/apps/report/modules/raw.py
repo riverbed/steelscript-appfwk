@@ -18,6 +18,17 @@ logger = logging.getLogger(__name__)
 class TableWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, rows=1000, height=300):
+        """Create a widget displaying data in a two dimensional table.
+
+        This is similar to ``yui3.TableWidget` except the key and data
+        values are minimally formatted to show raw data values.  Usually
+        only used for testing and debug.
+
+        :param int width: Width of the widget in columns (1-12, default 6)
+        :param int height: Height of the widget in pixels (default 300)
+        :param int rows: Number of rows to display (default 10)
+
+        """
         w = Widget(section=section, title=title, rows=rows, width=width,
                    height=height, module=__name__, uiwidget=cls.__name__)
         w.compute_row_col()

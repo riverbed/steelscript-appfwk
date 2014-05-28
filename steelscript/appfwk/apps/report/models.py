@@ -56,9 +56,28 @@ class Report(models.Model):
     reload_minutes = models.IntegerField(default=0)  # 0 means no reloads
 
     @classmethod
-    def create(cls, report_title, **kwargs):
-        logger.debug('Creating report %s' % report_title)
-        r = cls(title=report_title, **kwargs)
+    def create(cls, title, **kwargs):
+        """Create a new Report object and save it to the database.
+
+        :param str title: Title for the report
+
+        :param float position: Position in the menu for this report.
+            By defaut, all system reports have a ``position`` of 9 or
+            greater.
+
+        :param list field_order: List declaring the order to display
+            criteria fields.  Any fields not list are displayed after
+            all listed fields.
+
+        :param list hidden_fields: List of criteria fields to hide from UI
+
+        :param bool hide_criteria: Set to true to hide criteria and run on load
+        :param int reload_minuntes: If non-zero, automatically reloads the report
+
+        """
+
+        logger.debug('Creating report %s' % title)
+        r = cls(title=title, **kwargs)
         r.save()
         return r
 
@@ -93,6 +112,15 @@ class Report(models.Model):
         return unicode(self)
 
     def add_section(self, title=None, **kwargs):
+        """Create a new section associated with this report.
+
+        :param str title: Title for the section.  Defaults to
+            ``section<n>``.
+
+        See :py:meth:`Section.create` for a complete description
+        and a list of valid ``kwargs``.
+
+        """
         if title is None:
             title = 'section%d' % len(self._sections)
         s = Section.create(report=self, title=title, **kwargs)
@@ -100,6 +128,16 @@ class Report(models.Model):
         return s
 
     def add_widget(self, cls, table, title, **kwargs):
+        """Create a new widget associated with the last section added.
+
+        :param cls: UI class that will be used to render this widget
+        :param table: Table providing data for this widget
+        :param str title: Display title for this widget
+
+        See the specific ``cls.create()`` method for additional kwargs.
+
+        """
+
         if len(self._sections) == 0:
             raise ValueError('Widgets can only be added to Sections. '
                              'Add section using "add_section" method first.')
@@ -207,17 +245,17 @@ class Section(models.Model):
 
         :param report: the report this section applies to
 
-        :param title: section title to display
+        :param str title: section title to display
 
-        :param position: relative position for ordering on display,
+        :param float position: relative position for ordering on display,
             if None (default), this will be added as the last
             section of the current report
 
         :param default_field_mode: the default mode for how to
-            handle fields.  If None (default), INHERIT will be used
+            handle fields.  If None (default), ``INHERIT`` will be used
 
         :param keyword_field_modes: dict of keyword to mode to
-            override the `default_field_mode`.  Each entry in this
+            override the ``default_field_mode``.  Each entry in this
             dict will result in a SectionFieldMode object
 
         """
@@ -253,6 +291,15 @@ class Section(models.Model):
         return section
 
     def add_widget(self, cls, table, title, **kwargs):
+        """Create a new widget associated with this section
+
+        :param cls: UI class that will be used to render this widget
+        :param table: Table providing data for this widget
+        :param str title: Display title for this widget
+
+        See the specific ``cls.create()`` method for additional kwargs.
+
+        """
         return cls.create(self, table, title, **kwargs)
 
     def collect_fields_by_section(self):

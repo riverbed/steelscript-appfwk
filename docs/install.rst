@@ -3,7 +3,8 @@ Installation
 
 The SteelScript Application Framework is distributed entirely as
 Python packages via the Python Package Index `PyPI
-<https://pypi.python.org/pypi>`_.
+<https://pypi.python.org/pypi>`_.  This makes it easy to install
+and upgrade the base framework pacakge as well as any plugins.
 
 Quick Install
 -------------
@@ -12,7 +13,7 @@ Checklist:
 
 1. ``steelscript`` installed (if not see :doc:`/index`)
 
-2. Running Linux / Mac (for Windows, see `detailed`_)
+2. Running Linux / Mac (for Windows, see :ref:`appfwk_install_detailed` below)
 
 3. Developer tools installed (gcc/g++ or the like)
 
@@ -29,7 +30,7 @@ it has to compile NumPy and Pandas packages.  (Tail the log in
 ~/.steelscript/steel.log if you want to see what's happening behind
 the scenes).
 
-.. _detailed:
+.. _appfwk_install_detailed:
 
 Detailed Installation
 ---------------------
@@ -41,21 +42,21 @@ on `PyPI`_ - the Python Package Index.
 The following packages are related to the Application Framework:
 
 * ``steelscript.appfwk``
-  (`PyPI <https://pypi.python.org/pypi/steelscript.appfwk>`_,
+  (`PyPI <https://pypi.python.org/pypi/steelscript.appfwk>`__,
   `GitHub
-  <https://github.com/riverbed/steelscript-appfwk/releases>`_) -
+  <https://github.com/riverbed/steelscript-appfwk/releases>`__) -
   the core modules and data files for the Application Framework
 
 * ``steelscript.wireshark``
-  (`PyPI <https://pypi.python.org/pypi/steelscript.wireshark>`_,
+  (`PyPI <https://pypi.python.org/pypi/steelscript.wireshark>`__,
   `GitHub
-  <https://github.com/riverbed/steelscript-wireshark/releases>`_) -
+  <https://github.com/riverbed/steelscript-wireshark/releases>`__) -
   extensions to analyze PCAP files using Wireshark / tshark
 
 * ``steelscript.appfwk.business-hours``
-  (`PyPI <https://pypi.python.org/pypi/steelscript.appfwk.business-hours>`_,
+  (`PyPI <https://pypi.python.org/pypi/steelscript.appfwk.business-hours>`__,
   `GitHub
-  <https://github.com/riverbed/steelscript-appfwk-business-hours/releases>`_) -
+  <https://github.com/riverbed/steelscript-appfwk-business-hours/releases>`__) -
   adds support for running any report over business hours only
 
 The primary package is ``steelscript-appfwk``.  Installing this will
@@ -69,12 +70,12 @@ Framework.
 
 There are two packages dependencies that deserve special attention:
 
-* `Python Pandas <http://pandas.pydata.org/>`_ (`package
-  <https://pypi.python.org/pypi/pandas/0.13.1/>`_) - Python Data
+* `Python Pandas <http://pandas.pydata.org/>`_ (`PyPI
+  <https://pypi.python.org/pypi/pandas/0.13.1/>`__) - Python Data
   Analysis Library
 
-* `NumPy <http://www.numpy.org/>`_ (`package
-  <https://pypi.python.org/pypi/numpy>`_) - scientific computing with
+* `NumPy <http://www.numpy.org/>`_ (`PyPI
+  <https://pypi.python.org/pypi/numpy>`__) - scientific computing with
   Python
 
 These packages are heavily used for data tables and manipulation.

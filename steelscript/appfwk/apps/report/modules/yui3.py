@@ -26,6 +26,13 @@ def cleankey(s):
 class TableWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, rows=1000, height=300):
+        """Create a widget displaying data in a two dimensional table.
+
+        :param int width: Width of the widget in columns (1-12, default 6)
+        :param int height: Height of the widget in pixels (default 300)
+        :param int rows: Number of rows to display (default 1000)
+
+        """
         w = Widget(section=section, title=title, rows=rows, width=width,
                    height=height, module=__name__, uiwidget=cls.__name__)
         w.compute_row_col()
@@ -93,6 +100,17 @@ class TableWidget(object):
 class PieWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, rows=10, height=300):
+        """Create a widget displaying data in a pie chart.
+
+        :param int width: Width of the widget in columns (1-12, default 6)
+        :param int height: Height of the widget in pixels (default 300)
+        :param int rows: Number of rows to display (default 10)
+
+        The labels are taken from the Table key column (the first key,
+        if the table has multiple key columns defined).  The pie
+        widget values are taken from the sort column.
+
+        """
         w = Widget(section=section, title=title, rows=rows, width=width,
                    height=height, module=__name__, uiwidget=cls.__name__)
         w.compute_row_col()
@@ -154,6 +172,33 @@ class TimeSeriesWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, height=300,
                stacked=False, cols=None, altaxis=None):
+        """Create a widget displaying time-series data in a line chart
+
+        :param int width: Width of the widget in columns (1-12, default 6)
+
+        :param int height: Height of the widget in pixels (default 300)
+
+        :param bool stacked: If True, show multiple series as stacked
+
+        :param list cols: List of columns by name to graph.  If None,
+            the default, graph all data columns.
+
+        :param list altaxis: List of columns to graph using the
+            alternate Y-axis
+
+        As an example, the following will graph four columns of data::
+
+            section.add_widget(yui3.TimeSeriesWidget, 'Bytes and Packets',
+                               stacked=True, width=12, height=450,
+                               cols=['bytes', 'rtxbytes',
+                                     'packets', 'rtxpackets'],
+                               altaxis=['packets', rtxpackets'])
+
+        The columns 'bytes' and 'rtxbytes' will be graphed against the left
+        Y-axis, 'packets' and 'rtxpackets' on the right (alternate) Y-axis.
+
+        """
+
         w = Widget(section=section, title=title, width=width, height=height,
                    module=__name__, uiwidget=cls.__name__)
         w.compute_row_col()
@@ -162,9 +207,10 @@ class TimeSeriesWidget(object):
         if len(timecols) == 0:
             raise ValueError("Table %s must have a datatype 'time' column for "
                              "a timeseries widget" % str(table))
-        cols = cols or [col.name for col in table.get_columns()
-                        if not col.istime()]
+        cols = cols
         if altaxis:
+            if cols is None:
+                raise ValueError("Parameter `cols` cannot be none with `altaxis`")
             axes = {'0': {'position': 'left',
                           'columns': [col for col in cols if col not in altaxis]},
                     '1': {'position': 'right',
@@ -193,9 +239,9 @@ class TimeSeriesWidget(object):
         t_cols = job.get_columns()
         colinfo = {}   # map by widget key
 
-        # columns of '*' is a special case, just use all
+        # columns of None is a special case, just use all
         # defined columns other than time
-        if widget.options.columns == '*':
+        if widget.options.columns is None:
             valuecolnames = [col.name for col in t_cols
                              if not col.istime()]
         else:
@@ -360,7 +406,21 @@ class TimeSeriesWidget(object):
 class ChartWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, rows=10, height=300,
-               keycols=None, valuecols=None, chart_type='line'):
+               keycols=None, valuecols=None, charttype='line'):
+        """Create a widget displaying data as a chart.
+
+        This class is typically not used directly, but via LineWidget
+        or BarWidget subclasses
+
+        :param int width: Width of the widget in columns (1-12, default 6)
+        :param int height: Height of the widget in pixels (default 300)
+        :param int rows: Number of rows to display (default 10)
+        :param list keycols: List of key column names to use for x-axis labels
+        :param list valuecols: List of data columns to graph
+        :param str charttype: Type of chart, defaults to 'line'.  This may be
+           any YUI3 'type'
+
+        """
         w = Widget(section=section, title=title, rows=rows, width=width,
                    height=height, module=__name__, uiwidget=cls.__name__)
         w.compute_row_col()
@@ -377,7 +437,7 @@ class ChartWidget(object):
         w.options = JsonDict(dict={'keycols': keycols,
                                    'columns': valuecols,
                                    'axes': None,
-                                   'chart_type': chart_type})
+                                   'charttype': charttype})
         w.save()
         w.tables.add(table)
 
@@ -527,7 +587,7 @@ class ChartWidget(object):
 
         data = {
             "chartTitle": widget.title.format(**job.actual_criteria),
-            "type": widget.options.chart_type,
+            "type": widget.options.charttype,
             "categoryKey": catname,
             "dataProvider": rows,
             "seriesCollection": series,
@@ -542,11 +602,33 @@ class ChartWidget(object):
 class BarWidget(ChartWidget):
     @classmethod
     def create(cls, *args, **kwargs):
+        """Create a widget displaying data as a bar chart.
+
+        :param int width: Width of the widget in columns (1-12, default 6)
+        :param int height: Height of the widget in pixels (default 300)
+        :param int rows: Number of rows to display (default 10)
+        :param list keycols: List of key column names to use for x-axis labels
+        :param list valuecols: List of data columns to graph
+        :param str charttype: Type of chart, defaults to 'line'.  This may be
+           any YUI3 'type'
+
+        """
         kwargs['rows'] = kwargs.get('rows', 10)
-        return ChartWidget.create(*args, chart_type='column', **kwargs)
+        return ChartWidget.create(*args, charttype='column', **kwargs)
 
 class LineWidget(ChartWidget):
     @classmethod
     def create(cls, *args, **kwargs):
+        """Create a widget displaying data as a line chart.
+
+        :param int width: Width of the widget in columns (1-12, default 6)
+        :param int height: Height of the widget in pixels (default 300)
+        :param int rows: Number of rows to display (default 10)
+        :param list keycols: List of key column names to use for x-axis labels
+        :param list valuecols: List of data columns to graph
+        :param str charttype: Type of chart, defaults to 'line'.  This may be
+           any YUI3 'type'
+
+        """
         kwargs['rows'] = kwargs.get('rows', 0)
-        return ChartWidget.create(*args, chart_type='line', **kwargs)
+        return ChartWidget.create(*args, charttype='line', **kwargs)

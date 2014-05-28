@@ -66,16 +66,6 @@ Documentation
 -------------
 
 * :doc:`install`
-
-  * Using 'steel'
-  * Manual install
-
-    * Linux
-    * Windows
-
-  * SteelScript VM
-  * Upgrade
-
 * :doc:`projects`
 
   * Creating a new project
@@ -105,12 +95,9 @@ Documentation
   * Logging in
   * Running reports
 
-* Reports
+* :doc:`reports`
 
-  * Reports, Sections and Widgets
-
-    * Available Widgets
-    * Report/Section/Widget options
+* :doc:`tables`
 
   * Tables and Columns
 
@@ -121,6 +108,8 @@ Documentation
   * Custom AnalysisTables
 
   * Custom Criteria with TableFields
+
+* Devices
 
 * Plugins
 

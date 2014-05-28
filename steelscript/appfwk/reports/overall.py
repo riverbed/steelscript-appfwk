@@ -10,7 +10,7 @@ import steelscript.appfwk.apps.report.modules.yui3 as yui3
 import steelscript.appfwk.apps.report.modules.maps as maps
 
 from steelscript.netprofiler.appfwk.datasources.netprofiler import (NetProfilerGroupbyTable,
-                                                                    NetProfilerTimeseriesTable)
+                                                                    NetProfilerTimeSeriesTable)
 from steelscript.netshark.appfwk.datasources.netshark import NetSharkTable
 
 #
@@ -43,7 +43,7 @@ report.add_widget(yui3.TableWidget, p, "Locations by Avg Bytes", width=6)
 report.add_section('NetProfiler Overall',
                    section_keywords=['resolution', 'duration'])
 
-p = NetProfilerTimeseriesTable.create('ts1', duration=1440, resolution='15min')
+p = NetProfilerTimeSeriesTable.create('ts1', duration=1440, resolution='15min')
 
 p.add_column('time', label='Time', datatype='time', iskey=True)
 p.add_column('avg_bytes', label='Avg Bytes/s', units='B/s')

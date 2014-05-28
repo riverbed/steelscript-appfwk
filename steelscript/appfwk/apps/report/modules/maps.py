@@ -74,26 +74,29 @@ class MapWidget(object):
     def create(cls, section, table, title, width=6, height=300,
                lat_col=None, long_col=None, val_col=None, label_col=None,
                min_bounds=None):
-        """Class method to create a MapWidget.
+        """Create a widget displaying data overlayed on a map.
 
-        `lat_col` and `long_col` are optional pairs of columns indicating
-                the latitude and longitude values of data to plot.  If these
-                are omitted, the first column with the attribute 'iskey' will
-                be used as the means for determining where to plot.
+        :param int width: Width of the widget in columns (1-12, default 6)
+        :param int height: Height of the widget in pixels (default 300)
 
-        `val_column` is the data column to graph, defaults to the first non-key
-                column found assigned to the table.
+        :param float lat_col, long_col: are optional pairs of columns
+            indicating the latitude and longitude values of data to
+            plot.  If these are omitted, the first column with the
+            attribute 'iskey' will be used as the means for
+            determining where to plot.
 
-        `name_column` is an optional column to use for marker labels when
-                when defining lat/long columns.
+        :param str/col val_column: the data column to graph, defaults to
+            the first non-key column found assigned to the table.
 
-        `min_bounds` is an optional tuple of (lat, lng) points representing
-                the minimum extents that the map should include.  Useful to
-                avoid the close zoomed-in effect when two close-in points
-                would be plotted.  For example, to have continental US always
-                shown, the argument could be:
-                    ((33.184833, -116.999540),
-                     (45.561302, -67.956573))
+        :param str/col name_column: column to use for marker labels
+            when when defining lat/long columns.
+
+        :param tuple min_bounds: tuple of (lat, lng) points
+            representing the minimum extents that the map should
+            include.  Useful to avoid the close zoomed-in effect when
+            two close-in points would be plotted.  For example, to
+            have continental US always shown, the argument could be:
+            ``((33.184833, -116.999540), (45.561302, -67.956573))``
 
         Each column argument may be a Column object or the string name.
 

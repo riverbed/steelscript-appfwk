@@ -470,6 +470,42 @@ class DatasourceTable(Table):
 
     @classmethod
     def create(cls, name, **kwargs):
+        """Create a table.
+
+        :param str name: Unique identifier for this table
+
+        Standard keyword arguments:
+
+        :param int rows: set maximum number of rows to save after
+            sorting (defaults to -1, no maximum)
+
+        :param bool resample: if True, timeseries data returned by the
+            data source will be resampled to ``criteria.resample_resolution``
+            or ``criteria.resolution``
+
+        Additional table and field options keyword arguments may
+        be provided that are unique to the specific data source
+        table being instantiatied:
+
+        ``table_options``
+
+            These options define subclass-specific options that allow
+            customization of a table instance. Table options are *not*
+            visible to users running reports via the UI.  Option
+            values are provided at table creation and are considered
+            static for the life of this table instance.
+
+        ``field_options``
+
+            Most tables are designed to take input from the user via table
+            fields.  The user fills in values for each table field and the set
+            of input becomes the report *criteria*.
+
+            Field options allow the report writer to customize the aspects of
+            table fields such as the initial value of a form field or the list
+            of choices in a drop-down selection field.
+
+        """
         name = slugify(unicode(name))
 
         # process subclass assigned options
@@ -521,6 +557,50 @@ class DatasourceTable(Table):
 
     def add_column(self, name, label=None,
                    sortasc=False, sortdesc=False, **kwargs):
+        """Add a column to this table.
+
+        :param str name: Unique identifier for this column
+        :param str label: Display string, defaults to name
+        :param bool sortasc, sortdesc: Sort table based on this columns data
+
+        Standard keyword arguments:
+
+        :param bool iskey: Set True for key columns
+
+        :param enum datatype: type of data his column contains,
+            defaults to 'float':
+
+            * float
+            * integer
+            * time
+            * string
+            * html
+
+        :param enum units: Units for data in this column, defaults to none:
+
+            * none - no units
+            * s - seconds
+            * ms - milliseconds
+            * B - bytes
+            * B/s - bytes per second
+            * pct - percentage
+
+        :param float position: Display position relative to other columns, automatically
+            computed by default
+
+        :param bool synthetic: Set True to compute this columns value
+            according to ``compute_expression``
+
+        :param str compute_expression: Computation expression for syntetic columns
+
+        :param bool compute_post_resample: If true, compute this synthetic column
+            after resampling (time series only)
+
+        :param str resample_operation: Operation to use on this column to aggregate
+            multiple rows during resampling, defaults to sum
+
+
+        """
         klass = self._column_class or Column
         c = klass.create(self, name, label, **kwargs)
 
