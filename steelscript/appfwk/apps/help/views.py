@@ -12,7 +12,6 @@ from django.http import Http404
 from django.template import RequestContext
 from django.shortcuts import render_to_response
 from rest_framework import views
-from rest_framework.response import Response
 from rest_framework.renderers import TemplateHTMLRenderer
 
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager

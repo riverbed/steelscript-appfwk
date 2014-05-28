@@ -33,6 +33,7 @@ from steelscript.appfwk.apps.datasource.models import Job, Table
 from steelscript.appfwk.apps.datasource.serializers import TableSerializer
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
 from steelscript.appfwk.apps.devices.models import Device
+from steelscript.appfwk.apps.geolocation.models import Location, LocationIP
 from steelscript.appfwk.apps.preferences.models import SystemSettings
 from steelscript.appfwk.apps.report.models import Report, Section, Widget, WidgetJob
 from steelscript.appfwk.apps.report.serializers import ReportSerializer
@@ -515,12 +516,24 @@ class WidgetJobDetail(views.APIView):
                     resp['message'] = msg
                     logger.debug("%s Error: module unauthorized for user %s"
                                  % (str(wjob), request.user))
+                elif (hasattr(i, 'authorized') and
+                      not Location.objects.all() and
+                      not LocationIP.objects.all()):
+                    # we are using a maps widget, but have no locations
+                    resp = job.json()
+                    resp['data'] = None
+                    resp['status'] = Job.ERROR
+                    msg = '''\
+Geolocation data has not been loaded.
+See <a href="https://support.riverbed.com/apis/steelscript/appfwk/geolocation.html">\
+geolocation documentation</a> for more information.'''
+                    resp['message'] = msg
+                    logger.debug("%s Error: geo location data not loaded.")
                 else:
                     data = widget_func(widget, job, tabledata)
                     resp = job.json(data)
                     logger.debug("%s complete" % str(wjob))
-                    #with open('/tmp/widget-job-%d.txt' % job.id, 'w') as f:
-                    #    f.write(json.dumps(resp))
+
             except:
                 logger.exception("Widget %s Job %s processing failed" %
                                  (widget.id, job.id))

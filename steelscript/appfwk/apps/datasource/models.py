@@ -1477,7 +1477,6 @@ class BatchJobRunner(object):
     def add_job(self, job):
         self.jobs.append(job)
 
-
     def run(self):
         class JobList:
             def __init__(self, jobs):
@@ -1514,7 +1513,7 @@ class BatchJobRunner(object):
             rebuild_batch = False
             batch_progress = 0.0
             something_done = False
-            for i,job in enumerate(batch):
+            for i, job in enumerate(batch):
                 job.refresh()
                 if job.done():
                     something_done = True
@@ -1545,16 +1544,15 @@ class BatchJobRunner(object):
             elif rebuild_batch:
                 batch = [j for j in batch if j is not None]
 
-
         return
 
         for i in range(0, len(jobs), self.batchsize):
             batch = jobs[i:i+self.batchsize]
             batch_status = {}
-            for j,job in enumerate(batch):
+            for j, job in enumerate(batch):
                 batch_status[job.id] = False
                 logger.debug("%s: starting job #%d (%s)"
-                             % (self, j+i, job))
+                             % (self, j + i, job))
                 job.start()
 
             interval = 0.2
