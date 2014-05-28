@@ -5,9 +5,8 @@
 # as set forth in the License.
 
 
-import logging
-import inspect
 import os
+import logging
 
 from django.db import models
 from django.db.models import Max, Sum
@@ -20,7 +19,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from model_utils.managers import InheritanceManager
 
 from steelscript.common.jsondict import JsonDict
-from steelscript.appfwk.project.utils import get_module
+from steelscript.appfwk.project.utils import (get_module, get_sourcefile,
+                                              get_namespace)
 from steelscript.appfwk.apps.datasource.models import Table, Job, TableField
 from steelscript.appfwk.libs.fields import PickledObjectField, SeparatedValuesField
 
@@ -76,24 +76,10 @@ class Report(models.Model):
         """
         if not self.sourcefile:
             modname = get_module()
-            if modname is not None:
-                self.sourcefile = modname
-            else:
-                self.sourcefile = 'default'
+            self.sourcefile = get_sourcefile(modname)
 
         if not self.namespace:
-            if (self.sourcefile == 'default' or
-                    self.sourcefile.startswith('reports') or
-                    'builtin' in self.sourcefile):
-                self.namespace = 'default'
-            elif self.sourcefile.startswith('custom_reports'):
-                self.namespace = 'custom'
-            else:
-                ns = self.sourcefile.split('.')
-                if ns[1] != 'appfwk':
-                    self.namespace = ns[1]
-                else:
-                    self.namespace = ns[2]
+            self.namespace = get_namespace(self.sourcefile)
 
         if not self.slug:
             self.slug = slugify(self.sourcefile.split('.')[-1])

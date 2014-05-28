@@ -19,7 +19,6 @@ import random
 import datetime
 import string
 import copy
-import inspect
 
 from django.utils.text import slugify
 import pytz
@@ -35,10 +34,12 @@ from django.conf import settings
 from steelscript.common.jsondict import JsonDict
 from steelscript.common.utils import DictObject
 from steelscript.common import timedelta_total_seconds
-from steelscript.appfwk.project.utils import get_module
+from steelscript.appfwk.project.utils import (get_module, get_sourcefile,
+                                              get_namespace)
 from steelscript.appfwk.apps.datasource.exceptions import *
 from steelscript.appfwk.libs.fields import (PickledObjectField, FunctionField,
-                                            SeparatedValuesField, check_field_choice,
+                                            SeparatedValuesField,
+                                            check_field_choice,
                                             field_choice_str)
 
 logger = logging.getLogger(__name__)
@@ -277,24 +278,10 @@ class Table(models.Model):
         """
         if not self.sourcefile:
             modname = get_module()
-            if modname is not None:
-                self.sourcefile = modname
-            else:
-                self.sourcefile = 'default'
+            self.sourcefile = get_sourcefile(modname)
 
         if not self.namespace:
-            if (self.sourcefile == 'default' or
-                    self.sourcefile.startswith('reports') or
-                    'builtin' in self.sourcefile):
-                self.namespace = 'default'
-            elif self.sourcefile.startswith('custom_reports'):
-                self.namespace = 'custom'
-            else:
-                ns = self.sourcefile.split('.')
-                if ns[1] != 'appfwk':
-                    self.namespace = ns[1]
-                else:
-                    self.namespace = ns[2]
+            self.namespace = get_namespace(self.sourcefile)
 
         super(Table, self).save(*args, **kwargs)
 

@@ -7,7 +7,9 @@
 
 import os
 import sys
+import shutil
 import inspect
+import pkg_resources
 
 from steelscript.common.exceptions import RvbdHTTPException, RvbdException
 
@@ -55,6 +57,38 @@ def get_module():
         del frame, frm, mod
 
 
+def get_sourcefile(modname):
+    """Return sourcefile name for given module name."""
+    if modname is not None:
+        return modname
+    else:
+        return 'default'
+
+
+def get_namespace(sourcefile):
+    """Return namespace for given sourcefile. """
+    ns = sourcefile.split('.')
+
+    if (sourcefile.startswith('reports.') and (ns[1] == 'default' or
+                                               len(ns) == 2)):
+        # 'reports.default', 'reports.overall', etc.
+        namespace = 'default'
+    elif sourcefile.startswith('custom_reports'):
+        namespace = 'custom'
+    elif ns[0] == 'steelscript':
+        # 'steelscript.wireshark.appfwk.plugin' --> 'wireshark'
+        namespace = ns[1]
+    elif len(ns) >= 3:
+        # take the middle portion, should align to plugin names
+        # handles subdirectories as well
+        namespace = '.'.join(ns[1:-1])
+    else:
+        # some other folder structure
+        namespace = 'custom'
+
+    return namespace
+
+
 def get_caller_name(frames_back=2):
     """ Determine filename of calling function.
         Used to determine source of Report class definition.
@@ -64,6 +98,47 @@ def get_caller_name(frames_back=2):
     mod = inspect.getmodule(frm)
     del frm
     return mod.__name__
+
+
+def link_pkg_dir(pkgname, src_path, dest_dir, symlink=True,
+                 replace=True, buf=None):
+    """Create a link from a resource within an installed package.
+
+    :param pkgname: name of installed package
+    :param src_path: relative path within package to resource
+    :param dest_dir: absolute path to location to link/copy
+    :param symlink: create a symlink or copy files
+    :param replace: if True, will unlink/delete before linking
+    :param buf: IO buffer to send debug statements, if None uses sys.stdout
+    """
+    if buf is None:
+        debug = sys.stdout.write
+    else:
+        debug = buf
+
+    src_dir = pkg_resources.resource_filename(pkgname, src_path)
+
+    if os.path.islink(dest_dir) and not os.path.exists(dest_dir):
+        debug(' unlinking %s ...\n' % dest_dir)
+        os.unlink(dest_dir)
+
+    if os.path.exists(dest_dir):
+        if not replace:
+            return
+
+        if os.path.islink(dest_dir):
+            debug(' unlinking %s ...\n' % dest_dir)
+            os.unlink(dest_dir)
+        else:
+            debug(' removing %s ...\n' % dest_dir)
+            shutil.rmtree(dest_dir)
+
+    if symlink:
+        debug(' linking %s --> %s\n' % (src_dir, dest_dir))
+        os.symlink(src_dir, dest_dir)
+    else:
+        debug(' copying %s --> %s\n' % (src_dir, dest_dir))
+        shutil.copytree(src_dir, dest_dir)
 
 
 # list of files/directories to ignore
@@ -134,4 +209,3 @@ class Importer(object):
                     continue
 
                 self.import_file(f, name)
-

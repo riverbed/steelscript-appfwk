@@ -141,17 +141,15 @@ class Command(BaseCommand):
                                     clear_cache=True,
                                     clear_logs=False)
 
+            # collect any new reports
+            management.call_command('collectreports',
+                                    overwrite=False,
+                                    verbosity=3)
+
             # start with fresh device instances
             DeviceManager.clear()
 
-            report_dir = os.path.join(settings.PROJECT_ROOT,
-                                      options['report_dir'] or 'reports')
-
+            report_dir = settings.REPORTS_DIR
             self.importer.import_directory(report_dir, report_name=None)
-
-            for plugin in plugins.enabled():
-                if plugin.reports:
-                    #from IPython import embed; embed()
-                    plugin.load_reports()
 
             self.apply_enabled()

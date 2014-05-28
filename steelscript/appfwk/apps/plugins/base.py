@@ -7,7 +7,7 @@
 
 import os
 
-from steelscript.appfwk.project.utils import Importer
+from steelscript.appfwk.project.utils import Importer, get_namespace
 
 # portions and concepts used from sentry project:
 # https://getsentry.com/welcome/
@@ -55,7 +55,12 @@ class IPlugin(object):
         """ Returns boolean if this plugin is enabled. """
         return self.enabled or not self.can_disable
 
-    def _get_sources(self, paths):
+    def get_namespace(self):
+        """Return namespace of Plugin."""
+        return get_namespace(self.__class__.__module__)
+
+    def _get_sources(self, paths, abs_paths=False):
+        # 'abs_paths' return absolute paths rather than pkg references
         import inspect
         import pkgutil
 
@@ -68,15 +73,22 @@ class IPlugin(object):
         for instance, source_name, _ in pkgutil.iter_modules(sourcepaths):
             # append tuple of source_name, pkg_name
             source_path = instance.path
-            rel_source_path = os.path.relpath(source_path, module_path)
-            pkg_name = '.'.join([module_name,
-                                 '.'.join(rel_source_path.split(os.path.sep)),
-                                 source_name])
+            if abs_paths:
+                pkg_name = os.path.join(source_path, source_name + '.py')
+            else:
+                rel_path = os.path.relpath(source_path, module_path)
+                pkg_name = '.'.join([module_name,
+                                     '.'.join(rel_path.split(os.path.sep)),
+                                     source_name])
+
             yield (source_name, pkg_name)
 
     def get_reports(self):
         """ Returns list of library modules. """
         return self._get_sources(self.reports)
+
+    def get_reports_paths(self):
+        return self._get_sources(self.reports, True)
 
     def get_libraries(self):
         """ Returns list of library modules. """

@@ -11,7 +11,8 @@ from steelscript.appfwk.apps.report.models import Report, Widget, WidgetJob
 
 
 class ReportAdmin(admin.ModelAdmin):
-    list_display = ('title', 'enabled', 'position', 'sourcefile', 'slug')
+    list_display = ('enabled', 'title', 'position', 'namespace',
+                    'sourcefile', 'slug')
     fieldsets = (
         (None, {
             'fields': ('title', 'position', 'enabled', 'slug',

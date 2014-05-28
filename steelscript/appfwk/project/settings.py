@@ -17,8 +17,10 @@ PORTAL_ROOT = os.path.dirname(SETTINGS_ROOT)
 PROJECT_ROOT = os.path.dirname(PORTAL_ROOT)
 
 # Development defaults
-DATA_CACHE = os.path.join(PROJECT_ROOT, 'datacache')
-INITIAL_DATA = os.path.join(PROJECT_ROOT, 'initial_data')
+DATAHOME = os.getenv('DATAHOME', PROJECT_ROOT)
+DATA_CACHE = os.path.join(DATAHOME, 'data', 'datacache')
+INITIAL_DATA = os.path.join(DATAHOME, 'data', 'initial_data')
+REPORTS_DIR = os.path.join(PROJECT_ROOT, 'reports')
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
