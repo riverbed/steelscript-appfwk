@@ -46,10 +46,10 @@ class ProfilerMergeIpDeviceTable(AnalysisTable):
 
     def post_process_table(self, field_options):
         super(ProfilerMergeIpDeviceTable, self).post_process_table(field_options)
-        self.copy_columns(self.options['tables']['traffic'],
-                          except_columns=['interface_dns'])
         self.add_column('interface_name', 'Interface', iskey=True,
                         datatype="string")
+        self.copy_columns(self.options['tables']['traffic'],
+                          except_columns=['interface_dns'])
 
 
 class ProfilerMergeIpDeviceQuery(AnalysisQuery):

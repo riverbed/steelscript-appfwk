@@ -889,8 +889,9 @@ class TableQueryBase(object):
 
     def mark_progress(self, progress):
         # Called by the analysis function
-        if self.table.tables:
-            n = len(self.table.tables)+1
+        tables = getattr(self.table.options, 'tables', None)
+        if tables:
+            n = len(tables)+1
         else:
             n = 1
         self.job.mark_progress(((n-1)*100 + progress)/n)
