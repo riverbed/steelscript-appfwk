@@ -1,6 +1,8 @@
 Projects
 ======================
 
+.. _creating a new project:
+
 Creating a new project
 ----------------------
 
@@ -55,6 +57,8 @@ be ready for use!
     Initializing project using default settings....done
 
 
+.. _directory layout:
+
 Directory layout
 ----------------
 
@@ -95,9 +99,10 @@ Lets discuss in order listed above:
 * ``data`` - contains the default sqlite database, along with subdirectories
   'datacache' and 'initial_data', that store project specific transient data.
 
-* ``example-configs`` - contains example configuration files for Apache, and Nginx,
+* ``example-configs`` - contains example configuration files for Apache, and nginx,
   as well as some sample LDAP settings that can be added to the local_settings.py
-  file.
+  file.  Two example geolocation files are included here to provide
+  templates for your own location setups.
 
 * ``media`` and ``thirdparty`` - images, javascript libraries, and css files
   are stored here.

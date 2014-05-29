@@ -81,14 +81,19 @@ Documentation
 
 * :doc:`managing`
 
-  * Development server
+  * Maintenance / Rebuilding
 
-    * Start/stop
-    * Rebuilding
+      * Collecting Reports
+      * Reloading Reports
+      * Collecting Logs
+      * Reset database and server
 
-  * Apache
+  * Running the server
+      * Development server
+      * Production server
 
-    * Enabling HTTPS
+        * Collecting Static Files
+        * Enabling HTTPS
 
 * Using the Application Framework
 

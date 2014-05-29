@@ -89,7 +89,23 @@ and provides a means to add devices for use throughout the site.
 Click on "Add New Device" and fill out the requested information for
 each device you'd like to be able to use as a datasource.
 
+
+.. locations import:
+
 Locations
 ---------
 
-TBD
+The Geolocation functionality of App Framework relies on internally
+stored set of locations and IP address mappings in order to accurately
+plot data points.  Included in the :ref:`example-configs <directory layout>`
+directory are two locations files you can modify to meet your internal
+network layout.  To install these files (or your own similarly created
+ones):
+
+.. code-block:: console
+
+    $ cd appfwk_project
+    $ python manage.py locations --import-locations example-configs/sample_locations.txt
+    Imported 13 locations
+    $ python manage.py locations --import-location-ip example-configs/sample_location_ip.txt
+    Imported 13 locations/ip entries

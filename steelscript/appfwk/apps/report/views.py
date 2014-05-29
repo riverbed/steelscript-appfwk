@@ -525,7 +525,7 @@ class WidgetJobDetail(views.APIView):
                     resp['status'] = Job.ERROR
                     msg = '''\
 Geolocation data has not been loaded.
-See <a href="https://support.riverbed.com/apis/steelscript/appfwk/geolocation.html">\
+See <a href="https://support.riverbed.com/apis/steelscript/appfwk/configuration.html#locations">\
 geolocation documentation</a> for more information.'''
                     resp['message'] = msg
                     logger.debug("%s Error: geo location data not loaded.")
