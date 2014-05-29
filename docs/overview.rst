@@ -74,10 +74,13 @@ Documentation
 * :doc:`configuration`
 
   * Setting up the database
+  * Devices
+  * User Preferences
+  * System Settings
+
+  * Locations
   * Managing users
   * Using LDAP for Authentication
-  * Devices
-  * Locations
 
 * :doc:`managing`
 
@@ -95,7 +98,7 @@ Documentation
         * Collecting Static Files
         * Enabling HTTPS
 
-* Using the Application Framework
+* :doc:`usingappfwk`
 
   * Logging in
   * Running reports

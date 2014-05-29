@@ -101,7 +101,7 @@ Lets discuss in order listed above:
 
 * ``example-configs`` - contains example configuration files for Apache, and nginx,
   as well as some sample LDAP settings that can be added to the local_settings.py
-  file.  Two example geolocation files are included here to provide
+  file.  Two example geolocation files are also included here to provide
   templates for your own location setups.
 
 * ``media`` and ``thirdparty`` - images, javascript libraries, and css files
