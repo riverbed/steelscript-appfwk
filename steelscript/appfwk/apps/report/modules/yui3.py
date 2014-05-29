@@ -207,20 +207,9 @@ class TimeSeriesWidget(object):
         if len(timecols) == 0:
             raise ValueError("Table %s must have a datatype 'time' column for "
                              "a timeseries widget" % str(table))
-        cols = cols
-        if altaxis:
-            if cols is None:
-                raise ValueError("Parameter `cols` cannot be none with `altaxis`")
-            axes = {'0': {'position': 'left',
-                          'columns': [col for col in cols if col not in altaxis]},
-                    '1': {'position': 'right',
-                          'columns': [col for col in cols if col in altaxis]}
-                    }
-        else:
-            axes = {'0': {'position': 'left',
-                          'columns': cols}}
-        w.options = JsonDict(axes=axes,
-                             columns=cols,
+
+        w.options = JsonDict(columns=cols,
+                             altaxis=altaxis,
                              stacked=stacked)
         w.save()
         w.tables.add(table)
@@ -268,8 +257,20 @@ class TimeSeriesWidget(object):
 
             colinfo[ci.key] = ci
 
+        if widget.options.altaxis:
+            altaxis = widget.options.altaxis
+            axes_def = {'0': {'position': 'left',
+                              'columns': [col for col in valuecolnames
+                                          if col not in altaxis]},
+                        '1': {'position': 'right',
+                              'columns': [col for col in valuecolnames
+                                          if col in altaxis]}
+                        }
+        else:
+            axes_def = {'0': {'position': 'left',
+                          'columns': valuecolnames}}
         w_series = []
-        axes = Axes(widget.options.axes)
+        axes = Axes(axes_def)
 
         # Setup the time axis
         w_axes = {"time": {"keys": ["time"],
