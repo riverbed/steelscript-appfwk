@@ -5,7 +5,7 @@
 # as set forth in the License.
 
 
-from steelscript.appfwk.apps.plugins.builtin.whois.libs.whois import whois
+from steelscript.appfwk.apps.plugins.builtin.whois.datasource.whois import WhoisTable
 
 from steelscript.appfwk.apps.datasource.modules.analysis import AnalysisTable
 from steelscript.netprofiler.appfwk.datasources.netprofiler import NetProfilerGroupbyTable
@@ -30,12 +30,11 @@ table.add_column('host_ip', 'IP Addr', iskey=True, datatype='string')
 table.add_column('avg_bytes', 'Avg Bytes', units='B/s', sortdesc=True)
 
 
+#report.add_widget(yui3.TableWidget, table, "Table", width=12)
+
 # Create an Analysis table that calls the 'whois' function to craete a link to
 # 'whois'
-whoistable = AnalysisTable.create('5-whois-hosts',
-                                  tables={'t': table},
-                                  function=whois)
-whoistable.copy_columns(table)
-whoistable.add_column('whois', label="Whois link", datatype='html')
+whoistable = WhoisTable.create('5-whois-hosts',
+                               tables={'t': table})
 
 report.add_widget(yui3.TableWidget, whoistable, "Link table", width=12)

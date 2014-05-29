@@ -13,6 +13,8 @@ from steelscript.common.timeutils import \
 
 from steelscript.appfwk.apps.datasource.models import \
     DatasourceTable, TableQueryBase, Column, TableField
+from steelscript.appfwk.apps.datasource.modules.analysis import \
+    AnalysisTable, AnalysisQuery
 from steelscript.appfwk.apps.devices.forms import fields_add_device_selection
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 from steelscript.appfwk.apps.datasource.forms import \
@@ -65,7 +67,7 @@ class WaveTable(DatasourceTable):
     class Meta: proxy = True
 
     # When a custom column is used, it must be linked
-    _column_class = WaveColumn
+    _column_class = 'WaveColumn'
 
     # The query class defaults to TableQuery, change it here if
     # named something else
@@ -108,17 +110,7 @@ class WaveTable(DatasourceTable):
                               resolutions=field_options['resolutions'])
 
 
-#
-# The TableQuery class must be defined with the __init__ and run
-# method taking the defined arguments
-#
-class WaveQuery(object):
-
-    def __init__(self, table, job):
-        self.table = table
-        self.job = job
-
-        # Perform any additional query initialization here
+class WaveQuery(TableQueryBase):
 
     def run(self):
         # This method is called to actually execute the query
@@ -222,7 +214,7 @@ class WaveQuery(object):
 #
 # Define a custom WaveTable
 #
-class ClippedWaveTable(DatasourceTable):
+class ClippedWaveTable(AnalysisTable):
     class Meta: proxy = True
 
     # The query class defaults to TableQuery, change it here if
@@ -233,7 +225,8 @@ class ClippedWaveTable(DatasourceTable):
                       'max': 7 }
 
     def post_process_table(self, field_options):
-        if len(self.tables) != 1 and 'waves' not in self.tables:
+        tables = self.options['tables']
+        if not tables or len(tables) != 1 or 'waves' not in tables:
             raise ValueError("Tables must contain only a dependent table "
                              "named 'waves'")
 
@@ -249,16 +242,16 @@ class ClippedWaveTable(DatasourceTable):
                           help_text=('Clip all wave forms at this maximum value'),
                           required=False)
 
-        self.copy_columns(self.tables['waves'])
+        self.copy_columns(tables['waves'])
 
 
 #
 # The TableQuery class must be defined with the __init__ and run
 # method taking the defined arguments
 #
-class ClippedWaveQuery(TableQueryBase):
+class ClippedWaveQuery(AnalysisQuery):
 
-    def run(self):
+    def post_run(self):
         assert('waves' in self.tables)
 
         # Grab the incoming 'waves' table, which will have already been

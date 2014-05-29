@@ -7,7 +7,8 @@
 
 import logging
 
-from steelscript.appfwk.apps.datasource.models import DatasourceTable
+from steelscript.appfwk.apps.datasource.models import \
+    DatasourceTable, TableQueryBase
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 from steelscript.appfwk.apps.devices.forms import fields_add_device_selection
 
@@ -22,6 +23,8 @@ class SharepointTable(DatasourceTable):
     TABLE_OPTIONS = {'site_url': '',
                      'list_name': ''}
 
+    _query_class = 'SharepointQuery'
+
     def post_process_table(self, field_options):
         fields_add_device_selection(self,
                                     keyword='sharepoint_device',
@@ -30,11 +33,7 @@ class SharepointTable(DatasourceTable):
                                     enabled=True)
 
 
-class TableQuery(object):
-    # Used by Table to actually run a query
-    def __init__(self, table, job):
-        self.table = table
-        self.job = job
+class SharepointQuery(TableQueryBase):
 
     def run(self):
         """ Main execution method

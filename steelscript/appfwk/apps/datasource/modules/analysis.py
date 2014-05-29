@@ -77,59 +77,114 @@ class AnalysisTable(DatasourceTable):
     class Meta:
         proxy = True
 
-    TABLE_OPTIONS = {'function': None}         # Function object
+    _ANALYSIS_TABLE_OPTIONS = {
+        'tables': None,            # dependent tables to be run first
+        'related_tables': None}    # related tables that are reference only
+
+    _ANALYSIS_FIELD_OPTIONS = {
+        'copy_fields': True }      # If true, copy TableFields from tables
+                                   # and related_tables
+
+    _query_class = 'AnalysisQuery'
 
     @classmethod
     def process_options(cls, table_options):
-        if not isinstance(table_options['function'], Function):
-            table_options['function'] = Function(table_options['function'])
+        # handle direct id's, table references, or table classes
+        # from tables option and transform to simple table id value
+        for i in ['tables', 'related_tables']:
+            for k, v in (table_options[i] or {}).iteritems():
+                table_options[i][k] = Table.to_ref(v)
 
         return table_options
 
+    def post_process_table(self, field_options):
+        if field_options['copy_fields']:
+            keywords = set()
+            for i in ['tables', 'related_tables']:
+                refs = self.options[i] or {}
+                for ref in refs.values():
+                    table = Table.from_ref(ref)
+                    for f in table.fields.all():
+                        if f.keyword not in keywords:
+                            self.fields.add(f)
+                            keywords.add(f.keyword)
 
-class TableQuery(TableQueryBase):
+
+class AnalysisQuery(TableQueryBase):
 
     def run(self):
-        tables = self.tables or {}
-        reltables = self.table.related_tables or {}
-        for table_name in reltables:
-            tables[table_name] = Table.from_ref(reltables[table_name])
+        deptables = self.table.options.tables
+        if not deptables:
+            self.tables = {}
+            return True
 
+        # Collect all dependent tables
         options = self.table.options
-        try:
-            df = options.function(self, tables, self.job.criteria)
-        except AnalysisException as e:
-            self.job.mark_error("Analysis function %s failed: %s" %
-                                (options.function, e.message))
-            logger.exception("%s raised an exception" % self)
-            return False
-        except Exception as e:
-            self.job.mark_error("Analysis function %s failed: %s" %
-                                (options.function, str(e)))
-            logger.exception("%s: Analysis function %s raised an exception" %
-                             (self, options.function))
+
+        # Create dataframes for all dependent tables
+        tables = {}
+
+        logger.debug("%s: dependent tables: %s" % (self, deptables))
+        depjobids = {}
+        max_progress = (len(deptables)*100.0/float(len(deptables)+1))
+        batch = BatchJobRunner(self.job, max_progress=max_progress)
+
+        for (name, ref) in deptables.items():
+            deptable = Table.from_ref(ref)
+            job = Job.create(
+                table=deptable,
+                criteria=self.job.criteria.build_for_table(deptable)
+            )
+            batch.add_job(job)
+            logger.debug("%s: starting dependent job %s" % (self, job))
+            depjobids[name] = job.id
+
+        batch.run()
+
+        logger.debug("%s: all dependent jobs complete, collecting data"
+                     % str(self))
+
+        failed = False
+        for (name, id) in depjobids.items():
+            job = Job.objects.get(id=id)
+
+            if job.status == job.ERROR:
+                self.job.mark_error("Dependent Job failed: %s" % job.message)
+                failed = True
+                break
+
+            f = job.data()
+            tables[name] = f
+            logger.debug("%s: Table[%s] - %d rows" %
+                         (self, name, len(f) if f is not None else 0))
+
+        if failed:
             return False
 
-        self.data = df
+        self.tables = tables
 
-        logger.debug("%s: completed successfully" % (self))
+        logger.debug("%s: deptables completed successfully" % (self))
         return True
 
-def analysis_echo_criteria(query, tables, criteria, params):
-    values = [[str(k),str(v)]
-              for k,v in criteria.iteritems()]
-    values.append(['criteria.starttime', str(criteria.starttime)])
-    df = pandas.DataFrame(values,
-                          columns=['key', 'value']).sort('key')
 
-    return df
+class CriteriaTable(AnalysisTable):
+    _query_class = 'CriteriaQuery'
 
-def create_criteria_table(name):
-    table = AnalysisTable.create(name, tables={},
-                                 function = analysis_echo_criteria)
+    def post_process_table(self, field_options):
+        self.add_column('key', 'Criteria Key', iskey=True,
+                        datatype=Column.DATATYPE_STRING)
+        self.add_column('value', 'Criteria Value',
+                        datatype=Column.DATATYPE_STRING)
 
-    Column.create(table, 'key', 'Criteria Key', iskey=True,
-                  datatype=Column.DATATYPE_STRING)
-    Column.create(table, 'value', 'Criteria Value',
-                  datatype=Column.DATATYPE_STRING)
-    return table
+class CriteriaQuery(AnalysisQuery):
+
+    def post_run(self):
+        criteria = self.job.criteria
+        values = [[str(k),str(v)]
+                  for k,v in criteria.iteritems()]
+        values.append(['criteria.starttime', str(criteria.starttime)])
+        df = pandas.DataFrame(values,
+                              columns=['key', 'value']).sort('key')
+
+        self.data = df
+        return True

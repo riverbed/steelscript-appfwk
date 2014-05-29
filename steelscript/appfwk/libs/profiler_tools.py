@@ -1,6 +1,9 @@
 import pandas
 import logging
 
+from steelscript.appfwk.apps.datasource.modules.analysis import \
+    AnalysisTable, AnalysisQuery
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,35 +32,59 @@ def explode_interface_dns(interface_dns):
     return ip, ifindex, ifdescr
 
 
-def process_join_ip_device(target, tables, criteria, params):
-    dev = tables['devices']
-    traffic = tables['traffic']
+class ProfilerMergeIpDeviceTable(AnalysisTable):
 
-    #dev.save("/tmp/devices.pd")
-    #traffic.save("/tmp/traffic.pd")
+    _query_class = 'ProfilerMergeIpDeviceQuery'
 
-    if traffic is None or len(traffic) == 0:
-        return None
+    @classmethod
+    def create(cls, name, devices, traffic, **kwargs):
+        kwargs['tables'] = {'devices': devices,
+                            'traffic' : traffic}
+        return super(ProfilerMergeIpDeviceTable, cls).create(name, **kwargs)
 
-    if dev is None or len(dev) == 0:
-        return traffic
+    def post_process_table(self, field_options):
+        super(ProfilerMergeIpDeviceTable, self).post_process_table(field_options)
+        self.copy_columns(self.options['tables']['traffic'],
+                          except_columns=['interface_dns'])
+        self.add_column('interface_name', 'Interface', iskey=True,
+                        datatype="string")
 
-    dev = dev.copy()
-    traffic['interface_ip'], traffic['interface_index'], traffic['interface_ifdescr'] = zip(*traffic['interface_dns'].
-            map(explode_interface_dns))
 
-    df = pandas.merge(traffic, dev, left_on='interface_ip', right_on='ipaddr', how='left')
+class ProfilerMergeIpDeviceQuery(AnalysisQuery):
 
-    # Set the name to the ip addr wherever the name is empty
-    nullset = ((df['name'].isnull()) | (df['name'] == ''))
-    df.ix[nullset, 'name'] = df.ix[nullset, 'interface_ip']
+    def post_run(self):
+        #def process_join_ip_device(target, tables, criteria, params):
+        dev = self.tables['devices']
+        tr = self.tables['traffic']
 
-    # Set ifdescr to the index if empty
-    df['ifdescr'] = df['interface_ifdescr']
-    nullset = ((df['ifdescr'].isnull()) | (df['ifdescr'] == ''))
-    df.ix[nullset, 'ifdescr'] = df.ix[nullset, 'interface_index']
+        #dev.save("/tmp/devices.pd")
+        #traffic.save("/tmp/tr.pd")
 
-    # Compute the name from the name and ifdescr
-    df['interface_name'] = df['name'].astype(str) + ':' + df['ifdescr'].astype(str)
+        if tr is None or len(tr) == 0:
+            self.data = None
+            return True
 
-    return df
+        if dev is None or len(dev) == 0:
+            self.data = tr
+            return True
+
+        dev = dev.copy()
+        tr['interface_ip'], tr['interface_index'], tr['interface_ifdescr'] = zip(*tr['interface_dns'].
+                map(explode_interface_dns))
+
+        df = pandas.merge(tr, dev, left_on='interface_ip', right_on='ipaddr', how='left')
+
+        # Set the name to the ip addr wherever the name is empty
+        nullset = ((df['name'].isnull()) | (df['name'] == ''))
+        df.ix[nullset, 'name'] = df.ix[nullset, 'interface_ip']
+
+        # Set ifdescr to the index if empty
+        df['ifdescr'] = df['interface_ifdescr']
+        nullset = ((df['ifdescr'].isnull()) | (df['ifdescr'] == ''))
+        df.ix[nullset, 'ifdescr'] = df.ix[nullset, 'interface_index']
+
+        # Compute the name from the name and ifdescr
+        df['interface_name'] = df['name'].astype(str) + ':' + df['ifdescr'].astype(str)
+
+        self.data = df
+        return True

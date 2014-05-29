@@ -7,7 +7,8 @@
 
 import logging
 
-from steelscript.appfwk.apps.datasource.models import DatasourceTable
+from steelscript.appfwk.apps.datasource.models import \
+    DatasourceTable, TableQueryBase
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 from steelscript.appfwk.apps.devices.forms import fields_add_device_selection
 
@@ -19,6 +20,8 @@ class SolarwindsTable(DatasourceTable):
     class Meta:
         proxy = True
 
+    _query_class = 'SolarwindsQuery'
+
     def post_process_table(self, field_options):
         fields_add_device_selection(self,
                                     keyword='solarwinds_device',
@@ -27,11 +30,7 @@ class SolarwindsTable(DatasourceTable):
                                     enabled=True)
 
 
-class TableQuery(object):
-    # Used by Table to actually run a query
-    def __init__(self, table, job):
-        self.table = table
-        self.job = job
+class SolarwindsQuery(TableQueryBase):
 
     def run(self):
         """ Main execution method

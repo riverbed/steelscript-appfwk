@@ -9,7 +9,8 @@ import logging
 
 import pandas
 from steelscript.common.jsondict import JsonDict
-from steelscript.appfwk.apps.datasource.models import Column, Table, DatasourceTable
+from steelscript.appfwk.apps.datasource.models import \
+    Column, Table, DatasourceTable, TableQueryBase
 
 logger = logging.getLogger(__name__)
 
@@ -23,26 +24,15 @@ class HTMLTable(DatasourceTable):
     class Meta:
         proxy = True
 
+    _query_class = 'HTMLQuery'
+
     TABLE_OPTIONS = {'html': None}
 
     def post_process_table(self, field_options):
         self.add_column(name='html', label='html')
 
 
-class TableQuery(object):
-    def __init__(self, table, job):
-        self.table = table
-        self.job = job
-
-    def __unicode__(self):
-        return "<HTMLTable %s>" % self.job
-
-    def __str__(self):
-        return "<HTMLTable %s>" % self.job
-
-    def mark_progress(self, progress):
-        # Called by the analysis function
-        self.job.mark_progress(70 + (progress * 30)/100)
+class HTMLQuery(TableQueryBase):
 
     def run(self):
         # Collect all dependent tables

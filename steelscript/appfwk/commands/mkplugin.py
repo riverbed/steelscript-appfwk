@@ -112,7 +112,7 @@ class Command(BaseCommand):
         if not options.title:
             options.title = options.name
 
-        which = 'wave' if options.sample else '__plugin__'
+        which = 'wave' if options.wave else '__plugin__'
 
         basedir = os.path.join(os.path.dirname(steelscript.appfwk.commands.__file__),
                                'data', 'steelscript-' + which)

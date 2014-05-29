@@ -233,12 +233,6 @@ class Table(models.Model):
     # Indicates if data can be cached
     cacheable = models.BooleanField(default=True)
 
-    # Tables required to be run before this table
-    tables = PickledObjectField(null=True)
-
-    # Related table definitions
-    related_tables = PickledObjectField(null=True)
-
     @classmethod
     def create(cls, name, module, **kwargs):
         t = Table(name=name, module=module, **kwargs)
@@ -467,6 +461,7 @@ class Table(models.Model):
         return df
 
 
+
 class DatasourceTable(Table):
     class Meta:
         proxy = True
@@ -520,19 +515,13 @@ class DatasourceTable(Table):
         """
         name = slugify(unicode(name))
 
-        copy_fields = kwargs.pop('copy_fields', True)
-
-        # handle direct id's, table references, or table classes
-        # from tables option and transform to simple table id value
-        for i in ['tables', 'related_tables']:
-            if i not in kwargs:
-                continue
-            for k, v in kwargs[i].iteritems():
-                kwargs[i][k] = Table.to_ref(v)
-
         # process subclass assigned options
         table_options = copy.deepcopy(cls.TABLE_OPTIONS)
         field_options = copy.deepcopy(cls.FIELD_OPTIONS)
+
+        if hasattr(cls, '_ANALYSIS_TABLE_OPTIONS'):
+            table_options.update(cls._ANALYSIS_TABLE_OPTIONS)
+            field_options.update(cls._ANALYSIS_FIELD_OPTIONS)
 
         keys = kwargs.keys()
         to = dict((k, kwargs.pop(k)) for k in keys if k in table_options)
@@ -563,22 +552,13 @@ class DatasourceTable(Table):
         logger.debug('Creating table %s' % name)
         t = cls(name=name, module=cls.__module__, queryclass=queryclass,
                 datasource=cls.__name__, options=options, **table_kwargs)
+        # Ensure this is a *proxy* class
+        t._meta.proxy = True
+
         t.save()
 
         # post process table *instance* now that its been initialized
         t.post_process_table(field_options)
-
-        # Copy fields from tables/related_tables
-        if copy_fields:
-            keywords = set()
-            for i in ['tables', 'related_tables']:
-                refs = getattr(t, i) or {}
-                for ref in refs.values():
-                    table = Table.from_ref(ref)
-                    for f in table.fields.all():
-                        if f.keyword not in keywords:
-                            t.fields.add(f)
-                            keywords.add(f.keyword)
 
         return t
 
@@ -639,8 +619,12 @@ class DatasourceTable(Table):
 
 
         """
-        klass = self._column_class or Column
-        c = klass.create(self, name, label, **kwargs)
+        columnclass = self._column_class or Column
+        if not inspect.isclass(columnclass):
+            m = importlib.import_module(self.module)
+            columnclass = m.__dict__[columnclass]
+
+        c = columnclass.create(self, name, label, **kwargs)
 
         if sortasc or sortdesc:
             if self.sortcols is None:
@@ -901,59 +885,15 @@ class TableQueryBase(object):
             n = 1
         self.job.mark_progress(((n-1)*100 + progress)/n)
 
-    def run_deptables(self):
-        if not self.table.tables:
-            self.tables = {}
-            return True
-
-        # Collect all dependent tables
-        options = self.table.options
-
-        # Create dataframes for all dependent tables
-        tables = {}
-
-        deptables = self.table.tables
-        logger.debug("%s: dependent tables: %s" % (self, deptables))
-        depjobids = {}
-        max_progress = (len(deptables)*100.0/float(len(deptables)+1))
-        batch = BatchJobRunner(self.job, max_progress=max_progress)
-
-        for (name, ref) in deptables.items():
-            deptable = Table.from_ref(ref)
-            job = Job.create(
-                table=deptable,
-                criteria=self.job.criteria.build_for_table(deptable)
-            )
-            batch.add_job(job)
-            logger.debug("%s: starting dependent job %s" % (self, job))
-            depjobids[name] = job.id
-
-        batch.run()
-
-        logger.debug("%s: all dependent jobs complete, collecting data"
-                     % str(self))
-
-        failed = False
-        for (name, id) in depjobids.items():
-            job = Job.objects.get(id=id)
-
-            if job.status == job.ERROR:
-                self.job.mark_error("Dependent Job failed: %s" % job.message)
-                failed = True
-                break
-
-            f = job.data()
-            tables[name] = f
-            logger.debug("%s: Table[%s] - %d rows" %
-                         (self, name, len(f) if f is not None else 0))
-
-        if failed:
-            return False
-
-        self.tables = tables
-
-        logger.debug("%s: deptables completed successfully" % (self))
+    def pre_run(self):
         return True
+
+    def run(self):
+        return True
+
+    def post_run(self):
+        return True
+
 
 
 class Job(models.Model):
@@ -1464,8 +1404,9 @@ class Worker(base_worker_class):
             logger.info("%s running queryclass %s" % (self, self.queryclass))
             query = self.queryclass(job.table, job)
 
-            if (  (not hasattr(query, 'run_deptables') or query.run_deptables()) and
-                  query.run()):
+            if (  query.pre_run() and
+                  query.run() and
+                  query.post_run()):
 
                 logger.info("%s query finished" % self)
                 if isinstance(query.data, list) and len(query.data) > 0:

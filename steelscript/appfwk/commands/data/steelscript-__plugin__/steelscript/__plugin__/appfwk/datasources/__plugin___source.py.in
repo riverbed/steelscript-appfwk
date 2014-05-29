@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 # Use of this class is entirely optional, it may be deleted
 # if there are no custom column options
 
-class SomeColumn(Column):
+class {{Name}}Column(Column):
     class Meta:
         proxy = True
 
@@ -63,13 +63,13 @@ class SomeColumn(Column):
 #
 # Define a custom WaveTable
 #
-class SomeTable(DatasourceTable):
+class {{Name}}Table(DatasourceTable):
 
     class Meta:
         proxy = True
 
     # When a custom column is used, it must be linked
-    _column_class = WaveColumn
+    _column_class = '{{Name}}Column'
 
     # TABLE_OPTIONS is a dictionary of options that are specific to
     # TableQuery objects in this file.  These by be overriden by
