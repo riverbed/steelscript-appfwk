@@ -117,8 +117,6 @@ Documentation
 
   * Custom Criteria with TableFields
 
-* Devices
-
 * Plugins
 
   * Installing downloaded plugins

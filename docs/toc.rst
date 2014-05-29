@@ -7,4 +7,7 @@ SteelScript Application Framework
    install
    projects
    configuration
+   managing
+   usingappfwk
    reports
+   tables
