@@ -9,7 +9,7 @@ from random import choice
 
 from steelscript.commands.steel import (BaseCommand, prompt, console, debug,
                                         shell, check_git, ShellFailed)
-from steelscript.appfwk.project.utils import link_pkg_dir
+from steelscript.appfwk.project.utils import link_pkg_dir, link_pkg_files
 
 
 LOCAL_CONTENT = """
@@ -164,19 +164,19 @@ class Command(BaseCommand):
                      buf=self.debug)
         self.mkdir(os.path.join(datapath, 'datacache'))
 
-        # copy default reports
-        link_pkg_dir('steelscript.appfwk.apps',
-                     '../reports',
-                     os.path.join(dirpath, 'reports'),
-                     symlink=False,
-                     buf=self.debug)
-
         # copy example-configs
-        link_pkg_dir('steelscript.appfwk.apps',
-                     '../project/example-configs',
-                     os.path.join(dirpath, 'example-configs'),
-                     symlink=False,
-                     buf=self.debug)
+        link_pkg_files('steelscript.appfwk.apps',
+                       '../project/example-configs/*',
+                       os.path.join(dirpath, 'example-configs'),
+                       symlink=False,
+                       buf=self.debug)
+
+        # copy sample locations
+        link_pkg_files('steelscript.appfwk.apps',
+                       'geolocation/sample_location*',
+                       os.path.join(dirpath, 'example-configs'),
+                       symlink=False,
+                       buf=self.debug)
 
     def initialize_git(self, dirpath):
         """If git installed, initialize project folder as new repo.

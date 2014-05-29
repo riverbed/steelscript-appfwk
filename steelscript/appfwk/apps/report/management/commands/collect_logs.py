@@ -14,7 +14,7 @@ from steelscript.appfwk.apps.report.utils import create_debug_zipfile
 
 class Command(BaseCommand):
     args = None
-    help = 'Clears existing data caches, logs, and optionally application settings.'
+    help = 'Collects logfiles and system info and creates file `debug-<timestamp>.zip`'
 
     option_list = BaseCommand.option_list + (
         optparse.make_option('--no-summary',
