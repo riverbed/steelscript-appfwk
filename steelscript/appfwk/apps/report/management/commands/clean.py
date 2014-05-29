@@ -98,7 +98,7 @@ class Command(BaseCommand):
             rid = options['report_id']
 
             def del_table(tbl):
-                related_tables = ((tbl.options or {}).get('related_tables'))
+                related_tables = tbl.related_tables
                 for ref in (related_tables or {}).values():
                     try:
                         del_table(Table.from_ref(ref))
@@ -109,7 +109,7 @@ class Command(BaseCommand):
                 Column.objects.filter(table=tbl.id).delete()
                 Job.objects.filter(table=tbl.id).delete()
 
-                tables = (tbl.options or {}).get('tables')
+                tables = tbl.tables
                 for ref in (tables or {}).values():
                     try:
                         del_table(Table.from_ref(ref))

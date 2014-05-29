@@ -19,6 +19,7 @@ import random
 import datetime
 import string
 import copy
+import inspect
 
 from django.utils.text import slugify
 import pytz
@@ -191,6 +192,7 @@ class TableField(models.Model):
 class Table(models.Model):
     name = models.CharField(max_length=200)
     module = models.CharField(max_length=200)         # source module name
+    queryclass = models.CharField(max_length=200)     # name of query class
     datasource = models.CharField(max_length=200)     # class name of datasource
     namespace = models.CharField(max_length=100)
     sourcefile = models.CharField(max_length=200)
@@ -230,6 +232,12 @@ class Table(models.Model):
 
     # Indicates if data can be cached
     cacheable = models.BooleanField(default=True)
+
+    # Tables required to be run before this table
+    tables = PickledObjectField(null=True)
+
+    # Related table definitions
+    related_tables = PickledObjectField(null=True)
 
     @classmethod
     def create(cls, name, module, **kwargs):
@@ -327,6 +335,9 @@ class Table(models.Model):
         all attributes as well as sorting.
 
         """
+
+        if not isinstance(table, Table):
+            table = Table.from_ref(table)
 
         sortcols = []
         sortdir = []
@@ -464,6 +475,7 @@ class DatasourceTable(Table):
     FIELD_OPTIONS = {}
 
     _column_class = None  # override in subclass if needed, defaults to Column
+    _query_class = 'TableQuery'
 
     def __init__(self, *args, **kwargs):
         super(DatasourceTable, self).__init__(*args, **kwargs)
@@ -508,6 +520,16 @@ class DatasourceTable(Table):
         """
         name = slugify(unicode(name))
 
+        copy_fields = kwargs.pop('copy_fields', True)
+
+        # handle direct id's, table references, or table classes
+        # from tables option and transform to simple table id value
+        for i in ['tables', 'related_tables']:
+            if i not in kwargs:
+                continue
+            for k, v in kwargs[i].iteritems():
+                kwargs[i][k] = Table.to_ref(v)
+
         # process subclass assigned options
         table_options = copy.deepcopy(cls.TABLE_OPTIONS)
         field_options = copy.deepcopy(cls.FIELD_OPTIONS)
@@ -534,13 +556,29 @@ class DatasourceTable(Table):
         if kwargs:
             raise AttributeError('Invalid keyword arguments: %s' % str(kwargs))
 
+        queryclass = cls._query_class
+        if inspect.isclass(queryclass):
+            queryclass = queryclass.__name__
+
         logger.debug('Creating table %s' % name)
-        t = cls(name=name, module=cls.__module__, datasource=cls.__name__,
-                options=options, **table_kwargs)
+        t = cls(name=name, module=cls.__module__, queryclass=queryclass,
+                datasource=cls.__name__, options=options, **table_kwargs)
         t.save()
 
         # post process table *instance* now that its been initialized
         t.post_process_table(field_options)
+
+        # Copy fields from tables/related_tables
+        if copy_fields:
+            keywords = set()
+            for i in ['tables', 'related_tables']:
+                refs = getattr(t, i) or {}
+                for ref in refs.values():
+                    table = Table.from_ref(ref)
+                    for f in table.fields.all():
+                        if f.keyword not in keywords:
+                            t.fields.add(f)
+                            keywords.add(f.keyword)
 
         return t
 
@@ -844,6 +882,80 @@ class Criteria(DictObject):
         self.endtime = endtime
 
 
+class TableQueryBase(object):
+    def __init__(self, table, job):
+        self.table = table
+        self.job = job
+
+    def __unicode__(self):
+        return "<%s %s>" % (self.__class__.__name__, self.job)
+
+    def __str__(self):
+        return "<%s %s>" % (self.__class__.__name__, self.job)
+
+    def mark_progress(self, progress):
+        # Called by the analysis function
+        if self.table.tables:
+            n = len(self.table.tables)+1
+        else:
+            n = 1
+        self.job.mark_progress(((n-1)*100 + progress)/n)
+
+    def run_deptables(self):
+        if not self.table.tables:
+            self.tables = {}
+            return True
+
+        # Collect all dependent tables
+        options = self.table.options
+
+        # Create dataframes for all dependent tables
+        tables = {}
+
+        deptables = self.table.tables
+        logger.debug("%s: dependent tables: %s" % (self, deptables))
+        depjobids = {}
+        max_progress = (len(deptables)*100.0/float(len(deptables)+1))
+        batch = BatchJobRunner(self.job, max_progress=max_progress)
+
+        for (name, ref) in deptables.items():
+            deptable = Table.from_ref(ref)
+            job = Job.create(
+                table=deptable,
+                criteria=self.job.criteria.build_for_table(deptable)
+            )
+            batch.add_job(job)
+            logger.debug("%s: starting dependent job %s" % (self, job))
+            depjobids[name] = job.id
+
+        batch.run()
+
+        logger.debug("%s: all dependent jobs complete, collecting data"
+                     % str(self))
+
+        failed = False
+        for (name, id) in depjobids.items():
+            job = Job.objects.get(id=id)
+
+            if job.status == job.ERROR:
+                self.job.mark_error("Dependent Job failed: %s" % job.message)
+                failed = True
+                break
+
+            f = job.data()
+            tables[name] = f
+            logger.debug("%s: Table[%s] - %d rows" %
+                         (self, name, len(f) if f is not None else 0))
+
+        if failed:
+            return False
+
+        self.tables = tables
+
+        logger.debug("%s: deptables completed successfully" % (self))
+        return True
+
+
 class Job(models.Model):
 
     # Timestamp when the job was created
@@ -1122,7 +1234,7 @@ class Job(models.Model):
             logger.debug("%s: Worker to run report" % str(self))
             # Lookup the query class for this table
             i = importlib.import_module(self.table.module)
-            queryclass = i.TableQuery
+            queryclass = i.__dict__[self.table.queryclass]
 
             # Create an worker to do the work
             worker = Worker(self, queryclass)
@@ -1351,7 +1463,10 @@ class Worker(base_worker_class):
         try:
             logger.info("%s running queryclass %s" % (self, self.queryclass))
             query = self.queryclass(job.table, job)
-            if query.run():
+
+            if (  (not hasattr(query, 'run_deptables') or query.run_deptables()) and
+                  query.run()):
+
                 logger.info("%s query finished" % self)
                 if isinstance(query.data, list) and len(query.data) > 0:
                     # Convert the result to a dataframe

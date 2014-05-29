@@ -6,18 +6,19 @@
 
 import logging
 import pandas
+from random import randint
 
 from steelscript.common.timeutils import \
     datetime_to_seconds, timedelta_total_seconds, parse_timedelta
 
-from steelscript.appfwk.apps.datasource.models import DatasourceTable
-from steelscript.appfwk.apps.datasource.models import Column
+from steelscript.appfwk.apps.datasource.models import \
+    DatasourceTable, TableQueryBase, Column, TableField
 from steelscript.appfwk.apps.devices.forms import fields_add_device_selection
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
-from steelscript.appfwk.apps.datasource.forms import (fields_add_time_selection,
-                                                      fields_add_resolution)
+from steelscript.appfwk.apps.datasource.forms import \
+    fields_add_time_selection, fields_add_resolution
 
-from steelscript.{{name}}.core.wave import Wave
+from steelscript.wave.core.wave import Wave
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +32,7 @@ logger = logging.getLogger(__name__)
 # Use of this class is entirely optional, it may be deleted
 # if there are no custom column options
 class WaveColumn(Column):
-    class Meta:
-        proxy = True
+    class Meta: proxy = True
 
     # COLUMN_OPTIONS is a dictionary of options that
     # are specific to columns for tables in this file.
@@ -48,11 +48,28 @@ class WaveColumn(Column):
 # Define a custom WaveTable
 #
 class WaveTable(DatasourceTable):
-    class Meta:
-        proxy = True
+    """Simple wave generator data source table.
+
+    Table options:
+
+    :param int beta: beta parameter (offset) to wave function (default 10)
+
+    Criteria field options:
+
+    :param str duration: initial value for ``duration`` table field (default 1h)
+    :param list durations: valid values for ``duration`` (default: 1m, 15m, 1h, 6h)
+    :param str resolution: initial value for ``resolution`` table field (default 1m)
+    :param list resolutions: valid values for ``resolution`` (default: 1s, 1m, 15m)
+
+    """
+    class Meta: proxy = True
 
     # When a custom column is used, it must be linked
     _column_class = WaveColumn
+
+    # The query class defaults to TableQuery, change it here if
+    # named something else
+    _query_class = 'WaveQuery'
 
     # TABLE_OPTIONS is a dictionary of options that are specific to
     # TableQuery objects in this file.  These by be overriden by
@@ -74,10 +91,10 @@ class WaveTable(DatasourceTable):
         #
 
         # Add a device selection criteria to the table,
-        # listing only devices from {{name}}_device module that are
+        # listing only devices from wave_device module that are
         # enabled
-        fields_add_device_selection(self, keyword='{{name}}_device',
-                                    label='{{Name}}', module='{{name}}_device',
+        fields_add_device_selection(self, keyword='wave_device',
+                                    label='Wave', module='wave_device',
                                     enabled=True)
 
         # Add a time selection field
@@ -95,7 +112,7 @@ class WaveTable(DatasourceTable):
 # The TableQuery class must be defined with the __init__ and run
 # method taking the defined arguments
 #
-class TableQuery(object):
+class WaveQuery(object):
 
     def __init__(self, table, job):
         self.table = table
@@ -130,12 +147,12 @@ class TableQuery(object):
         # attributes according to the field keyword.
         criteria = self.job.criteria
 
-        # Check that a {{name}}_device was selected
-        if criteria.{{name}}_device == '':
-            logger.debug('%s: No {{name}} device selected' % self.table)
-            self.job.mark_error("No {{Name}} Device Selected")
+        # Check that a wave_device was selected
+        if criteria.wave_device == '':
+            logger.debug('%s: No wave device selected' % self.table)
+            self.job.mark_error("No Wave Device Selected")
             return False
-        {{name}}_device = DeviceManager.get_device(criteria.{{name}}_device)
+        wave_device = DeviceManager.get_device(criteria.wave_device)
 
         # Get the columns for this report
         columns = self.table.get_columns(synthetic=False)
@@ -180,7 +197,7 @@ class TableQuery(object):
         # (There's probably only one, but in general there may
         # by multiple devices defined that the user can select
         # from).
-        wavegen = DeviceManager.get_device(criteria.{{name}}_device)
+        wavegen = DeviceManager.get_device(criteria.wave_device)
 
         # Incoming resolution is a timedelta
         resolution = timedelta_total_seconds(criteria.resolution)
@@ -199,4 +216,66 @@ class TableQuery(object):
             self.data = None
             logger.info("Report %s returned no data" % (self.job))
 
+        return True
+
+
+#
+# Define a custom WaveTable
+#
+class ClippedWaveTable(DatasourceTable):
+    class Meta: proxy = True
+
+    # The query class defaults to TableQuery, change it here if
+    # named something else
+    _query_class = 'ClippedWaveQuery'
+
+    FIELD_OPTIONS = { 'min': 2,
+                      'max': 7 }
+
+    def post_process_table(self, field_options):
+        if len(self.tables) != 1 and 'waves' not in self.tables:
+            raise ValueError("Tables must contain only a dependent table "
+                             "named 'waves'")
+
+        # Add a custom field for 'min'
+        TableField.create(obj=self, keyword='min',  label='Min value',
+                          initial=field_options['min'],
+                          help_text=('Clip all wave forms at this minimum value'),
+                          required=False)
+
+        # Add a custom field for 'max'
+        TableField.create(obj=self, keyword='max', label='Max value',
+                          initial=field_options['max'],
+                          help_text=('Clip all wave forms at this maximum value'),
+                          required=False)
+
+        self.copy_columns(self.tables['waves'])
+
+
+#
+# The TableQuery class must be defined with the __init__ and run
+# method taking the defined arguments
+#
+class ClippedWaveQuery(TableQueryBase):
+
+    def run(self):
+        assert('waves' in self.tables)
+
+        # Grab the incoming 'waves' table, which will have already been
+        # run prior to this call.  The result is a pandas DataFrame
+        waves = self.tables['waves']
+
+        # Index on 'time' -- this allows the next operation to proceed
+        # only the remaining columns
+        waves = waves.set_index('time')
+
+        # Apply lower and upper limits to all data columns
+        criteria = self.job.criteria
+        waves = waves.clip(lower=int(criteria.min), upper=int(criteria.max))
+
+        # Reset the index before returning
+        waves = waves.reset_index()
+
+        # Save the result and return success
+        self.data = waves
         return True

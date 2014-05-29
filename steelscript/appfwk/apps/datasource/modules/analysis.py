@@ -9,8 +9,8 @@ import logging
 
 import pandas
 
-from steelscript.appfwk.apps.datasource.models import (DatasourceTable, Column, Job,
-                                                Table,  BatchJobRunner)
+from steelscript.appfwk.apps.datasource.models import\
+     DatasourceTable, Column, Job, Table, TableQueryBase, BatchJobRunner
 from steelscript.appfwk.libs.fields import Function
 
 
@@ -77,104 +77,25 @@ class AnalysisTable(DatasourceTable):
     class Meta:
         proxy = True
 
-    TABLE_OPTIONS = {'tables': None,           # required, dict of table ids
-                     'related_tables': None,   # additional table ids
-                     'function': None}         # Function object
-
-    FIELD_OPTIONS = {'copy_fields': True}
+    TABLE_OPTIONS = {'function': None}         # Function object
 
     @classmethod
     def process_options(cls, table_options):
-        # handle direct id's, table references, or table classes
-        # from tables option and transform to simple table id value
-        for name in ['tables', 'related_tables']:
-            for k, v in (table_options[name] or {}).iteritems():
-                table_options[name][k] = Table.to_ref(v)
-
         if not isinstance(table_options['function'], Function):
             table_options['function'] = Function(table_options['function'])
 
         return table_options
 
-    def post_process_table(self, field_options):
-        if field_options['copy_fields']:
-            keywords = set()
-            for name in ['tables', 'related_tables']:
-                refs = self.options[name] or {}
-                for ref in refs.values():
-                    table = Table.from_ref(ref)
-                    for f in table.fields.all():
-                        if f.keyword not in keywords:
-                            self.fields.add(f)
-                            keywords.add(f.keyword)
 
-
-class TableQuery(object):
-    def __init__(self, table, job):
-        self.table = table
-        self.job = job
-
-    def __unicode__(self):
-        return "<AnalysisTable %s>" % self.job
-
-    def __str__(self):
-        return "<AnalysisTable %s>" % self.job
-
-    def mark_progress(self, progress):
-        # Called by the analysis function
-        self.job.mark_progress(70 + (progress * 30)/100)
+class TableQuery(TableQueryBase):
 
     def run(self):
-        # Collect all dependent tables
-        options = self.table.options
-
-        # Create dataframes for all dependent tables
-        tables = {}
-
-        deptables = options.tables
-        if deptables and (len(deptables) > 0):
-            logger.debug("%s: dependent tables: %s" % (self, deptables))
-            depjobids = {}
-            batch = BatchJobRunner(self.job, max_progress=70)
-            for (name, ref) in deptables.items():
-                deptable = Table.from_ref(ref)
-                job = Job.create(
-                    table=deptable,
-                    criteria=self.job.criteria.build_for_table(deptable)
-                )
-                batch.add_job(job)
-                logger.debug("%s: starting dependent job %s" % (self, job))
-                depjobids[name] = job.id
-
-            batch.run()
-
-            logger.debug("%s: All dependent jobs complete, collecting data"
-                         % str(self))
-
-            failed = False
-            for (name, id) in depjobids.items():
-                job = Job.objects.get(id=id)
-
-                if job.status == job.ERROR:
-                    self.job.mark_error("Dependent Job failed: %s" % job.message)
-                    failed = True
-                    break
-
-                f = job.data()
-                tables[name] = f
-                logger.debug("%s: Table[%s] - %d rows" %
-                             (self, name, len(f) if f is not None else 0))
-
-            if failed:
-                return False
-
-        logger.debug("%s: Calling analysis function %s"
-                     % (self, options.function))
-
-        reltables = (self.table.options['related_tables'] or {})
+        tables = self.tables or {}
+        reltables = self.table.related_tables or {}
         for table_name in reltables:
             tables[table_name] = Table.from_ref(reltables[table_name])
 
+        options = self.table.options
         try:
             df = options.function(self, tables, self.job.criteria)
         except AnalysisException as e:
