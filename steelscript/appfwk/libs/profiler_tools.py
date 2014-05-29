@@ -34,6 +34,8 @@ def explode_interface_dns(interface_dns):
 
 class ProfilerMergeIpDeviceTable(AnalysisTable):
 
+    class Meta: proxy = True
+
     _query_class = 'ProfilerMergeIpDeviceQuery'
 
     @classmethod

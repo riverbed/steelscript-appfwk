@@ -27,6 +27,7 @@ import pandas
 import numpy
 from django.db import models
 from django.db import transaction
+from django.db import DatabaseError
 from django.db.models import F
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
@@ -463,6 +464,7 @@ class Table(models.Model):
 
 
 class DatasourceTable(Table):
+
     class Meta:
         proxy = True
 
@@ -552,10 +554,12 @@ class DatasourceTable(Table):
         logger.debug('Creating table %s' % name)
         t = cls(name=name, module=cls.__module__, queryclass=queryclass,
                 datasource=cls.__name__, options=options, **table_kwargs)
-        # Ensure this is a *proxy* class
-        t._meta.proxy = True
-
-        t.save()
+        try:
+            t.save()
+        except DatabaseError as e:
+            if 'no such table' in str(e):
+                raise DatabaseError(str(e) + ' -- did you forget class Meta: proxy=True?')
+            raise
 
         # post process table *instance* now that its been initialized
         t.post_process_table(field_options)
@@ -758,7 +762,13 @@ class Column(models.Model):
                    units=units, iskey=iskey, options=options, **col_kwargs)
 
         c.position = cls.get_position()
-        c.save()
+        try:
+            c.save()
+        except DatabaseError as e:
+            if 'no such table' in str(e):
+                raise DatabaseError(str(e) + ' -- did you forget class Meta: proxy=True?')
+            raise
+
 
         return c
 

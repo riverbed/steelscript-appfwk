@@ -26,8 +26,12 @@ import pandas
 from steelscript.common.timeutils import \
     datetime_to_seconds, timedelta_total_seconds, parse_timedelta
 
-from steelscript.appfwk.apps.datasource.models import DatasourceTable
-from steelscript.appfwk.apps.datasource.models import Column
+from steelscript.appfwk.apps.datasource.models import \
+    DatasourceTable, Column
+
+from steelscript.appfwk.apps.datasource.modules.analysis import \
+    AnalysisTable, AnalysisQuery
+
 from steelscript.appfwk.apps.devices.forms import fields_add_device_selection
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 from steelscript.appfwk.apps.datasource.forms import (fields_add_time_selection,

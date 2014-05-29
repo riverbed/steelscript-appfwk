@@ -74,8 +74,7 @@ class AnalysisTable(DatasourceTable):
     Note that the function must defined in a separate file in the 'helpers'
     directory.
     """
-    class Meta:
-        proxy = True
+    class Meta: proxy = True
 
     _ANALYSIS_TABLE_OPTIONS = {
         'tables': None,            # dependent tables to be run first
@@ -168,6 +167,8 @@ class AnalysisQuery(TableQueryBase):
 
 
 class CriteriaTable(AnalysisTable):
+    class Meta: proxy = True
+
     _query_class = 'CriteriaQuery'
 
     def post_process_table(self, field_options):
