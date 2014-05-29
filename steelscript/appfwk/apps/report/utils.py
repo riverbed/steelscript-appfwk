@@ -6,20 +6,16 @@
 
 
 import os
-import sys
 import glob
 import zipfile
-import platform
-import pkg_resources
 from datetime import datetime
 
 import pytz
-from django.contrib.auth.models import User
-
-from steelscript.common.timeutils import datetime_to_seconds
-from steelscript.commands.steel import shell
-
 from django.conf import settings
+
+from steelscript.commands.steel import shell
+from steelscript.common.timeutils import datetime_to_seconds
+from steelscript.appfwk.apps.preferences.models import PortalUser
 
 import logging
 logger = logging.getLogger(__name__)
@@ -32,6 +28,17 @@ def debug_fileinfo(fname):
                                                     datetime.fromtimestamp(st.st_ctime)))
 
 
+def find_logs():
+    # returns file paths for all local logs (ignores syslogs)
+    files = set()
+    for k, v in settings.LOGGING['handlers'].iteritems():
+        if 'filename' in v:
+            path = v['filename']
+            base = os.path.splitext(path)[0] + '*'
+            files.update(set(glob.glob(base)))
+    return files
+
+
 def create_debug_zipfile(no_summary=False):
     """ Collects logfiles and system info into a zipfile for download/email
 
@@ -40,8 +47,8 @@ def create_debug_zipfile(no_summary=False):
                      zipped package.  Default is to include the file.
     """
     # setup correct timezone based on admin settings
-    admin = User.objects.filter(is_superuser=True)[0]
-    tz = pytz.timezone(admin.userprofile.timezone)
+    admin = PortalUser.objects.filter(is_superuser=True)[0]
+    tz = pytz.timezone(admin.timezone)
     current_tz = os.environ['TZ']
 
     try:
@@ -64,16 +71,14 @@ def create_debug_zipfile(no_summary=False):
 
         try:
             # find all of the usual logfiles
-            filelist = glob.glob(os.path.join(settings.PROJECT_ROOT, 'log*'))
-
             logging.debug('zipping log files ...')
-            for fname in filelist:
+            for fname in find_logs():
                 debug_fileinfo(fname)
                 myzip.write(fname)
 
             if not no_summary:
                 logging.debug('running about script')
-                response = '\n'.join(shell('steel about', save_output=True))
+                response = shell('steel about -v', save_output=True)
                 logging.debug('zipping about script')
                 myzip.writestr('system_summary.txt', response)
         finally:
