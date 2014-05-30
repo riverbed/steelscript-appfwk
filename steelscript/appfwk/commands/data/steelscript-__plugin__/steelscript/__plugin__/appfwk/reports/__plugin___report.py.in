@@ -26,3 +26,6 @@ import steelscript.appfwk.apps.datasource.modules.analysis as analysis
 from steelscript.appfwk.apps.report.models import Report
 from steelscript.appfwk.apps.datasource.models import Column, TableField
 import steelscript.appfwk.apps.report.modules.yui3 as yui3
+
+# Import the datasource module for this plugin (if needed)
+from steelscript.{{name}}.appfwk.datasources.{{name}}_source as {{name}}
