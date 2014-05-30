@@ -168,7 +168,7 @@ perform:
     EWMA (exponential weighted moving average) of the ``{name}``
     column using a span of 20 data points.
 
-For more advanced analysis techniques, see :ref:`analysis`.
+For more advanced analysis techniques, see :doc:`analysis`.
 
 Resamping Time Series Tables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

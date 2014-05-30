@@ -172,6 +172,8 @@ class CriteriaTable(AnalysisTable):
     _query_class = 'CriteriaQuery'
 
     def post_process_table(self, field_options):
+        super(CriteriaTable, self).post_process_table(field_options)
+
         self.add_column('key', 'Criteria Key', iskey=True,
                         datatype=Column.DATATYPE_STRING)
         self.add_column('value', 'Criteria Value',

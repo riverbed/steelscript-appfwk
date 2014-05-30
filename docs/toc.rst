@@ -11,3 +11,6 @@ SteelScript Application Framework
    usingappfwk
    reports
    tables
+   plugins
+   analysis
+   geolocation

@@ -224,11 +224,20 @@ class ClippedWaveTable(AnalysisTable):
     FIELD_OPTIONS = { 'min': 2,
                       'max': 7 }
 
-    def post_process_table(self, field_options):
-        tables = self.options['tables']
+    @classmethod
+    def process_options(cls, table_options):
+        table_options = super(ClippedWaveTable, cls).process_options(table_options)
+
+        # Verify that the user defined a 'waves' input table
+        tables = table_options['tables']
         if not tables or len(tables) != 1 or 'waves' not in tables:
             raise ValueError("Tables must contain only a dependent table "
                              "named 'waves'")
+
+        return table_options
+
+    def post_process_table(self, field_options):
+        super(ClippedWaveTable, self).post_process_table(field_options)
 
         # Add a custom field for 'min'
         TableField.create(obj=self, keyword='min',  label='Min value',
@@ -242,6 +251,7 @@ class ClippedWaveTable(AnalysisTable):
                           help_text=('Clip all wave forms at this maximum value'),
                           required=False)
 
+        tables = self.options['tables']
         self.copy_columns(tables['waves'])
 
 

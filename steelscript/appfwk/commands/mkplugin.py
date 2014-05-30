@@ -8,7 +8,8 @@ import re
 import os
 import sys
 
-from steelscript.commands.steel import BaseCommand, shell, prompt, prompt_yn
+from steelscript.commands.steel import (BaseCommand, shell, prompt, prompt_yn,
+                                        check_git, ShellFailed)
 import steelscript.appfwk.commands
 
 def process_file(src, dst, options):
@@ -63,6 +64,31 @@ class Command(BaseCommand):
 
         parser.add_option('-w', '--wave', action='store_true',
                           help='Create the sample wave plugin rather than empty')
+
+        parser.add_option('--nogit', action='store_true',
+                          help='Do not initialize project as new git repo')
+
+    def initialize_git(self, dirpath):
+        """If git installed, initialize project folder as new repo.
+        """
+        try:
+            check_git()
+        except ShellFailed:
+            return False
+
+        # we have git, lets make a repo
+        shell('git init', msg='Initializing project as git repo',
+              cwd=dirpath)
+        shell('git add .',
+              msg=None,
+              cwd=dirpath)
+        shell('git commit -a -m "Initial commit."',
+              msg='Creating initial git commit',
+              cwd=dirpath)
+        shell('git tag -a 0.0.1 -m 0.0.1',
+              msg='Tagging as release 0.0.1',
+              cwd=dirpath)
+        return True
 
     def main(self):
         options = self.options
@@ -142,17 +168,16 @@ class Command(BaseCommand):
                 process_file(srcfile, dstfile, vars(options))
                 print('Writing:  {dst}'.format(dst=dstfile))
 
-        relver = open(os.path.join(targetbasedir, 'RELEASE-VERSION'), 'w')
-        relver.write('0.0.1')
-        relver.close()
 
         shell('(cd {dir}; python setup.py develop )'.format(dir=targetbasedir))
 
-        # Copy over gitpy_versioning
+        write_relver = True
 
-        # If using git:
-        #   git init
-        #   git commit -a -m
-        #   git tag -a 0.0.1 -m 0.0.1
-        # else:
-        #   cat 0.0.1 >> RELEASE-VERSION
+        if not self.options.nogit:
+            if self.initialize_git(targetbasedir):
+                write_relver = False
+
+        if write_relver:
+            relver = open(os.path.join(targetbasedir, 'RELEASE-VERSION'), 'w')
+            relver.write('0.0.1')
+            relver.close()

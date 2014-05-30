@@ -65,73 +65,18 @@ be inputs to yet another analysis table for further processing.
 Documentation
 -------------
 
-* :doc:`install`
-* :doc:`projects`
+.. toctree::
 
-  * Creating a new project
-  * Directory layout
-
-* :doc:`configuration`
-
-  * Setting up the database
-  * Devices
-  * User Preferences
-  * System Settings
-
-  * Locations
-  * Managing users
-  * Using LDAP for Authentication
-
-* :doc:`managing`
-
-  * Maintenance / Rebuilding
-
-      * Collecting Reports
-      * Reloading Reports
-      * Collecting Logs
-      * Reset database and server
-
-  * Running the server
-      * Development server
-      * Production server
-
-        * Collecting Static Files
-        * Enabling HTTPS
-
-* :doc:`usingappfwk`
-
-  * Logging in
-  * Running reports
-
-* :doc:`reports`
-
-* :doc:`tables`
-
-  * Tables and Columns
-
-    * Available tables across all plugins (link to individual plugins?)
-    * Standard table/column options
-    * Synthetic columns
-
-  * Custom AnalysisTables
-
-  * Custom Criteria with TableFields
-
-* Plugins
-
-  * Installing downloaded plugins
-  * Creating a new plugin
-  * Tour of the plugin files and directories
-
-    * Core (core)
-    * Devices (appfwk/devices)
-    * DataSources (appfwk/datasources)
-    * Reports (appfwk/reports)
-    * Help functions (appfwk/libs)
-    * Models (appfwk/models.py)
-    * Commands (management and steel)
-
-  * Generating a downloadable package
+   install
+   projects
+   configuration
+   managing
+   usingappfwk
+   reports
+   tables
+   plugins
+   analysis
+   geolocation
 
 * Python Pandas
 
