@@ -208,11 +208,12 @@ class Command(BaseCommand):
         console('Generating new Application Framework project ...')
 
         dirpath = self.options.dir
-        while not dirpath or not os.path.isabs(dirpath):
+        while not dirpath:
             default = os.path.join(os.getcwd(), 'appfwk_project')
-            dirpath = prompt('\nEnter absolute path for project files',
+            dirpath = prompt('\nEnter path for project files',
                              default=default)
 
+        dirpath = os.path.abspath(dirpath)
         if os.path.exists(dirpath):
             console('Project directory already exists, aborting.')
             return
