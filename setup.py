@@ -32,12 +32,13 @@ setup_args = {
     'long_description': """Core apps for SteelScript Application Framework
 ====================================================
 
-SteelScript is a collection of libraries and scripts in Python and JavaScript for
-interacting with Riverbed Technology devices.
+The SteelScript Application Framework makes it easy to create a fully
+custom web application that mashes up data from multiple sources.  It comes
+pre-configured with several reports for NetProfiler and NetShark.
 
 For a complete guide to installation, see:
 
-http://pythonhosted.org/steelscript/install.html
+http://pythonhosted.org/steelscript/
     """,
 
     'platforms': 'Linux, Mac OS, Windows',
