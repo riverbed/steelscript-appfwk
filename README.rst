@@ -22,7 +22,7 @@ If you already have pip, just run the following (in a
 
 Not sure about pip, but you know you have Python?
 
-1. Download :download:`steel_bootstrap.py`
+1. Download ``steel_bootstrap.py`` `from here <https://support.riverbed.com/apis/steelscript/index.html#quick-start>`_
 
 2. Run it (in a `virtualenv <http://www.virtualenv.org/>`_):
 
