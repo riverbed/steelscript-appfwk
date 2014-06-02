@@ -41,7 +41,7 @@ class Command(BaseCommand):
     def ensure_dir(self, dirname):
         if not os.path.exists(dirname):
             os.mkdir(dirname)
-            open(os.path.join(dirname, '__init__.py'), 'wa').close()
+            open(os.path.join(dirname, '__init__.py'), 'w+').close()
 
     def handle(self, *args, **options):
         self.verbose = int(options['verbosity']) > 1

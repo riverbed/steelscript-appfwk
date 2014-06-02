@@ -62,6 +62,14 @@ LOGGING['handlers']['backend-log']['filename'] = os.path.join(DATAHOME, 'logs', 
 #LOGGING['handlers'].pop('logfile')
 #LOGGING['handlers'].pop('backend-log')
 #
+#LOGGING['handlers']['syslog'] = {
+#    'level': 'DEBUG',
+#    'class': 'logging.handlers.SysLogHandler',
+#    'formatter': 'standard_syslog',
+#    'facility': SysLogHandler.LOG_USER,
+#    'address': '/var/run/syslog' if sys.platform == 'darwin' else '/dev/log'
+#}
+#
 #LOGGING['loggers'] = {
 #    'django.db.backends': {
 #        'handlers': ['null'],
@@ -146,10 +154,18 @@ class Command(BaseCommand):
         self.mkdir(dirpath)
 
         # link manage.py and media directories
-        for p in ('manage.py', 'media', 'thirdparty'):
+        # when symlink not available (windows) will copy files instead
+        link_pkg_files('steelscript.appfwk.apps',
+                       '../manage.py',
+                       dirpath,
+                       symlink=hasattr(os, 'symlink'),
+                       buf=self.debug)
+
+        for p in ('media', 'thirdparty'):
             link_pkg_dir('steelscript.appfwk.apps',
                          '../' + p,
                          os.path.join(dirpath, p),
+                         symlink=hasattr(os, 'symlink'),
                          buf=self.debug)
 
         # copy and make folders

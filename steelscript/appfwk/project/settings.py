@@ -142,10 +142,10 @@ MIDDLEWARE_CLASSES = (
     #'project.middleware.LoginRequiredMiddleware',
 )
 
-ROOT_URLCONF = 'project.urls'
+ROOT_URLCONF = 'steelscript.appfwk.project.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'project.wsgi.application'
+WSGI_APPLICATION = 'steelscript.appfwk.project.wsgi.application'
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     "django.contrib.auth.context_processors.auth",
@@ -274,13 +274,6 @@ LOGGING = {
             'backupCount': 1,
             'formatter': 'standard',
             'filename': os.path.join(PROJECT_ROOT, 'log-db.txt')
-        },
-        'syslog': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.SysLogHandler',
-            'formatter': 'standard_syslog',
-            'facility': SysLogHandler.LOG_USER,
-            'address': '/var/run/syslog' if sys.platform == 'darwin' else '/dev/log'
         },
     },
     'loggers': {
