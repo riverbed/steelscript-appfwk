@@ -99,9 +99,19 @@
             <div class="row-fluid" align="center">
                 <div class="span10 offset1">
                     <div class="span">
-                        {% csrf_token %}
-                        <table>{{ form.as_table }}</table>
-                        <br><input id="submit" type="submit" value="Find Columns" class="btn btn-primary">
+                        {% if form.valid_devices %}
+                            {% csrf_token %}
+                            <table>{{ form.as_table }}</table>
+                            <br><input id="submit" type="submit" value="Find Columns" class="btn btn-primary">
+                        {% else %}
+                            <table>
+                                <tr><td>No enabled devices found.</td></tr>
+                                {% if user.is_superuser %}
+                                    <tr><td>See <a href="{% url 'device-list' %}">device manager</a> to add or enable devices</td></tr>
+                                {% endif %}
+                            </table>
+                        {% endif %}
+
                     </div>
                 </div>
             </div>

@@ -12,7 +12,7 @@ from steelscript.appfwk.apps.devices.models import Device
 
 
 def get_device_choices(device_type):
-    devices = Device.objects.filter(module=device_type)
+    devices = Device.objects.filter(module=device_type, enabled=True)
     return [(d.id, d.name) for d in devices]
 
 
@@ -28,12 +28,24 @@ def get_centricities():
     return ('', '---'), ('hos', 'host'), ('int', 'interface')
 
 
-class NetProfilerInputForm(forms.Form):
-    device = forms.ChoiceField(choices=get_device_choices('netprofiler'))
+class DeviceInputForm(forms.Form):
+    def valid_devices(self):
+        return len(self.fields['device'].choices) > 0
+
+
+class NetProfilerInputForm(DeviceInputForm):
     realm = forms.ChoiceField(choices=get_realms())
     centricity = forms.ChoiceField(choices=get_centricities())
     groupby = forms.ChoiceField(choices=get_groupbys())
 
+    def __init__(self, *args, **kwargs):
+        super(NetProfilerInputForm, self).__init__(*args, **kwargs)
+        cf = forms.ChoiceField(choices=get_device_choices('netprofiler'))
+        self.fields.insert(0, 'device', cf)
 
-class NetSharkInputForm(forms.Form):
-    device = forms.ChoiceField(choices=get_device_choices('netshark'))
+
+class NetSharkInputForm(DeviceInputForm):
+    def __init__(self, *args, **kwargs):
+        super(NetSharkInputForm, self).__init__(*args, **kwargs)
+        cf = forms.ChoiceField(choices=get_device_choices('netshark'))
+        self.fields.insert(0, 'device', cf)
