@@ -12,11 +12,11 @@ from steelscript.appfwk.apps.report.models import Report, Widget, WidgetJob
 
 class ReportAdmin(admin.ModelAdmin):
     list_display = ('enabled', 'title', 'position', 'namespace',
-                    'sourcefile', 'slug')
+                    'sourcefile', 'filepath', 'slug')
     fieldsets = (
         (None, {
             'fields': ('title', 'position', 'enabled', 'slug',
-                       'namespace', 'sourcefile', 'field_order',
+                       'namespace', 'sourcefile', 'filepath', 'field_order',
                        'hidden_fields')
         }),
         ('Auto Reports', {

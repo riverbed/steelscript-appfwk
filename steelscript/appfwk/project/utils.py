@@ -35,27 +35,43 @@ def get_request():
         del frame
 
 
-def get_module():
+def get_module(skip_frames=1):
     """ Run up the stack, find the `module` object and return its name.
 
     This works reasonably well in non-interactive environments when a file
     is being explicitly imported, but will return '__main__' when called
     directly or from an interactive session, like IPython.
+
+    :param int skip_frames: number of stack frames to skip before checking
+        for module.  When calling method directly, default of 1 should be
+        fine.
     """
     frame, frm, mod = None, None, None
 
     try:
-        for frame in inspect.stack()[1:]:
+        for frame in inspect.stack()[skip_frames:]:
             if frame[3] == '<module>':
                 frm = frame[0]
                 mod = inspect.getmodule(frm)
                 # interactive shells will have <module> frame with
                 # no corresponding module, skip them
                 if hasattr(mod, '__name__'):
-                    return mod.__name__
+                    return mod
         return None
     finally:
         del frame, frm, mod
+
+
+def get_module_name(module=None):
+    """Return module string name.
+
+    :param module: optional module object
+    :return: string name or None if invalid module
+    """
+    if module is None:
+        module = get_module(skip_frames=2)
+
+    return getattr(module, '__name__', None)
 
 
 def get_sourcefile(modname):

@@ -36,7 +36,7 @@ from django.conf import settings
 from steelscript.common.jsondict import JsonDict
 from steelscript.common.utils import DictObject
 from steelscript.common import timedelta_total_seconds
-from steelscript.appfwk.project.utils import (get_module, get_sourcefile,
+from steelscript.appfwk.project.utils import (get_module_name, get_sourcefile,
                                               get_namespace)
 from steelscript.appfwk.apps.datasource.exceptions import *
 from steelscript.appfwk.libs.fields import (PickledObjectField, FunctionField,
@@ -280,7 +280,7 @@ class Table(models.Model):
         'steelscript.appfwk.business_hours.reports.x_report' --> 'business_hours'
         """
         if not self.sourcefile:
-            modname = get_module()
+            modname = get_module_name()
             self.sourcefile = get_sourcefile(modname)
 
         if not self.namespace:
