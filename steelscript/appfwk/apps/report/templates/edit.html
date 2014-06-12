@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2014 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% block title %}App Framework: Editing {{ report.title }}{% endblock %}
+
+{% block header %}
+    {{ form.media }}
+{% endblock %}
+
+{% block header_row %}<h3>Editing source file for "{{ report.title }}"</h3>{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+      <div class="row-fluid">
+              <form action="" method="POST">
+                  {% csrf_token %}
+                  {% for field in form.visible_fields %}
+                      {{ field }}
+                  {% endfor %}
+                  <input type="submit" value="Save File" class="btn btn-primary">
+                  <a href="#" onclick="reloadModalRedirect('{% url 'reload-report' report.namespace report.slug %}', '{% url 'report-view' report.namespace report.slug %}')" class="btn">Reload Report</a>
+                  {% if gitavail %}
+                      <a href="{% url 'report-editor-diff' report.namespace report.slug %}" class="btn pull-right" target="_blank">Show File Diff</a>
+                  {% endif %}
+              </form>
+      </div>
+    </div>
+{% endblock %}

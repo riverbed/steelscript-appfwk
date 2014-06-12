@@ -15,20 +15,25 @@ import traceback
 import logging
 
 import pytz
+from django.conf import settings
+from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.template import RequestContext
 from django.template.defaultfilters import date
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.core.urlresolvers import reverse
 from django.core.servers.basehttp import FileWrapper
 from django.core import management
 from django.utils.datastructures import SortedDict
 from rest_framework import generics, views
+from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 
 from steelscript.common.timeutils import round_time
+from steelscript.commands.steel import shell, ShellFailed
 from steelscript.appfwk.apps.datasource.models import Job, Table
 from steelscript.appfwk.apps.datasource.serializers import TableSerializer
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
@@ -38,11 +43,13 @@ from steelscript.appfwk.apps.preferences.models import SystemSettings
 from steelscript.appfwk.apps.report.models import Report, Section, Widget, WidgetJob
 from steelscript.appfwk.apps.report.serializers import ReportSerializer
 from steelscript.appfwk.apps.report.utils import create_debug_zipfile
+from steelscript.appfwk.apps.report.forms import ReportEditorForm
 
 
 logger = logging.getLogger(__name__)
 
 
+@api_view(['GET'])
 def reload_config(request, namespace=None, report_slug=None):
     """ Reload all reports or one specific report
     """
@@ -58,11 +65,12 @@ def reload_config(request, namespace=None, report_slug=None):
         logger.debug("Reloading all reports")
         management.call_command('reload')
 
-    if ('HTTP_REFERER' in request.META and
-        'reload' not in request.META['HTTP_REFERER']):
-        return HttpResponseRedirect(request.META['HTTP_REFERER'])
-    elif hasattr(request, 'QUERY_PARAMS') and 'next' in request.QUERY_PARAMS:
+    # prioritize next param over HTTP_REFERERs
+    if hasattr(request, 'QUERY_PARAMS') and 'next' in request.QUERY_PARAMS:
         return HttpResponseRedirect(request.QUERY_PARAMS['next'])
+    elif ('HTTP_REFERER' in request.META and
+          'reload' not in request.META['HTTP_REFERER']):
+        return HttpResponseRedirect(request.META['HTTP_REFERER'])
     else:
         return HttpResponseRedirect(reverse('report-view-root'))
 
@@ -195,11 +203,8 @@ class ReportView(views.APIView):
         logger.debug("Received POST for report %s, with params: %s" %
                      (report_slug, request.POST))
 
-        try:
-            report = Report.objects.get(namespace=namespace,
-                                        slug=report_slug)
-        except:
-            raise Http404
+        report = get_object_or_404(Report, namespace=namespace,
+                                   slug=report_slug)
 
         fields_by_section = report.collect_fields_by_section()
         all_fields = SortedDict()
@@ -266,6 +271,68 @@ class ReportView(views.APIView):
         else:
             # return form with errors attached in a HTTP 200 Error response
             return HttpResponse(str(form.errors), status=400)
+
+
+class ReportEditor(views.APIView):
+    """ Edit Report files directly.  Requires superuser permissions. """
+    renderer_classes = (TemplateHTMLRenderer, )
+    permission_classes = (IsAdminUser, )
+
+    def _git_repo(self):
+        # check if git enabled for this project
+        try:
+            shell(cmd='git status', cwd=settings.PROJECT_ROOT, allow_fail=True)
+            return True
+        except ShellFailed:
+            return False
+
+    def get(self, request, namespace, report_slug):
+        report = get_object_or_404(Report, namespace=namespace,
+                                   slug=report_slug)
+        form = ReportEditorForm(report.filepath)
+        return render_to_response('edit.html',
+                                  {'report': report,
+                                   'form': form,
+                                   'gitavail': self._git_repo()},
+                                  context_instance=RequestContext(request))
+
+    def post(self, request, namespace, report_slug):
+        report = get_object_or_404(Report, namespace=namespace,
+                                   slug=report_slug)
+        form = ReportEditorForm(report.filepath, request.POST)
+        if form.is_valid():
+            form.save()
+            msg = 'Report %s saved.' % report.filepath
+        else:
+            msg = 'Problem saving report ... review content.'
+
+        messages.add_message(request, messages.INFO, msg)
+        return render_to_response('edit.html',
+                                  {'report': report,
+                                   'form': form,
+                                   'gitavail': self._git_repo()},
+                                  context_instance=RequestContext(request))
+
+
+class ReportEditorDiff(views.APIView):
+    """ Show git diff of report file.  Requires superuser permissions. """
+    renderer_classes = (TemplateHTMLRenderer, )
+    permission_classes = (IsAdminUser, )
+
+    def get(self, request, namespace, report_slug):
+        report = get_object_or_404(Report, namespace=namespace,
+                                   slug=report_slug)
+        from ansi2html import Ansi2HTMLConverter
+        conv = Ansi2HTMLConverter(inline=True, dark_bg=False)
+        ansi = shell('git diff --color %s' % report.filepath, save_output=True)
+        html = conv.convert(ansi, full=False)
+        if not html:
+            html = 'No changes.'
+
+        return render_to_response('editdiff.html',
+                                  {'report': report,
+                                   'diffhtml': html},
+                                  context_instance=RequestContext(request))
 
 
 class ReportCriteria(views.APIView):

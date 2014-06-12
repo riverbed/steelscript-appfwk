@@ -74,3 +74,11 @@ function reloadingModal(url, allReports) {
     var next = window.location.href;
     window.location.href = url + "?next=" + next;
 };
+
+function reloadModalRedirect(url, next) {
+    // take explicit reload `url`, and explicit redirect `next` url
+    var modal = loadingModal('Reloading Report', 'Please wait ...');
+    modal.modal('show');
+    window.location.href = url + "?next=" + next;
+};
+

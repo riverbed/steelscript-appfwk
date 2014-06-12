@@ -70,6 +70,9 @@
                                   <li><a href="{% url 'plugins-list' %}"><i class="icon-resize-small"></i> Edit Plugins</a></li>
                                   <li><a href="/admin"><i class="icon-wrench"></i> Admin Panel</a></li>
                                   <li class="divider"></li>
+                                  {% if report %}
+                                      <li><a href="{% url 'report-editor' report.namespace report.slug %}"><i class="icon-edit"></i> Edit Report</a></li>
+                                  {% endif %}
                                   {% if reports and 'report' in request.path %}
                                       <li><a href="#" onClick="reloadingModal('reload', false)"><i class="icon-repeat"></i> Reload This Report</a></li>
                                   {% endif %}

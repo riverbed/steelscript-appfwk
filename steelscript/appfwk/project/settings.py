@@ -178,6 +178,7 @@ INSTALLED_APPS = (
     # third-party apps
     'rest_framework',
     'django_extensions',
+    'django_ace',
     #'announcements',
 
     # portal apps

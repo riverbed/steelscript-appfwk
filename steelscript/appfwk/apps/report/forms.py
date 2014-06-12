@@ -6,6 +6,7 @@
 
 
 from django import forms
+from django_ace import AceWidget
 
 from steelscript.appfwk.apps.report.models import Report, Widget
 
@@ -23,6 +24,30 @@ class ReportDetailForm(forms.ModelForm):
 
     class Meta:
         model = Report
+
+
+class AceReportWidget(AceWidget):
+    def render(self, name, value, attrs=None):
+        return super(AceReportWidget, self).render(name, value, attrs)
+
+
+class ReportEditorForm(forms.Form):
+
+    def __init__(self, filepath, *args, **kwargs):
+        super(ReportEditorForm, self).__init__(*args, **kwargs)
+        self._filepath = filepath
+        with open(self._filepath, 'r') as f:
+            widget = AceReportWidget(mode='python', width="100%", height="500px")
+            self.fields['text'] = forms.CharField(widget=widget,
+                                                  initial=f.read())
+
+    def is_valid(self):
+        return super(ReportEditorForm, self).is_valid()
+
+    def save(self):
+        if self.is_valid():
+            with open(self._filepath, 'w') as f:
+                f.write(self.cleaned_data['text'])
 
 
 class WidgetDetailForm(forms.ModelForm):
