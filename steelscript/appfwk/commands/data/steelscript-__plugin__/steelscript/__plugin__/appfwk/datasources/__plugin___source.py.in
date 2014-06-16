@@ -37,7 +37,7 @@ from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 from steelscript.appfwk.apps.datasource.forms import (fields_add_time_selection,
                                                       fields_add_resolution)
 
-from steelscript.{{name}}.core.wave import Wave
+from steelscript.{{name}}.core.{{name}} import {{Name}}
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class {{Name}}Column(Column):
 
 
 #
-# Define a custom WaveTable
+# Define a custom {{Name}}Table
 #
 class {{Name}}Table(DatasourceTable):
 
@@ -77,13 +77,13 @@ class {{Name}}Table(DatasourceTable):
 
     # TABLE_OPTIONS is a dictionary of options that are specific to
     # TableQuery objects in this file.  These by be overriden by
-    # keyword arguments to the WaveTable.create() call in a report
+    # keyword arguments to the {{Name}}Table.create() call in a report
     # file
     TABLE_OPTIONS = { }
 
     # FIELD_OPTIONS is a dictionary of default values for field
     # options.  These by be overriden by keyword arguments to the
-    # WaveTable.create() call in a report file
+    # {{Name}}Table.create() call in a report file
     FIELD_OPTIONS = { }
 
 
