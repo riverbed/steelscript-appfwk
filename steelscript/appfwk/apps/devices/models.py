@@ -48,7 +48,7 @@ class Device(models.Model):
     name = models.CharField(max_length=200)
     module = models.CharField(max_length=200)
     host = models.CharField(max_length=200)
-    port = models.IntegerField()
+    port = models.IntegerField(default=443)
     username = models.CharField(max_length=100)
     password = models.CharField(max_length=100)
 
