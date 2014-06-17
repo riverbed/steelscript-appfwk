@@ -8,6 +8,7 @@
 import os
 import logging
 
+from django.conf import settings
 from django.db import models
 from django.db.models import Max, Sum
 from django.template.defaultfilters import slugify
@@ -19,8 +20,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from model_utils.managers import InheritanceManager
 
 from steelscript.common.jsondict import JsonDict
-from steelscript.appfwk.project.utils import (get_module, get_sourcefile,
-                                              get_namespace)
+from steelscript.appfwk.project.utils import (get_module, get_module_name,
+                                              get_sourcefile, get_namespace)
 from steelscript.appfwk.apps.datasource.models import Table, Job, TableField
 from steelscript.appfwk.libs.fields import PickledObjectField, SeparatedValuesField
 
@@ -42,6 +43,7 @@ class Report(models.Model):
     slug = models.SlugField(unique=True)
     namespace = models.CharField(max_length=100)
     sourcefile = models.CharField(max_length=200)
+    filepath = models.FilePathField(path=settings.REPORTS_DIR)
 
     fields = models.ManyToManyField(TableField, null=True, blank=True)
     field_order = SeparatedValuesField(null=True,
@@ -62,7 +64,7 @@ class Report(models.Model):
         :param str title: Title for the report
 
         :param float position: Position in the menu for this report.
-            By defaut, all system reports have a ``position`` of 9 or
+            By default, all system reports have a ``position`` of 9 or
             greater.
 
         :param list field_order: List declaring the order to display
@@ -94,7 +96,9 @@ class Report(models.Model):
         'steelscript.appfwk.business_hours.reports.x_report' --> 'business_hours'
         """
         if not self.sourcefile:
-            modname = get_module()
+            mod = get_module()
+            self.filepath = mod.__file__
+            modname = get_module_name(mod)
             self.sourcefile = get_sourcefile(modname)
 
         if not self.namespace:

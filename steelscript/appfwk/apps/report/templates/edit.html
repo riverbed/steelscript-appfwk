@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2014 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% block title %}App Framework: Editing {{ report.title }}{% endblock %}
+
+{% block header %}
+    {{ form.media }}
+
+    <script type="text/javascript">
+        $(document).ready( function() {
+        });
+
+        function update_filepath_ns() {
+            var ns = $(this).val();
+            if (ns != 'default') {
+                $('#copy_ns').text(ns + '/');
+            } else {
+                $('#copy_ns').text('');
+            }
+        }
+
+        function update_filepath_name() {
+            $('#copy_name').text($(this).val());
+        }
+
+        function copy_file_modal() {
+            var basespan = 'Report will be copied to:<br />{{ ajaxform.basepath }}/';
+            {% if ajaxform.namespace.value != 'default' %}
+            var ns_span = '<span id="copy_ns">{{ ajaxform.namespace.value }}/</span>';
+            {% else %}
+            var ns_span = '<span id="copy_ns"></span>';
+            {% endif %}
+            var fn_span = '<span id="copy_name">{{ ajaxform.filename.value }}</span>';
+
+            var dynspan = '<span>' + basespan + ns_span + fn_span + '</span>';
+
+            var form_handlers = [
+                {
+                    selector: "[id='id_namespace']",
+                    event: "keyup",
+                    handler: update_filepath_ns
+                },
+                {
+                    selector: "[id='id_filename']",
+                    event: "keyup",
+                    handler: update_filepath_name
+                }
+            ];
+
+            var response_handlers = {redirect: function(redirect) {
+                    // reload all reports, then redirect to new report page
+                    var modal = loadingModal('Reloading All Reports', 'Please wait ...');
+                    modal.modal('show');
+                    window.location.href = "{% url 'reload-all' %}" + "?next=" + redirect;
+                }
+            };
+
+            var html = '{% filter escapejs %}{% include "ajax_form.html" %}{% endfilter %}';
+            html = html + dynspan;
+            formModal("Copy Report", html, "{{ ajaxform.id }}", form_handlers,
+                      response_handlers, "Cancel", "Copy");
+        }
+    </script>
+{% endblock %}
+
+{% block header_row %}
+<h3>Editing source file for "{{ report.title }}"</h3>
+<p class="muted">Source file: {{ report.filepath }}</p>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+      <div class="row-fluid">
+              <form action="" method="POST">
+                  {% csrf_token %}
+                  {% for field in form.visible_fields %}
+                      {{ field }}
+                  {% endfor %}
+                  <input type="submit" value="Save File" class="btn btn-primary">
+                  {% if gitavail %}
+                      <a href="{% url 'report-editor-diff' report.namespace report.slug %}" class="btn" target="_blank">Show File Diff</a>
+                  {% endif %}
+                  <a href="#" onclick="reloadModalRedirect('{% url 'reload-report' report.namespace report.slug %}', '{% url 'report-view' report.namespace report.slug %}')" class="btn">Reload Report</a>
+
+                  <a href="{% url 'admin:report_report_changelist' %}" class="btn pull-right">Manage All Reports</a>
+                  <a href="#" onclick="copy_file_modal()" class="btn pull-right">Copy Report</a>
+              </form>
+      </div>
+    </div>
+{% endblock %}

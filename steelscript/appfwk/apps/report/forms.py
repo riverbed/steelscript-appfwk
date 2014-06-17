@@ -3,9 +3,14 @@
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
-
+import os
+import shutil
 
 from django import forms
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.urlresolvers import reverse
+from django_ace import AceWidget
 
 from steelscript.appfwk.apps.report.models import Report, Widget
 
@@ -23,6 +28,91 @@ class ReportDetailForm(forms.ModelForm):
 
     class Meta:
         model = Report
+
+
+class AceReportWidget(AceWidget):
+    def render(self, name, value, attrs=None):
+        return super(AceReportWidget, self).render(name, value, attrs)
+
+
+class ReportEditorForm(forms.Form):
+
+    def __init__(self, filepath, *args, **kwargs):
+        super(ReportEditorForm, self).__init__(*args, **kwargs)
+        self._filepath = filepath
+        with open(self._filepath, 'r') as f:
+            textdata = f.read()
+
+        widget = AceReportWidget(mode='python', width="100%", height="500px")
+        self.fields['text'] = forms.CharField(widget=widget, initial=textdata)
+
+    def is_valid(self):
+        return super(ReportEditorForm, self).is_valid()
+
+    def save(self):
+        if self.is_valid():
+            backup = self._filepath + '.bak'
+            try:
+                shutil.copyfile(self._filepath, backup)
+            except IOError:
+                raise ValidationError('unable to create backup file: %s' % backup)
+
+            try:
+                with open(self._filepath, 'w') as f:
+                    f.write(self.cleaned_data['text'])
+            except IOError:
+                raise ValidationError('unable to save file: ' % self._filepath)
+
+
+class CopyReportForm(forms.Form):
+    filename = forms.CharField()
+    namespace = forms.CharField()
+
+    def __init__(self, report, *args, **kwargs):
+        super(CopyReportForm, self).__init__(*args, **kwargs)
+
+        # attributes for template rendering
+        self.id = 'copyform'
+        self.action = reverse('report-editor-copy', args=(report.namespace,
+                                                          report.slug))
+        self.method = 'POST'
+
+        # form fields
+        fname = os.path.basename(report.filepath)
+        self.fields['filename'] = forms.CharField(initial=fname)
+        self.fields['namespace'] = forms.CharField(initial=report.namespace)
+
+    def clean_filename(self):
+        filename = self.cleaned_data.get('filename')
+        if not filename.endswith('.py'):
+            raise ValidationError('filename must end with .py')
+        return filename
+
+    def clean(self):
+        cleaned_data = super(CopyReportForm, self).clean()
+        if not self.errors:
+            path = self.filepath(cleaned_data)
+            if os.path.exists(path):
+                raise ValidationError('File already exists: %s' % path)
+        return cleaned_data
+
+    def basepath(self):
+        """ Base path for report file. """
+        return settings.REPORTS_DIR
+
+    def filepath(self, data=None):
+        """ Returns filepath using either data or self.cleaned_data.
+        """
+        if data is None:
+            data = self.cleaned_data
+
+        namespace = data.get('namespace', '')
+        if namespace == 'default':
+            namespace = ''
+
+        return os.path.join(self.basepath(),
+                            namespace,
+                            data.get('filename'))
 
 
 class WidgetDetailForm(forms.ModelForm):

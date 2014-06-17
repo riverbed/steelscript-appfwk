@@ -89,8 +89,6 @@ div.circleMarker {
     opacity: 0.5;
 }
 
-.navbar .nav > li { z-index: 10000; }
-
 /* MESSAGES */
 
 ul#messages {
