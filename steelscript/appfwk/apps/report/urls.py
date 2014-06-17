@@ -40,6 +40,10 @@ urlpatterns = patterns(
         views.ReportEditorDiff.as_view(),
         name='report-editor-diff'),
 
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/edit/copy/$',
+        views.ReportCopy.as_view(),
+        name='report-editor-copy'),
+
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/reload$',
         'reload_config',
         name='reload-report'),

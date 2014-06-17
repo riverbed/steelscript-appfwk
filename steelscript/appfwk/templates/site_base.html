@@ -20,6 +20,7 @@
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.form/3.32/jquery.form.js"></script>
 
     {% comment %}
     need to call yui-s separately since it seems to be less efficient
@@ -117,13 +118,13 @@
     </div>
     {% endblock %}
 
-    {% if messages %}
-        <ul id="messages">
+    <ul id="messages">
+        {% if messages %}
             {% for message in messages %}
                 <li id="message_{{ forloop.counter }}"><a href="#" onclick="$('#message_{{ forloop.counter }}').fadeOut(); return false;"><small>clear</small></a> {{ message }}</li>
             {% endfor %}
-        </ul>
-    {% endif %}
+        {% endif %}
+    </ul>
 
     {% block content %}{% endblock %}
     <div class="container">
