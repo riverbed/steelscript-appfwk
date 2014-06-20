@@ -31,7 +31,7 @@ class Command(BaseCommand):
         """
         parser = super(Command, self).create_parser(prog_name, subcommand)
         group = optparse.OptionGroup(parser, "Location Help",
-                                     "Helper commands to manange locations")
+                                     "Helper commands to manage locations")
         group.add_option('--import-locations',
                          action='store',
                          dest='import_locations',
@@ -68,8 +68,7 @@ class Command(BaseCommand):
                 count_updated = 0
 
                 if not merge:
-                    ids = Location.objects.values_list('pk', flat=True)[:100]
-                    Location.objects.filter(pk__in=ids).delete()
+                    Location.objects.all().delete()
 
                 with open(filename, 'r') as csvfile:
                     reader = csv.reader(csvfile)
@@ -80,19 +79,20 @@ class Command(BaseCommand):
 
                         try:
                             location = Location.objects.get(name=name)
-                            count_updated = count_updated + 1
+                            count_updated += 1
                         except ObjectDoesNotExist:
                             location = Location(name=name)
-                            count_new = count_new + 1
+                            count_new += 1
 
                         location.latitude = latitude
                         location.longitude = longitude
                         location.save()
 
             if merge:
-                print 'Imported %d new locations, %d updated' % (count_new, count_updated)
+                print 'Imported %d new locations, %d updated' % (count_new,
+                                                                 count_updated)
             else:
-                print 'Imported %d locations' % (count_new)
+                print 'Imported %d locations' % count_new
 
         if options['import_location_ip']:
             filename = options['import_location_ip']
@@ -103,8 +103,7 @@ class Command(BaseCommand):
                 count_updated = 0
 
                 if not merge:
-                    ids = LocationIP.objects.values_list('pk', flat=True)[:100]
-                    LocationIP.objects.filter(pk__in=ids).delete()
+                    Location.objects.all().delete()
 
                 with open(filename, 'r') as csvfile:
                     reader = csv.reader(csvfile)
@@ -122,16 +121,17 @@ class Command(BaseCommand):
                             location_ip = LocationIP.objects.get(location=location,
                                                                  address=address,
                                                                  mask=mask)
-                            count_updated = count_updated + 1
+                            count_updated += 1
                         except ObjectDoesNotExist:
                             location_ip = LocationIP(location=location,
                                                      address=address,
                                                      mask=mask)
-                            count_new = count_new + 1
+                            count_new += 1
 
                         location_ip.save()
 
             if merge:
-                print 'Imported %d new locations/ip entries, %d updated' % (count_new, count_updated)
+                print ('Imported %d new locations/ip entries, %d updated' %
+                       (count_new, count_updated))
             else:
-                print 'Imported %d locations/ip entries' % (count_new)
+                print 'Imported %d locations/ip entries' % count_new
