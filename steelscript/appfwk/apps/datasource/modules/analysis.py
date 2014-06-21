@@ -6,11 +6,13 @@
 
 
 import logging
-
+from datetime import timedelta
 import pandas
 
-from steelscript.appfwk.apps.datasource.models import\
-     DatasourceTable, Column, Job, Table, TableQueryBase, BatchJobRunner
+from steelscript.common.timeutils import \
+    parse_timedelta, timedelta_total_seconds
+from steelscript.appfwk.apps.datasource.models import \
+    DatasourceTable, Column, Job, Table, TableQueryBase, BatchJobRunner
 from steelscript.appfwk.libs.fields import Function
 
 
@@ -191,3 +193,19 @@ class CriteriaQuery(AnalysisQuery):
 
         self.data = df
         return True
+
+def resample(df, timecol, interval, how):
+    """Resample the input dataframe.
+
+    :param str timecol: the name of the column containing the row time
+    :param timedelta,str interval: the new interval
+    :param how: method for down or resampling (see pandas.Dataframe.resample)
+
+    """
+    df[timecol] = pandas.DatetimeIndex(df[timecol])
+    df.set_index(timecol, inplace=True)
+    if isinstance(interval, timedelta):
+        interval = '%ss' % (timedelta_total_seconds(parse_timedelta(interval)))
+
+    df = df.resample(interval, how=how).reset_index()
+    return df
