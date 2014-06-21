@@ -47,6 +47,13 @@ class Command(BaseCommand):
                              dest='namespace',
                              default=None,
                              help='Reload reports under this namespace.'),
+
+        optparse.make_option('--no-collect',
+                             action='store_true',
+                             dest='no_collect',
+                             default=False,
+                             help="Don't collect reports first."),
+
     )
 
     def import_module(self, module):
@@ -142,9 +149,10 @@ class Command(BaseCommand):
                                     clear_logs=False)
 
             # collect any new reports
-            management.call_command('collectreports',
-                                    overwrite=False,
-                                    verbosity=3)
+            if not options['no_collect']:
+                management.call_command('collectreports',
+                                        overwrite=False,
+                                        verbosity=3)
 
             # start with fresh device instances
             DeviceManager.clear()
