@@ -15,14 +15,14 @@ logger = logging.getLogger(__name__)
 class SyntheticTest(reportrunner.ReportRunnerTestCase):
 
     def run_with_criteria(self, criteria, expected):
-            
+
         widgets = self.run_report(criteria)
 
         for i,e in enumerate(expected):
             w = widgets.values()[i]
             self.assertEqual(w['status'], Job.COMPLETE,
                              'Widget %d, message %s' % (i, w['message']))
-                
+
             data = dict(w['data'])
             logger.debug("Widget %d, data: %s" % (i, data))
             logger.debug("Expected: %s" % expected)
@@ -53,37 +53,37 @@ class SyntheticTest(reportrunner.ReportRunnerTestCase):
 
 class NoResample(SyntheticTest):
 
-    report = 'synthetic_noresample' 
+    report = 'synthetic_noresample'
 
     def test_basic(self):
         # This might break if run with project.settings.TIME_ZONE set to anything but UTC
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:00 am',  
+        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:00 am',
                                 'duration': '15min'},
                                [self.make_data(1385912700, 1385913600, 60)])
 
 
 class Resample(SyntheticTest):
 
-    report = 'synthetic_resample' 
+    report = 'synthetic_resample'
 
     def test_basic(self):
         # This might break if run with project.settings.TIME_ZONE set to anything but UTC
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:00 am',  
+        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:00 am',
                                 'duration': '15min',
                                 'resolution': '2min'},
                                [self.make_data(1385912700, 1385913600, 120)])
 
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:01 am',  
+        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:01 am',
                                 'duration': '16min',
                                 'resolution': '2min'},
                                [self.make_data(1385912700, 1385913660, 120)])
 
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:01 am',  
+        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:01 am',
                                 'duration': '15min',
                                 'resolution': '2min'},
                                [self.make_data(1385912760, 1385913660, 120)])
 
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:01 am',  
+        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:01 am',
                                 'duration': '16min',
                                 'resolution': '2min'},
                                [self.make_data(1385912700, 1385913660, 120)])

@@ -1,6 +1,4 @@
-import glob
 import time
-import os
 import json
 import logging
 
@@ -8,8 +6,12 @@ from django.test import TestCase, Client
 from django.core import management
 from django.utils.datastructures import SortedDict
 
+#from django.contrib.auth.tests.utils import skipIfCustomUser
+from django.test.utils import override_settings
+
 from steelscript.appfwk.apps.datasource.models import Job
 from steelscript.appfwk.apps.report.models import Report, Widget
+from steelscript.appfwk.apps.preferences.models import PortalUser
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +22,6 @@ class ReportRunnerTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        localdir = os.path.dirname(__file__)
-        initial_data = glob.glob(os.path.join(localdir, '*.json'))
-        management.call_command('loaddata', *initial_data)
-
         if not isinstance(cls.report, list):
             reports = [cls.report]
         else:
@@ -32,13 +30,20 @@ class ReportRunnerTestCase(TestCase):
         for report in reports:
             cls.load_report(report)
 
+        try:
+            PortalUser.objects.get(username='admin')
+        except:
+            PortalUser.objects.create_superuser(
+                'admin', 'admin@admin.com', 'admin')
+
     @classmethod
     def load_report(cls, report):
-            path = 'steelscript.appfwk.apps.report.tests.reports.' + report
-            logger.info("Loading report: %s" % path)
-            management.call_command('reload', report_name=path)
+        path = 'steelscript.appfwk.apps.report.tests.reports.' + report
+        logger.info("Loading report: %s" % path)
+        management.call_command('reload', report_name=path)
 
     def setUp(self):
+
         logger.info('Logging in as admin')
         logger.info('Report count: %d' % len(Report.objects.all()))
         self.client = Client()
@@ -49,10 +54,16 @@ class ReportRunnerTestCase(TestCase):
         if (sc >= 400 and sc < 500):
             logger.info("Report error response code %s\n%s" %
                         (sc, response.content))
-            self.assertTrue(expect_fail)
+            if not expect_fail:
+                raise Exception(
+                    'Report failed unexpectedly with status %s' % sc)
+
             return
 
-        self.assertTrue(not expect_fail)
+        if expect_fail:
+            raise Exception(
+                'Report was supposed to fail but succeeded')
+
         self.assertEqual(response.status_code, 200)
 
     def run_report(self, criteria, report=None,
@@ -64,7 +75,7 @@ class ReportRunnerTestCase(TestCase):
                     (report, criteria))
 
         try:
-            response = self.client.post('/report/rvbd_portal/%s/' % report,
+            response = self.client.post('/report/appfwk/%s/' % report,
                                         data=criteria)
         except:
             self.assertTrue(expect_fail_report)

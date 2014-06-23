@@ -1,25 +1,17 @@
-from steelscript.appfwk.apps.datasource.modules.analysis import AnalysisTable
+from steelscript.appfwk.apps.datasource.modules.analysis import CriteriaTable
 
-from steelscript.appfwk.apps.report.models import Report, Section
+from steelscript.appfwk.apps.report.models import Report, TableFieldh
 from steelscript.appfwk.apps.report.modules import raw
 
-from . import criteria_functions as funcs
-
-report = Report(title='Criteria Two Reports - 2')
-report.save()
+report = Report.create(title='Criteria Two Reports - 2')
 
 TableField.create(keyword='k2', label='Key 2', obj=report, initial='r2')
 
 # Section
-section = Section.create(report=report, title='Section')
-section.save()
+report.add_section(title='Section')
 
 # Table
-a = AnalysisTable.create('test-criteria-tworeports-2', tables={},
-                         function=funcs.analysis_echo_criteria)
+a = CriteriaTable.create('test-criteria-tworeports-2')
 TableField.create(keyword='k1', label='Key 1', obj=a, initial='r1')
 
-a.add_column('key', 'Key', iskey=True, datatype="string")
-a.add_column('value', 'Value', datatype="string")
-
-raw.TableWidget.create(section, a, 'Table 2')
+report.add_widget(raw.TableWidget, a, 'Table 2')

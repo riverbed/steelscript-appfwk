@@ -108,7 +108,7 @@
           var row;
           $.each(widgets, function(i,w) {
               if (rownum != w.row) {
-                  row = $('<div />', { 'class': 'row-fluid' }).appendTo(report); 
+                  row = $('<div />', { 'class': 'row-fluid' }).appendTo(report);
                   rownum = w.row;
               }
               var wid = "chart_" + w.widgetid;
@@ -171,11 +171,11 @@
               dataType:"json",
               type: "post",
               url: form.attr('action'),
-              success: function(data, textStatus) { 
+              success: function(data, textStatus) {
                   $("body").css("cursor", "default");
                   renderReport(data);
               },
-              error: function(jqXHR, textStatus, errorThrown) { 
+              error: function(jqXHR, textStatus, errorThrown) {
                   // we receive a 400 error on form validation problems
                   $("body").css("cursor", "default");
                   if (jqXHR.status == 400) {
@@ -191,7 +191,7 @@
       }
 
       function update_criteria(data) {
-          $.each(data, function(i,w) { 
+          $.each(data, function(i,w) {
               //alert('Updating ' + i + ',' + w + ' #' + w.id + '-span' + '\n' + w.html);
               $('#' + w.id + '-span').html(w.html);
           });
@@ -203,11 +203,11 @@
               dataType:"json",
               type: "post",
               url: form.attr('action') + 'criteria/',
-              success: function(data, textStatus) { 
+              success: function(data, textStatus) {
                   $("body").css("cursor", "default");
                   update_criteria(data);
               },
-              error: function(jqXHR, textStatus, errorThrown) { 
+              error: function(jqXHR, textStatus, errorThrown) {
                   $("body").css("cursor", "default");
                   alert("Failed: jqXHR: " + jqXHR.status + "\ntextStatus: " + textStatus);
 
@@ -268,22 +268,22 @@
                                 <div class="criteria-group-contents">
                                     {% for field in form.visible_fields %}
                                         {% if field.name in s.parameters %}
-                                        <div class="control-group">
-                                            <div class="control-label">
-                                                {{ field.label_tag }} 
+                                            <div class="control-group">
+                                                <div class="control-label">
+                                                    {{ field.label_tag }}
+                                                </div>
+                                                <div class="controls">
+                                                    <span id='{{ field.auto_id }}-span'>{{ field }}</span>
+                                                    {% if field.errors %}
+                                                        {% for err in field.errors %}
+                                                            <p class="text-error">{{ err }}</p>
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                    {% if field.help_text %}
+                                                        <span class="icon-info-sign" title="{{ field.help_text }}"></span>
+                                                    {% endif %}
+                                                </div>
                                             </div>
-                                            <div class="controls">
-                                                <span id='{{ field.auto_id }}-span'>{{ field }}</span>
-                                                {% if field.errors %}
-                                                    {% for err in field.errors %}
-                                                        <p class="text-error">{{ err }}</p>
-                                                    {% endfor %}
-                                                {% endif %}
-                                                {% if field.help_text %} 
-                                                    <span class="icon-info-sign" title="{{ field.help_text }}"></span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
                                         {% endif %}
                                     {% endfor %}
                                 </div>
@@ -310,12 +310,12 @@
                   </ul>
               </div>
             </div>
-          </div> 
-        </div> 
-      </div> 
+          </div>
+        </div>
+      </div>
     </div>
     {% endif %}
-  
+
     <div class="container-fluid">
       <div class="row-fluid">
         <div class="span12 widget-box">

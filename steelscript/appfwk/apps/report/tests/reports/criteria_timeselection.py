@@ -1,20 +1,12 @@
-from steelscript.appfwk.apps.report.models import Report, Section
+from steelscript.appfwk.apps.report.models import Report
 import steelscript.appfwk.apps.report.modules.raw as raw
 from steelscript.appfwk.apps.datasource.forms import fields_add_time_selection
-from steelscript.appfwk.apps.datasource.modules.analysis import AnalysisTable
-from steelscript.appfwk.apps.report.tests.reports import criteria_functions as funcs
+from steelscript.appfwk.apps.datasource.modules.analysis import CriteriaTable
 
-report = Report(title='Criteria Time Selection' )
-report.save()
+report = Report.create(title='Criteria Time Selection')
+report.add_section()
 
-section = Section(report=report, title='Section 0')
-section.save()
-
-a = AnalysisTable.create('test-criteria-timeselection', tables={},
-                         function=funcs.analysis_echo_criteria)
+a = CriteriaTable.create('test-criteria-timeselection')
 fields_add_time_selection(a, initial_duration='1 day')
 
-a.add_column('key', 'Key', iskey=True, datatype="string")
-a.add_column('value', 'Value', datatype="string")
-
-raw.TableWidget.create(section, a, 'Table')
+report.add_widget(raw.TableWidget, a, 'Table')

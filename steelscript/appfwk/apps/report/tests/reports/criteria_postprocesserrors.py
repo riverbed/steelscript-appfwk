@@ -1,26 +1,22 @@
-from steelscript.appfwk.apps.datasource.modules.analysis import AnalysisTable
+from steelscript.appfwk.apps.datasource.modules.analysis import CriteriaTable
 from steelscript.appfwk.apps.datasource.models import TableField
 from steelscript.appfwk.libs.fields import Function
 
-from steelscript.appfwk.apps.report.models import Report, Section
+from steelscript.appfwk.apps.report.models import Report
 from steelscript.appfwk.apps.report.modules import raw
 
-from steelscript.appfwk.apps.report.tests.reports import criteria_functions as funcs
+from steelscript.appfwk.apps.report.tests.reports \
+    import criteria_functions as funcs
 
-report = Report(title='Criteria Post Process Errors' )
-report.save()
+report = Report.create(title='Criteria Post Process Errors')
 
-section = Section(report=report, title='Section 0')
-section.save()
+section = report.add_section(title='Section 0')
 
-a = AnalysisTable.create('test-criteria-postprocess', tables={},
-                         function=funcs.analysis_echo_criteria)
+a = CriteriaTable.create('test-criteria-postprocess-errors')
 
 TableField.create('error', 'Error type', a)
 TableField.create('x', 'X Value', a, hidden=True,
-                  post_process_func = Function(funcs.postprocesserrors_compute))
+                  post_process_func=Function(funcs.postprocesserrors_compute))
 
-a.add_column('key', 'Key', iskey=True, datatype="string")
-a.add_column('value', 'Value', datatype="string")
 
-raw.TableWidget.create(section, a, 'Table')
+report.add_widget(raw.TableWidget, a, 'Table')

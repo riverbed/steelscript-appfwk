@@ -470,6 +470,23 @@ class DatasourceTable(Table):
             data source will be resampled to ``criteria.resample_resolution``
             or ``criteria.resolution``
 
+        :param dict field_map: a dictionary mapping fields by keyword
+            to either a new keyword or to a map of field values to
+            customize for the given field
+
+                field_map = {'qos': 'qos_1'}
+
+            or
+
+                field_map = {'qos': { 'keyword': 'qos_1',
+                                      'label': 'QoS 1',
+                                      'default': 'AF' } }
+
+            This is used to remap fields defined by standard tables
+            to allow the same table to be used multiple times in the
+            same report but with different criteria via different
+            keywords.
+
         Additional table and field options keyword arguments may
         be provided that are unique to the specific data source
         table being instantiatied:
@@ -504,6 +521,10 @@ class DatasourceTable(Table):
             field_options.update(cls._ANALYSIS_FIELD_OPTIONS)
 
         keys = kwargs.keys()
+
+        # The field_map mapping is stored in table_options for reference
+        # later when building criteria for this table
+        table_options['field_map'] = {}
         to = dict((k, kwargs.pop(k)) for k in keys if k in table_options)
         table_options.update(**to)
 
@@ -549,6 +570,26 @@ class DatasourceTable(Table):
 
         # post process table *instance* now that its been initialized
         t.post_process_table(field_options)
+
+        # if field_map has been specified, go through attached fields and
+        # change them accordingly
+        for keyword, mapped in (t.options.field_map or {}).iteritems():
+            try:
+                field = t.fields.get(keyword=keyword)
+                if isinstance(mapped, basestring):
+                    field.keyword = mapped
+                else:
+                    for k, v in mapped.iteritems():
+                        if not hasattr(field, k):
+                            raise AttributeError(
+                                "Invalid attribute for field '%s': %s" %
+                                (field.keyword, k))
+                        setattr(field, k, v)
+
+                field.save()
+            except ObjectDoesNotExist:
+                raise AttributeError(
+                    'field_map references invalid field: %s' % keyword)
 
         return t
 
@@ -815,14 +856,33 @@ class Criteria(DictObject):
         special handling for starttime, endtime, and duration,
         as they may be altered if duration is 'default'.
 
+        In addition, if this table has a field_map, the incoming criteria
+        is using the mapped keyword, but the underlying tables expect the
+        original keyword so reverse the mapping.
+
         """
         crit = Criteria(starttime=self._orig_starttime,
                         endtime=self._orig_endtime,
                         duration=self._orig_duration)
 
+        field_map = (table.options.field_map or {})
+        rev_field_map = {}
+        for k, v in field_map.iteritems():
+            if not isinstance(v, basestring):
+                if 'keyword' in v:
+                    v = v['keyword']
+                else:
+                    v = k
+            rev_field_map[v] =k
+
         for k, v in self.iteritems():
             if k in ['starttime', 'endtime', 'duration'] or k.startswith('_'):
                 continue
+
+            # Note, this problably needs work to support customizing
+            # starttime/endtime/duration
+            if k in rev_field_map:
+                k = rev_field_map[k]
 
             crit[k] = v
 
@@ -890,7 +950,6 @@ class TableQueryBase(object):
 
     def post_run(self):
         return True
-
 
 
 class Job(models.Model):
@@ -972,7 +1031,7 @@ class Job(models.Model):
             return
 
         with LocalLock():
-            logger.debug("%s safe_update %s" % (self, kwargs))
+            #logger.debug("%s safe_update %s" % (self, kwargs))
             Job.objects.filter(pk=self.pk).update(**kwargs)
 
             # Force a reload of the job to get latest data
@@ -998,6 +1057,7 @@ class Job(models.Model):
                 # Grab a lock on the row associated with the table
                 table = Table.objects.select_for_update().get(id=table.id)
 
+                criteria = criteria.build_for_table(table)
                 # Lockdown start/endtimes
                 try:
                     criteria.compute_times()
@@ -1190,7 +1250,7 @@ class Job(models.Model):
                          message='')
 
     def mark_progress(self, progress, remaining=None):
-        logger.debug("%s progress %s" % (self, progress))
+        #logger.debug("%s progress %s" % (self, progress))
         self.safe_update(status=Job.RUNNING,
                          progress=progress,
                          remaining=remaining)
@@ -1317,9 +1377,9 @@ class Job(models.Model):
 
     def done(self):
         self.refresh()
-        logger.debug("%s status: %s - %s%%" % (str(self),
-                                               self.status,
-                                               self.progress))
+        #logger.debug("%s status: %s - %s%%" % (str(self),
+        #                                       self.status,
+        #                                       self.progress))
         return self.status == Job.COMPLETE or self.status == Job.ERROR
 
 
@@ -1586,9 +1646,10 @@ class BatchJobRunner(object):
             job_progress = (float(self.min_progress) +
                             ((total_progress / 100.0) *
                              (self.max_progress - self.min_progress)))
-            logger.debug("%s: progress %d%% (basejob %d%%) (%d/%d done, %d in batch)" %
-                         (self, int(total_progress), int(job_progress),
-                          done_count, joblist.count, len(batch)))
+            #logger.debug(
+            #    "%s: progress %d%% (basejob %d%%) (%d/%d done, %d in batch)" %
+            #    (self, int(total_progress), int(job_progress),
+            #    done_count, joblist.count, len(batch)))
             self.basejob.mark_progress(job_progress)
 
             if not something_done:

@@ -114,13 +114,11 @@ class AnalysisTable(DatasourceTable):
 class AnalysisQuery(TableQueryBase):
 
     def run(self):
+        # Collect all dependent tables
         deptables = self.table.options.tables
         if not deptables:
             self.tables = {}
             return True
-
-        # Collect all dependent tables
-        options = self.table.options
 
         # Create dataframes for all dependent tables
         tables = {}
@@ -132,10 +130,8 @@ class AnalysisQuery(TableQueryBase):
 
         for (name, ref) in deptables.items():
             deptable = Table.from_ref(ref)
-            job = Job.create(
-                table=deptable,
-                criteria=self.job.criteria.build_for_table(deptable)
-            )
+            job = Job.create(deptable, self.job.criteria)
+
             batch.add_job(job)
             logger.debug("%s: starting dependent job %s" % (self, job))
             depjobids[name] = job.id

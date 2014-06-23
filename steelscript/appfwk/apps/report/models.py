@@ -5,7 +5,6 @@
 # as set forth in the License.
 
 
-import os
 import logging
 
 from django.conf import settings
@@ -23,7 +22,8 @@ from steelscript.common.jsondict import JsonDict
 from steelscript.appfwk.project.utils import (get_module, get_module_name,
                                               get_sourcefile, get_namespace)
 from steelscript.appfwk.apps.datasource.models import Table, Job, TableField
-from steelscript.appfwk.libs.fields import PickledObjectField, SeparatedValuesField
+from steelscript.appfwk.libs.fields import \
+    PickledObjectField, SeparatedValuesField
 
 logger = logging.getLogger(__name__)
 
@@ -153,9 +153,11 @@ class Report(models.Model):
         """
 
         # map of section id to field dict
-        fields_by_section = {}
+        fields_by_section = SortedDict()
 
         # section id=0 is the "common" section
+        # fields attached directly to the Report object are always added
+        # to the common section
         fields_by_section[0] = SortedDict()
         if self.fields:
             report_fields = {}
@@ -167,43 +169,46 @@ class Report(models.Model):
         # Pull in fields from each section (which may add fields to
         # the common as well)
         for s in Section.objects.filter(report=self):
-            for section_id, fields in s.collect_fields_by_section().iteritems():
-                if section_id not in fields_by_section:
-                    fields_by_section[section_id] = fields
+            for secid, fields in s.collect_fields_by_section().iteritems():
+                if secid not in fields_by_section:
+                    fields_by_section[secid] = fields
                 else:
-                    fields.update(fields_by_section[section_id])
-                    fields_by_section[section_id] = fields
+                    # update fields from fields_by_section so that the
+                    # first definition of a field takes precedence.
+                    # For example, if 'start' is defined at the report
+                    # 'common' level, it's field will be used rather
+                    # than that defined in the section.  This is useful
+                    # for custimizing the appearance/label/defaults of
+                    # fields pulled in from tables
+                    fields.update(fields_by_section[secid])
+                    fields_by_section[secid] = fields
 
         # Reorder fields in each section according to the field_order list
         new_fields_by_section = {}
         for i, fields in fields_by_section.iteritems():
-            # fields_by_section will have the format:
-            #   { 's17_duration' : TableField(keyword='duration'),
-            #     's18_duration' : TableField(keyword='duration'), ...}
-            # The field_order list is by keyword, not the <sectionid>_<keyword> format
-            keywords_to_field_names = SortedDict()
-            for (field_name, field) in fields_by_section[i].iteritems():
-                keywords_to_field_names[field.keyword] = (field_name, field)
+            # collect all field names
+            section_fields = fields_by_section[i]
+            section_field_names = set(section_fields.keys())
 
             ordered_field_names = SortedDict()
-            # Iterate over the defined order list, which may not address all fields
-            if self.field_order:
-                for keyword in self.field_order:
-                    if keyword in keywords_to_field_names:
-                        pair = keywords_to_field_names[keyword]
-                        ordered_field_names[pair[0]] = pair[1]
-                        del keywords_to_field_names[keyword]
+            # Iterate over the defined order list, which may not
+            # address all fields
+            for name in (self.field_order or []):
+                if name in section_field_names:
+                    ordered_field_names[name] = section_fields[name]
+                    section_field_names.remove(name)
 
             # Preserve the order of any fields left
-            for pair in keywords_to_field_names.values():
-                ordered_field_names[pair[0]] = pair[1]
+            for name in section_field_names:
+                ordered_field_names[name] = section_fields[name]
 
             new_fields_by_section[i] = ordered_field_names
 
         return new_fields_by_section
 
     def widgets(self):
-        return Widget.objects.filter(section__in=Section.objects.filter(report=self)).order_by('id')
+        return Widget.objects.filter(
+            section__in=Section.objects.filter(report=self)).order_by('id')
 
 
 class Section(models.Model):
@@ -329,13 +334,13 @@ class Section(models.Model):
             if self.fields_mode(f.keyword) is SectionFieldMode.SECTION:
                 # Section fields are prefixed with the section id
                 # in the field map
-                id = "__s%s_%s" % (self.id, f.keyword)
-                if id not in fields_by_section[self.id]:
-                    fields_by_section[self.id][id] = f
+                section_id = self.id
             else:
-                id = f.keyword
-                if id not in fields_by_section[0]:
-                    fields_by_section[0][id] = f
+                section_id = 0
+
+            id = f.keyword
+            if id not in fields_by_section[section_id]:
+                fields_by_section[section_id][id] = f
 
         return fields_by_section
 
@@ -411,27 +416,6 @@ class Widget(models.Model):
                 col = width + 1
         self.row = row
         self.col = col
-
-    def criteria_from_form(self, form):
-        """ Extract POST style criteria data from form. """
-        fields_by_section = self.section.report.collect_fields_by_section()
-
-        common_fields = fields_by_section[0]
-        section_fields = fields_by_section[self.section.id]
-
-        # Reverse the process of adding the prefix to SECTION-level criteria.
-        # If a field is in section_fields, the id has the prefix, just use
-        # the original keyword in the returned fields
-        fields = {}
-        for k, v in form.as_text().iteritems():
-            if k in common_fields:
-                fields[common_fields[k].keyword] = v
-            elif k in section_fields:
-                fields[section_fields[k].keyword] = v
-            elif k in ['debug', 'ignore_cache']:
-                fields[k] = v
-
-        return fields
 
     def collect_fields(self):
         # Gather up all fields

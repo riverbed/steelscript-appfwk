@@ -4,7 +4,6 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-
 import os
 import sys
 import cgi
@@ -22,10 +21,11 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.template import loader, RequestContext
 from django.template.defaultfilters import date
 from django.shortcuts import render_to_response, get_object_or_404
+from django.core import management
 from django.core.urlresolvers import reverse
 from django.core.servers.basehttp import FileWrapper
-from django.core import management
 from django.utils.datastructures import SortedDict
+
 from rest_framework import generics, views
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAdminUser
@@ -99,6 +99,7 @@ class ReportView(views.APIView):
     serializer_class = ReportSerializer
     renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
 
+    # ReportView.get()
     def get(self, request, namespace=None, report_slug=None):
         # handle REST calls
 
@@ -199,6 +200,7 @@ class ReportView(views.APIView):
                                    'show_sections': (len(section_map) > 1)},
                                   context_instance=RequestContext(request))
 
+    # ReportView.post()
     def post(self, request, namespace=None, report_slug=None):
         # handle REST calls
         if namespace is None or report_slug is None:
@@ -264,7 +266,7 @@ class ReportView(views.APIView):
                                   "row": w.row,
                                   "width": w.width,
                                   "height": w.height,
-                                  "criteria": w.criteria_from_form(form)
+                                  "criteria": form.as_text()
                                   }
                     definition.append(widget_def)
 
@@ -601,8 +603,8 @@ class WidgetJobDetail(views.APIView):
 
         if not job.done():
             # job not yet done, return an empty data structure
-            logger.debug("%s: Not done yet, %d%% complete" % (str(wjob),
-                                                              job.progress))
+            #logger.debug("%s: Not done yet, %d%% complete" % (str(wjob),
+            #                                                  job.progress))
             resp = job.json()
         elif job.status == Job.ERROR:
             resp = job.json()
