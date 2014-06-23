@@ -1,6 +1,6 @@
 from steelscript.appfwk.apps.datasource.modules.analysis import CriteriaTable
 
-from steelscript.appfwk.apps.report.models import Report, TableFieldh
+from steelscript.appfwk.apps.report.models import Report, TableField
 from steelscript.appfwk.apps.report.modules import raw
 
 report = Report.create(title='Criteria Two Reports - 2')
