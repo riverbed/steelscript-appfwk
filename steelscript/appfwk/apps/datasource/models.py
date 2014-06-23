@@ -32,6 +32,7 @@ from django.db.models import F
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
 from steelscript.common.jsondict import JsonDict
 from steelscript.common.utils import DictObject
@@ -235,12 +236,6 @@ class Table(models.Model):
     cacheable = models.BooleanField(default=True)
 
     @classmethod
-    def create(cls, name, module, **kwargs):
-        t = Table(name=name, module=module, **kwargs)
-        t.save()
-        return t
-
-    @classmethod
     def to_ref(cls, arg):
         """ Generate a table reference.
 
@@ -270,23 +265,6 @@ class Table(models.Model):
     def from_ref(cls, ref):
         return Table.objects.get(namespace=ref['namespace'],
                                  name=ref['name'])
-
-    def save(self, *args, **kwargs):
-        """ Apply sourcefile and namespaces to newly created Tables
-
-        Sourcefiles will be parsed into the following namespaces:
-        'config.reports.1_overall' --> 'default'
-        'steelscript.netshark.appfwk.reports.3_shark' --> 'netshark'
-        'steelscript.appfwk.business_hours.reports.x_report' --> 'business_hours'
-        """
-        if not self.sourcefile:
-            modname = get_module_name()
-            self.sourcefile = get_sourcefile(modname)
-
-        if not self.namespace:
-            self.namespace = get_namespace(self.sourcefile)
-
-        super(Table, self).save(*args, **kwargs)
 
     def __unicode__(self):
         return "<Table %s (%s)>" % (str(self.id), self.name)
@@ -551,9 +529,17 @@ class DatasourceTable(Table):
         if inspect.isclass(queryclass):
             queryclass = queryclass.__name__
 
+        sourcefile = get_sourcefile(get_module())
+        namespace = get_namespace(sourcefile)
+
+        if len(Table.objects.filter(name=name, namespace=namespace)) > 0:
+            raise ValueError(("Table '%s' already exists in namespace '%s' "
+                             "(sourcefile '%s')") % (name, namespace, sourcefile))
+
         logger.debug('Creating table %s' % name)
         t = cls(name=name, module=cls.__module__, queryclass=queryclass,
-                datasource=cls.__name__, options=options, **table_kwargs)
+                datasource=cls.__name__, options=options,
+                sourcefile=sourcefile, namespace=namespace, **table_kwargs)
         try:
             t.save()
         except DatabaseError as e:
