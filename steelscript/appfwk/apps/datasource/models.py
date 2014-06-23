@@ -529,7 +529,7 @@ class DatasourceTable(Table):
         if inspect.isclass(queryclass):
             queryclass = queryclass.__name__
 
-        sourcefile = get_sourcefile(get_module())
+        sourcefile = get_sourcefile(get_module_name())
         namespace = get_namespace(sourcefile)
 
         if len(Table.objects.filter(name=name, namespace=namespace)) > 0:
