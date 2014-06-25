@@ -7,9 +7,9 @@
 import os
 from random import choice
 
+from steelscript.common import link_pkg_dir, link_pkg_files
 from steelscript.commands.steel import (BaseCommand, prompt, console, debug,
                                         shell, check_git, ShellFailed)
-from steelscript.appfwk.project.utils import link_pkg_dir, link_pkg_files
 
 
 LOCAL_CONTENT = """
