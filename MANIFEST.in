@@ -7,4 +7,4 @@ include steelscript/appfwk/apps/geolocation/*.txt
 recursive-include steelscript/appfwk/commands/data *.py.in LICENSE MANIFEST.in README.rst
 recursive-include steelscript/appfwk/project/example-configs *.*
 global-include *.html *.js *.css
-global-include *.png *.ico
+global-include *.gif *.png *.ico
