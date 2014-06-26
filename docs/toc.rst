@@ -3,7 +3,7 @@ SteelScript Application Framework
 
 .. toctree::
 
-   overview
+   SteelScript Application Framework Overview <overview>
    install
    projects
    configuration
