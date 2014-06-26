@@ -89,10 +89,10 @@ class Command(BaseCommand):
                         location.save()
 
             if merge:
-                print 'Imported %d new locations, %d updated' % (count_new,
-                                                                 count_updated)
+                self.stdout.write('Imported %d new locations, %d updated' %
+                                  (count_new, count_updated))
             else:
-                print 'Imported %d locations' % count_new
+                self.stdout.write('Imported %d locations' % count_new)
 
         if options['import_location_ip']:
             filename = options['import_location_ip']
@@ -103,7 +103,7 @@ class Command(BaseCommand):
                 count_updated = 0
 
                 if not merge:
-                    Location.objects.all().delete()
+                    LocationIP.objects.all().delete()
 
                 with open(filename, 'r') as csvfile:
                     reader = csv.reader(csvfile)
@@ -131,7 +131,7 @@ class Command(BaseCommand):
                         location_ip.save()
 
             if merge:
-                print ('Imported %d new locations/ip entries, %d updated' %
-                       (count_new, count_updated))
+                self.stdout.write('Imported %d new locations/ip entries, %d updated' %
+                                  (count_new, count_updated))
             else:
-                print 'Imported %d locations/ip entries' % count_new
+                self.stdout.write('Imported %d locations/ip entries' % count_new)
