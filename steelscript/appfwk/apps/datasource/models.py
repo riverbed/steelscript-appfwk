@@ -21,7 +21,6 @@ import string
 import copy
 import inspect
 
-from django.utils.text import slugify
 import pytz
 import pandas
 import numpy
@@ -33,10 +32,11 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.text import slugify
 
 from steelscript.common.jsondict import JsonDict
 from steelscript.common.utils import DictObject
-from steelscript.common import timedelta_total_seconds
+from steelscript.common.timeutils import timedelta_total_seconds, tzutc
 from steelscript.appfwk.project.utils import (get_module_name, get_sourcefile,
                                               get_namespace)
 from steelscript.appfwk.apps.datasource.exceptions import *
@@ -415,7 +415,6 @@ class Table(models.Model):
                     continue
                 how[k] = colmap[k].resample_operation
 
-            indexed = df.set_index(timecol)
             if 'resample_resolution' in job.criteria:
                 resolution = job.criteria.resample_resolution
             else:
@@ -428,7 +427,16 @@ class Table(models.Model):
                          "less than 1 second") % self))
 
             logger.debug('%s: resampling to %ss' % (self, int(resolution)))
-            indexed.save('/tmp/indexed.pd')
+
+            indexed = df.set_index(timecol)
+            # XXX pandas 0.13.1 drops timezones when moving time cols around
+            # take timezone of first value from timecol, if there is one
+            if df[timecol][0].tz:
+                indexed.index = indexed.index.tz_localize(df[timecol][0].tz)
+
+            #indexed.to_pickle('/tmp/indexed.pd')
+            #df.to_pickle('/tmp/df.pd')
+
             resampled = indexed.resample('%ss' % int(resolution), how,
                                          convention='end').reset_index()
             df = resampled
@@ -1274,7 +1282,7 @@ class Job(models.Model):
                 logger.debug("%s looking for data file: %s" %
                              (str(self), self.datafile()))
                 if os.path.exists(self.datafile()):
-                    df = pandas.load(self.datafile())
+                    df = pandas.read_pickle(self.datafile())
                     logger.debug("%s data loaded %d rows from file: %s" %
                                  (str(self), len(df), self.datafile()))
                 else:
@@ -1498,7 +1506,7 @@ class Worker(base_worker_class):
                         df = df[job.table.rows]
 
                 if df is not None:
-                    df.save(job.datafile())
+                    df.to_pickle(job.datafile())
                     logger.debug("%s data saved to file: %s" % (str(self),
                                                                 job.datafile()))
                 else:
@@ -1559,6 +1567,19 @@ class Worker(base_worker_class):
                     # Possibly datetime object or a datetime string,
                     # hopefully astype() can figure it out
                     df[col.name] = s.astype('datetime64[ms]')
+
+                # Make sure we are UTC, must use internal tzutc because
+                # pytz timezones will cause an error when unpickling
+                # https://github.com/pydata/pandas/issues/6871
+                try:
+                    df[col.name] = df[col.name].apply(lambda x:
+                                                      x.tz_localize(tzutc()))
+                except BaseException as e:
+                    if e.message.startswith('Cannot convert'):
+                        df[col.name] = df[col.name].apply(lambda x:
+                                                          x.tz_convert(tzutc()))
+                    else:
+                        raise
 
             elif (col.isnumeric() and
                   s.dtype == pandas.np.dtype('object')):

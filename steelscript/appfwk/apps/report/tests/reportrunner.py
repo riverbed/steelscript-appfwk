@@ -5,6 +5,7 @@ import logging
 from django.test import TestCase, Client
 from django.core import management
 from django.utils.datastructures import SortedDict
+from django.core.exceptions import ObjectDoesNotExist
 
 #from django.contrib.auth.tests.utils import skipIfCustomUser
 from django.test.utils import override_settings
@@ -32,7 +33,7 @@ class ReportRunnerTestCase(TestCase):
 
         try:
             PortalUser.objects.get(username='admin')
-        except:
+        except ObjectDoesNotExist:
             PortalUser.objects.create_superuser(
                 'admin', 'admin@admin.com', 'admin')
 
