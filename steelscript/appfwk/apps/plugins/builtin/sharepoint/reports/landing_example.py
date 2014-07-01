@@ -14,8 +14,8 @@ from steelscript.appfwk.apps.report.models import Report
 import steelscript.appfwk.apps.report.modules.raw as raw
 import steelscript.appfwk.apps.report.modules.maps as maps
 import steelscript.appfwk.apps.report.modules.yui3 as yui3
-from rvbd_portal_profiler.datasources.profiler import ProfilerGroupbyTable
-from rvbd_portal_sharepoint.datasources.sharepoint import SharepointTable
+from steelscript.netprofiler.appfwk.datasources.netprofiler import NetProfilerGroupbyTable
+from steelscript.appfwk.apps.plugins.builtin.sharepoint.datasources.sharepoint import SharepointTable
 
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ report.add_widget(raw.TableWidget, table, 'report table', width=6)
 
 
 # Define a map and table, group by location
-p = ProfilerGroupbyTable.create('maploc', groupby='host_group', duration=60,
+p = NetProfilerGroupbyTable.create('maploc', groupby='host_group', duration=60,
                                 resolution='auto')
 
 p.add_column('group_name',    label='Group Name', iskey=True)

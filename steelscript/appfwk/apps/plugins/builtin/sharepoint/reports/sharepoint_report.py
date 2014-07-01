@@ -8,7 +8,7 @@
 from steelscript.appfwk.apps.report.models import Report, Section
 import steelscript.appfwk.apps.report.modules.yui3 as yui3
 
-from rvbd_portal_sharepoint.datasources.sharepoint import SharepointTable
+from steelscript.appfwk.apps.plugins.builtin.sharepoint.datasources.sharepoint import SharepointTable
 
 #
 # SharePoint report
