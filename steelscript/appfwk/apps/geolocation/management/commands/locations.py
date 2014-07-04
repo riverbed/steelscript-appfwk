@@ -118,9 +118,8 @@ class Command(BaseCommand):
                             raise KeyError('Unknown location: %s' % name)
 
                         try:
-                            location_ip = LocationIP.objects.get(location=location,
-                                                                 address=address,
-                                                                 mask=mask)
+                            location_ip = LocationIP.objects.get(
+                                location=location, address=address, mask=mask)
                             count_updated += 1
                         except ObjectDoesNotExist:
                             location_ip = LocationIP(location=location,

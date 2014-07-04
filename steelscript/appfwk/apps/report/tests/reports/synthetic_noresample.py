@@ -1,7 +1,7 @@
 from steelscript.appfwk.apps.report.models import Report
 from steelscript.appfwk.apps.report.modules import raw
 
-# Report
+# Reports
 from steelscript.appfwk.apps.report.tests.reports.synthetic_functions \
     import SyntheticGenerateTable
 

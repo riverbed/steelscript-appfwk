@@ -6,6 +6,7 @@
 
 
 import datetime
+import pytz
 
 from steelscript.common.timeutils import datetime_to_seconds
 
@@ -42,6 +43,8 @@ class TableWidget(object):
             newrow = []
             for col in row:
                 if isinstance(col, datetime.datetime):
+                    if col.tzinfo is None:
+                        col = col.replace(tzinfo=pytz.utc)
                     col = datetime_to_seconds(col)
                 newrow.append(col)
             newdata.append(newrow)

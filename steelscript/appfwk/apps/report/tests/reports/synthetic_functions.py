@@ -35,8 +35,8 @@ class SyntheticGenerateQuery(AnalysisQuery):
         for t in range(t0, t1, self.table.options['source_resolution']):
             data.append([t, 1])
 
-            df = pandas.DataFrame(data, columns=['time', 'value'])
-            df['time'] = pandas.DatetimeIndex(df['time']*1000000000)
+        df = pandas.DataFrame(data, columns=['time', 'value'])
+        df['time'] = df['time'].astype('datetime64[s]')
 
         self.data = df
         return True

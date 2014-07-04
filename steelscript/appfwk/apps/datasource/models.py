@@ -1489,6 +1489,7 @@ class Worker(base_worker_class):
                                      type(query.data))
 
                 if df is not None:
+                    self.check_columns(df)
                     df = self.normalize_types(df)
                     df = job.table.compute_synthetic(job, df)
 
@@ -1544,6 +1545,13 @@ class Worker(base_worker_class):
 
         finally:
             job.dereference("Worker exiting")
+
+    def check_columns(self, df):
+        job = self.job
+        for col in job.get_columns(synthetic=False):
+            if col.name not in df:
+                raise ValueError(
+                    'Returned table missing expected column: %s' % col.name)
 
     def normalize_types(self, df):
         job = self.job
