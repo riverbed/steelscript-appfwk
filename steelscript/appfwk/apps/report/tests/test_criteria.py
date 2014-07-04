@@ -327,3 +327,76 @@ class CriteriaFieldMap(CriteriaTest):
 
                                [{'k1': 'M11', 'k2': 'M2'},
                                 {'k1': 'M12', 'k2': 'M2'}])
+
+
+class CriteriaBool(CriteriaTest):
+
+    report = 'criteria_bool'
+
+    def test_ff(self):
+        self.run_report_with_criteria(
+            {# 'b1': 'False', -- omitted from form implies false
+             # 'b2': 'False' -- omitted from form implies false
+            },
+
+            {'b1': 'False',
+             'b2': 'False'})
+
+        self.run_tables_with_criteria(
+            {'b1': 'False',
+             # 'b2': 'False' -- omitted from form implies initial(false)
+            },
+
+            {'b1': 'False',
+             'b2': 'False'})
+
+    def test_ft(self):
+        self.run_report_with_criteria(
+            {# 'b1': 'False' -- omitted from form implies false
+             'b2': 'True',
+            },
+
+            {'b1': 'False',
+             'b2': 'True'})
+
+        self.run_tables_with_criteria(
+            {'b1': 'False',
+             'b2': 'True'
+            },
+
+            {'b1': 'False',
+             'b2': 'True'})
+
+    def test_tf(self):
+        self.run_report_with_criteria(
+            {'b1': 'True',
+             # 'b2': 'False' -- omitted from form
+            },
+
+            {'b1': 'True',
+             'b2': 'False'})
+
+        self.run_tables_with_criteria(
+            {# 'b1': 'True', -- omitted from form implies initial(True)
+             # 'b2': 'False' -- omitted from form implies initial(False)
+            },
+
+            {'b1': 'True',
+             'b2': 'False'})
+
+    def test_tt(self):
+        self.run_report_with_criteria(
+            {'b1': 'True',
+             'b2': 'True'
+            },
+
+            {'b1': 'True',
+             'b2': 'True'})
+
+        self.run_tables_with_criteria(
+            {# 'b1': 'True', -- omitted from form implies initial(True)
+             'b2': 'True'
+            },
+
+            {'b1': 'True',
+             'b2': 'True'})

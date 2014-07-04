@@ -15,17 +15,15 @@ from collections import deque
 import logging
 
 import dateutil
-import pytz
 from django import forms
-from django.utils.datastructures import SortedDict
 from django.forms.util import from_current_timezone, ErrorDict
 from django.core.files.uploadedfile import UploadedFile
 from django.core import validators
 from django.core.exceptions import ValidationError
 from django.forms.widgets import FileInput, TextInput
 from django.forms import widgets
-from steelscript.common.timeutils import (parse_timedelta, timedelta_total_seconds,
-                                   timedelta_str)
+from steelscript.common.timeutils import \
+    (parse_timedelta, timedelta_total_seconds, timedelta_str)
 
 from steelscript.appfwk.apps.datasource.models import Criteria, TableField
 
@@ -50,6 +48,7 @@ class CriteriaPostProcessError(CriteriaError):
 
 # Map of all possible timezone names to tzinfo structures
 ALL_TIMEZONES_MAP = None
+
 def all_timezones_map():
     global ALL_TIMEZONES_MAP
     if ALL_TIMEZONES_MAP is None:
@@ -456,7 +455,14 @@ class TableFieldForm(forms.Form):
         self.fields[field_id] = field
 
         if self.data is not None and field_id not in self.data:
-            if tablefield.initial is not None:
+
+            # If using widgets, sometimes formboolean fields are
+            # omitted from self.data if unchecked, thus we need to
+            # *not* fill in the initial value.
+
+            if (  (not self._use_widgets or
+                   tablefield.field_cls != forms.BooleanField) and
+                  (tablefield.initial is not None)):
                 self.data[field_id] = tablefield.initial
             elif ('choices' in fkwargs) and len(fkwargs['choices']) > 0:
                 self.data[field_id] = fkwargs['choices'][0][0]
