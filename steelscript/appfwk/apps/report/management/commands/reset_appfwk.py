@@ -17,7 +17,8 @@ from django.conf import settings
 from django import db
 from django.db import transaction, DatabaseError
 
-from steelscript.appfwk.apps.preferences.models import SystemSettings
+from steelscript.appfwk.apps.preferences.models import SystemSettings, \
+    PortalUser
 
 # list of files/directories to ignore
 IGNORE_FILES = ['helpers']
@@ -116,11 +117,12 @@ class Command(BaseCommand):
         initial_data = glob.glob(os.path.join(settings.INITIAL_DATA, '*.json'))
         initial_data.sort()
         if not options['drop_users']:
-            # filter out default admin user fixure and reload previous users
+            # filter out default admin user fixture and reload previous users
             initial_data = [f for f in initial_data if 'admin_user' not in f]
 
         if initial_data:
             management.call_command('loaddata', *initial_data)
+
         self.load_users()
 
         # if we don't have a settings fixture, create new default item
@@ -128,3 +130,10 @@ class Command(BaseCommand):
             SystemSettings().save()
 
         management.call_command('reload', report_id=None)
+
+        if not options['drop_users'] and (self.user_buffer is None or
+                                          len(PortalUser.objects.all()) == 0):
+            self.stdout.write('WARNING: No users added to database.  '
+                              'If you would like to include the default '
+                              'admin user, rerun this command with the '
+                              "'--drop-users' option.")
