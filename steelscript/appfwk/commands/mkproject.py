@@ -117,8 +117,11 @@ class Command(BaseCommand):
                           help='Optional path for new project location')
         parser.add_option('-v', '--verbose', action='store_true',
                           help='Extra verbose output')
-        parser.add_option('--nogit', action='store_true',
+        parser.add_option('--no-git', action='store_true',
                           help='Do not initialize project as new git repo')
+        parser.add_option('--no-init', action='store_true',
+                          help='Do not initialize project with default '
+                               'local settings')
 
     def debug(self, msg, newline=False):
         if self.options.verbose:
@@ -194,6 +197,11 @@ class Command(BaseCommand):
                        symlink=False,
                        buf=self.debug)
 
+    def collectreports(self, dirpath):
+        shell('python manage.py collectreports -v 3 --trace',
+              msg='Collecting default reports',
+              cwd=dirpath)
+
     def initialize_git(self, dirpath):
         """If git installed, initialize project folder as new repo.
         """
@@ -215,9 +223,9 @@ class Command(BaseCommand):
               msg='Creating initial git commit',
               cwd=dirpath)
 
-    def collectreports(self, dirpath):
-        shell('python manage.py collectreports -v 3 --trace',
-              msg='Collecting default reports',
+    def initialize_project(self, dirpath):
+        shell('python manage.py initialize -v 3 --trace',
+              msg='Initializing project with default settings',
               cwd=dirpath)
 
     def main(self):
@@ -237,10 +245,15 @@ class Command(BaseCommand):
         self.create_project_directory(dirpath)
         self.create_local_settings(dirpath)
         self.collectreports(dirpath)
-        if not self.options.nogit:
+        if not self.options.no_git:
             self.initialize_git(dirpath)
+
+        if not self.options.no_init:
+            self.initialize_project(dirpath)
 
         console('\n*****\n')
         console('App Framework project created.')
-        console("Change to that directory and run "
-                "'steel appfwk init' to initialize the project.")
+
+        if self.options.no_init:
+            console("Change to that directory and run "
+                    "'steel appfwk init' to initialize the project.")
