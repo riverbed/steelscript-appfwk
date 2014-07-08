@@ -10,8 +10,8 @@ import shutil
 import optparse
 import pkg_resources
 
-from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 
 from steelscript.appfwk.apps.plugins import plugins
 
@@ -26,6 +26,13 @@ class Command(BaseCommand):
                              dest='overwrite',
                              default=False,
                              help='Overwrite ALL existing reports.'),
+        optparse.make_option('--plugin',
+                             action='store',
+                             dest='plugin',
+                             default=None,
+                             help='Collect from specific report only. '
+                                  'Use plugin.slug value, e.g. '
+                                  '"netshark-datasource-plugin".'),
     )
 
     def copyfile(self, src, dest, overwrite=False):
@@ -62,7 +69,19 @@ class Command(BaseCommand):
             dest_file = os.path.join(report_dir, f)
             self.copyfile(src_file, dest_file, options['overwrite'])
 
+        if options['plugin'] and options['plugin'] not in (p.slug for p in
+                                                           plugins.enabled()):
+            msg = (
+                'Unable to find plugin: %s\n'
+                'Check that the plugin is enabled and the plugin '
+                'slug is spelled correctly.' % options['plugin']
+            )
+            raise CommandError(msg)
+
         for plugin in plugins.enabled():
+            if options['plugin'] and plugin.slug != options['plugin']:
+                continue
+
             reports = plugin.get_reports_paths()
             if reports:
                 rdir = os.path.join(report_dir, plugin.get_namespace())
