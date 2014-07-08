@@ -258,12 +258,14 @@ class Table(models.Model):
             table = Table.objects.get(id=arg)
         else:
             raise ValueError('No way to handle Table arg of type %s' % type(arg))
-        return {'namespace': table.namespace,
+        return {'sourcefile': table.sourcefile,
+                'namespace': table.namespace,
                 'name': table.name}
 
     @classmethod
     def from_ref(cls, ref):
-        return Table.objects.get(namespace=ref['namespace'],
+        return Table.objects.get(sourcefile=ref['sourcefile'],
+                                 namespace=ref['namespace'],
                                  name=ref['name'])
 
     def __unicode__(self):
@@ -561,7 +563,9 @@ class DatasourceTable(Table):
         sourcefile = get_sourcefile(get_module_name())
         namespace = get_namespace(sourcefile)
 
-        if len(Table.objects.filter(name=name, namespace=namespace)) > 0:
+        if len(Table.objects.filter(name=name,
+                                    namespace=namespace,
+                                    sourcefile=sourcefile)) > 0:
             raise ValueError(("Table '%s' already exists in namespace '%s' "
                              "(sourcefile '%s')") % (name, namespace, sourcefile))
 
