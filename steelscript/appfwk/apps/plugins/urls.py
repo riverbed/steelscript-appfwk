@@ -13,5 +13,7 @@ import steelscript.appfwk.apps.plugins.views as views
 urlpatterns = patterns(
     'steelscript.appfwk.apps.plugins.views',
     url(r'^$', views.PluginsListView.as_view(), name='plugins-list'),
+    url(r'^collect/$', views.PluginsCollectView.as_view(), name='plugins-collect-all'),
     url(r'^(?P<slug>[-\w]+)/$', views.PluginsDetailView.as_view(), name='plugins-detail'),
+    url(r'^(?P<slug>[-\w]+)/collect/$', views.PluginsCollectView.as_view(), name='plugins-collect'),
 )

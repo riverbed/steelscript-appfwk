@@ -17,7 +17,7 @@
                 '/plugins/' + this.name + '/',
                 {"enabled": this.checked, "csrfmiddlewaretoken": "{{ csrf_token }}" },
                 function(data) {
-                    href = window.location.href.split('#')[0].split('?')[0]
+                    href = window.location.href.split('#')[0].split('?')[0];
                     window.location.href = href + '?changed=true';
                 },
                 "json"
@@ -25,13 +25,22 @@
         });
     });
 
-    function reloadButton() {
-        modal = loadingModal('Reloading All Reports', 'Please wait ...');
+    function collectReports(url, allReports) {
+        if (allReports) {
+            modal = loadingModal('Collecting Reports from all Plugins', 'Please wait ...');
+        } else {
+            modal = loadingModal('Collecting Reports', 'Please wait ...');
+        }
+
         modal.modal('show');
-
-        window.location.href = "{% url 'reload-all' %}";
+        $.get(url,
+              function(data) {
+                  href = window.location.href.split('#')[0].split('?')[0];
+                  window.location.href = href + '?changed=true';
+              },
+              "json"
+        );
     }
-
 </script>
 
 
@@ -46,10 +55,11 @@
 
 {% block content %}
     <div class="container-fluid">
-        <table border="0" class="table table-bordered block-centered" style="max-width: 80%">
+        <table border="0" class="table table-bordered block-centered" style="max-width: 90%">
             <thead>
             <tr>
                 <th>Enabled</th>
+                <th>Action</th>
                 <th>Name</th>
                 <th>Description</th>
                 <th>Version</th>
@@ -65,6 +75,11 @@
                 {% for plugin in plugins %}
                     <tr {% if not plugin.enabled %}class="row-disabled"{% endif %}>
                         <td style="text-align: center"><input id="id_{{plugin.slug}}" name="{{plugin.slug}}" type="checkbox" {% if plugin.is_enabled %}checked{% endif %}></td>
+                        {% if plugin.enabled %}
+                        <td><a href="#" onclick="collectReports('{% url 'plugins-collect' plugin.slug %}', false)">Collect&nbsp;Reports</a></td>
+                        {% else %}
+                        <td>Collect&nbsp;Reports</td>
+                        {% endif %}
                         <td>{{ plugin.title }}</td>
                         <td>{{ plugin.description|safe }}</td>
                         <td>{{ plugin.version }}</td>
@@ -75,11 +90,12 @@
         </table>
         <div class="row">
             <div class="block-centered" style="text-align: center">
-            {% if changed %}
-            <input type="button" value="Reload All Reports" class="btn btn-primary" onClick="reloadingModal('{% url 'reload-all' %}', true)">
-            {% else %}
-                <a href="#" class="btn btn-primary disabled">Reload All Reports</a>
-            {% endif %}
+                {% if changed %}
+                <input type="button" value="Reload All Reports" class="btn btn-primary" onClick="reloadingModal('{% url 'reload-all' %}', true)">
+                {% else %}
+                    <a href="#" class="btn btn-primary disabled">Reload All Reports</a>
+                {% endif %}
+                <input type="button" value="Collect All Reports" class="btn" onClick="collectReports('{% url 'plugins-collect-all' %}', true)">
             </div>
         </div>
     </div>
