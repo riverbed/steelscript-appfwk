@@ -31,9 +31,7 @@ urlpatterns = patterns('',
     url(r'^plugins/', include('steelscript.appfwk.apps.plugins.urls')),
 
     # third party packages
-    # XXX disabled until PyPI updated
-    # https://github.com/pinax/django-announcements/issues/18
-    #url(r'^announcements/', include('announcements.urls')),
+    url(r'^announcements/', include('announcements.urls')),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
