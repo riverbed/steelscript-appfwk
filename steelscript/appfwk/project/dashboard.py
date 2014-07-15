@@ -42,6 +42,7 @@ class CustomIndexDashboard(Dashboard):
                 'steelscript.appfwk.apps.devices.*',
                 'steelscript.appfwk.apps.geolocation.*',
                 'steelscript.appfwk.apps.report.*',
+                'steelscript.*.appfwk.*',
             ),
         ))
 
