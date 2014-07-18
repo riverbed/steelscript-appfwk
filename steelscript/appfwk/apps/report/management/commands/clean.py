@@ -18,6 +18,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from steelscript.appfwk.apps.report.models import Report, WidgetJob
 from steelscript.appfwk.apps.datasource.models import Table, TableField, Column, Job
+from steelscript.appfwk.apps.alerting.models import Route, TriggerCache
 
 
 class Command(BaseCommand):
@@ -88,7 +89,7 @@ class Command(BaseCommand):
 
         if options['applications']:
             # reset objects from main applications
-            apps = ['report', 'datasource']
+            apps = ['report', 'datasource', 'alerting']
             for app in apps:
                 for model in get_models(get_app(app)):
                     self.stdout.write('Deleting objects from %s\n' % model)
@@ -108,6 +109,10 @@ class Command(BaseCommand):
 
                 Column.objects.filter(table=tbl.id).delete()
                 Job.objects.filter(table=tbl.id).delete()
+                for trigger in TriggerCache.filter(tbl):
+                    trigger.delete()
+                    # delete newly unreferenced routes
+                    Route.objects.filter(trigger=None).delete()
 
                 tables = (tbl.options or {}).get('tables')
                 for ref in (tables or {}).values():

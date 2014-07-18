@@ -157,7 +157,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.tz",
     "django.contrib.messages.context_processors.messages",
 #    "project.context_processors.django_version",
-'steelscript.appfwk.apps.report.context_processors.report_list_processor',
+    'steelscript.appfwk.apps.report.context_processors.report_list_processor',
 )
 
 INSTALLED_APPS = (
@@ -189,6 +189,7 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.help',
     'steelscript.appfwk.apps.preferences',
     'steelscript.appfwk.apps.plugins',
+    'steelscript.appfwk.apps.alerting',
 
     # 'standard' plugins
     'steelscript.appfwk.apps.plugins.builtin.whois',

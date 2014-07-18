@@ -213,7 +213,10 @@ class Function(object):
                 "Function reference is invalid, could not find function <%s> in module <%s>"
                 % (self.function, self.module))
 
-        return func(*args, params=self.params, **kwargs)
+        if 'params' in func.func_code.co_varnames:
+            kwargs['params'] = self.params
+
+        return func(*args, **kwargs)
 
 class FunctionField(PickledObjectField):
 

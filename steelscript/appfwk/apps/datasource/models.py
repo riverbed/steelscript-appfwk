@@ -40,6 +40,7 @@ from steelscript.common.timeutils import timedelta_total_seconds, tzutc
 from steelscript.appfwk.project.utils import (get_module_name, get_sourcefile,
                                               get_namespace)
 from steelscript.appfwk.apps.datasource.exceptions import *
+from steelscript.appfwk.apps.alerting.models import post_data_save
 from steelscript.appfwk.libs.fields import (PickledObjectField, FunctionField,
                                             SeparatedValuesField,
                                             check_field_choice,
@@ -450,7 +451,6 @@ class Table(models.Model):
         return df
 
 
-
 class DatasourceTable(Table):
 
     class Meta:
@@ -807,7 +807,6 @@ class Column(models.Model):
             if 'no such table' in str(e):
                 raise DatabaseError(str(e) + ' -- did you forget class Meta: proxy=True?')
             raise
-
 
         return c
 
@@ -1512,6 +1511,14 @@ class Worker(base_worker_class):
 
                 if df is not None:
                     df.to_pickle(job.datafile())
+
+                    #
+                    # Send signal for possible Triggers
+                    #
+                    post_data_save.send(sender=self,
+                                        data=df,
+                                        context={'job': job})
+
                     logger.debug("%s data saved to file: %s" % (str(self),
                                                                 job.datafile()))
                 else:
