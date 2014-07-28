@@ -280,7 +280,7 @@ class ReportView(views.APIView):
 
 
 class WidgetView(views.APIView):
-    """ Main handler for my test
+    """ Handler for displaying one widget which uses default criteria
     """
     model = Report
     serializer_class = ReportSerializer

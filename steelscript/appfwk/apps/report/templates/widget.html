@@ -76,7 +76,7 @@ Add header
                   xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
               }
           });
-
+          // Immediately render the page and run the widget
           renderPage();
           dorun();
 
