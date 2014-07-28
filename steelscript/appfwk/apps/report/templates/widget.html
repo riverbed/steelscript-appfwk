@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<!--
+# Copyright (c) 2014 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+
+<!--
+Add header
+-->
+
+{% load url from future %}
+<html>
+  <head>
+    <title>{% block title %}SteelScript App Framework{% endblock %}</title>
+
+    {% block site_header %}
+    <link href="{{ STATIC_URL }}bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen, print"/>
+    <link href="{{ STATIC_URL }}css/main.css" rel="stylesheet"/>
+    <link href="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.css" rel="stylesheet"/>
+    <link href="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.css" rel="stylesheet"/>
+    <link href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" rel="stylesheet"/>
+
+    <script type="text/javascript" src="{{ STATIC_URL }}js/portal.js"></script>
+
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.form/3.32/jquery.form.js"></script>
+
+    {% comment %}
+    need to call yui-s separately since it seems to be less efficient
+    with the network requests than the regular unsecured site - four combo
+    requests versus upwards of 50 individual requests under https
+    {% endcomment %}
+    {% if request.is_secure %}
+    <script type="text/javascript" src="https://yui-s.yahooapis.com/3.8.1/build/yui/yui-min.js"></script>
+    {% else %}
+    <script type="text/javascript" src="http://yui.yahooapis.com/3.8.1/build/yui/yui-min.js"></script>
+    {% endif %}
+    {% endblock %}
+    <link href="{{ STATIC_URL }}css/report.css" rel="stylesheet"/>
+    <script type="text/javascript" src="{{ STATIC_URL }}showLoading/js/jquery.showLoading.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.min.js"></script>
+
+    {% if maps_version == 'DEVELOPER' %}
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+    {% elif maps_version == 'FREE' %}
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3%key={{ maps_api_key }}&sensor=false"></script>
+    {% elif maps_version == 'BUSINESS' %}
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3&client={{ maps_api_key }}&sensor=false"></script>
+    {% endif %}
+
+    <script type="text/javascript" src="{{ STATIC_URL }}js/rvbd-widgets.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/rvbd-yui3.js"></script>
+
+    {% if maps_version == 'OPEN_STREET_MAPS' %}
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.2/leaflet.js"></script>
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.2/leaflet.css" />
+        <script type="text/javascript" src="{{ STATIC_URL }}js/rvbd-openstreetmaps.js"></script>
+    {% else %}
+        <script type="text/javascript" src="{{ STATIC_URL }}js/rvbd-google-maps.js"></script>
+    {% endif %}
+
+
+    <script type="text/javascript">
+      var runRequested = false;
+      var debugFlag = false;
+      $(document).ready( function() {
+          $.ajaxSetup({
+              beforeSend: function(xhr) {
+                  xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+              }
+          });
+
+          renderPage();
+          dorun();
+
+
+        });
+
+    </script>
+
+    <script type="text/javascript">
+      var global = this;
+      var rvbd_status = {};
+      var rvbd_debug = false;
+
+      // used for auto-run
+      function renderPage() {
+          $.ajax({
+              dataType:"json",
+              type: "get",
+              url: "{% url 'report-widgets' widget.namespace widget.report_slug %}",
+              success: function(data, textStatus, jqXHR) {
+                  renderReport(data);
+              },
+              error: function(jqXHR, textStatus, errorThrown) {
+                  // we receive a 400 error on form validation problems
+                  if (jqXHR.status == 400) {
+                      alert("an error occurred: " + textStatus + " : " + errorThrown);
+                  }
+                  if (jqXHR.status == 500) {
+                      alert("an error occurred: " + textStatus + " : " + errorThrown);
+                  }
+              }
+          });
+      }
+
+      function renderReport(widgets) {
+          // reset the status
+          global.rvbd_status = {};
+
+
+          // pull first element off list which contains information about the report
+          var report_meta = widgets.shift();
+          $('#report_datetime').html(report_meta.datetime);
+          $('#report_timezone').html(report_meta.timezone);
+
+          var report=$("#report");
+          report.html(widgets);
+          var rownum=0;
+          var row;
+
+          // run through all the report's widgets, if the widget isn't the one we are
+          // looking for, then stop there, and if it is, generate the HTML to display it
+          $.each(widgets, function(i,w) {
+              if (w.widgetid != {{ widget.widgetid }}){
+                    return true;
+              }
+              if (rownum != w.row) {
+                  row = $('<div />', { 'class': 'row-fluid' }).appendTo(report);
+                  rownum = w.row;
+              }
+              var wid = "chart_" + w.widgetid;
+              $('<div />',
+                { id: wid,
+                  'class': 'blackbox span12' })
+                  .text ("Widget " + w.widgetid)
+                  .appendTo(row);
+
+              var opts = w.options || {};
+              opts.height = w.height;
+              new global[w.widgettype[0]][w.widgettype[1]] ( w.posturl, wid, opts, w.criteria );
+              rvbd_status[w.posturl] = 'running';
+          });
+
+          // wait a short period before checking widget status
+          setTimeout(monitorWidgetStatus, 100);
+      }
+
+      function monitorWidgetStatus() {
+          // keep checking while at least one widget is running
+          for (var key in global.rvbd_status) {
+              if (global.rvbd_status[key] == 'running') {
+                  setTimeout(monitorWidgetStatus, 500);
+                  return;
+              };
+          };
+          // all statuses are not 'running', trigger the zipfile download
+          if (global.rvbd_debug == true) {
+              alert('Complete - you will now be prompted to download a zipfile ' +
+                    'containing the server logs.');
+              window.location = "{% url 'steelscript.appfwk.apps.report.views.download_debug' %}";
+          };
+          run();
+      }
+
+      function updateTimeAndRun() {
+          $('#timenow').click();
+          run();
+      }
+
+      function run() {
+          runRequested = true;
+          $("#criteria").collapse('hide');
+      }
+
+      function runDebug() {
+          debugFlag = true;
+          run();
+      }
+
+      function dorun() {
+          if (!runRequested)
+              return;
+          runRequested = false;
+          $("#id_debug").val(debugFlag ? "on" : "");
+          $("#form-error-info").html("");
+          form = $('form#criteriaform');
+          $("body").css("cursor", "wait");
+          form.ajaxSubmit({
+              dataType:"json",
+              type: "post",
+              url: form.attr('action'),
+              success: function(data, textStatus) {
+                  $("body").css("cursor", "default");
+                  renderReport(data);
+              },
+              error: function(jqXHR, textStatus, errorThrown) {
+                  // we receive a 400 error on form validation problems
+                  $("body").css("cursor", "default");
+                  if (jqXHR.status == 400) {
+                      $("#criteria").collapse('show');
+                      $("#form-error-info").html(jqXHR.responseText);
+                  }
+                  if (jqXHR.status == 500) {
+                      alert("an error occurred: " + textStatus + " : " + errorThrown);
+                  }
+              }
+          });
+          debugFlag = false;
+      }
+
+      function update_criteria(data) {
+          $.each(data, function(i,w) {
+              //alert('Updating ' + i + ',' + w + ' #' + w.id + '-span' + '\n' + w.html);
+              $('#' + w.id + '-span').html(w.html);
+          });
+      }
+      function criteria_changed() {
+          $("body").css("cursor", "wait");
+          form = $('form#criteriaform');
+          form.ajaxSubmit({
+              dataType:"json",
+              type: "post",
+              url: form.attr('action') + 'criteria/',
+              success: function(data, textStatus) {
+                  $("body").css("cursor", "default");
+                  update_criteria(data);
+              },
+              error: function(jqXHR, textStatus, errorThrown) {
+                  $("body").css("cursor", "default");
+                  alert("Failed: jqXHR: " + jqXHR.status + "\ntextStatus: " + textStatus);
+
+                  // we receive a 400 error on form validation problems
+                  if (jqXHR.status == 400) {
+                      $("#criteria").collapse('show');
+                      $("#form-error-info").html(jqXHR.responseText);
+                  }
+                  if (jqXHR.status == 500) {
+                      alert("an error occurred: " + textStatus + " : " + errorThrown);
+                  }
+              }
+          });
+      }
+
+    </script>
+    <style>
+        .loading-indicator
+        {
+            height: 80px;
+            width: 80px;
+            background: url( '{{ STATIC_URL }}showLoading/images/loading.gif' );
+            background-repeat: no-repeat;
+            background-position: center center;
+        }
+    </style>
+  </head>
+  <body>
+      <div class="row-fluid">
+          <div class="collapse in" id="report-container">
+            <div class="widget-content collapse in" id="report" style="width=100%;">
+            </div> <!-- criteria -->
+          </div> <!-- criteria -->
+    </div>
+
+  </body>
+</html>
+

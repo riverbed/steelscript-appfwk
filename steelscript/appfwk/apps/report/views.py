@@ -279,6 +279,28 @@ class ReportView(views.APIView):
             return HttpResponse(str(form.errors), status=400)
 
 
+class WidgetView(views.APIView):
+    """ Main handler for my test
+    """
+    model = Report
+    serializer_class = ReportSerializer
+    renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
+
+    # ReportView.get()
+    def get(self, request, namespace=None, report_slug=None, widget_slug=None):
+        Widget
+        w = Widget.objects.get(id=widget_slug)
+        widget_type = [str(x) for x in w.widgettype().split(".")]
+        widget_def = {"namespace": namespace,
+                      "report_slug": report_slug,
+                      "widgettype": [widget_type[0], widget_type[1]],
+                      "widgetid": w.id
+                      }
+        return render_to_response('widget.html', {"widget": widget_def,
+                                                  'STATIC_URL': '/static/'},
+                                  context_instance=RequestContext(request))
+
+
 class ReportEditor(views.APIView):
     """ Edit Report files directly.  Requires superuser permissions. """
     renderer_classes = (TemplateHTMLRenderer, )

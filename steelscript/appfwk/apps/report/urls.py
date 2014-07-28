@@ -68,7 +68,11 @@ urlpatterns = patterns(
         views.WidgetJobDetail.as_view(),
         name='report-job-detail'),
 
-    # this makes more sense at the project level, but since its implemented 
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widget/(?P<widget_slug>[0-9_a-zA-Z]+)/$',
+        views.WidgetView.as_view(),
+        name='widget-stand-alone'),
+
+    # this makes more sense at the project level, but since its implemented
     # under `report`, lets have the url here for now
     url(r'^download_debug$', 'download_debug'),
 )
