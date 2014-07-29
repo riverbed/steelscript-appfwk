@@ -53,10 +53,6 @@ Add header
                   xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
               }
           });
-          // rvbd_debug_url is used in report.js to allow the user to download a zip
-          // of the debug information if rvbd_debug is set to true.
-          rvbd_debug_url = "{% url 'steelscript.appfwk.apps.report.views.download_debug' %}";
-
           // Immediately render the page and run the widget
           var widget_info = {"widgetid": {{ widget.widgetid }},
                              "criteria": '{{ widget.criteria }}'

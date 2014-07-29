@@ -7,7 +7,7 @@ widget_data*
 *.data
 log.txt*
 log-db.txt*
-static/
+/static/
 
 initial_preferences.json
 initial_devices.json

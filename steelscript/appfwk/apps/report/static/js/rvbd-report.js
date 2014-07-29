@@ -121,8 +121,6 @@ function renderWidget(widgets, widget_info) {
         rvbd_status[w.posturl] = 'running';
     });
 
-    // wait a short period before checking widget status
-    setTimeout(monitorWidgetStatus, 100);
 }
 
 function monitorWidgetStatus() {
