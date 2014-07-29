@@ -17,7 +17,7 @@ Add header
   <head>
     <title>{% block title %}SteelScript App Framework{% endblock %}</title>
 
-    {% include "_general_imports.html" %}
+    {% include "site_header_includes.html" %}
 
     <link href="{{ STATIC_URL }}css/report.css" rel="stylesheet"/>
     <script type="text/javascript" src="{{ STATIC_URL }}showLoading/js/jquery.showLoading.js"></script>
@@ -65,9 +65,6 @@ Add header
           dorun();
         });
 
-    </script>
-
-    <script type="text/javascript">
     </script>
     <style>
         .loading-indicator
