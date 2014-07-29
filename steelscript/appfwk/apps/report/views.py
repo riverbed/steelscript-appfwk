@@ -25,6 +25,7 @@ from django.core import management
 from django.core.urlresolvers import reverse
 from django.core.servers.basehttp import FileWrapper
 from django.utils.datastructures import SortedDict
+from django.utils.safestring import mark_safe
 
 from rest_framework import generics, views
 from rest_framework.decorators import api_view
@@ -282,22 +283,24 @@ class ReportView(views.APIView):
 class WidgetView(views.APIView):
     """ Handler for displaying one widget which uses default criteria
     """
-    model = Report
     serializer_class = ReportSerializer
     renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
 
     # ReportView.get()
     def get(self, request, namespace=None, report_slug=None, widget_slug=None):
-        Widget
+        criteria = request.GET.dict()
+        if 'endtime' in criteria and criteria['endtime'] == "now":
+            del criteria['endtime']
+        criteria = json.dumps(criteria)
         w = Widget.objects.get(id=widget_slug)
         widget_type = [str(x) for x in w.widgettype().split(".")]
         widget_def = {"namespace": namespace,
                       "report_slug": report_slug,
                       "widgettype": [widget_type[0], widget_type[1]],
-                      "widgetid": w.id
+                      "widgetid": w.id,
+                      "criteria": mark_safe(criteria)
                       }
-        return render_to_response('widget.html', {"widget": widget_def,
-                                                  'STATIC_URL': '/static/'},
+        return render_to_response('widget.html', {"widget": widget_def},
                                   context_instance=RequestContext(request))
 
 
