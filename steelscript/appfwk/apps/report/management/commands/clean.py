@@ -131,6 +131,7 @@ class Command(BaseCommand):
                         for wjob in WidgetJob.objects.filter(widget=widget):
                             wjob.delete()
                     widget.delete()
+            TriggerCache.clear()
 
             # Delete TableFields no longer referenced by any Tables or Sections
             (TableField.objects
