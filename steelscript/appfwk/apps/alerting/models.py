@@ -5,12 +5,9 @@
 # as set forth in the License.
 
 import threading
-from collections import namedtuple, defaultdict
+from collections import defaultdict
 
 from django.db import models
-from django.db import transaction
-from django.db import DatabaseError
-from django.db.models.signals import pre_delete
 from django.dispatch import Signal, receiver
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
@@ -18,11 +15,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from steelscript.appfwk.libs.fields import (PickledObjectField,
                                             FunctionField, Function)
 
+from steelscript.appfwk.apps.alerting.routes import find_routers
+
 import logging
 logger = logging.getLogger(__name__)
 
-
-Alert = namedtuple('Alert', 'level,message,context')
 
 post_data_save = Signal(providing_args=['data', 'context'])
 
@@ -41,7 +38,7 @@ class TriggerCache(object):
     def _get(cls):
         logger.debug('TriggerCache: loading new data')
         cls._lookup = defaultdict(list)
-        triggers = Trigger.objects.all()
+        triggers = Trigger.objects.select_related()
         for t in triggers:
             logger.debug('TriggerCache: adding %s to key %s' % (t, t.source))
             cls._lookup[t.source].append(t)
@@ -67,9 +64,17 @@ class RouteThread(threading.Thread):
         super(RouteThread, self).__init__(**kwargs)
 
     def run(self):
-        t = self.route.template.format(**self.context)
-        logger.debug('Route %s -> %s: %s' % (self.route.name,
-                                             self.route.destination, t))
+        # create alert and send it before saving to db to
+        router = self.route.get_router_class()()
+        message = self.route.get_message(self.context)
+        alert = Alert(level=router.level,
+                      router=self.route.router,
+                      message=message,
+                      context=self.context)
+        logger.debug('Routing Alert %s via router %s' %
+                     (alert, self.route))
+        router.send(alert)
+        alert.save()
 
 
 class TriggerThread(threading.Thread):
@@ -133,6 +138,21 @@ class Source(object):
         return frozenset(Table.to_ref(source).itervalues())
 
 
+class Alert(models.Model):
+    timestamp = models.DateTimeField(auto_now=True)
+    level = models.CharField(max_length=50)
+    router = models.CharField(max_length=100)
+    message = models.TextField()
+    context = PickledObjectField()
+
+    def __unicode__(self):
+        msg = self.message
+        if len(msg) > 10:
+            msg = '%s...' % msg[:10]
+        return '<Alert %s (%s) %s/%s>' % (self.id or 'X', self.router,
+                                          self.level, msg)
+
+
 class Trigger(models.Model):
     name = models.CharField(max_length=100)
     source = PickledObjectField()
@@ -175,6 +195,16 @@ class Route(models.Model):
     template = models.TextField(blank=True, null=True)
     template_func = FunctionField(null=True)
 
+    def __unicode__(self):
+        return '<Route %d/%s -> %s>' % (self.id, self.router, self.destination)
+
+    def save(self, *args, **kwargs):
+        if self.template is None and self.template_func is None:
+            raise AttributeError('Missing template or template_func '
+                                 'definition in Route creation for Route %s'
+                                 % self)
+        super(Route, self).save()
+
     @classmethod
     def create(cls, router, destination, template=None,
                template_func=None):
@@ -184,6 +214,23 @@ class Route(models.Model):
                   template_func=template_func)
         r.save()
         return r
+
+    def get_router_class(self):
+        """Return instance of Router associated with the model.
+        """
+        routers = find_routers()
+        for r in routers:
+            if self.router == r.__name__:
+                return r
+
+    def get_message(self, context):
+        """Return string from either template_func or template
+        afer processed with given context.
+        """
+        if self.template_func:
+            return self.template_func(**context)
+        else:
+            return self.template.format(**context)
 
 
 create_trigger = Trigger.create
