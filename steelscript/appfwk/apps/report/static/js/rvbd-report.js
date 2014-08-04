@@ -202,7 +202,7 @@ function addWidgetMenu(widget, $title_div) {
             right: '0px'
         });
 
-    // iterate over all the menu elements, and add them to the menu
+    // iterate over all the menu items, and add them to the menu
     var i; 
     for (i = 0; i < menu_items.length; ++i) {
         var $li = $('<li>')
@@ -220,10 +220,10 @@ function addWidgetMenu(widget, $title_div) {
     $title_div.append($menu_container);
 
     // Add menu item onClick handlers
-    addWidgetMenuHandlers(widget);
+    addGetEmbedHtmlHandler(widget);
 }
 
-function addWidgetMenuHandlers(widget){
+function addGetEmbedHtmlHandler(widget){
     // Create the url that describes the current widget
     var url = window.location.href;
     url = url.replace(window.location.hash, "").replace("#", "");
@@ -262,7 +262,7 @@ function addWidgetMenuHandlers(widget){
             '\' type="text" style="width:97%">';
         var heading = 'Embed Widget HTML';
         var okButtonTxt = 'OK';
-        alertModal(heading, body, okButtonTxt, function(){}, function(){
+        alertModal(heading, body, okButtonTxt, function(){
             // this function is called on 'shown' 
             
             // automatically set the focus to the iframe text

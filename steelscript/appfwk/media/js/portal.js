@@ -56,17 +56,17 @@ function confirm(heading, question, cancelButtonTxt, okButtonTxt, callback) {
     modal.modal('show');
 }
 
-function alertModal(heading, body, okButtonTxt, okCallback, showCallback) {
+function alertModal(heading, body, okButtonTxt, shownCallback) {
     var modal = modal_html(heading, body, null, okButtonTxt);
 
     modal.find('#okButton').click(function(event) {
-      okCallback();
       modal.modal('hide');
+      // return false to avoid the page scrolling to the top after click
       return false;
     });
 
     modal.on('shown', function(){
-        showCallback();
+        shownCallback();
     });
     modal.on('hidden', function() {
         $(this).remove();
