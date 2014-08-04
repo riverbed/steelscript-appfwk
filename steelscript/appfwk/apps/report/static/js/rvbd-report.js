@@ -224,6 +224,7 @@ function addWidgetMenu(widget, $title_div) {
 }
 
 function addWidgetMenuHandlers(widget){
+    // Create the url that describes the current widget
     var url = window.location.href;
     url = url.replace(window.location.hash, "").replace("#", "");
     url += 'widget/' + widget.widgetid + '?';
@@ -235,23 +236,26 @@ function addWidgetMenuHandlers(widget){
             url += param + '=' + value + '&';
         }
     }
+    // Helper function for generating an iframe from a url and width and height
     function generateIFrame(url, width, height){
         return '<iframe width="'+ width + '" height="' + height +
             '" src="' + url + 
             '" frameborder="0"></iframe>';
     }
-    // Add the actual menu item listener which pulls up the modal
+    // Add the actual menu item listener which triggers the modal
     $('#'+widget.widgetid+'_get_embed').click(function() {
         var iframe = generateIFrame(url, 500, widget.height + 12); 
         var body = 'Choose dimensions for the embedded widget:<br>' +
             '<table>' +
             '<tr>' +
               '<td><h4>Width:</h4></td>' +
-              '<td><input value="500" type="text" id="widget-width" style="width:50px;margin-top:10px;"></td>' +
+              '<td><input value="500" type="text" id="widget-width"' + 
+                    'style="width:50px;margin-top:10px;"></td>' +
             '</tr>' +
             '<tr>' +
               '<td><h4>Height:</h4></td>' +
-              '<td><input value="312" type="text" id="widget-height" style="width:50px;margin-top:10px;"></td>' +
+              '<td><input value="312" type="text" id="widget-height" ' +
+                    'style="width:50px;margin-top:10px;"></td>' +
             '</tr>' +
             '</table><br>Copy the following HTML to embed the widget:' +
             '<input id="embed_text" value=\'' + iframe + 
@@ -259,6 +263,8 @@ function addWidgetMenuHandlers(widget){
         var heading = 'Embed Widget HTML';
         var okButtonTxt = 'OK';
         alertModal(heading, body, okButtonTxt, function(){}, function(){
+            // this function is called on 'shown' which handles the automatic
+            // selection as well as the width/height changing
             $('#embed_text').focus(function(){
                 this.select();
             });
