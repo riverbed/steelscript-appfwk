@@ -43,7 +43,7 @@ function renderPage(widgets_url, widget_info) {
 }
 
 // renderReport() renders all the widgets in the current report
-function renderReport(widgets) {
+function renderReport(widgets, criteria) {
     // reset the status
     global.rvbd_status = {};
 
@@ -58,7 +58,7 @@ function renderReport(widgets) {
     var rownum=0;
     var row;
     $.each(widgets, function(i,w) {
-        if (rownum != w.row) {
+        if (rownum !== w.row) {
             row = $('<div />', { 'class': 'row-fluid' }).appendTo(report);
             rownum = w.row;
         }
@@ -76,7 +76,7 @@ function renderReport(widgets) {
     });
 
     // wait a short period before checking widget status
-    setTimeout(monitorWidgetStatus, 100);
+    setTimeout(function(){ monitorWidgetStatus(onReportWidgetComplete, widgets); }, 100);
 }
 
 // renderWidget() is very similar to renderReport(), but it makes sure to only render
@@ -97,11 +97,11 @@ function renderWidget(widgets, widget_info) {
 
     // run through all the report's widgets, if the widget isn't the one we are
     // looking for, then stop there, and if it is, generate the HTML to display it
-    $.each(widgets, function(i,w) {
-        if (w.widgetid != widget_info.widgetid){
-              return true;
+    widgets = $.grep(widgets, function(w) {
+        if (w.widgetid !== widget_info.widgetid){
+            return false;
         }
-        if (rownum != w.row) {
+        if (rownum !== w.row) {
             row = $('<div />', { 'class': 'row-fluid' }).appendTo(report);
             rownum = w.row;
         }
@@ -112,31 +112,173 @@ function renderWidget(widgets, widget_info) {
             .text ("Widget " + w.widgetid)
             .appendTo(row);
 
+        // replace the default criteria with the url criteria
         var url_criteria = JSON.parse(widget_info.criteria);
-        var criteria = $.extend(true, {}, w.criteria, url_criteria);
+        w.criteria = $.extend(true, {}, w.criteria, url_criteria);
 
         var opts = w.options || {};
         opts.height = w.height;
-        new global[w.widgettype[0]][w.widgettype[1]] ( w.posturl, wid, opts, criteria );
+        new global[w.widgettype[0]][w.widgettype[1]] ( w.posturl, wid, opts, w.criteria );
         rvbd_status[w.posturl] = 'running';
+        return true;
     });
 
+    // wait a short period before checking widget status
+    setTimeout(function(){ monitorWidgetStatus(onEmbedWidgetComplete, widgets); }, 100);
 }
 
-function monitorWidgetStatus() {
-    // keep checking while at least one widget is running
-    for (var key in global.rvbd_status) {
-        if (global.rvbd_status[key] == 'running') {
-            setTimeout(monitorWidgetStatus, 500);
-            return;
-        };
-    };
+/**
+ * checks if each widget is finished loading, and then calls the provided
+ * onComplete() function passing the id of the completed widget. 
+ */
+function monitorWidgetStatus(onComplete, widgets) {
+    var i;
+    for (i = 0; i < widgets.length; ++i) {
+        if(global.rvbd_status[widgets[i].posturl] === 'complete'){
+            onComplete(widgets[i]);
+            widgets.splice(i, 1);
+        }
+    }
+
+    // if there are still running widgets, monitor widgets in 0.5 seconds
+    if ( widgets.length !== 0) {
+        setTimeout(function(){ 
+            monitorWidgetStatus(onComplete, widgets); }, 
+            500);
+        return;
+    }
     // all statuses are not 'running', trigger the zipfile download
-    if (global.rvbd_debug == true) {
+    if (global.rvbd_debug === true) {
         alert('Complete - you will now be prompted to download a zipfile ' +
               'containing the server logs.');
         window.location = rvbd_debug_url;
-    };
+    }
+}
+
+var onReportWidgetComplete = function (widget) {
+    var $chart_div = $('#chart_' + widget.widgetid),
+        $title_div = $('#chart_' + widget.widgetid + '_content-title'),
+        $content_div = $('#chart_' + widget.widgetid + '_content');
+
+    addWidgetMenu(widget, $title_div);
+};
+
+var onEmbedWidgetComplete = function (widget) {
+    var $chart_div = $('#chart_' + widget.widgetid),
+        $title_div = $('#chart_' + widget.widgetid + '_content-title'),
+        $content_div = $('#chart_' + widget.widgetid + '_content');
+    // Add functions to be called after embedded widget finishes loading
+};
+
+function addWidgetMenu(widget, $title_div) {
+    var id = widget.widgetid;
+    // a list of menu items
+    var menu_items = [
+        '<a tabindex="-1" id="'+id+'_get_embed">Get Embed Code</a>'
+    ];
+
+    // here we create all the html elements for our menu
+    var $menu_container = $('<div>')
+        .attr('class', 'dropdown')
+        .css({
+            position: 'relative',
+            float: 'right',
+            top: '0px;',
+            height: '26px'
+        });
+    var $menu_button = $('<a>')
+        .attr('class', 'dropdown-toggle')
+        .attr('id', id+'_menu')
+        .attr('data-toggle', 'dropdown')
+        .attr('href', '#');
+    var $menu_icon = $('<span>')
+        .attr('class', 'icon-chevron-down');
+    var $menu = $('<ul>')
+        .attr('class', 'dropdown-menu')
+        .attr('role', 'menu')
+        .attr('aria-labelledby', id+'_menu')
+        .css({
+            left: 'auto',
+            right: '0px'
+        });
+
+    // iterate over all the menu elements, and add them to the menu
+    var i; 
+    for (i = 0; i < menu_items.length; ++i) {
+        var $li = $('<li>')
+            .attr('role', 'presentation');
+        var $item = menu_items[i];
+        $li.append($item);
+        $menu.append($li);
+    }
+
+    // Now append the menu and the button to our menu container
+    $menu_button.append($menu_icon);
+    $menu_container.append($menu_button);
+    $menu_container.append($menu);
+    // Add the menu to the widget!
+    $title_div.append($menu_container);
+
+    // Add menu item onClick handlers
+    addWidgetMenuHandlers(widget);
+}
+
+function addWidgetMenuHandlers(widget){
+    var url = window.location.href;
+    url = url.replace(window.location.hash, "").replace("#", "");
+    url += 'widget/' + widget.widgetid + '?';
+    var criteria = widget.criteria;
+    for (var key in criteria) {
+        if (criteria.hasOwnProperty(key)) {
+            var param = encodeURIComponent(key);
+            var value = encodeURIComponent(criteria[key]);
+            url += param + '=' + value + '&';
+        }
+    }
+    function generateIFrame(url, width, height){
+        return '<iframe width="'+ width + '" height="' + height +
+            '" src="' + url + 
+            '" frameborder="0"></iframe>';
+    }
+    // Add the actual menu item listener which pulls up the modal
+    $('#'+widget.widgetid+'_get_embed').click(function() {
+        var iframe = generateIFrame(url, 500, widget.height + 12); 
+        var body = 'Choose dimensions for the embedded widget:<br>' +
+            '<table>' +
+            '<tr>' +
+              '<td><h4>Width:</h4></td>' +
+              '<td><input value="500" type="text" id="widget-width" style="width:50px;margin-top:10px;"></td>' +
+            '</tr>' +
+            '<tr>' +
+              '<td><h4>Height:</h4></td>' +
+              '<td><input value="312" type="text" id="widget-height" style="width:50px;margin-top:10px;"></td>' +
+            '</tr>' +
+            '</table><br>Copy the following HTML to embed the widget:' +
+            '<input id="embed_text" value=\'' + iframe + 
+            '\' type="text" style="width:97%">';
+        var heading = 'Embed Widget HTML';
+        var okButtonTxt = 'OK';
+        alertModal(heading, body, okButtonTxt, function(){}, function(){
+            $('#embed_text').focus(function(){
+                this.select();
+            });
+            $('#embed_text').focus();
+            $('#widget-width').keyup(function(){
+                var new_iframe = generateIFrame(url, 
+                    $(this).val(), $('#widget-height').val()); 
+                console.log(new_iframe)
+                $('#embed_text').attr('value', new_iframe);
+            });
+            $('#widget-height').keyup(function(){
+                var new_iframe = generateIFrame(url, 
+                    $('#widget-width').val(), $(this).val()); 
+                $('#embed_text').attr('value', new_iframe);
+            });
+        });
+    });
+}
+
+function showEmbedPopup(url){
 }
 
 function updateTimeAndRun() {
@@ -160,7 +302,11 @@ function dorun() {
     runRequested = false;
     $("#id_debug").val(debugFlag ? "on" : "");
     $("#form-error-info").html("");
-    form = $('form#criteriaform');
+    var form = $('form#criteriaform');
+    // save a copy of the criteria for future reference when embedding
+    var criteria = form.serializeArray();
+    criteria.shift();
+    criteria.splice(criteria.length - 2, 2);
     $("body").css("cursor", "wait");
     form.ajaxSubmit({
         dataType:"json",
@@ -168,7 +314,7 @@ function dorun() {
         url: form.attr('action'),
         success: function(data, textStatus) {
             $("body").css("cursor", "default");
-            renderReport(data);
+            renderReport(data, criteria);
         },
         error: function(jqXHR, textStatus, errorThrown) {
             // we receive a 400 error on form validation problems
@@ -184,6 +330,7 @@ function dorun() {
     });
     debugFlag = false;
 }
+    var question = 'This is a test';
 
 function update_criteria(data) {
     $.each(data, function(i,w) {

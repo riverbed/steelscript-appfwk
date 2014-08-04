@@ -9,8 +9,8 @@
 
 
 function modal_html(heading, body, cancelButtonTxt, okButtonTxt) {
-    var confirmModal =
-        $('<div class="modal hide fade">' +
+    var modalHtml = 
+        '<div class="modal hide fade" id="test_id">' +
             '<div class="modal-header">' +
                 '<a class="close" data-dismiss="modal">&times;</a>' +
                 '<h3>' + heading +'</h3>' +
@@ -18,8 +18,10 @@ function modal_html(heading, body, cancelButtonTxt, okButtonTxt) {
 
             '<div id="modalBody" class="modal-body">' +
                 '<p>' + body + '</p>' +
-            '</div>' +
-
+            '</div>';
+    // if we don't include cancelButtonTxt then don't draw cancel button
+    if( cancelButtonTxt ){
+        modalHtml +=
             '<div class="modal-footer">' +
                 '<a href="#" class="btn" data-dismiss="modal">' +
                   cancelButtonTxt +
@@ -28,8 +30,18 @@ function modal_html(heading, body, cancelButtonTxt, okButtonTxt) {
                   okButtonTxt +
                 '</a>' +
             '</div>' +
-          '</div>');
-    return confirmModal
+          '</div>';
+    }else{
+        modalHtml +=
+            '<div class="modal-footer">' +
+                '<a href="#" id="okButton" class="btn btn-primary">' +
+                  okButtonTxt +
+                '</a>' +
+            '</div>' +
+          '</div>';
+    }
+    var confirmModal = $(modalHtml);
+    return confirmModal;
 }
 
 // ref http://stackoverflow.com/a/10124151/2157429
@@ -41,6 +53,24 @@ function confirm(heading, question, cancelButtonTxt, okButtonTxt, callback) {
       modal.modal('hide');
     });
 
+    modal.modal('show');
+}
+
+function alertModal(heading, body, okButtonTxt, okCallback, showCallback) {
+    var modal = modal_html(heading, body, null, okButtonTxt);
+
+    modal.find('#okButton').click(function(event) {
+      okCallback();
+      modal.modal('hide');
+      return false;
+    });
+
+    modal.on('shown', function(){
+        showCallback();
+    });
+    modal.on('hidden', function() {
+        $(this).remove();
+    });
     modal.modal('show');
 }
 
