@@ -263,16 +263,16 @@ function addWidgetMenuHandlers(widget){
         var heading = 'Embed Widget HTML';
         var okButtonTxt = 'OK';
         alertModal(heading, body, okButtonTxt, function(){}, function(){
-            // this function is called on 'shown' which handles the automatic
-            // selection as well as the width/height changing
-            $('#embed_text').focus(function(){
-                this.select();
-            });
+            // this function is called on 'shown' 
+            
+            // automatically set the focus to the iframe text
+            $('#embed_text').focus(function(){ this.select(); });
             $('#embed_text').focus();
+
+            // update the iframe to reflect the width and height fields
             $('#widget-width').keyup(function(){
                 var new_iframe = generateIFrame(url, 
                     $(this).val(), $('#widget-height').val()); 
-                console.log(new_iframe)
                 $('#embed_text').attr('value', new_iframe);
             });
             $('#widget-height').keyup(function(){
@@ -336,7 +336,6 @@ function dorun() {
     });
     debugFlag = false;
 }
-    var question = 'This is a test';
 
 function update_criteria(data) {
     $.each(data, function(i,w) {
