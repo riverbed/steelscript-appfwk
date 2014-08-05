@@ -16,6 +16,7 @@ from steelscript.appfwk.libs.fields import (PickledObjectField,
                                             FunctionField, Function)
 
 from steelscript.appfwk.apps.alerting.routes import find_routers
+from steelscript.appfwk.apps.alerting.source import Source
 
 import logging
 logger = logging.getLogger(__name__)
@@ -31,6 +32,9 @@ class TriggerCache(object):
     using query logic won't be reliable, and since the encoding/decoding
     could be expensive across each Trigger all the time, this class
     pre-caches the values for quicker evaluation.
+
+    This is an in-memory cache and will be re-populated on server
+    restarts or cold-calling a run table operation.
     """
     _lookup = None
 
@@ -66,11 +70,13 @@ class RouteThread(threading.Thread):
     def run(self):
         # create alert and send it before saving to db to
         router = self.route.get_router_class()()
-        message = self.route.get_message(self.context)
+        message_context = Source.message_context(self.context, self.result)
+        message = self.route.get_message(message_context)
         alert = Alert(level=router.level,
                       router=self.route.router,
                       message=message,
-                      context=self.context)
+                      context=self.context,
+                      trigger_result=self.result)
         logger.debug('Routing Alert %s via router %s' %
                      (alert, self.route))
         router.send(alert)
@@ -91,11 +97,17 @@ class TriggerThread(threading.Thread):
         #from IPython import embed; embed()
         result = func(self.data, self.context)
         logger.debug('Trigger result: %s' % result)
-        if result:
+
+        def start_router(result):
             routes = self.trigger.routes.all()
             for route in routes:
-                # XXX update context
                 RouteThread(route, result, self.context).start()
+
+        if result and isinstance(result, (list, tuple)):
+            for r in result:
+                start_router(r)
+        elif result:
+            start_router(result)
 
 
 @receiver(post_data_save, dispatch_uid='post_data_receiver')
@@ -113,29 +125,9 @@ def process_data(sender, **kwargs):
         TriggerThread(t, data, context).start()
 
 
-class Source(object):
-    """Encapsulate access and encoding of source data objects.
-    """
-    # make this subclassable somehow ...
-    # possibly via abstract base class (import abc)
-
-    @staticmethod
-    def get(context):
-        """Get source object from a given context."""
-        return context['job'].table
-
-    @staticmethod
-    def name(source):
-        """Instead of hashable, return description from given value."""
-        return 'trigger_%s-%s' % (source.name, source.sourcefile)
-
-    @staticmethod
-    def encode(source):
-        """Normalize source values to hashable type for lookups."""
-        # require a hashable object, see here for simple way to hash dicts:
-        # http://stackoverflow.com/a/16162138/2157429
-        from steelscript.appfwk.apps.datasource.models import Table
-        return frozenset(Table.to_ref(source).itervalues())
+#
+# Models
+#
 
 
 class Alert(models.Model):
@@ -144,11 +136,12 @@ class Alert(models.Model):
     router = models.CharField(max_length=100)
     message = models.TextField()
     context = PickledObjectField()
+    trigger_result = PickledObjectField()
 
     def __unicode__(self):
         msg = self.message
-        if len(msg) > 10:
-            msg = '%s...' % msg[:10]
+        if len(msg) > 20:
+            msg = '%s...' % msg[:20]
         return '<Alert %s (%s) %s/%s>' % (self.id or 'X', self.router,
                                           self.level, msg)
 
@@ -225,7 +218,7 @@ class Route(models.Model):
 
     def get_message(self, context):
         """Return string from either template_func or template
-        afer processed with given context.
+        processed with result and given context.
         """
         if self.template_func:
             return self.template_func(**context)
