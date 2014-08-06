@@ -43,7 +43,7 @@ function renderPage(widgets_url, widget_info) {
 }
 
 // renderReport() renders all the widgets in the current report
-function renderReport(widgets, criteria) {
+function renderReport(widgets) {
     // reset the status
     global.rvbd_status = {};
 
@@ -132,10 +132,13 @@ function renderWidget(widgets, widget_info) {
  * onComplete() function passing the id of the completed widget. 
  */
 function monitorWidgetStatus(onComplete, widgets) {
+    var widgets_copy = widgets;
     var i;
-    for (i = 0; i < widgets.length; ++i) {
-        if(global.rvbd_status[widgets[i].posturl] === 'complete'){
-            onComplete(widgets[i]);
+    for (i = 0; i < widgets_copy.length; ++i) {
+        if(global.rvbd_status[widgets_copy[i].posturl] === 'complete'){
+            onComplete(widgets_copy[i]);
+            widgets.splice(i, 1);
+        }else if(global.rvbd_status[widgets_copy[i].posturl] === 'error'){
             widgets.splice(i, 1);
         }
     }
@@ -159,7 +162,7 @@ var onReportWidgetComplete = function (widget) {
     var $chart_div = $('#chart_' + widget.widgetid),
         $title_div = $('#chart_' + widget.widgetid + '_content-title'),
         $content_div = $('#chart_' + widget.widgetid + '_content');
-
+    // Add functions to be called after each widget in the report finishes loading
     addWidgetMenu(widget, $title_div);
 };
 
@@ -267,6 +270,7 @@ function addGetEmbedHtmlHandler(widget){
             
             // automatically set the focus to the iframe text
             $('#embed_text').focus(function(){ this.select(); });
+            $('#embed_text').mouseup(function(){ this.select(); });
             $('#embed_text').focus();
 
             // update the iframe to reflect the width and height fields
