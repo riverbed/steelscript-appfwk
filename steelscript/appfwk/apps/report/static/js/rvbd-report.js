@@ -129,19 +129,18 @@ function renderWidget(widgets, widget_info) {
 
 /**
  * checks if each widget is finished loading, and then calls the provided
- * onComplete() function passing the id of the completed widget. 
+ * onComplete() function passing the widget's info of the completed widget. 
  */
 function monitorWidgetStatus(onComplete, widgets) {
-    var widgets_copy = widgets;
-    var i;
-    for (i = 0; i < widgets_copy.length; ++i) {
-        if(global.rvbd_status[widgets_copy[i].posturl] === 'complete'){
-            onComplete(widgets_copy[i]);
-            widgets.splice(i, 1);
-        }else if(global.rvbd_status[widgets_copy[i].posturl] === 'error'){
-            widgets.splice(i, 1);
+    var i, unfinished_widgets = [];
+    for (i = 0; i < widgets.length; ++i) {
+        if(global.rvbd_status[widgets[i].posturl] === 'complete'){
+            onComplete(widgets[i]);
+        }else if(global.rvbd_status[widgets[i].posturl] !== 'error'){
+            unfinished_widgets.push(widgets[i]);
         }
     }
+    widgets = unfinished_widgets;
 
     // if there are still running widgets, monitor widgets in 0.5 seconds
     if ( widgets.length !== 0) {
