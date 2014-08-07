@@ -62,7 +62,10 @@ class TableWidget(object):
                 if wc.units == wc.UNITS_PCT:
                     w_column['formatter'] = 'formatPct'
                 else:
-                    w_column['formatter'] = 'formatMetric'
+                    if wc.datatype == wc.DATATYPE_FLOAT:
+                        w_column['formatter'] = 'formatMetric'
+                    elif wc.datatype == wc.DATATYPE_INTEGER:
+                        w_column['formatter'] = 'formatIntegerMetric'
             elif wc.istime():
                 w_column['formatter'] = 'formatTime'
             elif wc.datatype == wc.DATATYPE_HTML:

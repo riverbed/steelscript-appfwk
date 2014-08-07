@@ -124,11 +124,13 @@ Widget.prototype.formatTime = function(t, precision) {
     return date.toString();
 }
 
-Widget.prototype.formatMetric = function(bytes, precision) {
-    if (bytes == undefined) return '';
-    if (bytes == 0) return '0';
-    var e = parseInt(Math.floor(Math.log(bytes) / Math.log(1000)));
-    var v = (bytes / Math.pow(1000, e));
+Widget.prototype.formatMetric = function(num, precision) {
+    if (num == undefined) return '';
+    if (num == 0) return '0';
+    var prefix = '';
+    if (num < 0) { num *= -1; prefix = '-';}
+    var e = parseInt(Math.floor(Math.log(num) / Math.log(1000)));
+    var v = (num / Math.pow(1000, e));
     var vs;
     if (precision != undefined) {
         vs = v.toFixed(precision);
@@ -139,6 +141,23 @@ Widget.prototype.formatMetric = function(bytes, precision) {
     } else {
         vs = v.toFixed(1);
     }
+    vs = prefix + vs;
+    if (e >= 0) {
+        return vs + ['', 'k', 'M', 'G', 'T'][e];
+    } else {
+        return vs + ['', 'm', 'u', 'n'][-e];
+    }
+}
+
+Widget.prototype.formatIntegerMetric = function(num, precision) {
+    if (num == undefined) return '';
+    if (num == 0) return '0';
+    var prefix = '';
+    if (num < 0) { num *= -1; prefix = '-';}
+    var e = parseInt(Math.floor(Math.log(num) / Math.log(1000)));
+    var v = (num / Math.pow(1000, e));
+    var vs = v.toFixed();
+    vs = prefix + vs;
     if (e >= 0) {
         return vs + ['', 'k', 'M', 'G', 'T'][e];
     } else {
