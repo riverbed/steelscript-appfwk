@@ -147,6 +147,20 @@ class Alert(models.Model):
         return '<Alert %s (%s) %s/%s>' % (self.id or 'X', self.router,
                                           self.level, msg)
 
+    def get_details(self):
+        """Return details in a string"""
+        msg = []
+        fmt = '{0:15}: {1}'
+        msg.append(fmt.format('ID', self.id))
+        msg.append(fmt.format('Timestamp', self.timestamp))
+        msg.append(fmt.format('Level', self.level))
+        msg.append(fmt.format('Router', self.router))
+        msg.append(fmt.format('Destination', self.destination))
+        msg.append(fmt.format('Message', self.message))
+        msg.append(fmt.format('Trigger Result', self.trigger_result))
+        msg.append(fmt.format('Context', self.context))
+        return '\n'.join(msg)
+
 
 class Trigger(models.Model):
     name = models.CharField(max_length=100)
