@@ -68,19 +68,20 @@ class RouteThread(threading.Thread):
         super(RouteThread, self).__init__(**kwargs)
 
     def run(self):
-        # create alert and send it before saving to db to
         router = self.route.get_router_class()()
         message_context = Source.message_context(self.context, self.result)
         message = self.route.get_message(message_context)
         alert = Alert(level=router.level,
                       router=self.route.router,
                       message=message,
+                      destination=self.route.destination,
                       context=self.context,
                       trigger_result=self.result)
+        # need to save to get datetime set
+        alert.save()
         logger.debug('Routing Alert %s via router %s' %
                      (alert, self.route))
         router.send(alert)
-        alert.save()
 
 
 class TriggerThread(threading.Thread):
@@ -134,6 +135,7 @@ class Alert(models.Model):
     timestamp = models.DateTimeField(auto_now=True)
     level = models.CharField(max_length=50)
     router = models.CharField(max_length=100)
+    destination = PickledObjectField()
     message = models.TextField()
     context = PickledObjectField()
     trigger_result = PickledObjectField()
@@ -184,12 +186,13 @@ class Trigger(models.Model):
 class Route(models.Model):
     name = models.CharField(max_length=100)
     router = models.CharField(max_length=100)
-    destination = models.CharField(max_length=200)
+    destination = PickledObjectField()
     template = models.TextField(blank=True, null=True)
     template_func = FunctionField(null=True)
 
     def __unicode__(self):
-        return '<Route %d/%s -> %s>' % (self.id, self.router, self.destination)
+        return '<Route %d/%s -> %s>' % (self.id, self.router,
+                                        str(self.destination))
 
     def save(self, *args, **kwargs):
         if self.template is None and self.template_func is None:
