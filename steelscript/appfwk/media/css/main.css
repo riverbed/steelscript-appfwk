@@ -17,37 +17,37 @@
 {
   border: solid 1px black;
   margin-bottom: 10px;                                          
-  }
+}
 
 
 .loading-indicator
- {
+{
    height: 80px;
    width: 80px;
    background: url( '../images/loading.gif' );
    background-repeat: no-repeat;
    background-position: center center;
-   }
+}
 
 .loading-indicator-overlay 
 {
   background-color: #FFFFFF;
   opacity: 0.6;
   filter: alpha(opacity = 60);
-  }
+}
 
 .login-box
 {
   width: 100%;
   max-width: 500px;
-  }
+}
   
 .login-box .span9
 {
   text-align: center;
   margin-top: 5px;
   margin-bottom: 5px;
-  }
+}
 
 .login-box .span3
 {
@@ -55,25 +55,25 @@
   padding-top: 4px;
   margin-top: 5px;
   margin-bottom: 5px;
-  }
+}
 
 .login-box .span12
 {
   text-align: center;
   padding: 10px;
-  }
+}
 
 .login-box .input-large
 {
   width:100%;
   max-width: 230px;
-  }
+}
 
 .widget-box
 { 
   border: solid 1px black;
   margin-bottom: 10px;
- }
+}
 
 .widget-title
 {  
@@ -87,7 +87,7 @@
 { 
   border-top: solid 1px black;
   padding: 5px; 
-  }
+}
 
 .block-centered
 {
