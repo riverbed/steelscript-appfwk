@@ -314,9 +314,13 @@ class DurationField(forms.ChoiceField):
         pass
 
 
-def fields_add_time_selection(obj, show_duration=True, initial_duration=None, durations=None,
-                              show_start=False, initial_start_time='now-1h', initial_start_date='now-1h',
-                              show_end=True, initial_end_time='now-0', initial_end_date='now-0',):
+def fields_add_time_selection(obj, show_duration=True, initial_duration=None,
+                              durations=None, show_start=False,
+                              initial_start_time='now-1h',
+                              initial_start_date='now-1h', show_end=True,
+                              initial_end_time='now-0',
+                              initial_end_date='now-0',
+                              special_values=None):
 
     if show_start:
         field = TableField(keyword='starttime',
@@ -348,7 +352,8 @@ def fields_add_time_selection(obj, show_duration=True, initial_duration=None, du
                            label='Duration',
                            initial=initial_duration,
                            field_cls=DurationField,
-                           field_kwargs={'choices': durations},
+                           field_kwargs={'choices': durations,
+                                         'special_values': special_values},
                            required=False)
         field.save()
         obj.fields.add(field)

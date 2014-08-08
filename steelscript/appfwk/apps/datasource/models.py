@@ -921,7 +921,7 @@ class Criteria(DictObject):
         elif endtime is None:
             endtime = datetime.datetime.now()
 
-        if duration is not None:
+        if duration is not None and isinstance(duration, datetime.datetime):
             starttime = endtime - duration
         else:
             msg = ("Cannot compute times, have endtime but not "
