@@ -905,8 +905,9 @@ class Criteria(DictObject):
         starttime = self._orig_starttime
         endtime = self._orig_endtime
 
-        logger.debug("compute_times: %s %s %s" %
-                     (starttime, endtime, duration))
+        logger.debug("compute_times: start %s(%s), end %s(%s), duration %s(%s)"
+                     % (starttime, type(starttime), endtime, type(endtime),
+                        duration, type(duration)))
 
         if starttime is not None:
             if endtime is not None:
@@ -916,16 +917,19 @@ class Criteria(DictObject):
             else:
                 msg = ("Cannot compute times, have starttime but not "
                        "endtime or duration")
+                logger.debug(msg)
                 raise ValueError(msg)
 
         elif endtime is None:
             endtime = datetime.datetime.now()
 
-        if duration is not None and isinstance(duration, datetime.datetime):
+        if duration is not None and (isinstance(duration, datetime.datetime) or
+                                     isinstance(duration, datetime.timedelta)):
             starttime = endtime - duration
         else:
             msg = ("Cannot compute times, have endtime but not "
                    "starttime or duration")
+            logger.debug(msg)
             raise ValueError(msg)
 
         self.duration = duration
