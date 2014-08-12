@@ -4,6 +4,7 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+import datetime
 import threading
 from collections import defaultdict
 
@@ -12,10 +13,11 @@ from django.dispatch import Signal, receiver
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
+from steelscript.common.timeutils import datetime_to_microseconds
 from steelscript.appfwk.libs.fields import (PickledObjectField,
                                             FunctionField, Function)
 
-from steelscript.appfwk.apps.alerting.routes import find_routers
+from steelscript.appfwk.apps.alerting.routes import find_router
 from steelscript.appfwk.apps.alerting.source import Source
 
 import logging
@@ -23,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 post_data_save = Signal(providing_args=['data', 'context'])
+
+lock = threading.Lock()
 
 
 class TriggerCache(object):
@@ -40,12 +44,15 @@ class TriggerCache(object):
 
     @classmethod
     def _get(cls):
-        logger.debug('TriggerCache: loading new data')
-        cls._lookup = defaultdict(list)
-        triggers = Trigger.objects.select_related()
-        for t in triggers:
-            logger.debug('TriggerCache: adding %s to key %s' % (t, t.source))
-            cls._lookup[t.source].append(t)
+        lock.acquire()
+        if cls._lookup is None:
+            logger.debug('TriggerCache: loading new data')
+            cls._lookup = defaultdict(list)
+            triggers = Trigger.objects.select_related()
+            for t in triggers:
+                logger.debug('TriggerCache: adding %s to key %s' % (t, t.source))
+                cls._lookup[t.source].append(t)
+        lock.release()
 
     @classmethod
     def clear(cls):
@@ -61,17 +68,19 @@ class TriggerCache(object):
 
 
 class RouteThread(threading.Thread):
-    def __init__(self, route, result, context, **kwargs):
+    def __init__(self, route, eventid, result, context, **kwargs):
         self.route = route
+        self.eventid = eventid
         self.result = result
         self.context = context
         super(RouteThread, self).__init__(**kwargs)
 
     def run(self):
-        router = self.route.get_router_class()()
+        router = self.route.get_router()
         message_context = Source.message_context(self.context, self.result)
         message = self.route.get_message(message_context)
-        alert = Alert(level=router.level,
+        alert = Alert(eventid=self.eventid,
+                      level=router.level,
                       router=self.route.router,
                       message=message,
                       destination=self.route.destination,
@@ -91,6 +100,19 @@ class TriggerThread(threading.Thread):
         self.context = context
         super(TriggerThread, self).__init__(**kwargs)
 
+    def get_event_id(self):
+        """Return unique ID value for each triggered event."""
+        # XXX microseconds should be sufficiently unique,
+        #  but may need more if microseconds still cause event overlaps
+        dt = datetime.datetime.now()
+        return datetime_to_microseconds(dt)
+
+    def start_router(self, result):
+        routes = self.trigger.routes.all()
+        eventid = self.get_event_id()
+        for route in routes:
+            RouteThread(route, eventid, result, self.context).start()
+
     def run(self):
         func = self.trigger.trigger_func
 
@@ -99,16 +121,12 @@ class TriggerThread(threading.Thread):
         result = func(self.data, self.context)
         logger.debug('Trigger result: %s' % result)
 
-        def start_router(result):
-            routes = self.trigger.routes.all()
-            for route in routes:
-                RouteThread(route, result, self.context).start()
-
-        if result and isinstance(result, (list, tuple)):
-            for r in result:
-                start_router(r)
-        elif result:
-            start_router(result)
+        if result:
+            if isinstance(result, (list, tuple)):
+                for r in result:
+                    self.start_router(r)
+            else:
+                self.start_router(result)
 
 
 @receiver(post_data_save, dispatch_uid='post_data_receiver')
@@ -133,6 +151,7 @@ def process_data(sender, **kwargs):
 
 class Alert(models.Model):
     timestamp = models.DateTimeField(auto_now=True)
+    eventid = models.IntegerField()
     level = models.CharField(max_length=50)
     router = models.CharField(max_length=100)
     destination = PickledObjectField()
@@ -144,14 +163,17 @@ class Alert(models.Model):
         msg = self.message
         if len(msg) > 20:
             msg = '%s...' % msg[:20]
-        return '<Alert %s (%s) %s/%s>' % (self.id or 'X', self.router,
-                                          self.level, msg)
+        return '<Alert %s/%d (%s) %s/%s>' % (self.id or 'X',
+                                             self.eventid,
+                                             self.router,
+                                             self.level, msg)
 
     def get_details(self):
         """Return details in a string"""
         msg = []
         fmt = '{0:15}: {1}'
         msg.append(fmt.format('ID', self.id))
+        msg.append(fmt.format('EventID', self.eventid))
         msg.append(fmt.format('Timestamp', self.timestamp))
         msg.append(fmt.format('Level', self.level))
         msg.append(fmt.format('Router', self.router))
@@ -225,13 +247,10 @@ class Route(models.Model):
         r.save()
         return r
 
-    def get_router_class(self):
+    def get_router(self):
         """Return instance of Router associated with the model.
         """
-        routers = find_routers()
-        for r in routers:
-            if self.router == r.__name__:
-                return r
+        return find_router(self.router)()
 
     def get_message(self, context):
         """Return string from either template_func or template

@@ -13,13 +13,29 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class RouterMount(type):
+    def __init__(cls, name, bases, attrs):
+        if not hasattr(cls, '_routers'):
+            # setup mount point for class
+            cls._routers = dict()
+        else:
+            # register the class by name
+            cls._routers[name] = cls
+
+
 class BaseRouter(object):
     """Base class for Routers."""
+    __metaclass__ = RouterMount
+
     level = 'warning'
 
     def __init__(self, *args, **kwargs):
         """Initialize Router service with credentials, etc."""
         pass
+
+    @classmethod
+    def get_router(cls, name):
+        return cls._routers.get(name, None)
 
     def send(self, alert):
         """Send `alert` to defined router destination."""
@@ -45,7 +61,6 @@ class LoggingRouter(BaseRouter):
 
 class ConsoleRouter(LoggingRouter):
     """Sends results to console."""
-    # XXX experimentally subclassed from LoggingRouter
     def send(self, alert):
         print 'ConsoleRouter: %s' % alert
 
@@ -155,10 +170,5 @@ class SNMPRouterCascadeDefault(SNMPBaseRouter):
         )
 
 
-def find_routers():
-    def get_subclasses(c):
-        subclasses = c.__subclasses__()
-        for d in list(subclasses):
-            subclasses.extend(get_subclasses(d))
-        return subclasses
-    return get_subclasses(BaseRouter)
+def find_router(name):
+    return BaseRouter.get_router(name)
