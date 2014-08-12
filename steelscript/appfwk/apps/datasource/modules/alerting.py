@@ -7,6 +7,7 @@
 
 import logging
 
+import numpy
 import pandas
 
 from steelscript.appfwk.apps.alerting.models import Alert
@@ -43,26 +44,74 @@ class AlertQuery(TableQueryBase):
     """ Simple query to retrieve stored Alert objects. """
 
     def run(self):
-        duration = self.job.criteria['duration']
-        print duration
-        if duration == 'All':
+        self.duration = self.job.criteria['duration']
+        self.endtime = self.job.criteria['endtime']
+        if self.duration == 'All':
             alerts = Alert.objects.all().order_by('timestamp')
+            self.starttime = alerts[0].timestamp
         else:
-            endtime = self.job.criteria['endtime']
-            starttime = endtime - duration
-            alerts = Alert.objects.filter(timestamp__range=(starttime, endtime))
+            self.starttime = self.endtime - self.duration
+            alerts = Alert.objects.filter(timestamp__range=(self.starttime,
+                                                            self.endtime))
 
         columns = [col.name for col in self.table.get_columns(synthetic=False)]
         rows = [[getattr(a, c) for c in columns] for a in alerts]
 
         logger.debug('Alert query for duration %s returned %d rows' %
-                     (duration, len(rows)))
+                     (self.duration, len(rows)))
 
         if rows:
             df = pandas.DataFrame(rows, columns=columns)
         else:
-            df = []
+            df = None
 
         self.data = df
 
+        return True
+
+
+class AlertAnalysisGroupbyTable(AlertTable):
+    """Return values grouped by given parameter."""
+    class Meta:
+        proxy = True
+    _query_class = 'AlertAnalysisGroupbyQuery'
+
+
+class AlertAnalysisGroupbyQuery(AlertQuery):
+
+    def post_run(self):
+        columns = self.table.column_set.order_by('id')
+        groupby = columns[0].name
+
+        if self.data is not None:
+            dfg = self.data.groupby(groupby).count()
+            dfg.pop(groupby)
+            self.data = dfg.reset_index()
+            #logger.debug('AlertAnalysisGroupbyQuery result: %s' % self.data)
+        return True
+
+
+class AlertAnalysisTimeseriesTable(AlertTable):
+    """Return count of alerts aggregated by time interval."""
+    class Meta:
+        proxy = True
+    _query_class = 'AlertAnalysisTimeseriesQuery'
+
+
+class AlertAnalysisTimeseriesQuery(AlertQuery):
+
+    def post_run(self):
+        columns = self.table.column_set.order_by('id')
+        timecol = columns[0].name
+        datacol = columns[1].name
+
+        if self.data is not None:
+            dft = self.data.set_index(timecol)[datacol]
+            # add null value to beginning and end of time series to make sure
+            # resample interval lines up
+            dft[self.starttime] = numpy.nan
+            dft[self.endtime] = numpy.nan
+            dft = dft.resample('5min', how='count')
+            self.data = dft.reset_index().rename(columns={'index': timecol})
+            #logger.debug('AlertAnalysisTimeseriesQuery result: %s' % self.data)
         return True

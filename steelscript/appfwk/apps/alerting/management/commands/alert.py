@@ -5,12 +5,10 @@
 # as set forth in the License.
 
 
-
-import os
 import logging
 import optparse
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from steelscript.common.utils import Formatter
 
@@ -83,4 +81,5 @@ class Command(BaseCommand):
             logger.debug('Deleting all alerts.')
             Alert.objects.all().delete()
 
-
+        else:
+            raise CommandError('Missing appropriate option')
