@@ -92,8 +92,10 @@ class Command(BaseCommand):
             apps = ['report', 'datasource', 'alerting']
             for app in apps:
                 for model in get_models(get_app(app)):
-                    self.stdout.write('Deleting objects from %s\n' % model)
-                    model.objects.all().delete()
+                    if model.__name__ != 'Alert':
+                        # Avoid deleting Alerts when running a basic clean
+                        self.stdout.write('Deleting objects from %s\n' % model)
+                        model.objects.all().delete()
         elif options['report_id']:
             # remove Report and its Widgets, Jobs, WidgetJobs, Tables and Columns
             rid = options['report_id']
