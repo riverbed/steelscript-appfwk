@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class RouterMount(type):
+    """Metaclass for Router subclasses."""
+    # inspired by
+    # http://martyalchin.com/2008/jan/10/simple-plugin-framework/
     def __init__(cls, name, bases, attrs):
         if not hasattr(cls, '_routers'):
             # setup mount point for class
