@@ -150,19 +150,7 @@ Widget.prototype.formatMetric = function(num, precision) {
 }
 
 Widget.prototype.formatIntegerMetric = function(num, precision) {
-    if (num == undefined) return '';
-    if (num == 0) return '0';
-    var prefix = '';
-    if (num < 0) { num *= -1; prefix = '-';}
-    var e = parseInt(Math.floor(Math.log(num) / Math.log(1000)));
-    var v = (num / Math.pow(1000, e));
-    var vs = v.toFixed();
-    vs = prefix + vs;
-    if (e >= 0) {
-        return vs + ['', 'k', 'M', 'G', 'T'][e];
-    } else {
-        return vs + ['', 'm', 'u', 'n'][-e];
-    }
+    Widget.prototype.formatMetric(num, 0);
 }
 
 Widget.prototype.formatPct = function(num, precision) {
