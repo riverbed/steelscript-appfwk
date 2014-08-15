@@ -55,13 +55,13 @@ class {{Name}}Column(Column):
     class Meta:
         proxy = True
 
-     # COLUMN_OPTIONS is a dictionary of options that
-     # are specific to columns for tables in this file.
-     # the column options are available when the query is run.
-     # The values are stored with the column definition at
-     # table / column defintiion time.
+    # COLUMN_OPTIONS is a dictionary of options that
+    # are specific to columns for tables in this file.
+    # the column options are available when the query is run.
+    # The values are stored with the column definition at
+    # table / column defintiion time.
 
-     COLUMN_OPTIONS = { }
+    COLUMN_OPTIONS = { }
 
 
 #
