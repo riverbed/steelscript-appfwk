@@ -1,6 +1,38 @@
 #!/usr/bin/env python
 
+"""
+scheduler.py
+
+Command script to run schduled table jobs according to
+defined configuration.
+
+The config file uses the ConfigParser format. For example:
+
+    [job1]
+    table-name=pypi-download-stats-alerts
+    criteria=duration:1day, package:steelscript
+    output-file=statsalerts.csv
+    csv=
+    job_trigger=interval
+    job_seconds=10
+
+    [job2]
+    table-name=appfwk-alerts
+    criteria=duration:1hour
+    job_trigger=interval
+    job_seconds=15
+
+Each section name (the line with sourrounding brackets) will
+translate into a scheduled job name.  The key-value pairs include
+parameters for the table command itself (e.g. 'table-name', 'criteria'),
+and job configuration that gets handled by the scheduler
+(e.g. 'job_trigger', 'job_seconds').  Note that job configuration
+keys are all prefixed with 'job_'.
+
+"""
+
 import os
+import re
 import sys
 import signal
 import logging
@@ -13,26 +45,40 @@ except ImportError:
     print 'called "apschduler", ensure this is installed and try again'
     sys.exit(1)
 
-from django.core import management
-
-from steelscript.commands.steel import (BaseCommand, shell,
+from steelscript.commands.steel import (BaseCommand, shell, console,
                                         MainFailed, ShellFailed)
 
 
 logger = logging.getLogger(__name__)
-#call_command('table',
-#      table_id=t.id,
-#      as_csv=True,
-#      output_file=filename,
-#      criteria=['%s:%s' % (k, v) for (k, v) in criteria.iteritems()])
 
 
 def run_table(*args, **kwargs):
     #management.call_command(*args, **kwargs)
+
+    # combine base arguments
     a = ' '.join(args)
-    kws = ' '.join('--%s=%s' % (k, v) for k, v in kwargs.iteritems())
+
+    # if we have criteria, parse and append to base
+    criteria = kwargs.pop('criteria', None)
+    if criteria:
+        crits = re.split(',\s|,|\s', criteria)
+        critargs = ' '.join(['--criteria=%s' % c for c in crits])
+        a = '%s %s' % (a, critargs)
+
+    # format remaining keyword args
+    kws = []
+    for k, v in kwargs.iteritems():
+        if v in ('True', ''):
+            # handle empty or True attrs as command-line flags
+            kws.append('--%s' % k)
+        else:
+            kws.append('--%s=%s' % (k, v))
+
+    kws = ' '.join(kws)
+
     cmd = 'python manage.py %s %s' % (a, kws)
     logger.debug('running command: %s' % cmd)
+
     try:
         results = shell(cmd, cwd=os.getcwd(), save_output=True,
                         allow_fail=False, exit_on_fail=False, log_output=False)
@@ -53,8 +99,8 @@ class Command(BaseCommand):
 
     def add_options(self, parser):
         super(Command, self).add_options(parser)
-        parser.add_option('-l', '--list', help='List all running daemons')
-        parser.add_option('-c', '--config', help='Config file to read schedule from')
+        parser.add_option('-c', '--config',
+                          help='Config file to read schedule from')
 
     def get_settings(self):
         settings = os.path.join(os.getcwd(), 'local_settings.py')
@@ -64,14 +110,14 @@ class Command(BaseCommand):
         else:
             raise MainFailed('Unable to find local_settings.py file')
 
-    def add_job(self, name, job):
+    def schedule_job(self, name, job):
         #func = 'django.core.management:call_command'
         func = run_table
         args = 'table'
 
         # pull job kwargs from job dict
         keys = job.keys()
-        job_kwargs = dict((k.lstrip('job_'), job.pop(k))
+        job_kwargs = dict((k[4:], job.pop(k))
                           for k in keys if k.startswith('job_'))
 
         # hardcode the function call - don't allow config overrides
@@ -91,10 +137,10 @@ class Command(BaseCommand):
         logger.debug('Scheduling job with kwargs: %s' % job_kwargs)
         self.scheduler.add_job(**job_kwargs)
 
-    def add_jobs(self):
+    def schedule_jobs(self):
         for s in self.parser.sections():
             job = dict(self.parser.items(s))
-            self.add_job(s, job)
+            self.schedule_job(s, job)
 
     def reload_config(self):
         logger.debug('Reloading job schedule configuration.')
@@ -106,14 +152,14 @@ class Command(BaseCommand):
         for j in self.scheduler.get_jobs():
             self.scheduler.remove_job(j.id)
 
-        self.add_jobs()
+        self.schedule_jobs()
 
     def signal_handler(self, signum, frame):
         if signum == signal.SIGHUP:
-            logger.info('Received signal %s, reloading config' % signum)
+            console('Received signal %s, reloading config' % signum)
             self.reload_config()
         else:
-            logger.info('Received signal %s, shutting down gracefully.' % signum)
+            console('Received signal %s, shutting down gracefully.' % signum)
             if self.scheduler.running:
                 self.scheduler.shutdown()
             sys.exit()
