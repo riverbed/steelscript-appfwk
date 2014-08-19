@@ -25,21 +25,88 @@
         });
     });
 
-    function collectReports(url, allReports) {
-        if (allReports) {
-            modal = loadingModal('Collecting Reports from all Plugins', 'Please wait ...');
-        } else {
-            modal = loadingModal('Collecting Reports', 'Please wait ...');
+    function updateReports(collect_url, reload_url, pluginName) {
+        if(!pluginName){
+            pluginName = 'All';
         }
+        var heading = "Update " + pluginName + " Reports";
+        var question = '<label class="checkbox">' +
+            '<input type="checkbox" id="col-reports-id" ' +
+            'onclick="toggleOverwrite()"> Collect Reports' +
+            '</label>' +
+            '<label class="checkbox" style="margin-left:2em;">' +
+            '<input type="checkbox" id="col-overwrite-id"  disabled> ' +
+            'and Overwrite Reports' +
+            '</label>' +
+            '<label class="checkbox">' +
+                '<input type="checkbox" id="reload-reports-id"> Reload Reports' +
+            '</label>';
+        var okButtonTxt = 'Go!';
+        var cancelButtonTxt = 'Cancel';
+        confirm(heading, question, cancelButtonTxt, okButtonTxt,
+                function(){ reloadingHandler(collect_url, reload_url) });
+    }
 
+
+    var reloadingHandler = function(collect_url, reload_url) {
+        var url = null,
+            onSuccess = null,
+            modalText;
+        if($('#col-reports-id').is(':checked')){
+            url = collect_url;
+            if($('#col-overwrite-id').is(':checked'))
+                url += '?overwrite=True';
+            modalText = ['Collecting Reports', 'Please wait ...'];
+        }
+        if($('#reload-reports-id').is(':checked')){
+            if(!url){
+                url = reload_url;
+                modalText = ['Reloading Reports', 'Please wait ...'];
+            }else{
+                // If we want to both collect and reload reports
+                onSuccess = function(){ sendGet(reload_url); };
+                modalText = ['Collecting and Reloading Reports', 'Please wait ...'];
+            }
+        }
+        if(!url)
+            return;
+        modal = loadingModal(modalText[0], modalText[1]);
         modal.modal('show');
-        $.get(url,
-              function(data) {
-                  href = window.location.href.split('#')[0].split('?')[0];
-                  window.location.href = href + '?changed=true';
-              },
-              "json"
-        );
+        sendGet(url, onSuccess);
+    };
+
+    function sendGet(url, onSuccess) {
+        $.ajax({
+            type: "GET",
+            url: url,
+            error: function(xhr, statusText, errorThrown) {
+                $('.modal').modal('hide');
+                if (errorThrown == "INTERNAL SERVER ERROR"){
+                    errorThrown += "<br><br>Check appfwk log for more details.";
+                }
+                alertModal(statusText, errorThrown, "OK", function(){});
+            },
+            success: function(data){
+                if(!onSuccess){
+                    reloadPage();
+                }else{
+                    onSuccess();
+                }
+            }});
+    }
+
+    var reloadPage = function() {
+        href = window.location.href.split('#')[0].split('?')[0];
+        window.location.href = href + '?changed=true';
+    }
+
+    function toggleOverwrite() {
+        if($('#col-reports-id').is(':checked')){
+            $('#col-overwrite-id').removeAttr("disabled");
+        }else{
+            $('#col-overwrite-id').attr("disabled", "");
+            $('#col-overwrite-id').removeAttr("checked");
+        }
     }
 </script>
 
@@ -76,9 +143,9 @@
                     <tr {% if not plugin.enabled %}class="row-disabled"{% endif %}>
                         <td style="text-align: center"><input id="id_{{plugin.slug}}" name="{{plugin.slug}}" type="checkbox" {% if plugin.is_enabled %}checked{% endif %}></td>
                         {% if plugin.enabled %}
-                        <td><a href="#" onclick="collectReports('{% url 'plugins-collect' plugin.slug %}', false)">Collect&nbsp;Reports</a></td>
+                        <td><a href="#" onclick="updateReports('{% url 'plugins-collect' plugin.slug %}', '{% url 'reload-report' plugin.get_namespace %}', '{{plugin.title}}')">Update&nbsp;Reports</a></td>
                         {% else %}
-                        <td>Collect&nbsp;Reports</td>
+                        <td>Update&nbsp;Reports</td>
                         {% endif %}
                         <td>{{ plugin.title }}</td>
                         <td>{{ plugin.description|safe }}</td>
@@ -90,12 +157,7 @@
         </table>
         <div class="row">
             <div class="block-centered" style="text-align: center">
-                {% if changed %}
-                <input type="button" value="Reload All Reports" class="btn btn-primary" onClick="reloadingModal('{% url 'reload-all' %}', true)">
-                {% else %}
-                    <a href="#" class="btn btn-primary disabled">Reload All Reports</a>
-                {% endif %}
-                <input type="button" value="Collect All Reports" class="btn" onClick="collectReports('{% url 'plugins-collect-all' %}', true)">
+                <input type="button" value="Update All Reports" class="btn btn-primary" onClick="updateReports('{% url 'plugins-collect-all' %}', '{% url 'reload-all' %}')">
             </div>
         </div>
     </div>

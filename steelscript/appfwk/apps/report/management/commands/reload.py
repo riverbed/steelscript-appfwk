@@ -119,16 +119,23 @@ class Command(BaseCommand):
 
         elif options['namespace']:
             reports = Report.objects.filter(namespace=options['namespace'])
-
             self.capture_enabled(reports)
 
+            # clear all data from one namespace (module)
             for report in reports:
                 management.call_command('clean',
                                         applications=False,
                                         report_id=report.id,
                                         clear_cache=False,
                                         clear_logs=False)
-                self.import_module(report.sourcefile)
+
+            # ignore all dirs besides the one we cleared, then import
+            root_dir = settings.REPORTS_DIR
+            target_dir = options['namespace']
+            ignore_list = [os.path.basename(os.path.normpath(x))
+                           for x in os.listdir(root_dir) if x != target_dir]
+            self.importer.import_directory(
+                root_dir, ignore_list=ignore_list)
 
             self.apply_enabled()
 

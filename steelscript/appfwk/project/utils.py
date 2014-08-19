@@ -161,9 +161,9 @@ class Importer(object):
 
         rootpath = os.path.basename(root)
         for path, dirs, files in os.walk(root):
-            for i, d in enumerate(dirs):
-                if d in ignore_list:
-                    dirs.pop(i)
+            # if we are in an ignored directory, continue
+            if os.path.basename(os.path.normpath(path)) in ignore_list:
+                continue
 
             for f in files:
                 if f in ignore_list or not f.endswith('.py') or '__init__' in f:

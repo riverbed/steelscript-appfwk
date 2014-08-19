@@ -94,6 +94,9 @@ class PluginsCollectView(APIView):
     permission_classes = (IsAdminUser,)
 
     def get(self, request, slug=None, *args, **kwargs):
+        overwrite = request.QUERY_PARAMS.get('overwrite', False)
+        if isinstance(overwrite, basestring) and overwrite.lower() == 'true':
+            overwrite = True
         if slug is not None:
             try:
                 plugin = plugins.get(slug)
@@ -102,7 +105,7 @@ class PluginsCollectView(APIView):
 
             try:
                 management.call_command('collectreports', plugin=slug,
-                                        overwrite=False)
+                                        overwrite=overwrite)
                 msg = ('Collected Reports for Plugin %s successfully.' %
                        plugin.title)
                 messages.add_message(request, messages.INFO, msg)
@@ -115,7 +118,7 @@ class PluginsCollectView(APIView):
         else:
             try:
                 management.call_command('collectreports', plugin=None,
-                                        overwrite=False)
+                                        overwrite=overwrite)
                 msg = 'Collected Reports for all plugins successfully.'
                 messages.add_message(request, messages.INFO, msg)
             except CommandError as e:

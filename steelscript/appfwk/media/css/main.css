@@ -9,14 +9,14 @@
 
 @media print
 {
-  div 
+  div
   { page-break-inside: avoid; }
 }
 
 .blackbox
 {
   border: solid 1px black;
-  margin-bottom: 10px;                                          
+  margin-bottom: 10px;
 }
 
 
@@ -29,7 +29,7 @@
    background-position: center center;
 }
 
-.loading-indicator-overlay 
+.loading-indicator-overlay
 {
   background-color: #FFFFFF;
   opacity: 0.6;
@@ -38,10 +38,11 @@
 
 .login-box
 {
+  text-align: center;
   width: 100%;
   max-width: 500px;
 }
-  
+
 .login-box .span9
 {
   text-align: center;
@@ -70,23 +71,23 @@
 }
 
 .widget-box
-{ 
+{
   border: solid 1px black;
   margin-bottom: 10px;
 }
 
 .widget-title
-{  
+{
   font-size: 110%;
   font-weight: bold;
-  padding: 5px; 
+  padding: 5px;
   background-color: #F0F0F0;
 }
 
 .widget-content
-{ 
+{
   border-top: solid 1px black;
-  padding: 5px; 
+  padding: 5px;
 }
 
 .block-centered

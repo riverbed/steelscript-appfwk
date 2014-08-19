@@ -9,7 +9,7 @@
 
 
 function modal_html(heading, body, cancelButtonTxt, okButtonTxt) {
-    var modalHtml = 
+    var modalHtml =
         '<div class="modal hide fade" id="test_id">' +
             '<div class="modal-header">' +
                 '<a class="close" data-dismiss="modal">&times;</a>' +
@@ -54,6 +54,9 @@ function confirm(heading, question, cancelButtonTxt, okButtonTxt, callback) {
     });
 
     modal.modal('show');
+    modal.on('hidden', function() {
+        $(this).remove();
+    });
 }
 
 function alertModal(heading, body, okButtonTxt, shownCallback) {
