@@ -8,7 +8,6 @@
 # Django settings for SteelScript project project.
 import os
 import sys
-
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -88,11 +87,9 @@ STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
 # Example: "http://media.lawrence.com/static/"
 STATIC_URL = '/static/'
 
-JQUERY_URL = 'http://code.jquery.com/jquery-1.9.1.min.js'
-#JQUERY_URL = '/static/js/jquery-1.9.1.min.js'
-
-YUI3_URL = 'http://yui.yahooapis.com/3.8.1/build/yui/yui-min.js'
-#YUI3_URL = '/static/js/yui3/yui/yui-min.js'
+# If you set this to True, templates will look for local copies of the JS libs
+# that we normally get off the cloud.
+OFFLINE_JS = False
 
 # Additional locations of static files
 STATICFILES_DIRS = (
@@ -101,6 +98,7 @@ STATICFILES_DIRS = (
     # Don't forget to use absolute paths, not relative paths.
     os.path.join(PROJECT_ROOT, 'media'),
     os.path.join(PROJECT_ROOT, 'thirdparty'),
+    os.path.join(PROJECT_ROOT, 'thirdparty/offline'),
 )
 
 # List of finder classes that know how to find static files in
@@ -157,7 +155,9 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.tz",
     "django.contrib.messages.context_processors.messages",
 #    "project.context_processors.django_version",
-'steelscript.appfwk.apps.report.context_processors.report_list_processor',
+    "project.context_processors.offline_js",
+    'steelscript.appfwk.apps.report.context_processors.report_list_processor',
+
 )
 
 INSTALLED_APPS = (

@@ -5,6 +5,8 @@
 # as set forth in the License.
 
 import os
+import sys
+import requests
 from random import choice
 
 from steelscript.common.utils import link_pkg_dir, link_pkg_files
@@ -106,7 +108,17 @@ logs/
 media
 thirdparty
 static/
+offline_templates/
 """
+
+OFFLINE_JS_URLS = [
+    "http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css",
+    "http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js",
+    "http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.map",
+    "http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js",
+    "http://cdnjs.cloudflare.com/ajax/libs/jquery.form/3.32/jquery.form.js",
+    "http://yui.yahooapis.com/3.8.1/build/yui/yui-min.js",
+]
 
 
 class Command(BaseCommand):
@@ -122,6 +134,9 @@ class Command(BaseCommand):
         parser.add_option('--no-init', action='store_true',
                           help='Do not initialize project with default '
                                'local settings')
+        parser.add_option('--offline-js', action='store_true',
+                          help='Download local copies of cloud JavaScript '
+                               'libraries to allow for offline use.')
 
     def debug(self, msg, newline=False):
         if self.options.verbose:
@@ -135,16 +150,18 @@ class Command(BaseCommand):
     def create_local_settings(self, dirname):
         """Creates local settings configuration."""
 
-        secret = ''.join([
+        secret = ''.join((
             choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)')
             for i in range(50)
-        ])
+        ))
 
         fname = os.path.join(dirname, 'local_settings.py')
         if not os.path.exists(fname):
             console('Writing local settings %s ... ' % fname, newline=False)
             with open(fname, 'w') as f:
                 f.write(LOCAL_CONTENT)
+                if self.options.offline_js:
+                    f.write("OFFLINE_JS = True\n")
                 f.write("SECRET_KEY = '%s'\n" % secret)
                 f.write(LOCAL_FOOTER)
             console('done.')
@@ -170,6 +187,10 @@ class Command(BaseCommand):
                          os.path.join(dirpath, p),
                          symlink=hasattr(os, 'symlink'),
                          buf=self.debug)
+
+        if self.options.offline_js:
+            self.mkdir(os.path.join(dirpath, 'thirdparty', 'offline'))
+
 
         # copy and make folders
         self.mkdir(os.path.join(dirpath, 'logs'))
@@ -201,6 +222,52 @@ class Command(BaseCommand):
         shell('python manage.py collectreports -v 3 --trace',
               msg='Collecting default reports',
               cwd=dirpath)
+
+    def get_offline_js(self, dirpath):
+        console("Downloading offline JavaScript files...")
+
+        offline_js_dir = os.path.join(dirpath, 'thirdparty', 'offline')
+
+        failedurls = []
+        for url in OFFLINE_JS_URLS:
+            filename = url.rsplit('/', 1)[1]
+
+            console("Downloading {}... ".format(url), newline=False)
+
+            downloaded = False
+            try:
+                r = requests.get(url)
+            except requests.exceptions.Timeout:
+                console("failed: request timed out.".format(filename))
+            except requests.exceptions.ConnectionError as e:
+                console("failed with connection error: {}".format(filename, e))
+            else:    
+                if r.status_code != requests.codes.ok:
+                    console("failed with HTTP status code {}.".format(filename,
+                            r.status_code))
+                else:
+                    downloaded = True
+
+            if not downloaded:
+                failedurls.append(url)
+            else:
+                targetpath = os.path.join(offline_js_dir, filename)
+
+                with open(targetpath, 'w') as f:
+                    f.write(r.text)
+                    console("success.")
+
+        if failedurls:
+            console("Warning: the following offline JavaScript files failed to "
+                    "download. To complete this installation, you must "
+                    "manually download these files to "
+                    "{}.").format(offline_js_dir)
+
+            for url in failedurls:
+                console("    {}".format(url))
+        else:
+            console("Done.")
+
 
     def initialize_git(self, dirpath):
         """If git installed, initialize project folder as new repo.
@@ -245,6 +312,10 @@ class Command(BaseCommand):
         self.create_project_directory(dirpath)
         self.create_local_settings(dirpath)
         self.collectreports(dirpath)
+ 
+        if self.options.offline_js:
+            self.get_offline_js(dirpath)
+ 
         if not self.options.no_git:
             self.initialize_git(dirpath)
 

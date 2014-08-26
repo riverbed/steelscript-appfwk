@@ -3,16 +3,29 @@
     <link href="{{ STATIC_URL }}css/main.css" rel="stylesheet"/>
     <link href="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.css" rel="stylesheet"/>
     <link href="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.css" rel="stylesheet"/>
+    {% if offline_js %}
+    <link href="{{ STATIC_URL }}jquery-ui.css" rel="stylesheet"/>
+    {% else %}
     <link href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" rel="stylesheet"/>
+    {% endif %}
 
     <script type="text/javascript" src="{{ STATIC_URL }}js/portal.js"></script>
 
+    {% if offline_js %}
+    <script type="text/javascript" src="{{ STATIC_URL }}jquery.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}jquery-ui.min.js"></script>
+    {% else %}
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
+    {% endif %}
+
     <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.form/3.32/jquery.form.js"></script>
 
+    {% if offline_js %}
+    <script type="text/javascript" src="{{ STATIC_URL }}yui-min.js"></script>
+    {% else %}
     {% comment %}
     need to call yui-s separately since it seems to be less efficient
     with the network requests than the regular unsecured site - four combo
@@ -22,5 +35,6 @@
     <script type="text/javascript" src="https://yui-s.yahooapis.com/3.8.1/build/yui/yui-min.js"></script>
     {% else %}
     <script type="text/javascript" src="http://yui.yahooapis.com/3.8.1/build/yui/yui-min.js"></script>
+    {% endif %}
     {% endif %}
     {% endblock %}

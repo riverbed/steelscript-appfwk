@@ -6,7 +6,10 @@
 
 
 import django
-
+from django.conf import settings
 
 def django_version(request):
     return { 'django_version': django.VERSION }
+
+def offline_js(request):
+    return { 'offline_js': settings.OFFLINE_JS }
