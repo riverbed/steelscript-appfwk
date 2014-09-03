@@ -49,7 +49,7 @@ report.add_widget(yui3.TimeSeriesWidget, p, "Overall In/Out Bandwidth",
                   width=6)
 
 # Define a Overall TimeSeries showing In/Out Totals
-p = NetProfilerTimeSeriesTable.create('qos-overall-avg',
+p = NetProfilerTimeSeriesTable.create('dscp-overall-avg',
                                       duration=15, resolution=60,
                                       interface=True)
 p.fields.add(interface_field)
@@ -63,9 +63,9 @@ report.add_widget(yui3.TimeSeriesWidget, p,
                   "Overall Average In/Out Bandwidth", width=6)
 
 # ##
-# QOS Summary Tables
+# DSCP Summary Tables
 for direction in ['inbound', 'outbound']:
-    p = NetProfilerGroupbyTable.create('qos-%s-totals' % direction,
+    p = NetProfilerGroupbyTable.create('dscp-%s-totals' % direction,
                                        groupby='dsc',
                                        duration=15, resolution=60,
                                        interface=True)
@@ -90,7 +90,7 @@ for direction in ['inbound', 'outbound']:
                       "%s Traffic by DSCP" % direction.capitalize(), width=6)
 
 # ##
-# QoS sections, defaults to AF11, EF, and Default
+# DSCP sections, defaults to AF11, EF, and Default
 for i, dscp in enumerate(['AF11', 'EF', 'Default']):
 
     report.add_section("DSCP %d" % i)
