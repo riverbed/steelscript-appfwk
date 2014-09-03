@@ -105,8 +105,8 @@ for i, dscp in enumerate(['AF11', 'EF', 'Default']):
         p.fields.add(interface_field)
         p.fields.add(datafilter_field)
         dscp_field = TableField.create(keyword='dscp_%d' % i,
-                                      label='DSCP %d ' % i, obj=p,
-                                      initial=dscp)
+                                       label='DSCP %d' % i, obj=p,
+                                       initial=dscp)
         TableField.create(
             keyword='%s_filterexpr' % direction, obj=p,
             hidden=True,
