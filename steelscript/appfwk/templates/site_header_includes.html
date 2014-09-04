@@ -1,3 +1,8 @@
+    {% comment %}
+    If you add a local JS lib here, you must add a URL for the lib to the
+    OFFLINE_JS_URLS array in mkproject.py.
+    {% endcomment %}
+
     {% block site_header %}
     <link href="{{ STATIC_URL }}bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen, print"/>
     <link href="{{ STATIC_URL }}css/main.css" rel="stylesheet"/>
@@ -6,7 +11,7 @@
     {% if offline_js %}
     <link href="{{ STATIC_URL }}jquery-ui.css" rel="stylesheet"/>
     {% else %}
-    <link href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" rel="stylesheet"/>
+    <link href="http://code.jquery.com/ui/{{ js_versions.jqueryui }}/themes/smoothness/jquery-ui.css" rel="stylesheet"/>
     {% endif %}
 
     <script type="text/javascript" src="{{ STATIC_URL }}js/portal.js"></script>
@@ -15,26 +20,27 @@
     <script type="text/javascript" src="{{ STATIC_URL }}jquery.min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}jquery-ui.min.js"></script>
     {% else %}
-    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/{{ js_versions.jquery }}/jquery.min.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/{{ js_versions.jqueryui }}/jquery-ui.min.js"></script>
     {% endif %}
 
     <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.form/3.32/jquery.form.js"></script>
 
     {% if offline_js %}
-    <script type="text/javascript" src="{{ STATIC_URL }}yui-min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}jquery.form.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}yui/build/yui/yui-min.js"></script>
     {% else %}
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.form/{{ js_versions.jqueryform }}/jquery.form.js"></script>
     {% comment %}
     need to call yui-s separately since it seems to be less efficient
     with the network requests than the regular unsecured site - four combo
     requests versus upwards of 50 individual requests under https
     {% endcomment %}
     {% if request.is_secure %}
-    <script type="text/javascript" src="https://yui-s.yahooapis.com/3.8.1/build/yui/yui-min.js"></script>
+    <script type="text/javascript" src="https://yui-s.yahooapis.com/{{ js_versions.yui }}build/yui/yui-min.js"></script>
     {% else %}
-    <script type="text/javascript" src="http://yui.yahooapis.com/3.8.1/build/yui/yui-min.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/{{ js_versions.yui }}/build/yui/yui-min.js"></script>
     {% endif %}
     {% endif %}
     {% endblock %}

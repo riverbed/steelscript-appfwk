@@ -8,6 +8,7 @@
 # Django settings for SteelScript project project.
 import os
 import sys
+import collections
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -91,6 +92,27 @@ STATIC_URL = '/static/'
 # that we normally get off the cloud.
 OFFLINE_JS = False
 
+# Format: (url, dirname). If dirname is None, "steel install mkproject" will
+# install the file directly into the offline JS dir. Otherwise, treat the file4
+# as a tarball and extract it into that subdirectory.
+
+JS_VERSIONS = {
+    'jquery': '1.9.1',
+    'jqueryui': '1.10.2',
+    'jqueryform': '3.32',
+    'yui': '3.17.2'
+}
+
+OFFLINE_JS_FILES = [
+    ("http://code.jquery.com/ui/{}/themes/smoothness/jquery-ui.css".format(JS_VERSIONS['jqueryui']), None),
+    ("http://ajax.googleapis.com/ajax/libs/jquery/{}/jquery.min.js".format(JS_VERSIONS['jquery']), None),
+    ("http://ajax.googleapis.com/ajax/libs/jquery/{}/jquery.min.map".format(JS_VERSIONS['jquery']), None),
+    ("http://ajax.googleapis.com/ajax/libs/jqueryui/{}/jquery-ui.min.js".format(JS_VERSIONS['jqueryui']), None),
+    ("http://cdnjs.cloudflare.com/ajax/libs/jquery.form/{}/jquery.form.js".format(JS_VERSIONS['jqueryform']), None),
+    ("https://api.github.com/repos/yui/yui3/tarball/release-{}".format(JS_VERSIONS['yui']), "yui")
+]
+
+
 # Additional locations of static files
 STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
@@ -156,6 +178,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.contrib.messages.context_processors.messages",
 #    "project.context_processors.django_version",
     "project.context_processors.offline_js",
+    "project.context_processors.js_versions",
     'steelscript.appfwk.apps.report.context_processors.report_list_processor',
 
 )

@@ -7,12 +7,14 @@
 import os
 import sys
 import requests
+import tempfile
 from random import choice
 
 from steelscript.common.utils import link_pkg_dir, link_pkg_files
 from steelscript.commands.steel import (BaseCommand, prompt, console, debug,
                                         shell, check_git, ShellFailed)
 
+from steelscript.appfwk.project import settings
 
 LOCAL_CONTENT = """
 from steelscript.appfwk.project.settings import *
@@ -108,17 +110,7 @@ logs/
 media
 thirdparty
 static/
-offline_templates/
 """
-
-OFFLINE_JS_URLS = [
-    "http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css",
-    "http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js",
-    "http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.map",
-    "http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js",
-    "http://cdnjs.cloudflare.com/ajax/libs/jquery.form/3.32/jquery.form.js",
-    "http://yui.yahooapis.com/3.8.1/build/yui/yui-min.js",
-]
 
 
 class Command(BaseCommand):
@@ -135,8 +127,9 @@ class Command(BaseCommand):
                           help='Do not initialize project with default '
                                'local settings')
         parser.add_option('--offline-js', action='store_true',
-                          help='Download local copies of cloud JavaScript '
-                               'libraries to allow for offline use.')
+            help='Download local copies of cloud JavaScript libraries to allow '
+            'for offline use. (Google Maps and OpenStreetMaps are not '
+            'available offline.')
 
     def debug(self, msg, newline=False):
         if self.options.verbose:
@@ -228,43 +221,71 @@ class Command(BaseCommand):
 
         offline_js_dir = os.path.join(dirpath, 'thirdparty', 'offline')
 
-        failedurls = []
-        for url in OFFLINE_JS_URLS:
+        failedurls = set()
+        for url, dirname in settings.OFFLINE_JS_FILES:
             filename = url.rsplit('/', 1)[1]
 
             console("Downloading {}... ".format(url), newline=False)
 
-            downloaded = False
+            connectionfailed = False
             try:
-                r = requests.get(url)
+                r = requests.get(url, stream=True, allow_redirects=True)
             except requests.exceptions.Timeout:
                 console("failed: request timed out.".format(filename))
+                connectionfailed = True
             except requests.exceptions.ConnectionError as e:
-                console("failed with connection error: {}".format(filename, e))
-            else:    
-                if r.status_code != requests.codes.ok:
-                    console("failed with HTTP status code {}.".format(filename,
-                            r.status_code))
-                else:
-                    downloaded = True
+                console("failed with connection error: {}".format(e))
+                connectionfailed = True
 
-            if not downloaded:
-                failedurls.append(url)
+            if connectionfailed:
+                failedurls.add(url)
+            elif r.status_code != requests.codes.ok:
+                console("failed with HTTP status code {}.".format(filename,
+                        r.status_code))
+                failedurls.add(url)
             else:
-                targetpath = os.path.join(offline_js_dir, filename)
+                if dirname is not None:
+                    f = tempfile.NamedTemporaryFile(delete=False)
+                    targetpath = f.name
+                else:
+                    targetpath = os.path.join(offline_js_dir, filename)
+                    f = open(targetpath, 'w')
 
-                with open(targetpath, 'w') as f:
-                    f.write(r.text)
+                for chunk in r:
+                    f.write(chunk)
+                f.close()
+
+
+                console("success.")
+
+                if dirname is not None:
+                    extractdir = os.path.join(offline_js_dir, dirname)
+                    self.mkdir(extractdir)
+                    console("Extracting to " + extractdir + "... ", newline=False)
+                    try:
+                        shell("tar xvf {} --strip-components 1 --directory {}".format(
+                             targetpath, extractdir))
+                    except Exception as e:
+                        # This will probably be a ShellFailed exception, but
+                        # we need to clean up the file no matter what.
+                        raise e
+                    finally:
+                        os.remove(f.name)
+
                     console("success.")
 
         if failedurls:
             console("Warning: the following offline JavaScript files failed to "
-                    "download. To complete this installation, you must "
-                    "manually download these files to "
-                    "{}.").format(offline_js_dir)
+                    "download. To complete this installation, you must manually "
+                    "download these files to " + offline_js_dir + ".")
 
-            for url in failedurls:
-                console("    {}".format(url))
+            for url, dirname in settings.OFFLINE_JS_FILES:
+                if url in failedurls:
+                    console("    {}".format(url))
+                    if dirname is not None:
+                        console("        (this file is a tarball -- extract to " +
+                                os.path.join(offline_js_dir, dirname) + ")")
+
         else:
             console("Done.")
 
