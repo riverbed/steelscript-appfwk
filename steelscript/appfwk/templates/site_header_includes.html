@@ -9,7 +9,7 @@
     <link href="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.css" rel="stylesheet"/>
     <link href="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.css" rel="stylesheet"/>
     {% if offline_js %}
-    <link href="{{ STATIC_URL }}jquery-ui.css" rel="stylesheet"/>
+    <link href="{{ STATIC_URL }}jquery-ui/themes/base/jquery-ui.css" rel="stylesheet"/>
     {% else %}
     <link href="http://code.jquery.com/ui/{{ js_versions.jqueryui }}/themes/smoothness/jquery-ui.css" rel="stylesheet"/>
     {% endif %}
@@ -18,19 +18,12 @@
 
     {% if offline_js %}
     <script type="text/javascript" src="{{ STATIC_URL }}jquery.min.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}jquery-ui.min.js"></script>
-    {% else %}
-    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/{{ js_versions.jquery }}/jquery.min.js"></script>
-    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/{{ js_versions.jqueryui }}/jquery-ui.min.js"></script>
-    {% endif %}
-
-    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.js"></script>
-
-    {% if offline_js %}
+    <script type="text/javascript" src="{{ STATIC_URL }}jquery-ui/ui/minified/jquery-ui.min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}jquery.form.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}yui/build/yui/yui-min.js"></script>
     {% else %}
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/{{ js_versions.jquery }}/jquery.min.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/{{ js_versions.jqueryui }}/jquery-ui.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.form/{{ js_versions.jqueryform }}/jquery.form.js"></script>
     {% comment %}
     need to call yui-s separately since it seems to be less efficient
@@ -44,3 +37,6 @@
     {% endif %}
     {% endif %}
     {% endblock %}
+
+    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.js"></script>
