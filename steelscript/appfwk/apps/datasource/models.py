@@ -40,7 +40,7 @@ from steelscript.common.timeutils import timedelta_total_seconds, tzutc
 from steelscript.appfwk.project.utils import (get_module_name, get_sourcefile,
                                               get_namespace)
 from steelscript.appfwk.apps.datasource.exceptions import *
-from steelscript.appfwk.apps.alerting.models import post_data_save
+from steelscript.appfwk.apps.alerting.models import post_data_save, error_signal
 from steelscript.appfwk.libs.fields import (PickledObjectField, FunctionField,
                                             SeparatedValuesField,
                                             check_field_choice,
@@ -1557,6 +1557,11 @@ class Worker(base_worker_class):
                 message=traceback.format_exception_only(sys.exc_info()[0],
                                                         sys.exc_info()[1])
             )
+            #
+            # Send signal for possible Triggers
+            #
+            error_signal.send(sender=self,
+                              context={'job': job})
 
         finally:
             job.dereference("Worker exiting")

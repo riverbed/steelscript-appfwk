@@ -18,7 +18,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from steelscript.appfwk.apps.report.models import Report, WidgetJob
 from steelscript.appfwk.apps.datasource.models import Table, TableField, Column, Job
-from steelscript.appfwk.apps.alerting.models import Route, TriggerCache
+from steelscript.appfwk.apps.alerting.models import Route, TriggerCache, ErrorHandlerCache
 
 
 class Command(BaseCommand):
@@ -96,6 +96,7 @@ class Command(BaseCommand):
                         # Avoid deleting Alerts when running a basic clean
                         self.stdout.write('Deleting objects from %s\n' % model)
                         model.objects.all().delete()
+
         elif options['report_id']:
             # remove Report and its Widgets, Jobs, WidgetJobs, Tables and Columns
             rid = options['report_id']
@@ -111,10 +112,15 @@ class Command(BaseCommand):
 
                 Column.objects.filter(table=tbl.id).delete()
                 Job.objects.filter(table=tbl.id).delete()
+
                 for trigger in TriggerCache.filter(tbl):
                     trigger.delete()
-                    # delete newly unreferenced routes
-                    Route.objects.filter(trigger=None).delete()
+
+                for handler in ErrorHandlerCache.filter(tbl):
+                    handler.delete()
+
+                # delete newly unreferenced routes
+                Route.objects.filter(trigger=None).delete()
 
                 tables = (tbl.options or {}).get('tables')
                 for ref in (tables or {}).values():
@@ -133,7 +139,6 @@ class Command(BaseCommand):
                         for wjob in WidgetJob.objects.filter(widget=widget):
                             wjob.delete()
                     widget.delete()
-            TriggerCache.clear()
 
             # Delete TableFields no longer referenced by any Tables or Sections
             (TableField.objects
@@ -146,6 +151,10 @@ class Command(BaseCommand):
             report = Report.objects.get(id=rid)
 
             report.delete()
+
+        # clear model caches
+        TriggerCache.clear()
+        ErrorHandlerCache.clear()
 
         # rotate the logs once
         management.call_command('rotate_logs')

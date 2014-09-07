@@ -4,8 +4,12 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-from pysnmp.entity.rfc3413.oneliner import ntforg
-from pysnmp.proto import rfc1902
+# avoid SNMP requirements if not using those Routers
+try:
+    from pysnmp.entity.rfc3413.oneliner import ntforg
+    from pysnmp.proto import rfc1902
+except ImportError:
+    pass
 
 from steelscript.common import timeutils
 
@@ -46,20 +50,30 @@ class BaseRouter(object):
 
 
 class SmsRouter(BaseRouter):
+    """Not implemented yet."""
     pass
 
 
 class EmailRouter(BaseRouter):
+    """Not implemented yet."""
     pass
 
 
 class LoggingRouter(BaseRouter):
-    """Sends results to logger."""
+    """Sends results to logger at default 'warning' level."""
+    def send(self, alert):
+        log = getattr(logger, self.level)
+        log(alert.message)
+
+
+class LoggingRouterInfo(LoggingRouter):
+    """Sends results to logger at 'info' level."""
     level = 'info'
 
-    def send(self, alert):
-        log = getattr(logger, self.level, 'warning')
-        log(alert)
+
+class LoggingRouterError(LoggingRouter):
+    """Sends results to logger at 'error' level."""
+    level = 'error'
 
 
 class ConsoleRouter(LoggingRouter):

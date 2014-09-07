@@ -6,7 +6,6 @@
 
 import datetime
 import threading
-from collections import defaultdict
 
 from django.db import models
 from django.dispatch import Signal, receiver
@@ -19,66 +18,57 @@ from steelscript.appfwk.libs.fields import (PickledObjectField,
 
 from steelscript.appfwk.apps.alerting.routes import find_router
 from steelscript.appfwk.apps.alerting.source import Source
+from steelscript.appfwk.apps.alerting.caches import ModelCache
 
 import logging
 logger = logging.getLogger(__name__)
 
 
 post_data_save = Signal(providing_args=['data', 'context'])
+error_signal = Signal(providing_args=['context'])
 
 lock = threading.Lock()
 
 
-class TriggerCache(object):
-    """Provide quick lookup operation for Triggers by source attribute.
+class TriggerCache(ModelCache):
+    """Cache of Trigger objects."""
+    _model = 'alerting.Trigger'
+    _key = 'source'
 
-    Since source is stored as a PickledObjectField, direct filtering
-    using query logic won't be reliable, and since the encoding/decoding
-    could be expensive across each Trigger all the time, this class
-    pre-caches the values for quicker evaluation.
 
-    This is an in-memory cache and will be re-populated on server
-    restarts or cold-calling a run table operation.
-    """
-    _lookup = None
+class ErrorHandlerCache(ModelCache):
+    """Cache of ErrorHandler objects."""
+    _model = 'alerting.ErrorHandler'
+    _key = 'source'
 
-    @classmethod
-    def _get(cls):
-        lock.acquire()
-        if cls._lookup is None:
-            logger.debug('TriggerCache: loading new data')
-            cls._lookup = defaultdict(list)
-            triggers = Trigger.objects.select_related()
-            for t in triggers:
-                logger.debug('TriggerCache: adding %s to key %s' % (t, t.source))
-                cls._lookup[t.source].append(t)
-        lock.release()
 
-    @classmethod
-    def clear(cls):
-        logger.debug('TriggerCache: clearing cache')
-        cls._lookup = None
-
-    @classmethod
-    def filter(cls, value):
-        logger.debug('TriggerCache: filtering on %s' % value)
-        if cls._lookup is None:
-            cls._get()
-        return cls._lookup[Source.encode(value)]
+def create_event_id():
+    """Return unique ID value for each triggered event."""
+    # XXX microseconds should be sufficiently unique,
+    #  but may need more if microseconds still cause event overlaps
+    dt = datetime.datetime.now()
+    return datetime_to_microseconds(dt)
 
 
 class RouteThread(threading.Thread):
-    def __init__(self, route, eventid, result, context, **kwargs):
+    def __init__(self, route, eventid, result, context, is_error=False, **kwargs):
         self.route = route
         self.eventid = eventid
         self.result = result
         self.context = context
+        self.is_error = is_error
         super(RouteThread, self).__init__(**kwargs)
 
     def run(self):
         router = self.route.get_router()
-        message_context = Source.message_context(self.context, self.result)
+
+        if self.is_error:
+            message_context = Source.error_context(self.context)
+        else:
+            message_context = Source.message_context(self.context, self.result)
+
         message = self.route.get_message(message_context)
+
         alert = Alert(eventid=self.eventid,
                       level=router.level,
                       router=self.route.router,
@@ -86,10 +76,9 @@ class RouteThread(threading.Thread):
                       destination=self.route.destination,
                       context=self.context,
                       trigger_result=self.result)
-        # need to save to get datetime set
+        # need to save to get datetime assigned
         alert.save()
-        logger.debug('Routing Alert %s via router %s' %
-                     (alert, self.route))
+        logger.debug('Routing Alert %s via router %s' % (alert, self.route))
         router.send(alert)
 
 
@@ -100,16 +89,9 @@ class TriggerThread(threading.Thread):
         self.context = context
         super(TriggerThread, self).__init__(**kwargs)
 
-    def get_event_id(self):
-        """Return unique ID value for each triggered event."""
-        # XXX microseconds should be sufficiently unique,
-        #  but may need more if microseconds still cause event overlaps
-        dt = datetime.datetime.now()
-        return datetime_to_microseconds(dt)
-
     def start_router(self, result):
         routes = self.trigger.routes.all()
-        eventid = self.get_event_id()
+        eventid = create_event_id()
         for route in routes:
             RouteThread(route, eventid, result, self.context).start()
 
@@ -131,17 +113,34 @@ class TriggerThread(threading.Thread):
 
 @receiver(post_data_save, dispatch_uid='post_data_receiver')
 def process_data(sender, **kwargs):
-    data = kwargs.pop('data', None)
-    context = kwargs.pop('context', None)
+    data = kwargs.pop('data')
+    context = kwargs.pop('context')
+    source = Source.get(context)
+
     # xxx data may not be a dataframe
     logger.debug('Received post_data_save signal from %s with df size %s '
                  'and context %s' %
-                 (sender, data.shape, Source.get(context)))
+                 (sender, data.shape, context))
 
-    triggers = TriggerCache.filter(Source.get(context))
+    triggers = TriggerCache.filter(Source.encode(source))
     logger.debug('Found %d triggers.' % len(triggers))
     for t in triggers:
         TriggerThread(t, data, context).start()
+
+
+@receiver(error_signal, dispatch_uid='error_signal_receiver')
+def process_error(sender, **kwargs):
+    context = kwargs.pop('context')
+    source = Source.get(context)
+
+    logger.debug('Received error_signal from %s with context %s' %
+                 (sender, context))
+
+    handlers = ErrorHandlerCache.filter(Source.encode(source))
+    logger.debug('Found %d handlers.' % len(handlers))
+    eventid = create_event_id()
+    for h in handlers:
+        RouteThread(h.route, eventid, None, context, is_error=True).start()
 
 
 #
@@ -154,7 +153,7 @@ class Alert(models.Model):
     eventid = models.IntegerField()
     level = models.CharField(max_length=50)
     router = models.CharField(max_length=100)
-    destination = PickledObjectField()
+    destination = PickledObjectField(blank=True, null=True)
     message = models.TextField()
     context = PickledObjectField()
     trigger_result = PickledObjectField()
@@ -167,6 +166,9 @@ class Alert(models.Model):
                                              self.eventid,
                                              self.router,
                                              self.level, msg)
+
+    def __repr__(self):
+        return unicode(self)
 
     def get_details(self):
         """Return details in a string"""
@@ -210,25 +212,40 @@ class Trigger(models.Model):
         t.save()
         return t
 
-    def add_route(self, router, destination,
+    def add_route(self, router, destination=None,
                   template=None, template_func=None):
+        """Assign route to the given Trigger."""
         r = Route.create(router=router,
                          destination=destination,
                          template=template,
                          template_func=template_func)
         self.routes.add(r)
 
+    def add_error_handler(self, router, destination=None,
+                          template=None, template_func=None):
+        """Convenience method to create error handler for same source object."""
+        e = ErrorHandler.create(name=self.name + 'ErrorHandler',
+                                source=self.source,
+                                router=router,
+                                destination=destination,
+                                template=template,
+                                template_func=template_func)
+        return e
+
 
 class Route(models.Model):
     name = models.CharField(max_length=100)
     router = models.CharField(max_length=100)
-    destination = PickledObjectField()
+    destination = PickledObjectField(blank=True, null=True)
     template = models.TextField(blank=True, null=True)
     template_func = FunctionField(null=True)
 
     def __unicode__(self):
-        return '<Route %d/%s -> %s>' % (self.id, self.router,
-                                        str(self.destination))
+        if self.destination:
+            return '<Route %d/%s -> %s>' % (self.id, self.router,
+                                            str(self.destination))
+        else:
+            return '<Route %d/%s>' % (self.id, self.router)
 
     def save(self, *args, **kwargs):
         if self.template is None and self.template_func is None:
@@ -238,7 +255,7 @@ class Route(models.Model):
         super(Route, self).save()
 
     @classmethod
-    def create(cls, router, destination, template=None,
+    def create(cls, router, destination=None, template=None,
                template_func=None):
         r = Route(router=router,
                   destination=destination,
@@ -262,5 +279,39 @@ class Route(models.Model):
             return self.template.format(**context)
 
 
+class ErrorHandler(models.Model):
+    """Special alert which bypasses triggers and gets immediately routed.
+
+    The template/template_func attributes need to be provided to create
+    an associated Route object, and only one Route can be defined
+    per ErrorHandler.
+
+    One ErrorHandler should be defined for each desired route.
+
+    """
+    name = models.CharField(max_length=100)
+    source = PickledObjectField()
+    route = models.ForeignKey('Route')
+
+    def __unicode__(self):
+        return '<ErrorHandler %d/%s>' % (self.id, self.name)
+
+    @classmethod
+    def create(cls, name, source, router, destination=None,
+               template=None, template_func=None):
+        """Create new ErrorHandler and its assocated Route."""
+        route = Route.create(router, destination,
+                             template, template_func)
+
+        # when called through a Trigger classmethod source has already been encoded
+        if not isinstance(source, frozenset):
+            source=Source.encode(source)
+
+        e = ErrorHandler(name=name, source=source, route=route)
+        e.save()
+        return e
+
+
 create_trigger = Trigger.create
 create_route = Route.create
+create_error_handler = ErrorHandler.create

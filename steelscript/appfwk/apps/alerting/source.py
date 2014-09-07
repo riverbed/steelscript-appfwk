@@ -25,10 +25,22 @@ class Source(object):
         # XXX: can't use "actual_criteria" here because it hasn't yet
         # been saved to Job on the main thread
         d = context['job'].criteria
+
+        # if result is a dict of values, update the context to include
         if hasattr(result, 'keys'):
             d.update(result)
         else:
             d['result'] = result
+        return d
+
+    @staticmethod
+    def error_context(context):
+        """Extract error message from alert context."""
+        j = context['job']
+        d = j.criteria
+        d['id'] = j.id
+        d['message'] = j.message
+        d['status'] = j.status
         return d
 
     @staticmethod
