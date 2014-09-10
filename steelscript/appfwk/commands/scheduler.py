@@ -13,21 +13,35 @@ The config file uses the ConfigParser format. For example:
     criteria=duration:1day, package:steelscript
     output-file=statsalerts.csv
     csv=
-    job_trigger=interval
-    job_seconds=10
+    interval_seconds=10
 
     [job2]
+    ; comments are prefixed by a semi-colon
     table-name=appfwk-alerts
     criteria=duration:1hour
-    job_trigger=interval
-    job_seconds=15
+    interval_seconds=15
+
+    [job3]
+    table-name=appfwk-alerts
+    ; you can interpolate other values via keywords
+    criteria=duration:%(interval_minutes)sminutes
+    interval_seconds=0
+    interval_minutes=15
+
+    [job4]
+    table-name=appfwk-alerts
+    criteria=duration:%(interval_minutes)sminutes
+    interval_seconds=0
+    interval_minutes=15
+    ; offsets can be used to run reports further in the past
+    offset=1min
 
 Each section name (the line with sourrounding brackets) will
 translate into a scheduled job name.  The key-value pairs include
 parameters for the table command itself (e.g. 'table-name', 'criteria'),
 and job configuration that gets handled by the scheduler
-(e.g. 'job_trigger', 'job_seconds').  Note that job configuration
-keys are all prefixed with 'job_'.
+(e.g. 'interval_trigger', 'interval_seconds').  Note that job configuration
+keys are all prefixed with 'interval_'.
 
 """
 
@@ -36,15 +50,20 @@ import re
 import sys
 import signal
 import logging
+import datetime
+from collections import namedtuple
 from ConfigParser import SafeConfigParser
 
 try:
     from apscheduler.schedulers.blocking import BlockingScheduler
 except ImportError:
     print 'This module requires an additional python module'
-    print 'called "apschduler", ensure this is installed and try again'
+    print 'called "apscheduler", ensure this is installed and try again'
     sys.exit(1)
 
+import pytz
+
+from steelscript.common import timeutils
 from steelscript.commands.steel import (BaseCommand, shell, console,
                                         MainFailed, ShellFailed)
 
@@ -55,20 +74,41 @@ logger = logging.getLogger(__name__)
 def run_table(*args, **kwargs):
     #management.call_command(*args, **kwargs)
 
+    # get runtime parameters
+    interval = kwargs.pop('interval')
+
+    if interval['offset'] > datetime.timedelta(0):
+        # round now to nearest whole second
+        now = datetime.datetime.now(pytz.UTC)
+        roundnow = timeutils.round_time(now, round_to=1)
+
+        endtime = roundnow - interval['offset']
+    else:
+        endtime = None
+
+
     # combine base arguments
-    a = ' '.join(args)
+    argstr = ' '.join(args)
 
     # if we have criteria, parse and append to base
     criteria = kwargs.pop('criteria', None)
+    critargs = ''
     if criteria:
         crits = re.split(',\s|,|\s', criteria)
         critargs = ' '.join(['--criteria=%s' % c for c in crits])
-        a = '%s %s' % (a, critargs)
+        argstr = '%s %s' % (argstr, critargs)
+
+        if endtime:
+            endstr = '--criteria=endtime:"%s"' % str(endtime)
+            argstr = '%s %s' % (argstr, endstr)
+
+            logger.debug('Setting end time to %s (via offset: %s)' %
+                         (endstr, interval['offset']))
 
     # format remaining keyword args
     kws = []
     for k, v in kwargs.iteritems():
-        if v in ('True', ''):
+        if v.lower() in ('true', ''):
             # handle empty or True attrs as command-line flags
             kws.append('--%s' % k)
         else:
@@ -76,7 +116,7 @@ def run_table(*args, **kwargs):
 
     kws = ' '.join(kws)
 
-    cmd = 'python manage.py %s %s' % (a, kws)
+    cmd = 'python manage.py %s %s' % (argstr, kws)
     logger.debug('running command: %s' % cmd)
 
     try:
@@ -103,6 +143,7 @@ class Command(BaseCommand):
                           help='Config file to read schedule from')
 
     def get_settings(self):
+        # holdover for direct python call
         settings = os.path.join(os.getcwd(), 'local_settings.py')
         if os.path.exists(settings):
             os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'local_settings')
@@ -110,32 +151,64 @@ class Command(BaseCommand):
         else:
             raise MainFailed('Unable to find local_settings.py file')
 
-    def schedule_job(self, name, job):
+    def get_job_function(self):
+        # allow for alternate methods to call table commands in future
+        # possibly direct API calls, or REST calls against running server
         #func = 'django.core.management:call_command'
-        func = run_table
-        args = 'table'
 
-        # pull job kwargs from job dict
-        keys = job.keys()
-        job_kwargs = dict((k[4:], job.pop(k))
-                          for k in keys if k.startswith('job_'))
+        job_params = {'func': run_table,
+                      'args': ['table']}
+        return job_params
 
-        # hardcode the function call - don't allow config overrides
-        job_kwargs['name'] = name
-        job_kwargs['func'] = func
-        job_kwargs['args'] = [args]
+    def parse_config(self, job_config):
+        """Breaks up dict from config section into job and function options.
 
-        # add remaining kwargs as actual kwargs for function call
-        #job['settings'] = self.get_settings()
-        job_kwargs['kwargs'] = job
+        Returns new dict suitable for passing to add_job, plus dict
+        of interval definitions.
+        """
+        # pull job scheduler kwargs from job_config dict
+        interval = dict()
+        offset = timeutils.parse_timedelta(job_config.pop('offset', '0'))
 
-        # convert time fields to floats
+        keys = job_config.keys()
+        job_kwargs = dict((k[9:], job_config.pop(k))
+                          for k in keys if k.startswith('interval_'))
+
+        # convert time fields to floats, populate interval dict
         for v in ['weeks', 'days', 'hours', 'minutes', 'seconds']:
             if v in job_kwargs:
-                job_kwargs[v] = float(job_kwargs[v])
+                val = float(job_kwargs[v])
+                job_kwargs[v] = val
+                interval[v] = val
+        interval['delta'] = datetime.timedelta(**interval)
+        interval['offset'] = offset
 
-        logger.debug('Scheduling job with kwargs: %s' % job_kwargs)
-        self.scheduler.add_job(**job_kwargs)
+        # hardcode the function call - don't allow config overrides
+        job_kwargs.update(self.get_job_function())
+
+        # add remaining kwargs as actual kwargs for function call
+        job_config['interval'] = interval
+        job_kwargs['kwargs'] = job_config
+
+        return job_kwargs, interval
+
+    def schedule_job(self, name, job_config):
+        job_options, interval = self.parse_config(job_config)
+
+        if interval['offset'] > datetime.timedelta(0):
+            delta = timeutils.timedelta_total_seconds(interval['delta'])
+            offset = timeutils.timedelta_total_seconds(interval['offset'])
+            now = datetime.datetime.now(pytz.UTC)
+            next_run_time = timeutils.round_time(now,
+                                                 round_to=delta + offset,
+                                                 round_up=True)
+            logger.debug('Setting next run time to %s (delta: %d, offset: %d)' %
+                         (next_run_time, delta, offset))
+            job_options['next_run_time'] = next_run_time
+
+        logger.debug('Scheduling job named %s with kwargs: %s' % (name,
+                                                                  job_options))
+        self.scheduler.add_job(name=name, trigger='interval', **job_options)
 
     def schedule_jobs(self):
         for s in self.parser.sections():
