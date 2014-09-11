@@ -51,7 +51,6 @@ import sys
 import signal
 import logging
 import datetime
-from collections import namedtuple
 from ConfigParser import SafeConfigParser
 
 try:
@@ -72,8 +71,6 @@ logger = logging.getLogger(__name__)
 
 
 def run_table(*args, **kwargs):
-    #management.call_command(*args, **kwargs)
-
     # get runtime parameters
     interval = kwargs.pop('interval')
 
@@ -85,7 +82,6 @@ def run_table(*args, **kwargs):
         endtime = roundnow - interval['offset']
     else:
         endtime = None
-
 
     # combine base arguments
     argstr = ' '.join(args)
@@ -154,7 +150,8 @@ class Command(BaseCommand):
     def get_job_function(self):
         # allow for alternate methods to call table commands in future
         # possibly direct API calls, or REST calls against running server
-        #func = 'django.core.management:call_command'
+
+        # func = 'django.core.management:call_command'
 
         job_params = {'func': run_table,
                       'args': ['table']}

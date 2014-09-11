@@ -9,13 +9,10 @@ import threading
 
 from django.db import models
 from django.dispatch import Signal, receiver
-from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
 
 from steelscript.common.timeutils import datetime_to_microseconds
 from steelscript.appfwk.libs.fields import (PickledObjectField,
                                             FunctionField, Function)
-
 from steelscript.appfwk.apps.alerting.routes import find_router
 from steelscript.appfwk.apps.alerting.source import Source
 from steelscript.appfwk.apps.alerting.caches import ModelCache
@@ -100,7 +97,6 @@ class TriggerThread(threading.Thread):
         func = self.trigger.trigger_func
 
         logger.debug('Evaluating Trigger %s ...' % self.trigger.name)
-        #from IPython import embed; embed()
         result = func(self.data, self.context)
         logger.debug('Trigger result: %s' % result)
 
@@ -304,9 +300,9 @@ class ErrorHandler(models.Model):
         route = Route.create(router, destination,
                              template, template_func)
 
-        # when called through a Trigger classmethod source has already been encoded
+        # when called via Trigger classmethod source has already been encoded
         if not isinstance(source, frozenset):
-            source=Source.encode(source)
+            source = Source.encode(source)
 
         e = ErrorHandler(name=name, source=source, route=route)
         e.save()
