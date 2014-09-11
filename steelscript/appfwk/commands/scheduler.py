@@ -196,13 +196,19 @@ class Command(BaseCommand):
         job_options, interval = self.parse_config(job_config)
 
         if interval['offset'] > datetime.timedelta(0):
-            delta = timeutils.timedelta_total_seconds(interval['delta'])
-            offset = timeutils.timedelta_total_seconds(interval['offset'])
+            delta = interval['delta']
+            offset = interval['offset']
             now = datetime.datetime.now(pytz.UTC)
+
+            # this gives the latest rounded time in the past
+            # so we add interval to it to get a future run time
+            total_offset = timeutils.timedelta_total_seconds(delta + offset)
             next_run_time = timeutils.round_time(now,
-                                                 round_to=delta + offset,
-                                                 round_up=True)
-            logger.debug('Setting next run time to %s (delta: %d, offset: %d)' %
+                                                 round_to=total_offset,
+                                                 trim=True)
+            next_run_time += (delta + offset)
+
+            logger.debug('Setting next run time to %s (delta: %s, offset: %s)' %
                          (next_run_time, delta, offset))
             job_options['next_run_time'] = next_run_time
 
