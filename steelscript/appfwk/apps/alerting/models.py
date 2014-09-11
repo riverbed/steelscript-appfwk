@@ -51,7 +51,8 @@ def create_event_id():
 
 
 class RouteThread(threading.Thread):
-    def __init__(self, route, eventid, result, context, is_error=False, **kwargs):
+    def __init__(self, route, eventid, result, context,
+                 is_error=False, **kwargs):
         self.route = route
         self.eventid = eventid
         self.result = result
@@ -203,8 +204,8 @@ class Trigger(models.Model):
         super(Trigger, self).delete(*args, **kwargs)
 
     @classmethod
-    def create(cls, source, trigger_func, **kwargs):
-        tfunc = Function(trigger_func)
+    def create(cls, source, trigger_func, params=None, **kwargs):
+        tfunc = Function(trigger_func, params=params)
         t = Trigger(name=kwargs.pop('name', Source.name(source)),
                     source=Source.encode(source),
                     trigger_func=tfunc,
