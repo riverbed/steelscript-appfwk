@@ -88,11 +88,28 @@ STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
 # Example: "http://media.lawrence.com/static/"
 STATIC_URL = '/static/'
 
-JQUERY_URL = 'http://code.jquery.com/jquery-1.9.1.min.js'
-#JQUERY_URL = '/static/js/jquery-1.9.1.min.js'
+# If you set this to True, templates will look for local copies of the JS libs
+# that we normally get off the cloud.
+OFFLINE_JS = False
 
-YUI3_URL = 'http://yui.yahooapis.com/3.8.1/build/yui/yui-min.js'
-#YUI3_URL = '/static/js/yui3/yui/yui-min.js'
+JS_VERSIONS = {
+    'jquery': '1.9.1',
+    'jqueryui': '1.10.2',
+    'jqueryform': '3.32',
+    'yui': '3.17.2',
+}
+
+# Format: (url, dirname). If dirname is None, "steel appfwk mkproject" will
+# install the file directly into the offline JS dir. Otherwise, it will treat
+# the file as a zip or tar archive and extract it into that subdirectory.
+OFFLINE_JS_FILES = [
+    ("http://ajax.googleapis.com/ajax/libs/jquery/{}/jquery.min.js".format(JS_VERSIONS['jquery']), None),
+    ("http://ajax.googleapis.com/ajax/libs/jquery/{}/jquery.min.map".format(JS_VERSIONS['jquery']), None),
+    ("http://jqueryui.com/resources/download/jquery-ui-{}.zip".format(JS_VERSIONS['jqueryui']), "jquery-ui"),
+    ("http://cdnjs.cloudflare.com/ajax/libs/jquery.form/{}/jquery.form.js".format(JS_VERSIONS['jqueryform']), None),
+    ("https://api.github.com/repos/yui/yui3/tarball/release-{}".format(JS_VERSIONS['yui']), "yui"),
+]
+
 
 # Additional locations of static files
 STATICFILES_DIRS = (
@@ -156,8 +173,9 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.request",
     "django.core.context_processors.tz",
     "django.contrib.messages.context_processors.messages",
-#    "project.context_processors.django_version",
-'steelscript.appfwk.apps.report.context_processors.report_list_processor',
+    "project.context_processors.offline_js",
+    "project.context_processors.js_versions",
+    'steelscript.appfwk.apps.report.context_processors.report_list_processor',
 )
 
 INSTALLED_APPS = (

@@ -5,12 +5,16 @@
 # as set forth in the License.
 
 import os
+import requests
+import tempfile
+
 from random import choice
 
 from steelscript.common.utils import link_pkg_dir, link_pkg_files
 from steelscript.commands.steel import (BaseCommand, prompt, console, debug,
                                         shell, check_git, ShellFailed)
 
+from steelscript.appfwk.project import settings
 
 LOCAL_CONTENT = """
 from steelscript.appfwk.project.settings import *
@@ -122,6 +126,10 @@ class Command(BaseCommand):
         parser.add_option('--no-init', action='store_true',
                           help='Do not initialize project with default '
                                'local settings')
+        parser.add_option('--offline-js', action='store_true',
+            help='Download local copies of cloud JavaScript libraries to '
+                 'allow for offline use. (Google Maps and OpenStreetMaps are '
+                 'not available offline.)')
 
     def debug(self, msg, newline=False):
         if self.options.verbose:
@@ -135,16 +143,20 @@ class Command(BaseCommand):
     def create_local_settings(self, dirname):
         """Creates local settings configuration."""
 
-        secret = ''.join([
+        secret = ''.join(
             choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)')
             for i in range(50)
-        ])
+        )
 
         fname = os.path.join(dirname, 'local_settings.py')
         if not os.path.exists(fname):
             console('Writing local settings %s ... ' % fname, newline=False)
             with open(fname, 'w') as f:
                 f.write(LOCAL_CONTENT)
+                if self.options.offline_js:
+                    f.write("OFFLINE_JS = True\n")
+                    f.write("STATICFILES_DIRS += (os.path.join(PROJECT_ROOT, "
+                            "'offline'), )\n")
                 f.write("SECRET_KEY = '%s'\n" % secret)
                 f.write(LOCAL_FOOTER)
             console('done.')
@@ -202,6 +214,95 @@ class Command(BaseCommand):
               msg='Collecting default reports',
               cwd=dirpath)
 
+    def get_offline_js(self, dirpath):
+        console("Downloading offline JavaScript files...")
+
+        offline_js_dir = os.path.join(dirpath, 'offline')
+        self.mkdir(offline_js_dir)
+
+        failedurls = set()
+        for url, dirname in settings.OFFLINE_JS_FILES:
+            filename = url.rsplit('/', 1)[1]
+
+            console("Downloading {}... ".format(url), newline=False)
+
+            connectionfailed = False
+            try:
+                r = requests.get(url, stream=True, allow_redirects=True)
+            except requests.exceptions.Timeout:
+                console("failed: request timed out.".format(filename))
+                connectionfailed = True
+            except requests.exceptions.ConnectionError as e:
+                console("failed with connection error: {}".format(e))
+                connectionfailed = True
+
+            if connectionfailed:
+                failedurls.add(url)
+            elif r.status_code != requests.codes.ok:
+                console("failed with HTTP status code {}.".format(filename,
+                        r.status_code))
+                failedurls.add(url)
+            else:
+                if dirname is not None:
+                    f = tempfile.NamedTemporaryFile(delete=False)
+                    downloadpath = f.name
+                else:
+                    downloadpath = os.path.join(offline_js_dir, filename)
+                    f = open(downloadpath, 'w')
+
+                for chunk in r:
+                    f.write(chunk)
+                f.close()
+
+                console("success.")
+
+                # If dirname is not None, that means the file is a zip or tar
+                # archive and should be extracted to that subdirectory.
+                if dirname is not None:
+                    finaldir = os.path.join(offline_js_dir, dirname)
+                    console("Extracting to " + finaldir + "... ",
+                            newline=False)
+                    os.mkdir(finaldir)
+
+                    try:
+                        if r.url.endswith('zip'):
+                            # Unzip into temporary dir, then move the contents
+                            # of the outermost dir where we want. (With tar we
+                            # can just use --strip-components 1.)
+                            unzipdir = tempfile.mkdtemp()
+                            shell("unzip {} -d {}".format(downloadpath,
+                                                          unzipdir))
+                            shell("mv -v {}/*/* {}".format(unzipdir, finaldir))
+                            shell("rm -rf {}".format(unzipdir))
+                        else:  # Not a zip, assume tarball.
+                            self.mkdir(finaldir)
+                            shell(("tar xvf {} --strip-components 1 "
+                                  "--directory {}").format(downloadpath,
+                                                           finaldir))
+                    except Exception as e:
+                        # This will probably be a ShellFailed exception, but
+                        # we need to clean up the file no matter what.
+                        raise e
+                    finally:
+                        os.remove(downloadpath)
+
+                    console("success.")
+
+        if failedurls:
+            console("Warning: the following offline JavaScript files failed "
+                    "to download. To complete this installation, you must "
+                    "manually download these files to " + offline_js_dir + ".")
+
+            for url, dirname in settings.OFFLINE_JS_FILES:
+                if url in failedurls:
+                    console("    {}".format(url))
+                    if dirname is not None:
+                        console("        (this file is an archive -- extract to " +
+                                os.path.join(offline_js_dir, dirname) + ")")
+        else:
+            console("Done.")
+
+
     def initialize_git(self, dirpath):
         """If git installed, initialize project folder as new repo.
         """
@@ -245,6 +346,10 @@ class Command(BaseCommand):
         self.create_project_directory(dirpath)
         self.create_local_settings(dirpath)
         self.collectreports(dirpath)
+
+        if self.options.offline_js:
+            self.get_offline_js(dirpath)
+
         if not self.options.no_git:
             self.initialize_git(dirpath)
 
