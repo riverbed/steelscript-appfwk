@@ -40,7 +40,8 @@ from steelscript.common.timeutils import timedelta_total_seconds, tzutc
 from steelscript.appfwk.project.utils import (get_module_name, get_sourcefile,
                                               get_namespace)
 from steelscript.appfwk.apps.datasource.exceptions import *
-from steelscript.appfwk.apps.alerting.models import post_data_save, error_signal
+from steelscript.appfwk.apps.alerting.models import (post_data_save,
+                                                     error_signal)
 from steelscript.appfwk.libs.fields import (PickledObjectField, FunctionField,
                                             SeparatedValuesField,
                                             check_field_choice,

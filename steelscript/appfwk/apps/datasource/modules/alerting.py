@@ -11,8 +11,9 @@ import numpy
 import pandas
 
 from steelscript.appfwk.apps.alerting.models import Alert
-from steelscript.appfwk.apps.datasource.models import DatasourceTable, TableQueryBase
 from steelscript.appfwk.apps.datasource.forms import fields_add_time_selection
+from steelscript.appfwk.apps.datasource.models import (DatasourceTable,
+                                                       TableQueryBase)
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +88,6 @@ class AlertAnalysisGroupbyQuery(AlertQuery):
             dfg = self.data.groupby(groupby).count()
             dfg.pop(groupby)
             self.data = dfg.reset_index()
-            #logger.debug('AlertAnalysisGroupbyQuery result: %s' % self.data)
         return True
 
 
@@ -113,5 +113,4 @@ class AlertAnalysisTimeseriesQuery(AlertQuery):
             dft[self.endtime] = numpy.nan
             dft = dft.resample('5min', how='count')
             self.data = dft.reset_index().rename(columns={'index': timecol})
-            #logger.debug('AlertAnalysisTimeseriesQuery result: %s' % self.data)
         return True

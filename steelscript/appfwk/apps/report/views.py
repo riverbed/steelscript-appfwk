@@ -500,7 +500,8 @@ class ReportWidgets(views.APIView):
         if minutes:
             # avoid case of long duration reloads to have large reload gap
             # e.g. 24-hour report will consider 12:15 am or later a valid time
-            # to roll-over the time time values, rather than waiting until 12:00 pm
+            # to roll-over the time time values, rather than waiting
+            # until 12:00 pm
             trimmed = round_time(dt=now, round_to=60*minutes, trim=True)
             if now - trimmed > datetime.timedelta(minutes=15):
                 now = trimmed

@@ -205,8 +205,8 @@ class Command(BaseCommand):
                                                  trim=True)
             next_run_time += (delta + offset)
 
-            logger.debug('Setting next run time to %s (delta: %s, offset: %s)' %
-                         (next_run_time, delta, offset))
+            logger.debug('Setting next run time to %s (delta: %s, offset: %s)'
+                         % (next_run_time, delta, offset))
             job_options['next_run_time'] = next_run_time
 
         logger.debug('Scheduling job named %s with kwargs: %s' % (name,

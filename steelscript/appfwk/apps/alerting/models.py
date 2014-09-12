@@ -220,7 +220,7 @@ class Trigger(models.Model):
 
     def add_error_handler(self, router, destination=None,
                           template=None, template_func=None):
-        """Convenience method to create error handler for same source object."""
+        """Convenience method to create error handler for same source."""
         e = ErrorHandler.create(name=self.name + 'ErrorHandler',
                                 source=self.source,
                                 router=router,

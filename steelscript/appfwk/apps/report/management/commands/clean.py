@@ -11,19 +11,21 @@ import optparse
 
 from django.core.management.base import BaseCommand
 from django.core import management
-from django.db import DatabaseError, connection
+from django.db import connection
 from django.db.models import get_app, get_models, Count
 from django.core.exceptions import ObjectDoesNotExist
 
 from django.conf import settings
 from steelscript.appfwk.apps.report.models import Report, WidgetJob
-from steelscript.appfwk.apps.datasource.models import Table, TableField, Column, Job
-from steelscript.appfwk.apps.alerting.models import Route, TriggerCache, ErrorHandlerCache
+from steelscript.appfwk.apps.datasource.models import (Table, TableField,
+                                                       Column, Job)
+from steelscript.appfwk.apps.alerting.models import (Route, TriggerCache,
+                                                     ErrorHandlerCache)
 
 
 class Command(BaseCommand):
     args = None
-    help = 'Clears existing data caches, logs, and optionally application settings.'
+    help = 'Clears existing data caches, logs, and application settings.'
 
     option_list = BaseCommand.option_list + (
         optparse.make_option('--applications',
@@ -35,7 +37,7 @@ class Command(BaseCommand):
                              action='store',
                              dest='report_id',
                              default=None,
-                             help='Reload single report instead of all applications.'),
+                             help='Reload single report instead of all apps.'),
         optparse.make_option('--clear-cache',
                              action='store_true',
                              dest='clear_cache',
@@ -98,7 +100,7 @@ class Command(BaseCommand):
                         model.objects.all().delete()
 
         elif options['report_id']:
-            # remove Report and its Widgets, Jobs, WidgetJobs, Tables and Columns
+            # remove Report and its Widgets, Jobs, WidgetJobs, Tables, Columns
             rid = options['report_id']
 
             def del_table(tbl):

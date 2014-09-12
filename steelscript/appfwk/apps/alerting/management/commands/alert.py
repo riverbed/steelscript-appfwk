@@ -36,7 +36,7 @@ class Command(BaseCommand):
                          action='store_true',
                          dest='alert_age',
                          default=False,
-                         help='Delete old/ancient alerts according to settings')
+                         help='Delete old/ancient alerts based on settings')
         group.add_option('--flush',
                          action='store_true',
                          dest='alert_flush',
