@@ -1281,7 +1281,7 @@ class Job(models.Model):
         with transaction.commit_on_success():
             self.refresh()
             if not self.status == Job.COMPLETE:
-                raise ValueError("Job not complete, no data available")
+                raise DataError("Job not complete, no data available")
 
             self.reference("data()")
 

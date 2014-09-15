@@ -5,18 +5,22 @@
 # as set forth in the License.
 
 
-import json
 import logging
 
 from rest_framework.reverse import reverse
 from rest_framework import generics
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 
+from steelscript.appfwk.apps.datasource.forms import TableFieldForm
+from steelscript.appfwk.apps.datasource.exceptions import JobCreationError
 from steelscript.appfwk.apps.datasource.serializers import (TableSerializer,
-                                                     ColumnSerializer,
-                                                     JobSerializer,
-                                                     JobDataSerializer,
-                                                     JobListSerializer)
-from steelscript.appfwk.apps.datasource.models import Table, Column, Job, Criteria
+                                                            ColumnSerializer,
+                                                            JobSerializer,
+                                                            JobDataSerializer,
+                                                            JobListSerializer)
+from steelscript.appfwk.apps.datasource.models import Table, Column, Job
 
 
 logger = logging.getLogger(__name__)
@@ -43,44 +47,50 @@ class TableColumnList(generics.ListCreateAPIView):
         return Column.objects.filter(table=self.kwargs['pk'])
 
 
-class TableJobList(generics.ListCreateAPIView):
-    model = Job
-    serializer_class = JobSerializer
+class TableJobList(APIView):
+    """Create new jobs for a given table."""
 
     def get_queryset(self):
         """Filter results to specific table."""
         return Job.objects.filter(table=self.kwargs['pk'])
 
-    def post(self, request, *args, **kwargs):
-        # auto-populate table info for criteria values
-        data = request.DATA.copy()
-        data['table'] = self.kwargs['pk']
-        request._data = data
-        return super(TableJobList, self).post(request, *args, **kwargs)
-
-    def pre_save(self, obj):
-        """Populate criteria object with defaults."""
-        try:
-            criteria = Criteria(table=obj.table,
-                                **json.loads(self.request.POST['criteria']))
-        except KeyError:
-            criteria = Criteria(table=obj.table)
-
-        obj.criteria = criteria
-
-    def post_save(self, obj, created=False):
-        # kickoff job once its been created
-        if created:
-            obj.start()
-
-    def get_success_headers(self, data):
+    def get_success_headers(self, job):
         # override method to return location of new job resource
         try:
-            job = self.object
             url = reverse('job-detail', args=(job.pk,), request=self.request)
             return {'Location': url}
         except (TypeError, KeyError):
             return {}
+
+    def get(self, request, pk):
+        """Return list of Job objects for given table."""
+        job = self.get_queryset()
+        serializer = JobSerializer(job, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, pk):
+        """Create new Job for the specified table using POSTed criteria."""
+        table = Table.objects.get(pk=pk)
+        all_fields = {f.keyword: f for f in table.fields.all()}
+
+        # data needs to be not-None or form will be created as unbound
+        data = self.request.POST or {}
+        form = TableFieldForm(all_fields, use_widgets=False,
+                              data=data)
+        if form.is_valid(check_unknown=True):
+            criteria = form.criteria()
+        else:
+            return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            job = Job.create(table, criteria)
+            job.start()
+            serializer = JobSerializer(job, many=False)
+            return Response(serializer.data, status=status.HTTP_201_CREATED,
+                            headers=self.get_success_headers(job))
+        except Exception as e:
+            msg = 'Error processing Job: %s' % e.message
+            raise JobCreationError(msg)
 
 
 class ColumnList(generics.ListCreateAPIView):
@@ -94,7 +104,11 @@ class ColumnDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ColumnSerializer
 
 
-class JobList(generics.ListCreateAPIView):
+class JobList(generics.ListAPIView):
+    """List all Jobs in system.
+
+    Creation of Jobs must be done via a TableJobList endpoint.
+    """
     model = Job
     serializer_class = JobListSerializer
     paginate_by = 10
@@ -102,15 +116,6 @@ class JobList(generics.ListCreateAPIView):
     def post_save(self, obj, created=False):
         if created:
             obj.start()
-
-    def get_success_headers(self, data):
-        # override method to return location of new job resource
-        try:
-            job = self.object
-            url = reverse('job-detail', args=(job.pk,), request=self.request)
-            return {'Location': url}
-        except (TypeError, KeyError):
-            return {}
 
 
 class JobDetail(generics.RetrieveAPIView):

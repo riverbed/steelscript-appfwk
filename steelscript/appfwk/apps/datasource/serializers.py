@@ -36,9 +36,13 @@ class JobDataField(serializers.Field):
 #
 class TableSerializer(serializers.ModelSerializer):
     options = PickledObjectField()
+    criteria = PickledObjectField()
 
     class Meta:
         model = Table
+        fields = ('id', 'name', 'module', 'queryclass', 'datasource',
+                  'namespace', 'sourcefile', 'filterexpr', 'options',
+                  'criteria', 'fields')
 
 
 class ColumnSerializer(serializers.ModelSerializer):
@@ -53,7 +57,8 @@ class ColumnSerializer(serializers.ModelSerializer):
 class JobListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
-        fields = ('id', 'table', 'criteria', 'actual_criteria', 'status', 'message', 'progress', 'remaining')
+        fields = ('id', 'table', 'criteria', 'actual_criteria', 'status',
+                  'message', 'progress', 'remaining')
         read_only_fields = ('id', 'status', 'message', 'progress', 'remaining')
 
 
@@ -63,8 +68,12 @@ class JobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Job
-        fields = ('id', 'table', 'criteria', 'actual_criteria', 'status', 'message', 'progress', 'remaining')
+        fields = ('id', 'table', 'criteria', 'actual_criteria', 'status',
+                  'message', 'progress', 'remaining')
         read_only_fields = ('id', 'status', 'message', 'progress', 'remaining')
+
+    def save(self, **kwargs):
+        return super(JobSerializer, self).save(**kwargs)
 
 
 class JobDataSerializer(serializers.ModelSerializer):
