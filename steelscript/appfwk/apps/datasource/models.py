@@ -856,6 +856,11 @@ class Criteria(DictObject):
         #        param.initial = value
         #        param.save()
 
+    @classmethod
+    def is_timeframe_key(cls, key):
+        return [key in ['starttime', 'endtime', 'duration',
+                        '_orig_starttime', '_orig_endtime', '_orig_duration']]
+
     def print_details(self):
         """ Return instance variables as nicely formatted string
         """
