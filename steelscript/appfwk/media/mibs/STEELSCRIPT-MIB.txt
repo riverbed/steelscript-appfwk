@@ -1,0 +1,87 @@
+STEELSCRIPT-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    OBJECT-TYPE, MODULE-IDENTITY, NOTIFICATION-TYPE, Unsigned32
+                 FROM SNMPv2-SMI
+    DateAndTime FROM SNMPv2-TC
+    products FROM RBT-MIB;
+
+steelscript MODULE-IDENTITY
+          LAST-UPDATED        "201202030000Z"
+          ORGANIZATION        "Riverbed Technology, Inc."
+          CONTACT-INFO
+          "  Riverbed Technical Support
+             support@riverbed.com"
+          DESCRIPTION         "SteelScript MIB"
+          REVISION            "201409040000Z"
+          DESCRIPTION         "SteelScript related traps"
+          ::= { products 500 }
+
+steelscriptNotificationPrefix OBJECT IDENTIFIER ::=
+    { steelscript 1 }
+
+steelscriptNotifications OBJECT IDENTIFIER ::=
+    { steelscriptNotificationPrefix 0 }
+
+steelscriptNotificationObjects OBJECT IDENTIFIER ::=
+    { steelscriptNotificationPrefix 1 }
+
+--
+-- Notification Objects
+--
+
+tableName OBJECT-TYPE
+    SYNTAX     OCTET STRING
+    MAX-ACCESS accessible-for-notify
+    STATUS     current
+    DESCRIPTION
+        "Name of the table related to the notification"
+    ::= { steelscriptNotificationObjects 1 }
+
+jobID OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS accessible-for-notify
+    STATUS     current
+    DESCRIPTION
+        "Name of the table related to the notification"
+    ::= { steelscriptNotificationObjects 2 }
+
+jobFailedMessage OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS accessible-for-notify
+    STATUS     current
+    DESCRIPTION
+        "Name of the table related to the notification"
+    ::= { steelscriptNotificationObjects 3 }
+
+alertContext OBJECT-TYPE
+    SYNTAX     OCTET STRING
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "Alerting context"
+    ::= { steelscriptNotificationObjects 4 }
+
+--
+--
+-- NOTIFICATIONS
+--
+--
+
+jobFailed NOTIFICATION-TYPE
+    OBJECTS { tableName, jobID, jobFailedMessage }
+    STATUS  current
+    DESCRIPTION
+            "Indication that an alerting job failed to run."
+    ::= { steelscriptNotifications 1 }
+
+alertTrigger NOTIFICATION-TYPE
+    OBJECTS { tableName, jobID, alertContext }
+    STATUS  current
+    DESCRIPTION
+            "Notifcation that the trigger associated with the
+            a table has triggered.  The alertContextTable contains
+            specific details of the event."
+    ::= { steelscriptNotifications 2 }
+
+END

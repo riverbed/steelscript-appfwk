@@ -105,7 +105,7 @@ class SNMPBaseRouter(BaseRouter):
         values will raise an AttributeError.
         """
         missing = []
-        for k, v in alert.destination.iteritems():
+        for k, v in (alert.destination or {}).iteritems():
             if hasattr(self, k):
                 setattr(self, k, v)
             else:
@@ -148,6 +148,28 @@ class SNMPBaseRouter(BaseRouter):
             http://pysnmp.sourceforge.net/docs/current/apps/sync-notification-originator.html
         """
         pass
+
+
+class SNMPRouterSteelScript(SNMPBaseRouter):
+    """Sends SNMP traps."""
+    community = 'public'
+    manager_ip = '127.0.0.1'
+
+    eoid = '1.3.6.1.4.1.17163.1.500'     # SteelScript OID
+    trapid = '1.0.2'                     # Test Trap Number
+    default_description = 'SteelScript Alert'
+    trap_url = 'http://localhost'
+
+    def setup_snmp_trap(self, alert):
+        oid = self.eoid             # cascade enterprise Object ID
+        trapid = self.trapid        # base string for trap indicators
+        self.trapname = '.'.join([oid, trapid])
+
+        self.binds = (
+            ('1.3.6.1.4.1.17163.1.500.1.1.1', rfc1902.OctetString('table')),         # tableName
+            ('1.3.6.1.4.1.17163.1.500.1.1.2', rfc1902.Unsigned32(3)),                 # Job ID
+            ('1.3.6.1.4.1.17163.1.500.1.1.4', rfc1902.OctetString('alertContext')),   # alertContext
+        )
 
 
 class SNMPRouterCascadeDefault(SNMPBaseRouter):
