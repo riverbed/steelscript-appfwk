@@ -147,7 +147,7 @@ def process_error(sender, **kwargs):
 
 class Alert(models.Model):
     timestamp = models.DateTimeField(auto_now=True)
-    eventid = models.IntegerField()
+    eventid = models.BigIntegerField()
     level = models.CharField(max_length=50)
     router = models.CharField(max_length=100)
     destination = PickledObjectField(blank=True, null=True)
