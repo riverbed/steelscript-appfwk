@@ -19,7 +19,7 @@ from django.conf import settings
 from steelscript.appfwk.apps.report.models import Report, WidgetJob
 from steelscript.appfwk.apps.datasource.models import (Table, TableField,
                                                        Column, Job)
-from steelscript.appfwk.apps.alerting.models import (Route, TriggerCache,
+from steelscript.appfwk.apps.alerting.models import (Destination, TriggerCache,
                                                      ErrorHandlerCache)
 
 
@@ -122,7 +122,7 @@ class Command(BaseCommand):
                     handler.delete()
 
                 # delete newly unreferenced routes
-                Route.objects.filter(trigger=None).delete()
+                Destination.objects.filter(trigger=None).delete()
 
                 tables = (tbl.options or {}).get('tables')
                 for ref in (tables or {}).values():

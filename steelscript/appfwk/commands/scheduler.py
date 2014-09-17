@@ -97,6 +97,8 @@ def process_criteria(kws):
 
         if endtime:
             critdict['endtime'] = endtime
+    else:
+        critdict = dict()
 
     kws['offset'] = interval['offset']
     kws['delta'] = interval['delta']

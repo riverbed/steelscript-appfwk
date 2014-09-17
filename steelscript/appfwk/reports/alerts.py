@@ -22,7 +22,7 @@ atable.add_column('timestamp', 'Timestamp', datatype='time',
 atable.add_column('id', 'ID', datatype='string')
 atable.add_column('level', 'Level', datatype='string')
 atable.add_column('router', 'Router', datatype='string')
-atable.add_column('destination', 'Destination', datatype='string')
+atable.add_column('options', 'Dest Options', datatype='string')
 atable.add_column('message', 'Message', datatype='string')
 
 report.add_widget(yui3.TableWidget, atable, 'App Framework Alerts', width=12)
