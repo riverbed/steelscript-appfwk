@@ -21,7 +21,7 @@ atable.add_column('timestamp', 'Timestamp', datatype='time',
                   iskey=True, sortasc=True)
 atable.add_column('id', 'ID', datatype='string')
 atable.add_column('level', 'Level', datatype='string')
-atable.add_column('router', 'Router', datatype='string')
+atable.add_column('sender', 'Sender', datatype='string')
 atable.add_column('options', 'Dest Options', datatype='string')
 atable.add_column('message', 'Message', datatype='string')
 

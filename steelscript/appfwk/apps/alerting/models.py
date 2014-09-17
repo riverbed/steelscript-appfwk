@@ -13,7 +13,7 @@ from django.dispatch import Signal, receiver
 from steelscript.common.timeutils import datetime_to_microseconds
 from steelscript.appfwk.libs.fields import (PickledObjectField,
                                             FunctionField, Function)
-from steelscript.appfwk.apps.alerting.routes import find_router
+from steelscript.appfwk.apps.alerting.senders import find_sender
 from steelscript.appfwk.apps.alerting.source import Source
 from steelscript.appfwk.apps.alerting.caches import ModelCache
 
@@ -58,7 +58,7 @@ class DestinationThread(threading.Thread):
         super(DestinationThread, self).__init__(**kwargs)
 
     def run(self):
-        router = self.destination.get_router()
+        sender = self.destination.get_sender()
 
         if self.is_error:
             message_context = Source.error_context(self.context)
@@ -68,17 +68,17 @@ class DestinationThread(threading.Thread):
         message = self.destination.get_message(message_context)
 
         alert = Alert(eventid=self.eventid,
-                      level=router.level,
-                      router=self.destination.router,
+                      level=sender.level,
+                      sender=self.destination.sender,
                       message=message,
                       options=self.destination.options,
                       context=self.context,
                       trigger_result=self.result)
         # need to save to get datetime assigned
         alert.save()
-        logger.debug('Routing Alert %s via destination %s' %
+        logger.debug('Sending Alert %s via Destination %s' %
                      (alert, self.destination))
-        router.send(alert)
+        sender.send(alert)
 
 
 class TriggerThread(threading.Thread):
@@ -88,7 +88,7 @@ class TriggerThread(threading.Thread):
         self.context = context
         super(TriggerThread, self).__init__(**kwargs)
 
-    def start_router(self, result):
+    def start_destinations(self, result):
         destinations = self.trigger.destinations.all()
         eventid = create_event_id()
         for d in destinations:
@@ -104,9 +104,9 @@ class TriggerThread(threading.Thread):
         if result:
             if isinstance(result, (list, tuple)):
                 for r in result:
-                    self.start_router(r)
+                    self.start_destinations(r)
             else:
-                self.start_router(result)
+                self.start_destinations(result)
 
 
 @receiver(post_data_save, dispatch_uid='post_data_receiver')
@@ -151,7 +151,7 @@ class Alert(models.Model):
     timestamp = models.DateTimeField(auto_now=True)
     eventid = models.BigIntegerField()
     level = models.CharField(max_length=50)
-    router = models.CharField(max_length=100)
+    sender = models.CharField(max_length=100)
     options = PickledObjectField(blank=True, null=True)
     message = models.TextField()
     context = PickledObjectField()
@@ -163,7 +163,7 @@ class Alert(models.Model):
             msg = '%s...' % msg[:20]
         return '<Alert %s/%d (%s) %s/%s>' % (self.id or 'X',
                                              self.eventid,
-                                             self.router,
+                                             self.sender,
                                              self.level, msg)
 
     def __repr__(self):
@@ -177,7 +177,7 @@ class Alert(models.Model):
         msg.append(fmt.format('EventID', self.eventid))
         msg.append(fmt.format('Timestamp', self.timestamp))
         msg.append(fmt.format('Level', self.level))
-        msg.append(fmt.format('Router', self.router))
+        msg.append(fmt.format('Sender', self.sender))
         msg.append(fmt.format('Dest options', self.options))
         msg.append(fmt.format('Message', self.message))
         msg.append(fmt.format('Trigger Result', self.trigger_result))
@@ -211,21 +211,21 @@ class Trigger(models.Model):
         t.save()
         return t
 
-    def add_destination(self, router, options=None,
+    def add_destination(self, sender, options=None,
                         template=None, template_func=None):
-        """Assign route to the given Trigger."""
-        r = Destination.create(router=router,
+        """Assign destination to the given Trigger."""
+        r = Destination.create(sender=sender,
                                options=options,
                                template=template,
                                template_func=template_func)
         self.destinations.add(r)
 
-    def add_error_handler(self, router, options=None,
+    def add_error_handler(self, sender, options=None,
                           template=None, template_func=None):
         """Convenience method to create error handler for same source."""
         e = ErrorHandler.create(name=self.name + 'ErrorHandler',
                                 source=self.source,
-                                router=router,
+                                sender=sender,
                                 options=options,
                                 template=template,
                                 template_func=template_func)
@@ -234,17 +234,17 @@ class Trigger(models.Model):
 
 class Destination(models.Model):
     name = models.CharField(max_length=100)
-    router = models.CharField(max_length=100)
+    sender = models.CharField(max_length=100)
     options = PickledObjectField(blank=True, null=True)
     template = models.TextField(blank=True, null=True)
     template_func = FunctionField(null=True)
 
     def __unicode__(self):
         if self.options:
-            return '<Destination %d/%s -> %s>' % (self.id, self.router,
+            return '<Destination %d/%s -> %s>' % (self.id, self.sender,
                                                   str(self.options))
         else:
-            return '<Destination %d/%s>' % (self.id, self.router)
+            return '<Destination %d/%s>' % (self.id, self.sender)
 
     def save(self, *args, **kwargs):
         if self.template is None and self.template_func is None:
@@ -254,19 +254,19 @@ class Destination(models.Model):
         super(Destination, self).save()
 
     @classmethod
-    def create(cls, router, options=None, template=None,
+    def create(cls, sender, options=None, template=None,
                template_func=None):
-        r = Destination(router=router,
+        r = Destination(sender=sender,
                         options=options,
                         template=template,
                         template_func=template_func)
         r.save()
         return r
 
-    def get_router(self):
-        """Return instance of Router associated with the model.
+    def get_sender(self):
+        """Return instance of Sender associated with the model.
         """
-        return find_router(self.router)()
+        return find_sender(self.sender)()
 
     def get_message(self, context):
         """Return string from either template_func or template
@@ -296,10 +296,10 @@ class ErrorHandler(models.Model):
         return '<ErrorHandler %d/%s>' % (self.id, self.name)
 
     @classmethod
-    def create(cls, name, source, router, options=None,
+    def create(cls, name, source, sender, options=None,
                template=None, template_func=None):
         """Create new ErrorHandler and its associated Destination."""
-        destination = Destination.create(router, options,
+        destination = Destination.create(sender, options,
                                          template, template_func)
 
         # when called via Trigger classmethod source has already been encoded

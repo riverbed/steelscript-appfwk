@@ -61,11 +61,11 @@ class Command(BaseCommand):
         """ Main command handler. """
 
         if options['alert_list']:
-            columns = ('ID', 'Timestamp', 'EventID', 'Level', 'Router',
+            columns = ('ID', 'Timestamp', 'EventID', 'Level', 'Sender',
                        'Dest Options', 'Message')
             data = []
             for a in Alert.objects.all().order_by('timestamp'):
-                data.append((a.id, a.timestamp, a.eventid, a.level, a.router,
+                data.append((a.id, a.timestamp, a.eventid, a.level, a.sender,
                              a.options, a.message))
             Formatter.print_table(data, columns)
 

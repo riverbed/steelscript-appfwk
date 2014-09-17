@@ -4,7 +4,7 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-# avoid SNMP requirements if not using those Routers
+# avoid SNMP requirements if not using those Senders
 try:
     from pysnmp.entity.rfc3413.oneliner import ntforg
     from pysnmp.proto import rfc1902
@@ -17,72 +17,72 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class RouterMount(type):
-    """Metaclass for Router subclasses."""
+class SenderMount(type):
+    """Metaclass for Sender subclasses."""
     # inspired by
     # http://martyalchin.com/2008/jan/10/simple-plugin-framework/
     def __init__(cls, name, bases, attrs):
-        if not hasattr(cls, '_routers'):
+        if not hasattr(cls, '_senders'):
             # setup mount point for class
-            cls._routers = dict()
+            cls._senders = dict()
         else:
             # register the class by name
-            cls._routers[name] = cls
+            cls._senders[name] = cls
 
 
-class BaseRouter(object):
-    """Base class for Routers."""
-    __metaclass__ = RouterMount
+class BaseSender(object):
+    """Base class for Senders."""
+    __metaclass__ = SenderMount
 
     level = 'warning'
 
     def __init__(self, *args, **kwargs):
-        """Initialize Router service with credentials, etc."""
+        """Initialize Sender service with credentials, etc."""
         pass
 
     @classmethod
-    def get_router(cls, name):
-        return cls._routers.get(name, None)
+    def get_sender(cls, name):
+        return cls._senders.get(name, None)
 
     def send(self, alert):
-        """Send `alert` to defined router destination."""
+        """Send `alert` to defined sender destination."""
         pass
 
 
-class SmsRouter(BaseRouter):
+class SmsSender(BaseSender):
     """Not implemented yet."""
     pass
 
 
-class EmailRouter(BaseRouter):
+class EmailSender(BaseSender):
     """Not implemented yet."""
     pass
 
 
-class LoggingRouter(BaseRouter):
+class LoggingSender(BaseSender):
     """Sends results to logger at default 'warning' level."""
     def send(self, alert):
         log = getattr(logger, self.level)
         log(alert.message)
 
 
-class LoggingRouterInfo(LoggingRouter):
+class LoggingSenderInfo(LoggingSender):
     """Sends results to logger at 'info' level."""
     level = 'info'
 
 
-class LoggingRouterError(LoggingRouter):
+class LoggingSenderError(LoggingSender):
     """Sends results to logger at 'error' level."""
     level = 'error'
 
 
-class ConsoleRouter(LoggingRouter):
+class ConsoleSender(LoggingSender):
     """Sends results to console."""
     def send(self, alert):
-        print 'ConsoleRouter: %s' % alert
+        print 'ConsoleSender: %s' % alert
 
 
-class SNMPBaseRouter(BaseRouter):
+class SNMPBaseSender(BaseSender):
     """Base class for SNMP trap notifications.
 
     Subclass this to override defaults and configuration
@@ -142,7 +142,7 @@ class SNMPBaseRouter(BaseRouter):
                 an ObjectIdentifier string, or a MibVariable object.
             ``self.binds`` - array of Managed Objects to construct the
                 trap defined in ``self.trapname``.  See example class
-                ``SNMPRouterCascadeDefault`` for examples.
+                ``SNMPSenderCascadeDefault`` for examples.
 
         See pysnmp docs for more information here:
             http://pysnmp.sourceforge.net/docs/current/apps/sync-notification-originator.html
@@ -150,7 +150,7 @@ class SNMPBaseRouter(BaseRouter):
         pass
 
 
-class SNMPRouterSteelScript(SNMPBaseRouter):
+class SNMPSenderSteelScript(SNMPBaseSender):
     """Sends SNMP traps."""
     community = 'public'
     manager_ip = '127.0.0.1'
@@ -172,7 +172,7 @@ class SNMPRouterSteelScript(SNMPBaseRouter):
         )
 
 
-class SNMPRouterCascadeDefault(SNMPBaseRouter):
+class SNMPSenderCascadeDefault(SNMPBaseSender):
     """Sends SNMP traps."""
     community = 'public'
     manager_ip = '127.0.0.1'
@@ -209,5 +209,5 @@ class SNMPRouterCascadeDefault(SNMPBaseRouter):
         )
 
 
-def find_router(name):
-    return BaseRouter.get_router(name)
+def find_sender(name):
+    return BaseSender.get_sender(name)
