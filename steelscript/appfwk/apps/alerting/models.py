@@ -9,6 +9,7 @@ import threading
 
 from django.db import models
 from django.dispatch import Signal, receiver
+from django_extensions.db.fields import UUIDField
 
 from steelscript.common.timeutils import datetime_to_microseconds
 from steelscript.appfwk.libs.fields import (PickledObjectField,
@@ -39,21 +40,11 @@ class ErrorHandlerCache(ModelCache):
     _key = 'source'
 
 
-def create_event_id():
-    """Return unique ID value for each triggered event."""
-    # XXX microseconds should be sufficiently unique,
-    #  but may need more if microseconds still cause event overlaps
-    dt = datetime.datetime.now()
-    return datetime_to_microseconds(dt)
-
-
 class DestinationThread(threading.Thread):
-    def __init__(self, destination, eventid, result, context,
+    def __init__(self, destination, event,
                  is_error=False, **kwargs):
         self.destination = destination
-        self.eventid = eventid
-        self.result = result
-        self.context = context
+        self.event = event
         self.is_error = is_error
         super(DestinationThread, self).__init__(**kwargs)
 
@@ -61,19 +52,18 @@ class DestinationThread(threading.Thread):
         sender = self.destination.get_sender()
 
         if self.is_error:
-            message_context = Source.error_context(self.context)
+            message_context = Source.error_context(self.event.context)
         else:
-            message_context = Source.message_context(self.context, self.result)
+            message_context = Source.message_context(self.event.context,
+                                                     self.event.trigger_result)
 
         message = self.destination.get_message(message_context)
 
-        alert = Alert(eventid=self.eventid,
+        alert = Alert(event=self.event,
                       level=sender.level,
                       sender=self.destination.sender,
                       message=message,
-                      options=self.destination.options,
-                      context=self.context,
-                      trigger_result=self.result)
+                      options=self.destination.options)
         # need to save to get datetime assigned
         alert.save()
         logger.debug('Sending Alert %s via Destination %s' %
@@ -90,22 +80,25 @@ class TriggerThread(threading.Thread):
 
     def start_destinations(self, result):
         destinations = self.trigger.destinations.all()
-        eventid = create_event_id()
+        event = Event(context=self.context, trigger_result=result)
+        event.save()
+        logger.debug('New Event created: %s' % event)
         for d in destinations:
-            DestinationThread(d, eventid, result, self.context).start()
+            DestinationThread(d, event).start()
 
     def run(self):
         func = self.trigger.trigger_func
 
         logger.debug('Evaluating Trigger %s ...' % self.trigger.name)
         result = func(self.data, self.context)
-        logger.debug('Trigger result: %s' % result)
 
         if result:
             if isinstance(result, (list, tuple)):
+                logger.debug('Trigger result: %d elements' % len(result))
                 for r in result:
                     self.start_destinations(r)
             else:
+                logger.debug('Trigger result: %s' % result)
                 self.start_destinations(result)
 
 
@@ -145,26 +138,16 @@ def process_error(sender, **kwargs):
 #
 # Models
 #
-
-
-class Alert(models.Model):
+class Event(models.Model):
+    """Event instance which may result in one or more Alerts."""
     timestamp = models.DateTimeField(auto_now=True)
-    eventid = models.BigIntegerField()
-    level = models.CharField(max_length=50)
-    sender = models.CharField(max_length=100)
-    options = PickledObjectField(blank=True, null=True)
-    message = models.TextField()
+    eventid = UUIDField()
+    log_message = models.TextField(null=True, blank=True)
     context = PickledObjectField()
     trigger_result = PickledObjectField()
 
     def __unicode__(self):
-        msg = self.message
-        if len(msg) > 20:
-            msg = '%s...' % msg[:20]
-        return '<Alert %s/%d (%s) %s/%s>' % (self.id or 'X',
-                                             self.eventid,
-                                             self.sender,
-                                             self.level, msg)
+        return '<Event %s/%s (%s)>' % (self.id, self.eventid, self.timestamp)
 
     def __repr__(self):
         return unicode(self)
@@ -176,12 +159,49 @@ class Alert(models.Model):
         msg.append(fmt.format('ID', self.id))
         msg.append(fmt.format('EventID', self.eventid))
         msg.append(fmt.format('Timestamp', self.timestamp))
+        msg.append(fmt.format('Log Message', self.log_message))
+        msg.append(fmt.format('Trigger Result', self.trigger_result))
+        msg.append(fmt.format('Context', self.context))
+
+        alerts = self.alert_set.all()
+        if alerts:
+            msg.append('')
+            msg.append('Associated Alerts:')
+            for a in alerts:
+                msg.append(a.get_details())
+        return '\n'.join(msg)
+
+
+class Alert(models.Model):
+    """Individual notification sent by a Sender for a specific Event."""
+    timestamp = models.DateTimeField(auto_now=True)
+    event = models.ForeignKey('Event')
+    level = models.CharField(max_length=50)
+    sender = models.CharField(max_length=100)
+    options = PickledObjectField(blank=True, null=True)
+    message = models.TextField()
+
+    def __unicode__(self):
+        msg = self.message
+        if len(msg) > 20:
+            msg = '%s...' % msg[:20]
+        return '<Alert %s (%s/%s)>' % (self.id or 'X',
+                                       self.sender, msg)
+
+    def __repr__(self):
+        return unicode(self)
+
+    def get_details(self):
+        """Return details in a string"""
+        msg = []
+        fmt = '{0:15}: {1}'
+        msg.append(fmt.format('ID', self.id))
+        msg.append(fmt.format('EventID', self.event.eventid))
+        msg.append(fmt.format('Timestamp', self.timestamp))
         msg.append(fmt.format('Level', self.level))
         msg.append(fmt.format('Sender', self.sender))
         msg.append(fmt.format('Dest options', self.options))
         msg.append(fmt.format('Message', self.message))
-        msg.append(fmt.format('Trigger Result', self.trigger_result))
-        msg.append(fmt.format('Context', self.context))
         return '\n'.join(msg)
 
 

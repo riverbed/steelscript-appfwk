@@ -44,6 +44,19 @@ class AlertTable(DatasourceTable):
 class AlertQuery(TableQueryBase):
     """ Simple query to retrieve stored Alert objects. """
 
+    def _get(self, alert, attr):
+        """Returns attribute from alert or its associated Event.
+
+        Raises AttributeError if attr not found in either object.
+        """
+        for obj in (alert, alert.event):
+            try:
+                return getattr(obj, attr)
+            except AttributeError:
+                continue
+        raise AttributeError('%s not a valid attribute of Alert '
+                             'or Event' % attr)
+
     def run(self):
         self.duration = self.job.criteria['duration']
         self.endtime = self.job.criteria['endtime']
@@ -56,7 +69,7 @@ class AlertQuery(TableQueryBase):
                                                             self.endtime))
 
         columns = [col.name for col in self.table.get_columns(synthetic=False)]
-        rows = [[getattr(a, c) for c in columns] for a in alerts]
+        rows = [[self._get(a, c) for c in columns] for a in alerts]
 
         logger.debug('Alert query for duration %s returned %d rows' %
                      (self.duration, len(rows)))

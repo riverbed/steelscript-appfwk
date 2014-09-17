@@ -20,6 +20,7 @@ atable = AlertTable.create('Appfwk Alerts')
 atable.add_column('timestamp', 'Timestamp', datatype='time',
                   iskey=True, sortasc=True)
 atable.add_column('id', 'ID', datatype='string')
+atable.add_column('eventid', 'Event ID', datatype='string')
 atable.add_column('level', 'Level', datatype='string')
 atable.add_column('sender', 'Sender', datatype='string')
 atable.add_column('options', 'Dest Options', datatype='string')
