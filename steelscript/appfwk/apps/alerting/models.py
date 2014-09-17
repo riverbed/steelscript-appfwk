@@ -4,14 +4,12 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-import datetime
 import threading
 
 from django.db import models
 from django.dispatch import Signal, receiver
 from django_extensions.db.fields import UUIDField
 
-from steelscript.common.timeutils import datetime_to_microseconds
 from steelscript.appfwk.libs.fields import (PickledObjectField,
                                             FunctionField, Function)
 from steelscript.appfwk.apps.alerting.senders import find_sender
@@ -129,10 +127,11 @@ def process_error(sender, **kwargs):
 
     handlers = ErrorHandlerCache.filter(Source.encode(source))
     logger.debug('Found %d handlers.' % len(handlers))
-    eventid = create_event_id()
+    event = Event(context=context, trigger_result=None)
+    event.save()
+    logger.debug('New Event created: %s' % event)
     for h in handlers:
-        DestinationThread(h.destination, eventid, None,
-                          context, is_error=True).start()
+        DestinationThread(h.destination, event, is_error=True).start()
 
 
 #
