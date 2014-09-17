@@ -48,9 +48,11 @@ keys are all prefixed with 'interval_'.
 import os
 import re
 import sys
+import time
 import signal
 import logging
 import datetime
+from urlparse import urljoin
 from ConfigParser import SafeConfigParser
 
 try:
@@ -61,6 +63,7 @@ except ImportError:
     sys.exit(1)
 
 import pytz
+import requests
 
 from steelscript.common import timeutils
 from steelscript.commands.steel import (BaseCommand, shell, console,
@@ -70,9 +73,10 @@ from steelscript.commands.steel import (BaseCommand, shell, console,
 logger = logging.getLogger(__name__)
 
 
-def run_table(*args, **kwargs):
+def process_criteria(kws):
+    """Process criteria options into separate dict."""
     # get runtime parameters
-    interval = kwargs.pop('interval')
+    interval = kws.pop('interval')
 
     if interval['offset'] > datetime.timedelta(0):
         # round now to nearest whole second
@@ -80,26 +84,35 @@ def run_table(*args, **kwargs):
         roundnow = timeutils.round_time(now, round_to=1)
 
         endtime = roundnow - interval['offset']
+        logger.debug('Setting end time to %s (via offset: %s)' %
+                     (endtime, interval['offset']))
     else:
         endtime = None
 
+    # if we have criteria, parse and append to base
+    criteria = kws.pop('criteria', None)
+    if criteria:
+        crits = re.split(',\s|,', criteria)
+        critdict = dict(c.split(':', 1) for c in crits)
+
+        if endtime:
+            critdict['endtime'] = endtime
+
+    kws['offset'] = interval['offset']
+    kws['delta'] = interval['delta']
+
+    return critdict, kws
+
+
+def run_table(*args, **kwargs):
     # combine base arguments
     argstr = ' '.join(args)
 
-    # if we have criteria, parse and append to base
-    criteria = kwargs.pop('criteria', None)
-    critargs = ''
-    if criteria:
-        crits = re.split(',\s|,|\s', criteria)
-        critargs = ' '.join(['--criteria=%s' % c for c in crits])
-        argstr = '%s %s' % (argstr, critargs)
-
-        if endtime:
-            endstr = '--criteria=endtime:"%s"' % str(endtime)
-            argstr = '%s %s' % (argstr, endstr)
-
-            logger.debug('Setting end time to %s (via offset: %s)' %
-                         (endstr, interval['offset']))
+    # split out criteria
+    criteria, options = process_criteria(kwargs)
+    critargs = ' '.join(['--criteria=%s:%s' % (k, v)
+                         for k, v in criteria.iteritems()])
+    argstr = '%s %s' % (argstr, critargs)
 
     # format remaining keyword args
     kws = []
@@ -123,6 +136,69 @@ def run_table(*args, **kwargs):
                      'stdout results: %s' % (e.returncode, e.output))
 
 
+def get_auth(authfile):
+    """Parse simple auth from given file."""
+    with open(authfile, 'r') as f:
+        return tuple(f.readline().strip().split(':'))
+
+
+def run_table_via_rest(url, authfile, **kwargs):
+    criteria, options = process_criteria(kwargs)
+
+    s = requests.session()
+    s.auth = get_auth(authfile)
+    s.headers.update({'Accept': 'application/json'})
+
+    logger.debug('POSTing new job with criteria: %s' % criteria)
+    r = s.post(url, data=criteria)
+    if r.ok:
+        logger.debug('Job creation sucessful.')
+    else:
+        logger.error('Error creating Job: %s' % r.content)
+
+    if options.get('output-file', None):
+        # check periodically until data is ready and write to file
+        url = r.headers['Location']
+        timeout = options['delta']
+        interval = 1
+
+        complete = False
+        now = datetime.datetime.now
+        start = now()
+
+        while (now() - start) < timeout:
+            status = s.get(url)
+
+            if status.json()['status'] == 3:
+                logger.debug("Table completed successfully.")
+                complete = True
+                break
+
+            if status.json()['status'] == 4:
+                logger.error('Table reported error in processing: %s' %
+                             status.json())
+                complete = True
+                break
+
+            logger.debug("Table not yet complete, sleeping for 1 second.")
+            time.sleep(interval)
+
+        if not complete:
+            logger.warning("Timed out waiting for table to complete,"
+                           "url is: %s" % url)
+        else:
+            # get data and write as CSV
+            data = s.get(urljoin(url, 'data/'))
+            d = data.json()['data']
+            with open(options['output-file'], 'a') as f:
+                for row in d:
+                    f.write(','.join(str(x) for x in row))
+                    f.write('\n')
+    else:
+        # we aren't interested in results
+        pass
+
+
 class Command(BaseCommand):
     help = 'Interface to schedule table operations.'
 
@@ -137,6 +213,23 @@ class Command(BaseCommand):
         super(Command, self).add_options(parser)
         parser.add_option('-c', '--config',
                           help='Config file to read schedule from')
+        parser.add_option('-r', '--rest-server', action='store', default=None,
+                          help='Run jobs against running App Framework '
+                               'server using a REST API.')
+        # storing auth as a file will avoid having the actual credentials
+        # passed in via the commandline and viewable under 'ps'
+        parser.add_option('--authfile', action='store', default=None,
+                          help='Path to file containing authentication '
+                               'to rest-server in format "user:password"')
+
+    def validate_args(self):
+        if self.options.rest_server and not self.options.authfile:
+            console('Must specify an authfile to use with rest-server.')
+            sys.exit(1)
+
+        if self.options.authfile and not self.options.rest_server:
+            console('Must specify a rest-server for use with an authfile.')
+            sys.exit(1)
 
     def get_settings(self):
         # holdover for direct python call
@@ -147,14 +240,42 @@ class Command(BaseCommand):
         else:
             raise MainFailed('Unable to find local_settings.py file')
 
-    def get_job_function(self):
+    def get_job_function(self, kwargs):
         # allow for alternate methods to call table commands in future
         # possibly direct API calls, or REST calls against running server
 
-        # func = 'django.core.management:call_command'
+        if self.options.rest_server:
+            # find id of table-name
+            name = kwargs['table-name']
+            baseurl = self.options.rest_server + '/data/tables/'
 
-        job_params = {'func': run_table,
-                      'args': ['table']}
+            s = requests.session()
+            s.auth = get_auth(self.options.authfile)
+            s.headers.update({'Accept': 'application/json'})
+
+            tableid = None
+            url = baseurl
+            while tableid is None:
+                r = s.get(url)
+                results = r.json()['results']
+                ids = [t['id'] for t in results if t['name'] == name]
+                if len(ids) > 1:
+                    msg = 'Multiple tables found for name %s: %s' % (name, ids)
+                    raise ValueError(msg)
+                elif len(ids) == 1:
+                    tableid = ids[0]
+                else:
+                    url = r.json()['next']
+                    if url is None:
+                        raise ValueError('No table found for name %s' % (name))
+
+            tableurl = urljoin(baseurl, str(tableid) + '/jobs/')
+
+            job_params = {'func': run_table_via_rest,
+                          'args': [tableurl, self.options.authfile]}
+        else:
+            job_params = {'func': run_table,
+                          'args': ['table']}
         return job_params
 
     def parse_config(self, job_config):
@@ -181,9 +302,11 @@ class Command(BaseCommand):
         interval['offset'] = offset
 
         # hardcode the function call - don't allow config overrides
-        job_kwargs.update(self.get_job_function())
+        func_params = self.get_job_function(job_config)
+        job_kwargs.update(func_params)
 
-        # add remaining kwargs as actual kwargs for function call
+        # embed interval and add remaining kwargs as
+        # actual kwargs for function call
         job_config['interval'] = interval
         job_kwargs['kwargs'] = job_config
 
