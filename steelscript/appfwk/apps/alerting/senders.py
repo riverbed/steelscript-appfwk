@@ -5,11 +5,14 @@
 # as set forth in the License.
 
 # avoid SNMP requirements if not using those Senders
+
 try:
     from pysnmp.entity.rfc3413.oneliner import ntforg
     from pysnmp.proto import rfc1902
 except ImportError:
     pass
+
+import urllib
 
 from steelscript.common import timeutils
 
@@ -105,7 +108,7 @@ class SNMPBaseSender(BaseSender):
         values will raise an AttributeError.
         """
         missing = []
-        for k, v in (alert.destination or {}).iteritems():
+        for k, v in (alert.options or {}).iteritems():
             if hasattr(self, k):
                 setattr(self, k, v)
             else:
@@ -152,8 +155,6 @@ class SNMPBaseSender(BaseSender):
 
 class SNMPSenderSteelScript(SNMPBaseSender):
     """Sends SNMP traps."""
-    community = 'public'
-    manager_ip = '127.0.0.1'
 
     eoid = '1.3.6.1.4.1.17163.1.500'     # SteelScript OID
     trapid = '1.0.2'                     # Test Trap Number
@@ -165,10 +166,18 @@ class SNMPSenderSteelScript(SNMPBaseSender):
         trapid = self.trapid        # base string for trap indicators
         self.trapname = '.'.join([oid, trapid])
 
+        context = urllib.urlencode(alert.event.trigger_result)
+        job = alert.event.context['job']
+
         self.binds = (
-            ('1.3.6.1.4.1.17163.1.500.1.1.1', rfc1902.OctetString('table')),         # tableName
-            ('1.3.6.1.4.1.17163.1.500.1.1.2', rfc1902.Unsigned32(3)),                 # Job ID
-            ('1.3.6.1.4.1.17163.1.500.1.1.4', rfc1902.OctetString('alertContext')),   # alertContext
+            # tableName
+            ('1.3.6.1.4.1.17163.1.500.1.1.1', rfc1902.OctetString(job.table.name)),
+
+            # Job ID
+            ('1.3.6.1.4.1.17163.1.500.1.1.2', rfc1902.Unsigned32(job.id)),
+
+            # alertContext
+            ('1.3.6.1.4.1.17163.1.500.1.1.4', rfc1902.OctetString(context)),
         )
 
 
