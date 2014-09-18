@@ -372,9 +372,13 @@ class Table(models.Model):
                         if ttype != tokenize.NAME:
                             msg = "Invalid syntax, expected {name}: %s" % tvalue
                             raise ValueError(msg)
-                        elif tvalue not in all_col_names:
-                            raise ValueError("Invalid column name: %s" % tvalue)
-                        newexpr += "df['%s']" % tvalue
+                        elif tvalue in all_col_names:
+                            newexpr += "df['%s']" % tvalue
+                        elif tvalue in job.criteria:
+                            newexpr += '"%s"' % str(job.criteria.get(tvalue))
+                        else:
+                            raise ValueError("Invalid variable name: %s" % tvalue)
+
                         getclose = True
                         getvalue = False
                     elif getclose:
