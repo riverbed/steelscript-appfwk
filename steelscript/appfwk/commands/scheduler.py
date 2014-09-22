@@ -144,12 +144,13 @@ def get_auth(authfile):
         return tuple(f.readline().strip().split(':'))
 
 
-def run_table_via_rest(url, authfile, **kwargs):
+def run_table_via_rest(url, authfile, verify, **kwargs):
     criteria, options = process_criteria(kwargs)
 
     s = requests.session()
     s.auth = get_auth(authfile)
     s.headers.update({'Accept': 'application/json'})
+    s.verify = verify
 
     logger.debug('POSTing new job with criteria: %s' % criteria)
     r = s.post(url, data=criteria)
@@ -218,6 +219,8 @@ class Command(BaseCommand):
         parser.add_option('-r', '--rest-server', action='store', default=None,
                           help='Run jobs against running App Framework '
                                'server using a REST API.')
+        parser.add_option('--insecure', action='store_true', default=False,
+                          help='Allow connections without verifying SSL certs')
         # storing auth as a file will avoid having the actual credentials
         # passed in via the commandline and viewable under 'ps'
         parser.add_option('--authfile', action='store', default=None,
@@ -250,10 +253,12 @@ class Command(BaseCommand):
             # find id of table-name
             name = kwargs['table-name']
             baseurl = self.options.rest_server + '/data/tables/'
+            verify = not self.options.insecure
 
             s = requests.session()
             s.auth = get_auth(self.options.authfile)
             s.headers.update({'Accept': 'application/json'})
+            s.verify = verify
 
             tableid = None
             url = baseurl
@@ -274,7 +279,7 @@ class Command(BaseCommand):
             tableurl = urljoin(baseurl, str(tableid) + '/jobs/')
 
             job_params = {'func': run_table_via_rest,
-                          'args': [tableurl, self.options.authfile]}
+                          'args': [tableurl, self.options.authfile, verify]}
         else:
             job_params = {'func': run_table,
                           'args': ['table']}
