@@ -103,11 +103,11 @@ JS_VERSIONS = {
 # install the file directly into the offline JS dir. Otherwise, it will treat
 # the file as a zip or tar archive and extract it into that subdirectory.
 OFFLINE_JS_FILES = [
-    ("http://ajax.googleapis.com/ajax/libs/jquery/{}/jquery.min.js".format(JS_VERSIONS['jquery']), None),
-    ("http://ajax.googleapis.com/ajax/libs/jquery/{}/jquery.min.map".format(JS_VERSIONS['jquery']), None),
-    ("http://jqueryui.com/resources/download/jquery-ui-{}.zip".format(JS_VERSIONS['jqueryui']), "jquery-ui"),
-    ("http://cdnjs.cloudflare.com/ajax/libs/jquery.form/{}/jquery.form.js".format(JS_VERSIONS['jqueryform']), None),
-    ("https://api.github.com/repos/yui/yui3/tarball/release-{}".format(JS_VERSIONS['yui']), "yui"),
+    ("http://ajax.googleapis.com/ajax/libs/jquery/{0}/jquery.min.js".format(JS_VERSIONS['jquery']), None),
+    ("http://ajax.googleapis.com/ajax/libs/jquery/{0}/jquery.min.map".format(JS_VERSIONS['jquery']), None),
+    ("http://jqueryui.com/resources/download/jquery-ui-{0}.zip".format(JS_VERSIONS['jqueryui']), "jquery-ui"),
+    ("http://cdnjs.cloudflare.com/ajax/libs/jquery.form/{0}/jquery.form.js".format(JS_VERSIONS['jqueryform']), None),
+    ("https://api.github.com/repos/yui/yui3/tarball/release-{0}".format(JS_VERSIONS['yui']), "yui"),
 ]
 
 
