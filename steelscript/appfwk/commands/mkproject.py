@@ -46,16 +46,19 @@ DATABASES = {
         # Database name for others
         'NAME': os.path.join(DATAHOME, 'data', 'project.db'),
 
-        'USER': '',     # Not used with sqlite3.
-        'PASSWORD': '', # Not used with sqlite3.
-        'HOST': '',     # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',     # Set to empty string for default. Not used with sqlite3.
+        # USER, PASSWORD, HOST and PORT are not used by sqlite3.
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',  # Set to empty string for localhost.
+        'PORT': '',  # Set to empty string for default.
     }
 }
 
 # Setup loggers to local directory
-LOGGING['handlers']['logfile']['filename'] = os.path.join(DATAHOME, 'logs', 'log.txt')
-LOGGING['handlers']['backend-log']['filename'] = os.path.join(DATAHOME, 'logs', 'log-db.txt')
+LOGGING['handlers']['logfile']['filename'] = os.path.join(DATAHOME, 'logs',
+                                                          'log.txt')
+LOGGING['handlers']['backend-log']['filename'] = os.path.join(DATAHOME, 'logs',
+                                                              'log-db.txt')
 
 # To enable syslog handling instead of local logging, uncomment next block of LOGGING
 # statements
@@ -224,7 +227,7 @@ class Command(BaseCommand):
         for url, dirname in settings.OFFLINE_JS_FILES:
             filename = url.rsplit('/', 1)[1]
 
-            console("Downloading {0}... ".format(url), newline=False)
+            console("Downloading {}... ".format(url), newline=False)
 
             connectionfailed = False
             try:
@@ -233,13 +236,13 @@ class Command(BaseCommand):
                 console("failed: request timed out.".format(filename))
                 connectionfailed = True
             except requests.exceptions.ConnectionError as e:
-                console("failed with connection error: {0}".format(e))
+                console("failed with connection error: {}".format(e))
                 connectionfailed = True
 
             if connectionfailed:
                 failedurls.add(url)
             elif r.status_code != requests.codes.ok:
-                console("failed with HTTP status code {0}.".format(filename,
+                console("failed with HTTP status code {}.".format(filename,
                         r.status_code))
                 failedurls.add(url)
             else:
@@ -270,14 +273,14 @@ class Command(BaseCommand):
                             # of the outermost dir where we want. (With tar we
                             # can just use --strip-components 1.)
                             unzipdir = tempfile.mkdtemp()
-                            shell("unzip {0} -d {1}".format(downloadpath,
+                            shell("unzip {} -d {}".format(downloadpath,
                                                           unzipdir))
-                            shell("mv -v {0}/*/* {1}".format(unzipdir, finaldir))
-                            shell("rm -rf {0}".format(unzipdir))
+                            shell("mv -v {}/*/* {}".format(unzipdir, finaldir))
+                            shell("rm -rf {}".format(unzipdir))
                         else:  # Not a zip, assume tarball.
                             self.mkdir(finaldir)
-                            shell(("tar xvf {0} --strip-components 1 "
-                                  "--directory {1}").format(downloadpath,
+                            shell(("tar xvf {} --strip-components 1 "
+                                  "--directory {}").format(downloadpath,
                                                            finaldir))
                     except Exception as e:
                         # This will probably be a ShellFailed exception, but
@@ -295,7 +298,7 @@ class Command(BaseCommand):
 
             for url, dirname in settings.OFFLINE_JS_FILES:
                 if url in failedurls:
-                    console("    {0}".format(url))
+                    console("    {}".format(url))
                     if dirname is not None:
                         console("        (this file is an archive -- extract to " +
                                 os.path.join(offline_js_dir, dirname) + ")")
