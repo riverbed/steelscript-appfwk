@@ -167,16 +167,13 @@ class SNMPSenderSteelScript(SNMPBaseSender):
         self.trapname = '.'.join([oid, trapid])
 
         context = urllib.urlencode(alert.event.trigger_result)
-        job = alert.event.context['job']
+        eid = alert.event.eventid
 
         self.binds = (
-            # tableName
-            ('1.3.6.1.4.1.17163.1.500.1.1.1', rfc1902.OctetString(job.table.name)),
+            # eventID == UUID
+            ('1.3.6.1.4.1.17163.1.500.1.1.1', rfc1902.OctetString(eid)),
 
-            # Job ID
-            ('1.3.6.1.4.1.17163.1.500.1.1.2', rfc1902.Unsigned32(job.id)),
-
-            # alertContext
+            # eventContext
             ('1.3.6.1.4.1.17163.1.500.1.1.4', rfc1902.OctetString(context)),
         )
 

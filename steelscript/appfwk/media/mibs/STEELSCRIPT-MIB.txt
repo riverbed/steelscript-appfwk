@@ -10,10 +10,10 @@ steelscript MODULE-IDENTITY
           LAST-UPDATED        "201202030000Z"
           ORGANIZATION        "Riverbed Technology, Inc."
           CONTACT-INFO
-          "  Riverbed Technical Support
-             support@riverbed.com"
+          "  Riverbed SteelScript
+             eng-steelscript@riverbed.com"
           DESCRIPTION         "SteelScript MIB"
-          REVISION            "201409040000Z"
+          REVISION            "201409240000Z"
           DESCRIPTION         "SteelScript related traps"
           ::= { products 500 }
 
@@ -30,12 +30,12 @@ steelscriptNotificationObjects OBJECT IDENTIFIER ::=
 -- Notification Objects
 --
 
-tableName OBJECT-TYPE
+eventID OBJECT-TYPE
     SYNTAX     OCTET STRING
     MAX-ACCESS accessible-for-notify
     STATUS     current
     DESCRIPTION
-        "Name of the table related to the notification"
+        "Event identifier"
     ::= { steelscriptNotificationObjects 1 }
 
 jobID OBJECT-TYPE
@@ -43,7 +43,7 @@ jobID OBJECT-TYPE
     MAX-ACCESS accessible-for-notify
     STATUS     current
     DESCRIPTION
-        "Name of the table related to the notification"
+        "Job ID that failed"
     ::= { steelscriptNotificationObjects 2 }
 
 jobFailedMessage OBJECT-TYPE
@@ -51,15 +51,15 @@ jobFailedMessage OBJECT-TYPE
     MAX-ACCESS accessible-for-notify
     STATUS     current
     DESCRIPTION
-        "Name of the table related to the notification"
+        "Message indicating reason the job failed."
     ::= { steelscriptNotificationObjects 3 }
 
-alertContext OBJECT-TYPE
+eventContext OBJECT-TYPE
     SYNTAX     OCTET STRING
     MAX-ACCESS read-only
     STATUS     current
     DESCRIPTION
-        "Alerting context"
+        "Context for an event that was triggered."
     ::= { steelscriptNotificationObjects 4 }
 
 --
@@ -75,13 +75,12 @@ jobFailed NOTIFICATION-TYPE
             "Indication that an alerting job failed to run."
     ::= { steelscriptNotifications 1 }
 
-alertTrigger NOTIFICATION-TYPE
-    OBJECTS { tableName, jobID, alertContext }
+eventNotification NOTIFICATION-TYPE
+    OBJECTS { eventID, eventContext }
     STATUS  current
     DESCRIPTION
-            "Notifcation that the trigger associated with the
-            a table has triggered.  The alertContextTable contains
-            specific details of the event."
+            "Notifcation that an event has occured.  The event context
+            eventContext contains the specific details of the event."
     ::= { steelscriptNotifications 2 }
 
 END
