@@ -99,8 +99,8 @@ class Command(BaseCommand):
 
         if options.wave:
             if options.name and options.name != 'wave':
-                parser.error("Name may not be specified for the sample "
-                             "WaveGenerator plugin")
+                self.parser.error("Name may not be specified for the sample "
+                                  "WaveGenerator plugin")
                 sys.exit(1)
 
             options.name = 'wave'
