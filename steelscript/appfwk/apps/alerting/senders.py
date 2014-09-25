@@ -30,6 +30,10 @@ class SenderMount(type):
             cls._senders = dict()
         else:
             # register the class by name
+            if (name in cls._senders and
+                   cls._senders[name].__module__ != cls.__module__):
+                msg = 'Sender class %s has already been defined' % name
+                raise ValueError(msg)
             cls._senders[name] = cls
 
 
@@ -65,24 +69,16 @@ class EmailSender(BaseSender):
 class LoggingSender(BaseSender):
     """Sends results to logger at default 'warning' level."""
     def send(self, alert):
-        log = getattr(logger, self.level)
+        # try to use the alert level as the logger function
+        # but apply default in case level fails to match
+        log = getattr(logger, alert.level, 'warning')
         log(alert.message)
-
-
-class LoggingSenderInfo(LoggingSender):
-    """Sends results to logger at 'info' level."""
-    level = 'info'
-
-
-class LoggingSenderError(LoggingSender):
-    """Sends results to logger at 'error' level."""
-    level = 'error'
 
 
 class ConsoleSender(LoggingSender):
     """Sends results to console."""
     def send(self, alert):
-        print 'ConsoleSender: %s' % alert
+        print 'ConsoleSender: %s - %s' % (alert.level, alert)
 
 
 class SNMPBaseSender(BaseSender):
@@ -134,7 +130,7 @@ class SNMPBaseSender(BaseSender):
         self.setup_snmp_trap(alert)
         self.send_trap()
 
-    def setup_snmp_trap(self):
+    def setup_snmp_trap(self, alert):
         """Method for subclasses to override to add logic for specific
         trap implementations.
 

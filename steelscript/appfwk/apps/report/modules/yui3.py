@@ -535,7 +535,7 @@ class ChartWidget(object):
                 if not c.col.iskey:
                     continue
                 keyvals.append(rawrow[c.dataindex])
-            row[catname] = ','.join(keyvals)
+            row[catname] = ','.join(str(k) for k in keyvals)
 
             # collect the data values
             for c in colmap.values():

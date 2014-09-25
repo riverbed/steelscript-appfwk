@@ -112,8 +112,8 @@ def run_table(*args, **kwargs):
 
     # split out criteria
     criteria, options = process_criteria(kwargs)
-    critargs = ' '.join(['--criteria=%s:%s' % (k, v)
-                         for k, v in criteria.iteritems()])
+    critargs = ' '.join('--criteria=%s:%s' % (k, v)
+                        for k, v in criteria.iteritems())
     argstr = '%s %s' % (argstr, critargs)
 
     # format remaining keyword args

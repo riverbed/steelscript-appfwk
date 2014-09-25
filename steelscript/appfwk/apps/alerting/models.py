@@ -4,6 +4,7 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+import itertools
 import threading
 
 from django.db import models
@@ -25,6 +26,9 @@ error_signal = Signal(providing_args=['context'])
 
 lock = threading.Lock()
 
+DEFAULT_SEVERITY = 0    # Default severity when none assigned from trigger
+ERROR_SEVERITY = 99     # Severity assigned to all errors
+
 
 class TriggerCache(ModelCache):
     """Cache of Trigger objects."""
@@ -36,6 +40,80 @@ class ErrorHandlerCache(ModelCache):
     """Cache of ErrorHandler objects."""
     _model = 'alerting.ErrorHandler'
     _key = 'source'
+
+
+class Results(object):
+    """Container data structure for trigger method results.
+
+    Stores data in an internal list of dicts.  The keys for each
+    dict must be consistent - once the initial data gets stored all
+    further data additions must use the same set of keys.
+
+    The 'severity' key is optional, and leaving it blank will default it
+    to the integer 0.
+
+    When adding data or initializing the object, data may be a list
+    of objects.  The supporting keys may also be lists, but they must
+    be of the same length as the data.  Alternately, the keys may
+    be single-values, in which case that value will be applied to
+    all elements of the data list.
+
+    >>> r = Results()
+    >>> r.add_data([42, 88], foo=19)
+    >>> r.get_data()
+    [{'data': 42, 'foo': 19, 'severity': 0},
+     {'data': 88, 'foo': 19, 'severity': 0}]
+    """
+    def __init__(self, data=None, severity=None, **kwargs):
+        self._keys = None
+        self._data = []
+        if data:
+            self.add_data(data, severity=severity, **kwargs)
+
+    def __len__(self):
+        return len(self._data)
+
+    def _add_items(self, **kwargs):
+        try:
+            kvs = zip(*[[(k, v) for v in val] for k, val in kwargs.items()])
+            items = map(dict, kvs)
+        except TypeError:
+            # single values rather than lists
+            items = [dict([(k, v) for k, v in kwargs.items()])]
+        self._data.extend(items)
+
+    def add_data(self, data, severity=None, **kwargs):
+        keys = set(['severity'] + kwargs.keys())
+        if self._keys is None:
+            self._keys = keys
+
+        if keys - self._keys:
+            msg = 'Invalid keys passed to add_data: %s' % (keys - self._keys)
+            raise ValueError(msg)
+        elif self._keys - keys:
+            msg = 'Missing data keys in add_data: %s' % (self._keys - keys)
+            raise ValueError(msg)
+
+        if severity is None:
+            severity = DEFAULT_SEVERITY
+        kwargs['severity'] = severity
+
+        if isinstance(data, (list, tuple)):
+            attrs = {}
+            for k in self._keys:
+                if isinstance(kwargs[k], (list, tuple)):
+                    if len(data) != len(kwargs[k]):
+                        msg = 'Length of %s does not match length of data' % k
+                        raise ValueError(msg)
+                    attrs[k] = kwargs[k]
+                else:
+                    attrs[k] = itertools.repeat(kwargs[k], len(data))
+            self._add_items(data=data, **attrs)
+        else:
+            self._add_items(data=data, **kwargs)
+
+    def get_data(self):
+        return self._data
 
 
 class DestinationThread(threading.Thread):
@@ -50,18 +128,23 @@ class DestinationThread(threading.Thread):
         sender = self.destination.get_sender()
 
         if self.is_error:
+            level = 'error'  # can be overridden by options, but not Sender
             message_context = Source.error_context(self.event.context)
         else:
+            level = None    # set via options or Sender
             message_context = Source.message_context(self.event.context,
                                                      self.event.trigger_result)
 
         message = self.destination.get_message(message_context)
+        options = self.destination.options
+        if options:
+            level = self.destination.options.get('level', None)
 
         alert = Alert(event=self.event,
-                      level=sender.level,
+                      level=level or sender.level,
                       sender=self.destination.sender,
                       message=message,
-                      options=self.destination.options)
+                      options=options)
         # need to save to get datetime assigned
         alert.save()
         logger.debug('Sending Alert %s via Destination %s' %
@@ -78,7 +161,10 @@ class TriggerThread(threading.Thread):
 
     def start_destinations(self, result):
         destinations = self.trigger.destinations.all()
-        event = Event(context=self.context, trigger_result=result)
+        severity = result.pop('severity')
+        event = Event(severity=severity,
+                      context=self.context,
+                      trigger_result=result)
         event.save()
         logger.debug('New Event created: %s' % event)
         for d in destinations:
@@ -90,14 +176,9 @@ class TriggerThread(threading.Thread):
         logger.debug('Evaluating Trigger %s ...' % self.trigger.name)
         result = func(self.data, self.context)
 
-        if result:
-            if isinstance(result, (list, tuple)):
-                logger.debug('Trigger result: %d elements' % len(result))
-                for r in result:
-                    self.start_destinations(r)
-            else:
-                logger.debug('Trigger result: %s' % result)
-                self.start_destinations(result)
+        for r in result.get_data():
+            logger.debug('Trigger result: %s' % result)
+            self.start_destinations(r)
 
 
 @receiver(post_data_save, dispatch_uid='post_data_receiver')
@@ -127,7 +208,8 @@ def process_error(sender, **kwargs):
 
     handlers = ErrorHandlerCache.filter(Source.encode(source))
     logger.debug('Found %d handlers.' % len(handlers))
-    event = Event(context=context, trigger_result=None)
+    event = Event(severity=ERROR_SEVERITY, context=context,
+                  trigger_result=None)
     event.save()
     logger.debug('New Event created: %s' % event)
     for h in handlers:
@@ -141,6 +223,7 @@ class Event(models.Model):
     """Event instance which may result in one or more Alerts."""
     timestamp = models.DateTimeField(auto_now=True)
     eventid = UUIDField()
+    severity = models.IntegerField()
     log_message = models.TextField(null=True, blank=True)
     context = PickledObjectField()
     trigger_result = PickledObjectField()
@@ -157,6 +240,7 @@ class Event(models.Model):
         fmt = '{0:15}: {1}'
         msg.append(fmt.format('ID', self.id))
         msg.append(fmt.format('EventID', self.eventid))
+        msg.append(fmt.format('Severity', self.severity))
         msg.append(fmt.format('Timestamp', self.timestamp))
         msg.append(fmt.format('Log Message', self.log_message))
         msg.append(fmt.format('Trigger Result', self.trigger_result))
@@ -222,6 +306,13 @@ class Trigger(models.Model):
 
     @classmethod
     def create(cls, source, trigger_func, params=None, **kwargs):
+        """Create trigger against given source table.
+
+        :param table source: Table object reference
+        :param function trigger_func: function object to run for trigger
+        :param dict params: optional additional parameters to pass to
+            trigger_func
+        """
         tfunc = Function(trigger_func, params=params)
         t = Trigger(name=kwargs.pop('name', Source.name(source)),
                     source=Source.encode(source),
@@ -232,7 +323,14 @@ class Trigger(models.Model):
 
     def add_destination(self, sender, options=None,
                         template=None, template_func=None):
-        """Assign destination to the given Trigger."""
+        """Assign destination to the given Trigger.
+
+        :param str sender: name of sender class to use
+        :param dict options: optional dictionary of attributes
+        :param str template: format string to use for resulting alert
+        :param function template_func: optional function which returns a
+            formatted string, receives same context as template
+        """
         r = Destination.create(sender=sender,
                                options=options,
                                template=template,

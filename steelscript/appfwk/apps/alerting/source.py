@@ -3,6 +3,7 @@
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
+import copy
 
 
 class Source(object):
@@ -26,11 +27,16 @@ class Source(object):
         # been saved to Job on the main thread
         d = context['job'].criteria
 
-        # if result is a dict of values, update the context to include
-        if hasattr(result, 'keys'):
-            d.update(result)
+        # pull data from result dict, check if its a dict itself
+        # and flatten it into message_context
+        r = copy.deepcopy(result)
+        data = r.pop('data', None)
+        if hasattr(data, 'keys'):
+            d.update(data)
         else:
-            d['result'] = result
+            d['result'] = data
+
+        d.update(r)
         return d
 
     @staticmethod
