@@ -158,7 +158,7 @@ class Command(BaseCommand):
             if dir == basedir:
                 if os.path.exists(targetdir):
                     self.parser.error(('Target directory already exists: '
-                                       '{}').format(targetdir))
+                                       '{0}').format(targetdir))
 
             os.mkdir(targetdir.format(which=options.name))
 

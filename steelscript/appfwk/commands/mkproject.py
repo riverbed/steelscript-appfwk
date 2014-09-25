@@ -227,7 +227,7 @@ class Command(BaseCommand):
         for url, dirname in settings.OFFLINE_JS_FILES:
             filename = url.rsplit('/', 1)[1]
 
-            console("Downloading {}... ".format(url), newline=False)
+            console("Downloading {0}... ".format(url), newline=False)
 
             connectionfailed = False
             try:
@@ -236,13 +236,13 @@ class Command(BaseCommand):
                 console("failed: request timed out.".format(filename))
                 connectionfailed = True
             except requests.exceptions.ConnectionError as e:
-                console("failed with connection error: {}".format(e))
+                console("failed with connection error: {0}".format(e))
                 connectionfailed = True
 
             if connectionfailed:
                 failedurls.add(url)
             elif r.status_code != requests.codes.ok:
-                console("failed with HTTP status code {}.".format(filename,
+                console("failed with HTTP status code {0}.".format(filename,
                         r.status_code))
                 failedurls.add(url)
             else:
@@ -273,14 +273,14 @@ class Command(BaseCommand):
                             # of the outermost dir where we want. (With tar we
                             # can just use --strip-components 1.)
                             unzipdir = tempfile.mkdtemp()
-                            shell("unzip {} -d {}".format(downloadpath,
+                            shell("unzip {0} -d {0}".format(downloadpath,
                                                           unzipdir))
-                            shell("mv -v {}/*/* {}".format(unzipdir, finaldir))
-                            shell("rm -rf {}".format(unzipdir))
+                            shell("mv -v {0}/*/* {0}".format(unzipdir, finaldir))
+                            shell("rm -rf {0}".format(unzipdir))
                         else:  # Not a zip, assume tarball.
                             self.mkdir(finaldir)
-                            shell(("tar xvf {} --strip-components 1 "
-                                  "--directory {}").format(downloadpath,
+                            shell(("tar xvf {0} --strip-components 1 "
+                                  "--directory {0}").format(downloadpath,
                                                            finaldir))
                     except Exception as e:
                         # This will probably be a ShellFailed exception, but
@@ -298,7 +298,7 @@ class Command(BaseCommand):
 
             for url, dirname in settings.OFFLINE_JS_FILES:
                 if url in failedurls:
-                    console("    {}".format(url))
+                    console("    {0}".format(url))
                     if dirname is not None:
                         console("        (this file is an archive -- extract to " +
                                 os.path.join(offline_js_dir, dirname) + ")")
