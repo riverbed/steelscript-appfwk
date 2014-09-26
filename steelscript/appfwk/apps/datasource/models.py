@@ -34,8 +34,8 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.text import slugify
 
-from steelscript.common.jsondict import JsonDict
-from steelscript.common.utils import DictObject
+from steelscript.common.datastructures import JsonDict
+from steelscript.common.datastructures import DictObject
 from steelscript.common.timeutils import timedelta_total_seconds, tzutc
 from steelscript.appfwk.project.utils import (get_module_name, get_sourcefile,
                                               get_namespace)
@@ -193,9 +193,9 @@ class TableField(models.Model):
 
 class Table(models.Model):
     name = models.CharField(max_length=200)
-    module = models.CharField(max_length=200)         # source module name
-    queryclass = models.CharField(max_length=200)     # name of query class
-    datasource = models.CharField(max_length=200)     # class name of datasource
+    module = models.CharField(max_length=200)  # source module name
+    queryclass = models.CharField(max_length=200)  # name of query class
+    datasource = models.CharField(max_length=200)  # class name of datasource
     namespace = models.CharField(max_length=100)
     sourcefile = models.CharField(max_length=200)
 
@@ -358,7 +358,7 @@ class Table(models.Model):
         all_col_names = [c.name for c in all_columns]
 
         def compute(df, syncols):
-            #logger.debug("Compute: syncol = %s" % ([c.name for c in syncols]))
+            # logger.debug("Compute: syncol = %s" % ([c.name for c in syncols]))
             for syncol in syncols:
                 expr = syncol.compute_expression
                 g = tokenize.generate_tokens(StringIO(expr).readline)
@@ -405,7 +405,7 @@ class Table(models.Model):
                        ("Table %s 'resample' is set but no 'time' column'" %
                         self))
 
-            if (  ('resolution' not in job.criteria) and
+            if (('resolution' not in job.criteria) and
                   ('resample_resolution' not in job.criteria)):
                 raise (TableComputeSyntheticError
                        (("Table %s 'resample' is set but criteria missing " +
@@ -436,8 +436,8 @@ class Table(models.Model):
             if df[timecol][0].tz:
                 indexed.index = indexed.index.tz_localize(df[timecol][0].tz)
 
-            #indexed.to_pickle('/tmp/indexed.pd')
-            #df.to_pickle('/tmp/df.pd')
+            # indexed.to_pickle('/tmp/indexed.pd')
+            # df.to_pickle('/tmp/df.pd')
 
             resampled = indexed.resample('%ss' % int(resolution), how,
                                          convention='end').reset_index()
@@ -834,8 +834,8 @@ class Criteria(DictObject):
 
         super(Criteria, self).__init__(kwargs)
 
-        #self.filterexpr = filterexpr
-        #self.ignore_cache = ignore_cache
+        # self.filterexpr = filterexpr
+        # self.ignore_cache = ignore_cache
 
         # Keep track of the original starttime / endtime
         # This are needed when recomputing start/end times with
@@ -850,7 +850,7 @@ class Criteria(DictObject):
             return
         elif key in ['starttime', 'endtime', 'duration']:
             self['_orig_%s' % key] = value
-        #else:
+        # else:
         #    param = TableField.find_instance(key)
         #    if param.initial != value:
         #        param.initial = value
@@ -885,7 +885,7 @@ class Criteria(DictObject):
                     v = v['keyword']
                 else:
                     v = k
-            rev_field_map[v] =k
+            rev_field_map[v] = k
 
         for k, v in self.iteritems():
             if k in ['starttime', 'endtime', 'duration'] or k.startswith('_'):
@@ -949,10 +949,10 @@ class TableQueryBase(object):
         # Called by the analysis function
         tables = getattr(self.table.options, 'tables', None)
         if tables:
-            n = len(tables)+1
+            n = len(tables) + 1
         else:
             n = 1
-        self.job.mark_progress(((n-1)*100 + progress)/n)
+        self.job.mark_progress(((n - 1) * 100 + progress) / n)
 
     def pre_run(self):
         return True
@@ -1043,7 +1043,7 @@ class Job(models.Model):
             return
 
         with LocalLock():
-            #logger.debug("%s safe_update %s" % (self, kwargs))
+            # logger.debug("%s safe_update %s" % (self, kwargs))
             Job.objects.filter(pk=self.pk).update(**kwargs)
 
             # Force a reload of the job to get latest data
@@ -1161,7 +1161,7 @@ class Job(models.Model):
                 criteria = table.criteria_handle_func(criteria)
 
             for k, v in criteria.iteritems():
-                #logger.debug("Updating hash from %s -> %s" % (k,v))
+                # logger.debug("Updating hash from %s -> %s" % (k,v))
                 h.update('%s:%s' % (k, v))
         else:
             # Table is not cacheable, instead use current time plus a random
@@ -1173,14 +1173,14 @@ class Job(models.Model):
 
     def reference(self, message=""):
         pk = self.pk
-        Job.objects.filter(pk=pk).update(refcount=F('refcount')+1)
-        #logger.debug("%s: reference(%s) @ %d" %
+        Job.objects.filter(pk=pk).update(refcount=F('refcount') + 1)
+        # logger.debug("%s: reference(%s) @ %d" %
         #             (self, message, Job.objects.get(pk=pk).refcount))
 
     def dereference(self, message=""):
         pk = self.pk
-        Job.objects.filter(pk=pk).update(refcount=F('refcount')-1)
-        #logger.debug("%s: dereference(%s) @ %d" %
+        Job.objects.filter(pk=pk).update(refcount=F('refcount') - 1)
+        # logger.debug("%s: dereference(%s) @ %d" %
         #             (self, message, Job.objects.get(pk=pk).refcount))
 
     def get_columns(self, ephemeral=None, **kwargs):
@@ -1262,7 +1262,7 @@ class Job(models.Model):
                          message='')
 
     def mark_progress(self, progress, remaining=None):
-        #logger.debug("%s progress %s" % (self, progress))
+        # logger.debug("%s progress %s" % (self, progress))
         self.safe_update(status=Job.RUNNING,
                          progress=progress,
                          remaining=remaining)
@@ -1339,7 +1339,7 @@ class Job(models.Model):
         """ Delete old jobs that have no refcount and all ancient jobs. """
         # Throttle - only run this at most once every 15 minutes
         global age_jobs_last_run
-        if not force and time.time() - age_jobs_last_run < 60*15:
+        if not force and time.time() - age_jobs_last_run < 60 * 15:
             return
 
         age_jobs_last_run = time.time()
@@ -1389,7 +1389,7 @@ class Job(models.Model):
 
     def done(self):
         self.refresh()
-        #logger.debug("%s status: %s - %s%%" % (str(self),
+        # logger.debug("%s status: %s - %s%%" % (str(self),
         #                                       self.status,
         #                                       self.progress))
         return self.status == Job.COMPLETE or self.status == Job.ERROR
@@ -1473,7 +1473,7 @@ class Worker(base_worker_class):
             logger.info("%s running queryclass %s" % (self, self.queryclass))
             query = self.queryclass(job.table, job)
 
-            if (  query.pre_run() and
+            if (query.pre_run() and
                   query.run() and
                   query.post_run()):
 
@@ -1679,7 +1679,7 @@ class BatchJobRunner(object):
             job_progress = (float(self.min_progress) +
                             ((total_progress / 100.0) *
                              (self.max_progress - self.min_progress)))
-            #logger.debug(
+            # logger.debug(
             #    "%s: progress %d%% (basejob %d%%) (%d/%d done, %d in batch)" %
             #    (self, int(total_progress), int(job_progress),
             #    done_count, joblist.count, len(batch)))
@@ -1694,7 +1694,7 @@ class BatchJobRunner(object):
         return
 
         for i in range(0, len(jobs), self.batchsize):
-            batch = jobs[i:i+self.batchsize]
+            batch = jobs[i:i + self.batchsize]
             batch_status = {}
             for j, job in enumerate(batch):
                 batch_status[job.id] = False
@@ -1726,9 +1726,9 @@ class BatchJobRunner(object):
                                 (total_progress * (self.max_progress -
                                                    self.min_progress)) / 100)
                 logger.debug("%s: batch[%d:%d] %d%% / total %d%% / job %d%%",
-                             self, i, i+self.batchsize, int(batch_progress),
+                             self, i, i + self.batchsize, int(batch_progress),
                              int(total_progress), int(job_progress))
                 self.basejob.mark_progress(job_progress)
                 if not batch_done:
                     time.sleep(interval)
-                    #interval = (interval * 2) if interval < max_interval else max_interval
+                    # interval = (interval * 2) if interval < max_interval else max_interval

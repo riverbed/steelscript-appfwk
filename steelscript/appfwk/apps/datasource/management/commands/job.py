@@ -12,7 +12,7 @@ import optparse
 
 from django.core.management.base import BaseCommand
 
-from steelscript.common.utils import Formatter
+from steelscript.common.datautils import Formatter
 
 from steelscript.appfwk.apps.datasource.models import Job
 

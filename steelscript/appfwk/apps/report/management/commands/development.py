@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 from django.core.management.base import BaseCommand
 
-from steelscript.common.utils import Formatter
+from steelscript.common.datautils import Formatter
 from steelscript.appfwk.project.utils import Importer
 
 from steelscript.appfwk.apps.datasource.models import Table, Job, DatasourceTable

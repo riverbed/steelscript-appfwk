@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 from django.core.management.base import BaseCommand
 
-from steelscript.common.utils import Formatter
+from steelscript.common.datautils import Formatter
 
 from steelscript.appfwk.apps.datasource.models import Table, Job
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
@@ -160,7 +160,7 @@ class Command(BaseCommand):
             else:
                 raise ValueError("Must specify either --table-id or "
                                  "--table-name to run a table")
-                
+
             # Django gives us a nice error if we can't find the table
             self.console('Table %s found.' % table)
 
@@ -180,7 +180,7 @@ class Command(BaseCommand):
                                       for k, v in form.errors.iteritems()))
                 for k, v in form.errors.iteritems():
                     self.console('  %s: %s' % (k, ','.join(v)))
-                
+
                 sys.exit(1)
 
             criteria = form.criteria()
@@ -203,14 +203,14 @@ class Command(BaseCommand):
 
             # wait for results
             while not job.done():
-                #self.console('. ', ending='')
-                #self.stdout.flush()
+                # self.console('. ', ending='')
+                # self.stdout.flush()
                 time.sleep(1)
 
             end_time = datetime.datetime.now()
             delta = end_time - start_time
-            seconds = float(delta.microseconds + 
-                            (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6
+            seconds = float(delta.microseconds +
+                            (delta.seconds + delta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
 
             self.console('Done!! (elapsed time: %.2f seconds)' % seconds)
             self.console('')

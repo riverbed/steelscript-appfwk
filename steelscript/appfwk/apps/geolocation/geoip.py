@@ -12,7 +12,7 @@ import threading
 import pygeoip
 from pygeoip.util import ip2long
 
-from steelscript.common.utils import DictObject
+from steelscript.common.datastructures import DictObject
 
 
 GEOLOCATION_DATA_FILE = '/tmp/GeoLiteCity.dat1'

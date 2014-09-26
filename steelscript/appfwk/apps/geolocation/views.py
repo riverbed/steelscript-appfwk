@@ -10,7 +10,7 @@ import json
 from django.http import HttpResponse, Http404
 from django.core.exceptions import ObjectDoesNotExist
 
-from steelscript.common.utils import DictObject
+from steelscript.common.datastructures import DictObject
 from steelscript.appfwk.apps.geolocation.models import *
 from steelscript.appfwk.apps.geolocation.geoip import LookupIP
 
@@ -32,8 +32,8 @@ def getLocation(request, name):
 
     d = DictObject()
     d.name = loc.name
-    #d.address = loc.address
-    #d.mask = loc.mask
+    # d.address = loc.address
+    # d.mask = loc.mask
     d.latitude = loc.latitude
     d.longitude = loc.longitude
 

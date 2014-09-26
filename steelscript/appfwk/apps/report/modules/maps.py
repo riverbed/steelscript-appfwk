@@ -18,7 +18,7 @@ import pygeoip
 from pygeoip.util import ip2long
 from django.core.exceptions import ObjectDoesNotExist
 
-from steelscript.common.jsondict import JsonDict
+from steelscript.common.datastructures import JsonDict
 from steelscript.appfwk.apps.report.models import Widget
 from steelscript.appfwk.apps.preferences.models import SystemSettings
 from steelscript.appfwk.apps.geolocation.models import Location

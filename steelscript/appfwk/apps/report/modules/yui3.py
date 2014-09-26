@@ -11,7 +11,7 @@ import datetime
 import logging
 
 from steelscript.common import timeutils
-from steelscript.common.jsondict import JsonDict
+from steelscript.common.datastructures import JsonDict
 from steelscript.appfwk.libs.nicescale import NiceScale
 from steelscript.appfwk.apps.report.models import Axes, Widget
 
@@ -48,11 +48,11 @@ class TableWidget(object):
                 self.dataindex = dataindex
                 self.istime = istime
 
-        w_keys = []      # Widget column keys in order that matches data
-        colinfo = {}     # Map of ColInfo by key
-        w_columns = []   # Widget column definitions
+        w_keys = []  # Widget column keys in order that matches data
+        colinfo = {}  # Map of ColInfo by key
+        w_columns = []  # Widget column definitions
 
-        for i,wc in enumerate(job.get_columns()):
+        for i, wc in enumerate(job.get_columns()):
             ci = ColInfo(wc, i, wc.istime())
             colinfo[ci.key] = ci
             w_keys.append(ci.key)
@@ -229,7 +229,7 @@ class TimeSeriesWidget(object):
                 self.istime = istime
 
         t_cols = job.get_columns()
-        colinfo = {}   # map by widget key
+        colinfo = {}  # map by widget key
 
         # columns of None is a special case, just use all
         # defined columns other than time
@@ -403,7 +403,7 @@ class TimeSeriesWidget(object):
             "interactionType": "planar" if stacked else "marker"
         }
 
-        #logger.debug("data:\n\n%s\n" % data)
+        # logger.debug("data:\n\n%s\n" % data)
         return data
 
 
@@ -476,7 +476,7 @@ class ChartWidget(object):
         catname = '-'.join([k.name for k in keycols])
         w_axes = {catname: {"keys": [catname],
                             "position": "bottom",
-                            "styles": {"label": {"rotation": -60}}}}
+                            "styles": {"label": {"rotation":-60}}}}
 
         # Map of column info by column name
         colmap = {}
