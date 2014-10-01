@@ -4,18 +4,20 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-import itertools
 import threading
 
 from django.db import models
 from django.dispatch import Signal, receiver
 from django_extensions.db.fields import UUIDField
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 from steelscript.appfwk.libs.fields import (PickledObjectField,
                                             FunctionField, Function)
 from steelscript.appfwk.apps.alerting.senders import find_sender
 from steelscript.appfwk.apps.alerting.source import Source
 from steelscript.appfwk.apps.alerting.caches import ModelCache
+from steelscript.appfwk.apps.alerting.datastructures import (AlertLevels,
+                                                             ERROR_SEVERITY)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -25,9 +27,6 @@ post_data_save = Signal(providing_args=['data', 'context'])
 error_signal = Signal(providing_args=['context'])
 
 lock = threading.Lock()
-
-DEFAULT_SEVERITY = 0    # Default severity when none assigned from trigger
-ERROR_SEVERITY = 99     # Severity assigned to all errors
 
 
 class TriggerCache(ModelCache):
@@ -42,80 +41,6 @@ class ErrorHandlerCache(ModelCache):
     _key = 'source'
 
 
-class Results(object):
-    """Container data structure for trigger method results.
-
-    Stores data in an internal list of dicts.  The keys for each
-    dict must be consistent - once the initial data gets stored all
-    further data additions must use the same set of keys.
-
-    The 'severity' key is optional, and leaving it blank will default it
-    to the integer 0.
-
-    When adding data or initializing the object, data may be a list
-    of objects.  The supporting keys may also be lists, but they must
-    be of the same length as the data.  Alternately, the keys may
-    be single-values, in which case that value will be applied to
-    all elements of the data list.
-
-    >>> r = Results()
-    >>> r.add_data([42, 88], foo=19)
-    >>> r.get_data()
-    [{'data': 42, 'foo': 19, 'severity': 0},
-     {'data': 88, 'foo': 19, 'severity': 0}]
-    """
-    def __init__(self, data=None, severity=None, **kwargs):
-        self._keys = None
-        self._data = []
-        if data:
-            self.add_data(data, severity=severity, **kwargs)
-
-    def __len__(self):
-        return len(self._data)
-
-    def _add_items(self, **kwargs):
-        try:
-            kvs = zip(*[[(k, v) for v in val] for k, val in kwargs.items()])
-            items = map(dict, kvs)
-        except TypeError:
-            # single values rather than lists
-            items = [dict([(k, v) for k, v in kwargs.items()])]
-        self._data.extend(items)
-
-    def add_data(self, data, severity=None, **kwargs):
-        keys = set(['severity'] + kwargs.keys())
-        if self._keys is None:
-            self._keys = keys
-
-        if keys - self._keys:
-            msg = 'Invalid keys passed to add_data: %s' % (keys - self._keys)
-            raise ValueError(msg)
-        elif self._keys - keys:
-            msg = 'Missing data keys in add_data: %s' % (self._keys - keys)
-            raise ValueError(msg)
-
-        if severity is None:
-            severity = DEFAULT_SEVERITY
-        kwargs['severity'] = severity
-
-        if isinstance(data, (list, tuple)):
-            attrs = {}
-            for k in self._keys:
-                if isinstance(kwargs[k], (list, tuple)):
-                    if len(data) != len(kwargs[k]):
-                        msg = 'Length of %s does not match length of data' % k
-                        raise ValueError(msg)
-                    attrs[k] = kwargs[k]
-                else:
-                    attrs[k] = itertools.repeat(kwargs[k], len(data))
-            self._add_items(data=data, **attrs)
-        else:
-            self._add_items(data=data, **kwargs)
-
-    def get_data(self):
-        return self._data
-
-
 class DestinationThread(threading.Thread):
     def __init__(self, destination, event,
                  is_error=False, **kwargs):
@@ -128,7 +53,7 @@ class DestinationThread(threading.Thread):
         sender = self.destination.get_sender()
 
         if self.is_error:
-            level = 'error'  # can be overridden by options, but not Sender
+            level = AlertLevels.ERROR
             message_context = Source.error_context(self.event.context)
         else:
             level = None    # set via options or Sender
@@ -138,7 +63,7 @@ class DestinationThread(threading.Thread):
         message = self.destination.get_message(message_context)
         options = self.destination.options
         if options:
-            level = self.destination.options.get('level', None)
+            level = AlertLevels.find(options.get('level', None))
 
         alert = Alert(event=self.event,
                       level=level or sender.level,
@@ -223,7 +148,8 @@ class Event(models.Model):
     """Event instance which may result in one or more Alerts."""
     timestamp = models.DateTimeField(auto_now=True)
     eventid = UUIDField()
-    severity = models.IntegerField()
+    severity = models.IntegerField(validators=[MinValueValidator(0),
+                                               MaxValueValidator(100)])
     log_message = models.TextField(null=True, blank=True)
     context = PickledObjectField()
     trigger_result = PickledObjectField()
@@ -259,7 +185,7 @@ class Alert(models.Model):
     """Individual notification sent by a Sender for a specific Event."""
     timestamp = models.DateTimeField(auto_now=True)
     event = models.ForeignKey('Event')
-    level = models.CharField(max_length=50)
+    level = models.CharField(max_length=50, choices=AlertLevels.get_choices())
     sender = models.CharField(max_length=100)
     options = PickledObjectField(blank=True, null=True)
     message = models.TextField()

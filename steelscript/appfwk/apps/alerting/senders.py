@@ -15,6 +15,7 @@ except ImportError:
 import urllib
 
 from steelscript.common import timeutils
+from steelscript.appfwk.apps.alerting.datastructures import AlertLevels
 
 import logging
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ class BaseSender(object):
     """Base class for Senders."""
     __metaclass__ = SenderMount
 
-    level = 'warning'
+    level = AlertLevels.WARNING
 
     def __init__(self, *args, **kwargs):
         """Initialize Sender service with credentials, etc."""
@@ -69,9 +70,7 @@ class EmailSender(BaseSender):
 class LoggingSender(BaseSender):
     """Sends results to logger at default 'warning' level."""
     def send(self, alert):
-        # try to use the alert level as the logger function
-        # but apply default in case level fails to match
-        log = getattr(logger, alert.level, 'warning')
+        log = getattr(logger, alert.level.lower())
         log(alert.message)
 
 
@@ -95,7 +94,7 @@ class SNMPBaseSender(BaseSender):
     trapid = None
     default_description = 'SteelScript Alert'
     severity = 70
-    level = 2
+    level = AlertLevels.get_integer('INFO')
 
     def process_alert(self, alert):
         """Override class values with kwargs from destination in alert.
@@ -184,7 +183,7 @@ class SNMPSenderCascadeDefault(SNMPBaseSender):
     default_description = 'SteelScript Alert'
     trap_url = 'http://localhost'
     severity = 70
-    level = 2
+    level = AlertLevels.INFO
 
     def setup_snmp_trap(self, alert):
         oid = self.eoid             # cascade enterprise Object ID
