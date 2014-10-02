@@ -8,9 +8,13 @@
  */
 
 
-function modal_html(heading, body, cancelButtonTxt, okButtonTxt) {
+function modal_html(heading, body, cancelButtonTxt, okButtonTxt, customClass) {
+    if (typeof customClass === 'undefined') {
+        customClass = '';
+    }
+
     var modalHtml =
-        '<div class="modal hide fade" id="test_id">' +
+        '<div class="modal hide fade ' + customClass + '" id="test_id">' +
             '<div class="modal-header">' +
                 '<a class="close" data-dismiss="modal">&times;</a>' +
                 '<h3>' + heading +'</h3>' +
@@ -59,8 +63,8 @@ function confirm(heading, question, cancelButtonTxt, okButtonTxt, callback) {
     });
 }
 
-function alertModal(heading, body, okButtonTxt, shownCallback) {
-    var modal = modal_html(heading, body, null, okButtonTxt);
+function alertModal(heading, body, okButtonTxt, shownCallback, customClass) {
+    var modal = modal_html(heading, body, null, okButtonTxt, customClass);
 
     modal.find('#okButton').click(function(event) {
       modal.modal('hide');
@@ -78,7 +82,7 @@ function alertModal(heading, body, okButtonTxt, shownCallback) {
 }
 
 function formModal(heading, form_html, form_id, form_handlers, response_handlers,
-                   cancelButtonTxt, okButtonTxt) {
+                   cancelButtonTxt, okButtonTxt, customClass) {
     // heading: text for modal header
     // form_html: html of form, including '<form>' tags
     // form_id: css id of form object in form_html
@@ -87,7 +91,7 @@ function formModal(heading, form_html, form_id, form_handlers, response_handlers
     //          'redirect', 'messages', 'form', 'error'
     // cancelButtonTxt:
     // okButtonTxt
-    var modal = modal_html(heading, form_html, cancelButtonTxt, okButtonTxt);
+    var modal = modal_html(heading, form_html, cancelButtonTxt, okButtonTxt, customClass);
 
     // need to destroy modal so handlers can be reapplied when next shown
     modal.on('hidden', function () {
@@ -180,4 +184,3 @@ function reloadModalRedirect(url, next) {
     modal.modal('show');
     window.location.href = url + "?next=" + next;
 };
-

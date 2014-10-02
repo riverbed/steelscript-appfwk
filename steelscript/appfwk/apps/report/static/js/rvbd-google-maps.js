@@ -12,27 +12,27 @@ var rvbd_maps = {};
 rvbd_maps.MapWidget = function (dataurl, divid, options, criteria) {
     Widget.apply(this, [dataurl, divid, options, criteria]);
 };
-rvbd_maps.MapWidget.prototype = inherit(Widget.prototype)
-rvbd_maps.MapWidget.prototype.constructor = rvbd_maps.MapWidget;
+rvbd_maps.MapWidget.prototype = Object.create(Widget.prototype)
 
-rvbd_maps.MapWidget.prototype.render = function(data)
-{
-    var contentid = this.divid + "_content";
-    $('#' + this.divid).
-        html('').
-        append('<div id="' + contentid + '-title" class="widget-title">' + data['chartTitle'] + '</div>').
-        append('<div id="' + contentid + '" class="mapcanvas"></div>')
+rvbd_maps.MapWidget.prototype.render = function(data) {
+    var self = this;
 
-    var div= $('#' + this.divid)
-    
+    var $div = $(self.div);
+
+    var contentid = $div.attr('id') + '_content';
+
+    $(self.div)
+        .css('position', 'relative')
+        .empty()
+        .append('<div id="' + contentid + '-title" class="widget-title map-widget-title">' + data['chartTitle'] + '</div>')
+        .append('<div id="' + contentid + '" class="mapcanvas"></div>');
+
     $('#' + contentid + '-title')
         .height(20)
-        .css({"text-align" : "center"});
+        .css('text-align', 'center');
 
-    $('#' + contentid).
-        css({"margin": 10}).
-        width(div.width()-22).
-        height(div.height()-42)
+    $('#' + contentid)
+        .height($div.height() - 52);
 
     var map;
 
@@ -59,9 +59,8 @@ rvbd_maps.MapWidget.prototype.render = function(data)
         c.center = new google.maps.LatLng(c.center[0], c.center[1]);
         bounds.extend(c.center)
 
-        var valstr = (c.formatter ?
-                      Widget.prototype[c.formatter].call(undefined, c.value, 2) :
-                      c.value) + c.units;
+        var valstr = (c.formatter ? Widget.prototype[c.formatter].call(self, c.value, 2)
+                                  : c.value) + c.units;
 
         var title = c.title + '\n' + valstr;
 
@@ -79,18 +78,6 @@ rvbd_maps.MapWidget.prototype.render = function(data)
                     fillColor: "red",
                   }
         });
-
-        if (0) {
-            circle = new google.maps.Circle(c);
-            
-            var infoWindow = new google.maps.InfoWindow();
-            var html = c.label;
-            
-            google.maps.event.addListener(circle, 'click', function() {
-                infoWindow.setContent(html);
-                infoWindow.open(map, circle);
-            });
-        }
     });
     map.fitBounds(bounds);
 }

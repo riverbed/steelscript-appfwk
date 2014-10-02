@@ -20,6 +20,8 @@ Add header
     {% include "site_header_includes.html" %}
 
     <link href="{{ STATIC_URL }}css/report.css" rel="stylesheet"/>
+    <link href="{{ STATIC_URL }}showLoading/css/showLoading.css" rel="stylesheet"/>
+
     <script type="text/javascript" src="{{ STATIC_URL }}showLoading/js/jquery.showLoading.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.min.js"></script>
 
@@ -75,7 +77,7 @@ Add header
   <body>
       <div class="row-fluid">
           <div class="collapse in" id="report-container">
-              <img src='{{ STATIC_URL }}images/riverbed-logo.png' id="rvbd-widget-logo" style="position:absolute; bottom:15px; right: 12px;z-index:3;pointer-events: none">
+              <img src='{{ STATIC_URL }}images/riverbed-logo-small.png' id="rvbd-widget-logo" style="position: absolute; bottom: 14px; right: 1px; z-index:3; opacity: 0.7; pointer-events: none">
             <div id="report">
             </div> <!-- criteria -->
           </div> <!-- criteria -->

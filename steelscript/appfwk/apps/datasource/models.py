@@ -1016,6 +1016,10 @@ class Job(models.Model):
     # Message if job complete or error
     message = models.TextField(default="")
 
+    # If an error comes from a Python exception, this will contain the full
+    # exception text with traceback.
+    exception = models.TextField(default="")
+
     # While RUNNING, this provides an indicator of progress 0-100
     progress = models.IntegerField(default=-1)
 
@@ -1031,7 +1035,7 @@ class Job(models.Model):
     def refresh(self):
         """ Refresh dynamic job parameters from the database. """
         job = Job.objects.get(pk=self.pk)
-        for k in ['status', 'message', 'progress', 'remaining',
+        for k in ['status', 'message', 'exception', 'progress', 'remaining',
                   'actual_criteria', 'touched', 'refcount']:
             setattr(self, k, getattr(job, k))
 
@@ -1060,8 +1064,8 @@ class Job(models.Model):
                 # Push changes to children of this job
                 child_kwargs = {}
                 for k, v in kwargs.iteritems():
-                    if k in ['status', 'message', 'progress', 'remaining',
-                             'actual_criteria']:
+                    if k in ['status', 'message', 'exception', 'progress',
+                             'remaining', 'actual_criteria']:
                         child_kwargs[k] = v
                 # There should be no recursion, so a direct update to the
                 # database is possible.  (If recursion, would need to call
@@ -1114,7 +1118,8 @@ class Job(models.Model):
                               ischild=True,
                               progress=parent.progress,
                               remaining=parent.remaining,
-                              message='')
+                              message='',
+                              exception='')
                     job.save()
 
                     parent.reference("Link from job %s" % job)
@@ -1132,7 +1137,8 @@ class Job(models.Model):
                               ischild=False,
                               progress=0,
                               remaining=-1,
-                              message='')
+                              message='',
+                              exception='')
                     job.save()
                     logger.info("%s: New job for table %s" % (job, table.name))
 
@@ -1209,6 +1215,7 @@ class Job(models.Model):
                 'remaining': self.remaining,
                 'status': self.status,
                 'message': self.message,
+                'exception': self.exception,
                 'data': data}
 
     def combine_filterexprs(self, joinstr="and", exprs=None):
@@ -1558,8 +1565,10 @@ class Worker(base_worker_class):
             job.safe_update(
                 status=job.ERROR,
                 progress=100,
-                message=traceback.format_exception_only(sys.exc_info()[0],
-                                                        sys.exc_info()[1])
+                message="".join(
+                    traceback.format_exception_only(*sys.exc_info()[0:2])),
+                exception="".join(
+                    traceback.format_exception(*sys.exc_info()))
             )
             #
             # Send signal for possible Triggers

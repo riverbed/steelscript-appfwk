@@ -7,195 +7,229 @@
  # This software is distributed "AS IS" as set forth in the License.
  */
 
-function inherit(p) {
-    if (p == null) throw TypeError();
-    if (Object.create)
-        return Object.create(p);
-    var t = typeof p;
-    if (t !== "object" && t !== "function") throw TypeError();
-    function f() {};
-    f.prototype = p;
-    return new f();
+(function() {
+'use strict';
+
+if (typeof Object.create !== 'function') {
+    Object.create = function (o) {
+        function F() {}
+        F.prototype = o;
+        return new F();
+    };
 }
 
-var widgets = [];
 
-function resize() {
-    $.each(widgets, function(w) { w.draw(); });
-}
+window.Widget = function(posturl, divid, options, criteria) {
+    var self = this;
 
-window.onresize = resize;
+    self.options = options;
+    self.posturl = posturl;
+    self.div = document.getElementById(divid);
 
-function Widget (posturl, divid, options, criteria) {
-    this.posturl = posturl,
-    this.divid = divid;
-    this.options = options;
+    var $div = $(self.div);
 
-    this.container = document.getElementById(divid);
-
-    this.container.innerHTML = '<p>Loading...</p>';
-
-    //debugger;
     if (options.height) {
-        $('#' + divid).height(options.height);
+        $div.height(options.height);
     }
-    $('#' + divid).showLoading();
-    $('#' + divid).setLoading(0);
-    var self = this;
+
+    $div.html("<p>Loading...</p>")
+        .showLoading()
+        .setLoading(0);
+
     $.ajax({
-        dataType: "json",
-        type: "POST",
+        dataType: 'json',
+        type: 'POST',
         url: self.posturl,
-        data : { criteria: JSON.stringify(criteria) },
+        data: { criteria: JSON.stringify(criteria) },
         success: function(data, textStatus) {
-            self.joburl = data.joburl,
-            setTimeout(function() { self.getData(criteria) }, 1000);
+            self.joburl = data.joburl;
+            setTimeout(function() { self.getData(criteria); }, 1000);
         },
         error: function(jqXHR, textStatus, errorThrown) {
-            $('#' + self.divid).hideLoading();
             var message = $("<div/>").html(textStatus + " : " + errorThrown).text()
-            $('#' + self.divid).html("<p>Server error: <pre>" + message + "</pre></p>");
-            rvbd_status[self.posturl] = 'error';
+            $div.hideLoading()
+                .append("<p>Server error: <pre>" + message + "</pre></p>");
+            window.rvbd_status[self.posturl] = 'error';
         }
     });
 }
 
-Widget.prototype.getData = function(criteria) {
-    var self = this;
-    $.ajax({
-        dataType: "json",
-        url: self.joburl,
-        data: null,
-        success: function(data, textStatus) {
-            self.processResponse(criteria, data, textStatus);
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-            $('#' + self.divid).hideLoading();
-            var message = $("<div/>").html(textStatus + " : " + errorThrown).text()
-            $('#' + self.divid).html("<p>Server error: <pre>" + message + "</pre></p>");
-            rvbd_status[self.posturl] = 'error';
+window.Widget.prototype = {
+    getData: function(criteria) {
+        var self = this;
+
+        $.ajax({
+            dataType: "json",
+            url: self.joburl,
+            data: null,
+            success: function(data, textStatus) {
+                self.processResponse(criteria, data, textStatus);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                self.displayError(response);
+            }
+        });
+    },
+
+    processResponse: function(criteria, response, textStatus) {
+        var self = this;
+
+        switch (response.status) {
+            case 3: // COMPLETE
+                $(self.div).hideLoading();
+                self.render(response.data);
+                window.rvbd_status[self.posturl] = 'complete';
+                break;
+            case 4: // ERROR
+                self.displayError(response);
+                break;
+            default:
+                $(self.div).setLoading(response.progress);
+
+                setTimeout(function() { self.getData(criteria); }, 1000);
         }
-    });
-}
+    },
 
-Widget.prototype.processResponse = function(criteria, response, textStatus)
-{
-    var self = this;
-    if (response.status == 3) {
-        // COMPLETE
-        $('#' + this.divid).hideLoading();
-        this.render(response.data);
-        rvbd_status[self.posturl] = 'complete';
-    } else if (response.status == 4) {
-        // ERROR
-        $('#' + this.divid).hideLoading();
-        var message = $("<div/>").html(response.message).text()
-        $('#' + this.divid).html("<p>Server error: <pre>" + message + "</pre></p>");
-        rvbd_status[self.posturl] = 'error';
-    } else {
-        if (response.progress > 0) {
-            $('#' + this.divid).setLoading(response.progress);
+    render: function(data) {
+        var self = this;
+
+        $(self.div).html(data);
+    },
+
+    padZeros: function(n, p) {
+        var pad = (new Array(1 + p)).join("0");
+        return (pad + n).slice(-pad.length);
+    },
+
+    roundAndPadRight: function(num, totalPlaces, precision) {
+        var digits = Math.floor(num).toString().length;
+        if (typeof precision === 'undefined') {
+           if (digits >= totalPlaces) { // Always at least 1 digit of precision
+               var precision = 1;
+           } else { // Include enough precision digits to get the total we want
+               var precision = (totalPlaces + 1) - digits; // One extra for decimal point
+           }
         }
-        setTimeout(function() { self.getData(criteria) }, 1000);
+        return num.toFixed(precision);
+    },
+
+    formatTime: function(t, precision) {
+        return (new Date(t)).toString();
+    },
+
+    formatTimeMs: function(t, precision) {
+        var d = new Date(t);
+        return d.getHours() +
+            ':' + self.padZeros(d.getMinutes(), 2) +
+            ':' + self.padZeros(d.getSeconds(), 2) +
+            '.' + self.padZeros(d.getMilliseconds(), 3);
+        // return date.toString();
+     },
+
+     formatMetric: function(num, precision) {
+        var self = this;
+
+        if (typeof num === 'undefined') { 
+            return "";
+        } else if (num === 0) {
+            return "0";
+        }
+
+        num = Math.abs(num);
+
+        var e = parseInt(Math.floor(Math.log(num) / Math.log(1000))),
+            v = (num / Math.pow(1000, e));
+
+        var vs = self.roundAndPadRight(v, 4, precision);
+
+        if (e >= 0) {
+            return vs + ['', 'k', 'M', 'G', 'T'][e];
+        } else {
+            return vs + ['', 'm', 'u', 'n'][-e];
+        }
+    },
+
+    formatIntegerMetric: function(num, precision) {
+        var self = this;
+        
+        return self.formatMetric(num, 0);
+    },
+
+    formatPct: function(num, precision) {
+        var self = this;
+
+        if (typeof num === 'undefined') {
+            return "";
+        } else if (num === 0) {
+            return "0";
+        } else {
+            return self.roundAndPadRight(num, 4, precision)
+        }
+    },
+
+    displayError: function(response) {
+        var self = this;
+
+        var isException = (response.exception !== ''),
+            $shortMessage = $('<span></span>').addClass('short-error-text'),
+            $div = $(self.div);
+
+        if (isException) { // Python exceptions are always text (encoded as HTML)
+            $shortMessage.html(response.message);
+        } else { // Non-exception errors sometimes contain HTML (double-encoded, e.g. <hr> becomes &lt;hr&gt;)
+            $shortMessage.html($('<span></span>').html(response.message).text());
+        }
+
+        var $error = $('<div></div>')
+            .addClass('widget-error')
+            .append("Internal server error: ")
+            .append('<br/>')
+            .append($shortMessage)
+
+        if (isException) {
+            $error.append('<br/>')
+                  .append($('<a href="#">Details</a>')
+                       .click(function() { self.launchTracebackDialog(response); }));
+        }
+
+        $div.hideLoading();
+
+        $div.empty()
+            .append($error);
+
+        window.rvbd_status[self.posturl] = 'error';
+    },
+
+    launchTracebackDialog: function(response) {
+        alertModal("Full Traceback", "<pre>" + $('<div></div>').text(response.exception).html() + "</pre>",
+                   "OK", function() { }, 'widget-error-modal');
     }
 }
 
-Widget.prototype.render = function(data)
-{
-    $('#' + this.divid).html(data);
-}
+window.rvbd_raw = {};
 
-function padzeros(n, p) {
-    var pad = new Array(1 + p).join('0');
-    return (pad + n).slice(-pad.length);
-}
-
-Widget.prototype.formatTimeMs = function(t, precision) {
-    var d = new Date(t);
-    return d.getHours() +
-        ':' + padzeros(d.getMinutes(),2) +
-        ':' + padzeros(d.getSeconds(),2) +
-        '.' + padzeros(d.getMilliseconds(),3);
-    // return date.toString();
-}
-
-Widget.prototype.formatTime = function(t, precision) {
-    var date = new Date(t);
-    return date.toString();
-}
-
-Widget.prototype.formatMetric = function(num, precision) {
-    if (num == undefined) return '';
-    if (num == 0) return '0';
-    var prefix = '';
-    if (num < 0) { num *= -1; prefix = '-';}
-    var e = parseInt(Math.floor(Math.log(num) / Math.log(1000)));
-    var v = (num / Math.pow(1000, e));
-    var vs;
-    if (precision != undefined) {
-        vs = v.toFixed(precision);
-    } else if (v < 10) {
-        vs = v.toFixed(3);
-    } else if (v < 100) {
-        vs = v.toFixed(2);
-    } else {
-        vs = v.toFixed(1);
-    }
-    vs = prefix + vs;
-    if (e >= 0) {
-        return vs + ['', 'k', 'M', 'G', 'T'][e];
-    } else {
-        return vs + ['', 'm', 'u', 'n'][-e];
-    }
-}
-
-Widget.prototype.formatIntegerMetric = function(num, precision) {
-    Widget.prototype.formatMetric(num, 0);
-}
-
-Widget.prototype.formatPct = function(num, precision) {
-    if (num == undefined) return '';
-    if (num == 0) return '0';
-    var v = num;
-    var vs;
-    if (precision != undefined) {
-        vs = v.toFixed(precision);
-    } else if (v < 10) {
-        vs = v.toFixed(3);
-    } else if (v < 100) {
-        vs = v.toFixed(2);
-    } else {
-        vs = v.toFixed(1);
-    }
-    return vs;
-}
-
-var rvbd_raw = {};
-
-rvbd_raw.TableWidget = function (dataurl, divid, options, criteria) {
+window.rvbd_raw.TableWidget = function (dataurl, divid, options, criteria) {
     Widget.apply(this, [dataurl, divid, options, criteria]);
 };
-rvbd_raw.TableWidget.prototype = inherit(Widget.prototype)
-rvbd_raw.TableWidget.prototype.constructor = rvbd_raw.TableWidget;
+window.rvbd_raw.TableWidget.prototype = Object.create(window.Widget.prototype);
 
-rvbd_raw.TableWidget.prototype.render = function(data)
-{
-    var contentid = this.divid + "_content";
-    $('#' + this.divid).
-        html('').
-        append('<table id="' + contentid + '-table"></table>')
+window.rvbd_raw.TableWidget.prototype.render = function(data) {
+    var self = this;
 
-    var div= $('#' + this.divid);
+    var $table = $('<table></table>')
+                     .attr('id', $(self.div).attr('id') + "_content")
+                     .width('100%'),
+        $tr;
 
-    var table = $('#' + contentid + '-table');
-    table.width('100%');
-
-    $.each(data, function(i,row) {
-        rowstr = '<tr>'
-        $.each(row, function(i,col) {
-            rowstr = rowstr + '<td>' + col + '</td>';
+    $.each(data, function(i, row) {
+        $tr = $('<tr></tr>');
+        $.each(row, function(i, col) {
+            $tr.append('<td></td>').html(col);
         });
-        rowstr = rowstr + '</tr>'
-        table.append(rowstr);
-        });
+        $table.append($tr);
+    });
+
+    $(self.div).empty().append($table);
 }
+
+})();

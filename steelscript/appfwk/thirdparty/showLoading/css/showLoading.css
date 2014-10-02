@@ -1,13 +1,38 @@
-.loading-indicator {
-	height: 80px;
-	width: 80px;
-	background: url( '../images/loading.gif' );
-	background-repeat: no-repeat;
-	background-position: center center;
+.loading-indicator-overlay {
+    background-color: rgba(255, 255, 255, 0.6);
+
+    /* Fill container to edges */
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    top: 0px;
+    bottom: 0px;
+
+    z-index: 5000; /* Above everything */
+    display: none; /* Initially hidden, callbacks can be run before showing */
 }
 
-.loading-indicator-overlay {
-	background-color: #FFFFFF;
-	opacity: 0.6;
-	filter: alpha(opacity = 60);
+.loading-indicator-overlay.ie8 { /* No support for RGBA backgrounds in IE 8 and below */
+    background-color: transparent;
+    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99ffffff,endColorstr=#99ffffff)";
 }
+
+    .loading-indicator {
+        /* Centering hack: if we set margin to auto and left/right/top/bottom to 0px on an
+           absolutely positioned element with fixed dimensions, it will center. */
+        position: absolute;
+        margin: auto;
+        left: 0px;
+        right: 0px;
+        top: 0px;
+        bottom: 0px;
+
+        height: 80px;
+        width: 80px;
+
+        text-align: center;
+
+        background: url('../images/loading.gif');
+        background-repeat: no-repeat;
+        background-position: center center;
+    }
