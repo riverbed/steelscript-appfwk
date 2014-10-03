@@ -48,8 +48,8 @@ class TableWidget(object):
                 self.dataindex = dataindex
                 self.istime = istime
 
-        w_keys = []  # Widget column keys in order that matches data
-        colinfo = {}  # Map of ColInfo by key
+        w_keys = []     # Widget column keys in order that matches data
+        colinfo = {}    # Map of ColInfo by key
         w_columns = []  # Widget column definitions
 
         for i, wc in enumerate(job.get_columns()):
@@ -476,7 +476,7 @@ class ChartWidget(object):
         catname = '-'.join([k.name for k in keycols])
         w_axes = {catname: {"keys": [catname],
                             "position": "bottom",
-                            "styles": {"label": {"rotation":-60}}}}
+                            "styles": {"label": {"rotation": -60}}}}
 
         # Map of column info by column name
         colmap = {}

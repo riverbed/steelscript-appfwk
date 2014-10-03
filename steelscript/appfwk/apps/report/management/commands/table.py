@@ -210,7 +210,7 @@ class Command(BaseCommand):
             end_time = datetime.datetime.now()
             delta = end_time - start_time
             seconds = float(delta.microseconds +
-                            (delta.seconds + delta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+                            (delta.seconds + delta.days*24*3600)*10**6)/10**6
 
             self.console('Done!! (elapsed time: %.2f seconds)' % seconds)
             self.console('')

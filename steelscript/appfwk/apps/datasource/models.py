@@ -193,7 +193,7 @@ class TableField(models.Model):
 
 class Table(models.Model):
     name = models.CharField(max_length=200)
-    module = models.CharField(max_length=200)  # source module name
+    module = models.CharField(max_length=200)      # source module name
     queryclass = models.CharField(max_length=200)  # name of query class
     datasource = models.CharField(max_length=200)  # class name of datasource
     namespace = models.CharField(max_length=100)
@@ -358,7 +358,7 @@ class Table(models.Model):
         all_col_names = [c.name for c in all_columns]
 
         def compute(df, syncols):
-            # logger.debug("Compute: syncol = %s" % ([c.name for c in syncols]))
+            #logger.debug("Compute: syncol = %s" % ([c.name for c in syncols]))
             for syncol in syncols:
                 expr = syncol.compute_expression
                 g = tokenize.generate_tokens(StringIO(expr).readline)
@@ -435,9 +435,6 @@ class Table(models.Model):
             # take timezone of first value from timecol, if there is one
             if df[timecol][0].tz:
                 indexed.index = indexed.index.tz_localize(df[timecol][0].tz)
-
-            # indexed.to_pickle('/tmp/indexed.pd')
-            # df.to_pickle('/tmp/df.pd')
 
             resampled = indexed.resample('%ss' % int(resolution), how,
                                          convention='end').reset_index()
@@ -833,9 +830,6 @@ class Criteria(DictObject):
         self.duration = None
 
         super(Criteria, self).__init__(kwargs)
-
-        # self.filterexpr = filterexpr
-        # self.ignore_cache = ignore_cache
 
         # Keep track of the original starttime / endtime
         # This are needed when recomputing start/end times with
@@ -1731,4 +1725,5 @@ class BatchJobRunner(object):
                 self.basejob.mark_progress(job_progress)
                 if not batch_done:
                     time.sleep(interval)
-                    # interval = (interval * 2) if interval < max_interval else max_interval
+                    # interval = ((interval * 2)
+                    #     if interval < max_interval else max_interval)

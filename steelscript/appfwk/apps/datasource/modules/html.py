@@ -8,7 +8,6 @@
 import logging
 
 import pandas
-from steelscript.common.datastructures import JsonDict
 from steelscript.appfwk.apps.datasource.models import \
     Column, Table, DatasourceTable, TableQueryBase
 
