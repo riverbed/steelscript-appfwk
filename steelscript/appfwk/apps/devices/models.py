@@ -60,4 +60,4 @@ class Device(models.Model):
 
     def save(self, *args, **kwargs):
         super(Device, self).save(*args, **kwargs)
-        create_device_fixture()
+        create_device_fixture(settings.APPFWK_STRIP_DEVICE_PASSWORDS)

@@ -28,7 +28,6 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-#AUTH_PROFILE_MODULE = 'report.UserProfile'
 AUTH_USER_MODEL = 'preferences.PortalUser'
 LOGIN_REDIRECT_URL = '/report'
 
@@ -314,6 +313,14 @@ LOGGING = {
     }
 }
 
+#
+# App Framework custom settings
+#
+
+# Strip device passwords from fixture that gets written to disk.  Should remain
+# True in all production settings.  If False, the passwords will be stored to
+# disk to aid in development workflows.
+APPFWK_STRIP_DEVICE_PASSWORDS = True
 
 # Job aging parameters
 # Used as a form of datasource caching, jobs older than the 'ancient'
