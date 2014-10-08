@@ -1,0 +1,86 @@
+STEELSCRIPT-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    OBJECT-TYPE, MODULE-IDENTITY, NOTIFICATION-TYPE, Unsigned32
+                 FROM SNMPv2-SMI
+    DateAndTime FROM SNMPv2-TC
+    products FROM RBT-MIB;
+
+steelscript MODULE-IDENTITY
+          LAST-UPDATED        "201202030000Z"
+          ORGANIZATION        "Riverbed Technology, Inc."
+          CONTACT-INFO
+          "  Riverbed SteelScript
+             eng-steelscript@riverbed.com"
+          DESCRIPTION         "SteelScript MIB"
+          REVISION            "201409240000Z"
+          DESCRIPTION         "SteelScript related traps"
+          ::= { products 500 }
+
+steelscriptNotificationPrefix OBJECT IDENTIFIER ::=
+    { steelscript 1 }
+
+steelscriptNotifications OBJECT IDENTIFIER ::=
+    { steelscriptNotificationPrefix 0 }
+
+steelscriptNotificationObjects OBJECT IDENTIFIER ::=
+    { steelscriptNotificationPrefix 1 }
+
+--
+-- Notification Objects
+--
+
+eventID OBJECT-TYPE
+    SYNTAX     OCTET STRING
+    MAX-ACCESS accessible-for-notify
+    STATUS     current
+    DESCRIPTION
+        "Event identifier"
+    ::= { steelscriptNotificationObjects 1 }
+
+jobID OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS accessible-for-notify
+    STATUS     current
+    DESCRIPTION
+        "Job ID that failed"
+    ::= { steelscriptNotificationObjects 2 }
+
+jobFailedMessage OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS accessible-for-notify
+    STATUS     current
+    DESCRIPTION
+        "Message indicating reason the job failed."
+    ::= { steelscriptNotificationObjects 3 }
+
+eventContext OBJECT-TYPE
+    SYNTAX     OCTET STRING
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "Context for an event that was triggered."
+    ::= { steelscriptNotificationObjects 4 }
+
+--
+--
+-- NOTIFICATIONS
+--
+--
+
+jobFailed NOTIFICATION-TYPE
+    OBJECTS { tableName, jobID, jobFailedMessage }
+    STATUS  current
+    DESCRIPTION
+            "Indication that an alerting job failed to run."
+    ::= { steelscriptNotifications 1 }
+
+eventNotification NOTIFICATION-TYPE
+    OBJECTS { eventID, eventContext }
+    STATUS  current
+    DESCRIPTION
+            "Notifcation that an event has occured.  The event context
+            eventContext contains the specific details of the event."
+    ::= { steelscriptNotifications 2 }
+
+END

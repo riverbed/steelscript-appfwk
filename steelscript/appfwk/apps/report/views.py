@@ -160,6 +160,13 @@ class ReportView(views.APIView):
 
         system_settings = SystemSettings.get_system_settings()
         form_init = {'ignore_cache': system_settings.ignore_cache}
+        tables = (table
+                  for section in report.section_set.all()
+                  for widget in section.widget_set.all()
+                  for table in widget.tables.all())
+        for table in tables:
+            if table.criteria:
+                form_init.update(table.criteria)
 
         # Collect all fields organized by section, with section id 0
         # representing common report level fields
@@ -498,11 +505,15 @@ class ReportWidgets(views.APIView):
         # reload periodically
         minutes = report.reload_minutes
         if minutes:
+            # avoid case of long duration reloads to have large reload gap
+            # e.g. 24-hour report will consider 12:15 am or later a valid time
+            # to roll-over the time time values, rather than waiting
+            # until 12:00 pm
             trimmed = round_time(dt=now, round_to=60*minutes, trim=True)
             if now - trimmed > datetime.timedelta(minutes=15):
                 now = trimmed
             else:
-                now = round_time(dt=now, round_to=60*report.reload_minutes)
+                now = round_time(dt=now, round_to=60*minutes)
 
         widget_defs = []
 

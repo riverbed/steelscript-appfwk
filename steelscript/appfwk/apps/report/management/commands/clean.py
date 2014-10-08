@@ -11,18 +11,21 @@ import optparse
 
 from django.core.management.base import BaseCommand
 from django.core import management
-from django.db import DatabaseError, connection
+from django.db import connection
 from django.db.models import get_app, get_models, Count
 from django.core.exceptions import ObjectDoesNotExist
 
 from django.conf import settings
 from steelscript.appfwk.apps.report.models import Report, WidgetJob
-from steelscript.appfwk.apps.datasource.models import Table, TableField, Column, Job
+from steelscript.appfwk.apps.datasource.models import (Table, TableField,
+                                                       Column, Job)
+from steelscript.appfwk.apps.alerting.models import (Destination, TriggerCache,
+                                                     ErrorHandlerCache)
 
 
 class Command(BaseCommand):
     args = None
-    help = 'Clears existing data caches, logs, and optionally application settings.'
+    help = 'Clears existing data caches, logs, and application settings.'
 
     option_list = BaseCommand.option_list + (
         optparse.make_option('--applications',
@@ -34,7 +37,7 @@ class Command(BaseCommand):
                              action='store',
                              dest='report_id',
                              default=None,
-                             help='Reload single report instead of all applications.'),
+                             help='Reload single report instead of all apps.'),
         optparse.make_option('--clear-cache',
                              action='store_true',
                              dest='clear_cache',
@@ -88,13 +91,16 @@ class Command(BaseCommand):
 
         if options['applications']:
             # reset objects from main applications
-            apps = ['report', 'datasource']
+            apps = ['report', 'datasource', 'alerting']
             for app in apps:
                 for model in get_models(get_app(app)):
-                    self.stdout.write('Deleting objects from %s\n' % model)
-                    model.objects.all().delete()
+                    if model.__name__ != 'Alert':
+                        # Avoid deleting Alerts when running a basic clean
+                        self.stdout.write('Deleting objects from %s\n' % model)
+                        model.objects.all().delete()
+
         elif options['report_id']:
-            # remove Report and its Widgets, Jobs, WidgetJobs, Tables and Columns
+            # remove Report and its Widgets, Jobs, WidgetJobs, Tables, Columns
             rid = options['report_id']
 
             def del_table(tbl):
@@ -108,6 +114,15 @@ class Command(BaseCommand):
 
                 Column.objects.filter(table=tbl.id).delete()
                 Job.objects.filter(table=tbl.id).delete()
+
+                for trigger in TriggerCache.filter(tbl):
+                    trigger.delete()
+
+                for handler in ErrorHandlerCache.filter(tbl):
+                    handler.delete()
+
+                # delete newly unreferenced routes
+                Destination.objects.filter(trigger=None).delete()
 
                 tables = (tbl.options or {}).get('tables')
                 for ref in (tables or {}).values():
@@ -138,6 +153,10 @@ class Command(BaseCommand):
             report = Report.objects.get(id=rid)
 
             report.delete()
+
+        # clear model caches
+        TriggerCache.clear()
+        ErrorHandlerCache.clear()
 
         # rotate the logs once
         management.call_command('rotate_logs')

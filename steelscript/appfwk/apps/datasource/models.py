@@ -40,6 +40,8 @@ from steelscript.common.timeutils import timedelta_total_seconds, tzutc
 from steelscript.appfwk.project.utils import (get_module_name, get_sourcefile,
                                               get_namespace)
 from steelscript.appfwk.apps.datasource.exceptions import *
+from steelscript.appfwk.apps.alerting.models import (post_data_save,
+                                                     error_signal)
 from steelscript.appfwk.libs.fields import (PickledObjectField, FunctionField,
                                             SeparatedValuesField,
                                             check_field_choice,
@@ -370,9 +372,13 @@ class Table(models.Model):
                         if ttype != tokenize.NAME:
                             msg = "Invalid syntax, expected {name}: %s" % tvalue
                             raise ValueError(msg)
-                        elif tvalue not in all_col_names:
-                            raise ValueError("Invalid column name: %s" % tvalue)
-                        newexpr += "df['%s']" % tvalue
+                        elif tvalue in all_col_names:
+                            newexpr += "df['%s']" % tvalue
+                        elif tvalue in job.criteria:
+                            newexpr += '"%s"' % str(job.criteria.get(tvalue))
+                        else:
+                            raise ValueError("Invalid variable name: %s" % tvalue)
+
                         getclose = True
                         getvalue = False
                     elif getclose:
@@ -445,7 +451,6 @@ class Table(models.Model):
                      if (c.synthetic and c.compute_post_resample is True)])
 
         return df
-
 
 
 class DatasourceTable(Table):
@@ -805,7 +810,6 @@ class Column(models.Model):
                 raise DatabaseError(str(e) + ' -- did you forget class Meta: proxy=True?')
             raise
 
-
         return c
 
     def isnumeric(self):
@@ -849,6 +853,11 @@ class Criteria(DictObject):
         #    if param.initial != value:
         #        param.initial = value
         #        param.save()
+
+    @classmethod
+    def is_timeframe_key(cls, key):
+        return [key in ['starttime', 'endtime', 'duration',
+                        '_orig_starttime', '_orig_endtime', '_orig_duration']]
 
     def print_details(self):
         """ Return instance variables as nicely formatted string
@@ -900,8 +909,9 @@ class Criteria(DictObject):
         starttime = self._orig_starttime
         endtime = self._orig_endtime
 
-        logger.debug("compute_times: %s %s %s" %
-                     (starttime, endtime, duration))
+        logger.debug("compute_times: start %s(%s), end %s(%s), duration %s(%s)"
+                     % (starttime, type(starttime), endtime, type(endtime),
+                        duration, type(duration)))
 
         if starttime is not None:
             if endtime is not None:
@@ -911,16 +921,19 @@ class Criteria(DictObject):
             else:
                 msg = ("Cannot compute times, have starttime but not "
                        "endtime or duration")
+                logger.debug(msg)
                 raise ValueError(msg)
 
         elif endtime is None:
             endtime = datetime.datetime.now()
 
-        if duration is not None:
+        if duration is not None and (isinstance(duration, datetime.datetime) or
+                                     isinstance(duration, datetime.timedelta)):
             starttime = endtime - duration
         else:
             msg = ("Cannot compute times, have endtime but not "
                    "starttime or duration")
+            logger.debug(msg)
             raise ValueError(msg)
 
         self.duration = duration
@@ -1271,7 +1284,7 @@ class Job(models.Model):
         with transaction.commit_on_success():
             self.refresh()
             if not self.status == Job.COMPLETE:
-                raise ValueError("Job not complete, no data available")
+                raise DataError("Job not complete, no data available")
 
             self.reference("data()")
 
@@ -1506,6 +1519,14 @@ class Worker(base_worker_class):
 
                 if df is not None:
                     df.to_pickle(job.datafile())
+
+                    #
+                    # Send signal for possible Triggers
+                    #
+                    post_data_save.send(sender=self,
+                                        data=df,
+                                        context={'job': job})
+
                     logger.debug("%s data saved to file: %s" % (str(self),
                                                                 job.datafile()))
                 else:
@@ -1540,6 +1561,11 @@ class Worker(base_worker_class):
                 message=traceback.format_exception_only(sys.exc_info()[0],
                                                         sys.exc_info()[1])
             )
+            #
+            # Send signal for possible Triggers
+            #
+            error_signal.send(sender=self,
+                              context={'job': job})
 
         finally:
             job.dereference("Worker exiting")

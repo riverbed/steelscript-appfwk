@@ -206,6 +206,7 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.help',
     'steelscript.appfwk.apps.preferences',
     'steelscript.appfwk.apps.plugins',
+    'steelscript.appfwk.apps.alerting',
 
     # 'standard' plugins
     'steelscript.appfwk.apps.plugins.builtin.whois',

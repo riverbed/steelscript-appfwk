@@ -8,10 +8,11 @@
     <link href="{{ STATIC_URL }}css/main.css" rel="stylesheet"/>
     <link href="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.css" rel="stylesheet"/>
     <link href="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.css" rel="stylesheet"/>
+
     {% if offline_js %}
     <link href="{{ STATIC_URL }}jquery-ui/themes/base/jquery-ui.css" rel="stylesheet"/>
     {% else %}
-    <link href="http://code.jquery.com/ui/{{ js_versions.jqueryui }}/themes/smoothness/jquery-ui.css" rel="stylesheet"/>
+    <link href="//code.jquery.com/ui/{{ js_versions.jqueryui }}/themes/smoothness/jquery-ui.css" rel="stylesheet"/>
     {% endif %}
 
     <script type="text/javascript" src="{{ STATIC_URL }}js/portal.js"></script>
