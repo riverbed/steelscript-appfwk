@@ -32,7 +32,7 @@ class SenderMount(type):
         else:
             # register the class by name
             if (name in cls._senders and
-                   cls._senders[name].__module__ != cls.__module__):
+                    cls._senders[name].__module__ != cls.__module__):
                 msg = 'Sender class %s has already been defined' % name
                 raise ValueError(msg)
             cls._senders[name] = cls
@@ -94,7 +94,7 @@ class SNMPBaseSender(BaseSender):
     trapid = None
     default_description = 'SteelScript Alert'
     severity = 70
-    level = AlertLevels.get_integer('INFO')
+    level = AlertLevels.INFO
 
     def process_alert(self, alert):
         """Override class values with kwargs from destination in alert.
@@ -192,7 +192,7 @@ class SNMPSenderCascadeDefault(SNMPBaseSender):
 
         severity = self.severity
         description = alert.message or self.default_description
-        alert_level = self.level
+        alert_level = AlertLevels.get_integer(self.level)
         now = timeutils.datetime_to_seconds(alert.timestamp)
 
         self.binds = (
