@@ -71,7 +71,7 @@ class TableJobList(APIView):
     def post(self, request, pk):
         """Create new Job for the specified table using POSTed criteria."""
         table = Table.objects.get(pk=pk)
-        all_fields = {f.keyword: f for f in table.fields.all()}
+        all_fields = dict((f.keyword, f) for f in table.fields.all())
 
         # data needs to be not-None or form will be created as unbound
         data = self.request.POST or {}
