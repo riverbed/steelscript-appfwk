@@ -32,7 +32,7 @@
     requests versus upwards of 50 individual requests under https
     {% endcomment %}
     {% if request.is_secure %}
-    <script type="text/javascript" src="https://yui-s.yahooapis.com/{{ js_versions.yui }}build/yui/yui-min.js"></script>
+    <script type="text/javascript" src="https://yui-s.yahooapis.com/{{ js_versions.yui }}/build/yui/yui-min.js"></script>
     {% else %}
     <script type="text/javascript" src="http://yui.yahooapis.com/{{ js_versions.yui }}/build/yui/yui-min.js"></script>
     {% endif %}
