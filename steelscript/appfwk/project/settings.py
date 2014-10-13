@@ -164,16 +164,16 @@ ROOT_URLCONF = 'steelscript.appfwk.project.urls'
 WSGI_APPLICATION = 'steelscript.appfwk.project.wsgi.application'
 
 TEMPLATE_CONTEXT_PROCESSORS = (
-    "django.contrib.auth.context_processors.auth",
-    "django.core.context_processors.debug",
-    "django.core.context_processors.i18n",
-    "django.core.context_processors.media",
-    "django.core.context_processors.static",
-    "django.core.context_processors.request",
-    "django.core.context_processors.tz",
-    "django.contrib.messages.context_processors.messages",
-    "project.context_processors.offline_js",
-    "project.context_processors.js_versions",
+    'django.contrib.auth.context_processors.auth',
+    'django.core.context_processors.debug',
+    'django.core.context_processors.i18n',
+    'django.core.context_processors.media',
+    'django.core.context_processors.static',
+    'django.core.context_processors.request',
+    'django.core.context_processors.tz',
+    'django.contrib.messages.context_processors.messages',
+    'steelscript.appfwk.project.context_processors.offline_js',
+    'steelscript.appfwk.project.context_processors.js_versions',
     'steelscript.appfwk.apps.report.context_processors.report_list_processor',
 )
 
