@@ -12,12 +12,12 @@
 
 window.rvbd_yui3 = {};
 
-window.rvbd_yui3.YUIWidget = function(dataurl, divid, options, criteria) {
+window.rvbd_yui3.YUIWidget = function(posturl, isEmbedded, div, id, options, criteria) {
     var self = this;
 
-    Widget.apply(self, [dataurl, divid, options, criteria]);
+    Widget.apply(self, [posturl, isEmbedded, div, id, options, criteria]);
 };
-window.rvbd_yui3.YUIWidget.prototype = Object.create(Widget.prototype);
+window.rvbd_yui3.YUIWidget.prototype = Object.create(window.Widget.prototype);
 $.extend(window.rvbd_yui3.YUIWidget.prototype, {
     buildInnerLayout: function(title) {
         var self = this;
@@ -107,17 +107,19 @@ $.extend(window.rvbd_yui3.YUIWidget.prototype, {
         var requirements = self.requirements.concat(['event-resize']); // All widgets need event-resize
         YUI().use(requirements, function(Y) {
             self.yuiWidget = new Y[self.widgetClass](data);
-
             Y.on('windowresize', self.onResize.bind(self));
+            if (typeof self.onRender !== 'undefined') {
+                self.onRender();
+            }
         });
     }
 });
 
 
-window.rvbd_yui3.TableWidget = function (dataurl, divid, options, criteria) {
+window.rvbd_yui3.TableWidget = function(posturl, isEmbedded, div, id, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [dataurl, divid, options, criteria]);
+    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, options, criteria]);
 };
 window.rvbd_yui3.TableWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
 
@@ -127,6 +129,7 @@ $.extend(window.rvbd_yui3.TableWidget.prototype, {
 
     prepareData: function(data) {
         data.scrollable = 'xy';
+
         $.each(data.columns, function(i, c) {
             if (typeof c.formatter !== 'undefined' && c.formatter in window.rvbd_yui3.YUIWidget.prototype) {
                 c.formatter = (function(key, f) {
@@ -138,14 +141,27 @@ $.extend(window.rvbd_yui3.TableWidget.prototype, {
         });
 
         return data;
+    },
+
+    onRender: function() {
+        var self = this;
+
+        if (window.expandTables) {
+            var scroller = $(self.div).find('.yui3-datatable-y-scroller')[0];
+            if (scroller.scrollHeight > scroller.clientHeight) {
+                // Table is oversized--expand widget to fit content
+                self.yuiWidget.set('height', (scroller.scrollHeight + 2) + 'px');
+                $(this.div).css('height', 'auto');
+            }
+        }
     }
 });
 
 
-window.rvbd_yui3.TimeSeriesWidget = function(dataurl, divid, options, criteria) {
+window.rvbd_yui3.TimeSeriesWidget = function(posturl, isEmbedded, div, id, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [dataurl, divid, options, criteria]);
+    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, options, criteria]);
 };
 window.rvbd_yui3.TimeSeriesWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
 
@@ -192,10 +208,10 @@ $.extend(window.rvbd_yui3.TimeSeriesWidget.prototype, {
     }
 });
 
-window.rvbd_yui3.ChartWidget = function(dataurl, divid, options, criteria) {
+window.rvbd_yui3.ChartWidget = function(posturl, isEmbedded, div, id, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [dataurl, divid, options, criteria]);
+    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, options, criteria]);
 };
 
 window.rvbd_yui3.ChartWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
@@ -237,10 +253,10 @@ $.extend(window.rvbd_yui3.ChartWidget.prototype, {
     }
 });
 
-window.rvbd_yui3.PieWidget = function(dataurl, divid, options, criteria) {
+window.rvbd_yui3.PieWidget = function(posturl, isEmbedded, div, id, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [dataurl, divid, options, criteria]);
+    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, options, criteria]);
 };
 
 window.rvbd_yui3.PieWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
