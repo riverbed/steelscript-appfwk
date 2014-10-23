@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+# Copyright (c) 2014 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+
 """
 scheduler.py
 
@@ -166,6 +172,7 @@ def run_table_via_rest(url, authfile, verify, **kwargs):
         interval = 1
 
         complete = False
+        error = False
         now = datetime.datetime.now
         start = now()
 
@@ -181,6 +188,7 @@ def run_table_via_rest(url, authfile, verify, **kwargs):
                 logger.error('Table reported error in processing: %s' %
                              status.json())
                 complete = True
+                error = True
                 break
 
             logger.debug("Table not yet complete, sleeping for 1 second.")
@@ -189,7 +197,7 @@ def run_table_via_rest(url, authfile, verify, **kwargs):
         if not complete:
             logger.warning("Timed out waiting for table to complete,"
                            "url is: %s" % url)
-        else:
+        elif not error:
             # get data and write as CSV
             data = s.get(urljoin(url, 'data/'))
             d = data.json()['data']
