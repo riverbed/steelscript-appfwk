@@ -273,15 +273,16 @@ class Command(BaseCommand):
                             # of the outermost dir where we want. (With tar we
                             # can just use --strip-components 1.)
                             unzipdir = tempfile.mkdtemp()
-                            shell("unzip {0} -d {0}".format(downloadpath,
-                                                          unzipdir))
-                            shell("mv -v {0}/*/* {0}".format(unzipdir, finaldir))
+                            shell("unzip {0} -d {1}".format(downloadpath,
+                                                            unzipdir))
+                            shell("mv -v {0}/*/* {1}".format(unzipdir,
+                                                             finaldir))
                             shell("rm -rf {0}".format(unzipdir))
                         else:  # Not a zip, assume tarball.
                             self.mkdir(finaldir)
                             shell(("tar xvf {0} --strip-components 1 "
-                                  "--directory {0}").format(downloadpath,
-                                                           finaldir))
+                                  "--directory {1}").format(downloadpath,
+                                                            finaldir))
                     except Exception as e:
                         # This will probably be a ShellFailed exception, but
                         # we need to clean up the file no matter what.
