@@ -160,7 +160,7 @@ class Importer(object):
             ignore_list = IGNORE_FILES
 
         rootpath = os.path.basename(root)
-        for path, dirs, files in os.walk(root):
+        for path, dirs, files in os.walk(root, followlinks=True):
             # if we are in an ignored directory, continue
             if os.path.basename(os.path.normpath(path)) in ignore_list:
                 continue
