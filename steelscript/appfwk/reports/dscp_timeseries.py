@@ -9,63 +9,89 @@ from steelscript.appfwk.apps.datasource.models import TableField
 from steelscript.appfwk.apps.report.models import Report
 import steelscript.appfwk.apps.report.modules.yui3 as yui3
 
-from steelscript.netprofiler.appfwk.datasources.netprofiler import (NetProfilerTimeSeriesTable,
-                                                                    NetProfilerGroupbyTable)
+from steelscript.netprofiler.appfwk.datasources.netprofiler import \
+    NetProfilerTimeSeriesTable, NetProfilerGroupbyTable, NetProfilerTable
 
-report = Report.create("DSCP Report", position=11)
+report = Report.create("DSCP Report", position=11,
+                       hidden_fields=['netprofiler_filterexpr'])
 
-interface_field = TableField.create(keyword='interface', label='Interface',
-                                    required=True)
-datafilter_field = TableField.create(keyword='datafilter', hidden=True,
-                                     post_process_template='interfaces_a,{interface}')
+netprofiler_filterexpr = TableField.create(
+    keyword='netprofiler_filterexpr')
 
-report.add_section("Overall")
+interface_field = TableField.create(
+    keyword='interface', label='Interface', required=True)
+
+#
+# Overall section
+#  - netprofiler_filterexpr = "interface {interface}"
+#
+section = report.add_section("Overall",
+                             section_keywords=['netprofiler_filterexpr',
+                                               'interface_expr'])
+
+section.fields.add(netprofiler_filterexpr)
+section.fields.add(interface_field)
+
+NetProfilerTable.extend_filterexpr(section, keyword='interface_filterexpr',
+                                   template='interface {interface}')
 
 # Define a Overall TimeSeries showing In/Out Utilization
-p = NetProfilerTimeSeriesTable.create('dscp-overall-util',
+p = NetProfilerTimeSeriesTable.create('qos-overall-util',
                                       duration=15, resolution=60,
                                       interface=True)
-p.fields.add(interface_field)
-p.fields.add(datafilter_field)
 
 p.add_column('time', 'Time', datatype='time', iskey=True)
 p.add_column('in_avg_util', 'Avg Inbound Util %', units='B/s')
 p.add_column('out_avg_util', 'Avg Outbound Util %', units='B/s')
 
-report.add_widget(yui3.TimeSeriesWidget, p, "Overall Utilization", width=12)
+report.add_widget(yui3.TimeSeriesWidget, p, "{interface} - Overall Utilization", width=12)
 
 # Define a Overall TimeSeries showing In/Out Totals
-p = NetProfilerTimeSeriesTable.create('dscp-overall-total',
+p = NetProfilerTimeSeriesTable.create('qos-overall-total',
                                       duration=15, resolution=15 * 60,
                                       interface=True)
-p.fields.add(interface_field)
-p.fields.add(datafilter_field)
 
 p.add_column('time', 'Time', datatype='time', iskey=True)
 p.add_column('in_total_bytes', 'Total Inbound Bytes', units='B/s')
 p.add_column('out_total_bytes', 'Total Outbound Bytes', units='B/s')
 
-report.add_widget(yui3.TimeSeriesWidget, p, "Overall In/Out Bandwidth",
+report.add_widget(yui3.TimeSeriesWidget, p, "Overall In/Out Totals",
                   width=6)
 
 # Define a Overall TimeSeries showing In/Out Totals
-p = NetProfilerTimeSeriesTable.create('dscp-overall-avg',
+p = NetProfilerTimeSeriesTable.create('qos-overall-avg',
                                       duration=15, resolution=60,
                                       interface=True)
-p.fields.add(interface_field)
-p.fields.add(datafilter_field)
 
 p.add_column('time', 'Time', datatype='time', iskey=True)
-p.add_column('in_avg_bytes', 'Avg Inbound Bytes/s', units='B/s')
-p.add_column('out_avg_bytes', 'Avg Outbound Bytes/s', units='B/s')
+p.add_column('in_avg_bytes', 'Avg Inbound B/s', units='B/s')
+p.add_column('out_avg_bytes', 'Avg Outbound B/s', units='B/s')
 
 report.add_widget(yui3.TimeSeriesWidget, p,
-                  "Overall Average In/Out Bandwidth", width=6)
+                  "Overall In/Out Avg BW ", width=6)
 
-# ##
-# DSCP Summary Tables
+#
+# QOS Summary Tables
+#
 for direction in ['inbound', 'outbound']:
-    p = NetProfilerGroupbyTable.create('dscp-%s-totals' % direction,
+    #
+    # Section per direction
+    #  - netprofiler_filterexpr = "{direction} interface {interface}"
+    #    - direction is hardcoded from the loop
+    #    - interface comes from the field
+    #
+    section = report.add_section("%s" % direction,
+                                 section_keywords=['netprofiler_filterexpr',
+                                                   'interface_expr'])
+
+    section.fields.add(netprofiler_filterexpr)
+    section.fields.add(interface_field)
+
+    NetProfilerTable.extend_filterexpr(
+        section, keyword='interface_filterexpr',
+        template=('%s interface {interface}' % direction))
+
+    p = NetProfilerGroupbyTable.create('qos-%s-totals' % direction,
                                        groupby='dsc',
                                        duration=15, resolution=60,
                                        interface=True)
@@ -79,8 +105,8 @@ for direction in ['inbound', 'outbound']:
     )
     p.fields_add_filterexprs_field('%s_filterexpr' % direction)
 
-    p.add_column('dscp', 'DSCP', iskey=True)
-    p.add_column('dscp_name', 'DSCP Name', iskey=True)
+    p.add_column('dscp', 'Dscp', iskey=True, datatype="integer")
+    p.add_column('dscp_name', 'Dscp Name', iskey=True, datatype="string")
     p.add_column('avg_bytes', 'Avg Bytes/s', units='B/s')
     p.add_column('total_bytes', 'Total Bytes/s', units='B/s')
     p.add_column('avg_util', 'Avg Util', units='pct')
@@ -89,36 +115,41 @@ for direction in ['inbound', 'outbound']:
     report.add_widget(yui3.TableWidget, p,
                       "%s Traffic by DSCP" % direction.capitalize(), width=6)
 
-# ##
-# DSCP sections, defaults to AF11, EF, and Default
+#
+# Dscp sections, defaults to AF11, EF, and Default
+#
 for i, dscp in enumerate(['AF11', 'EF', 'Default']):
 
     report.add_section("DSCP %d" % i)
 
-    # ##
-    # DSCP Tables
-
     for direction in ['inbound', 'outbound']:
-        p = NetProfilerTimeSeriesTable.create('dscp-%d-%s' % (i, direction),
+        #
+        # Section per direction
+        #  - netprofiler_filterexpr = "{direction} interface {interface}"
+        #    - direction is hardcoded from the loop
+        #    - interface comes from the field
+        #
+        section = report.add_section(
+            "%s %s" % (direction, dscp),
+            section_keywords=['netprofiler_filterexpr',
+                              'interface_expr'])
+
+        section.fields.add(netprofiler_filterexpr)
+        section.fields.add(interface_field)
+
+        NetProfilerTable.extend_filterexpr(
+            section, keyword='interface_filterexpr',
+            template=('set any [%s interface {interface}] with set any [dscp %s]' %
+                      (direction, dscp)))
+
+        p = NetProfilerTimeSeriesTable.create('qos-%d-%s' % (i, direction),
                                               duration=15, resolution=60,
                                               interface=True)
-        p.fields.add(interface_field)
-        p.fields.add(datafilter_field)
-        dscp_field = TableField.create(keyword='dscp_%d' % i,
-                                       label='DSCP %d' % i, obj=p,
-                                       initial=dscp)
-        TableField.create(
-            keyword='%s_filterexpr' % direction, obj=p,
-            hidden=True,
-            post_process_template=('%s interface {interface} and dscp {dscp_%d}'
-                                   % (direction, i))
-        )
-        p.fields_add_filterexprs_field('%s_filterexpr' % direction)
 
         p.add_column('time', 'Time', datatype='time', iskey=True)
         p.add_column('avg_bytes', 'Avg Bytes/s', units='B/s')
 
-        report.add_widget(yui3.TimeSeriesWidget, p,
-                          "DSCP {dscp_%d} - Average %s Bandwidth"
-                          % (i, direction.capitalize()),
-                          width=6)
+        report.add_widget(
+            yui3.TimeSeriesWidget, p,
+            "%s - %s Avg BW" % (dscp, direction.capitalize()),
+            width=6)
