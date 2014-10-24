@@ -237,7 +237,7 @@ function onEmbedWidgetComplete(widget) {
 
 function addWidgetMenu(widget, $titleDiv) {
     var menuItems = [
-        '<a tabindex="-1" id="' + widget.widgetid + '_get_embed">Get Embed Code</a>'
+        '<a tabindex="-1" id="' + widget.widgetid + '_get_embed">Embed This Widget...</a>'
     ];
 
     var $menuContainer = $('<div></div>')
