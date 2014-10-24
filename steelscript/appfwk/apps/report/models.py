@@ -338,9 +338,9 @@ class Section(models.Model):
             else:
                 section_id = 0
 
-            id = f.keyword
-            if id not in fields_by_section[section_id]:
-                fields_by_section[section_id][id] = f
+            key = f.keyword
+            if key not in fields_by_section[section_id]:
+                fields_by_section[section_id][key] = f
 
         return fields_by_section
 
@@ -427,13 +427,15 @@ class Widget(models.Model):
 
         # All fields attached to the section
         for f in self.section.fields.all().order_by('id'):
-            fields[f.keyword] = f
+            if f.keyword not in fields:
+                fields[f.keyword] = f
 
         # All fields attached to any Widget's Tables
         for w in self.section.widget_set.all().order_by('id'):
             for t in w.tables.all():
                 for f in t.fields.all().order_by('id'):
-                    fields[f.keyword] = f
+                    if f.keyword not in fields:
+                        fields[f.keyword] = f
 
         return fields
 
