@@ -69,8 +69,8 @@ http://pythonhosted.org/steelscript/
 
     'install_requires': (
         'Django>=1.5.1,<1.6',
-        'steelscript>=0.6',
-        'steelscript.netprofiler>=0.1',
+        'steelscript>=0.9.5',
+        'steelscript.netprofiler>=0.9.4',
 
         'djangorestframework==2.3.13',
         'django-extensions==1.3.7',
