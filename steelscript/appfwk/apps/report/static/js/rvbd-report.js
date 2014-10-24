@@ -65,7 +65,7 @@ window.dorun = function() {
     if (!window.runRequested) {
         return;
     }
-    window.runRquested = false;
+    window.runRequested = false;
 
     var $form = $('form#criteriaform');
 
@@ -285,14 +285,16 @@ function addGetEmbedHtmlHandler(widget) {
     }
 
     // Create the url that describes the current widget
-    var criteria = widget.criteria;
+    var criteria = $.extend({}, widget.criteria);
 
-    var url = window.location.href.replace(window.location.hash, "").replace("#", "") +
-              'widget/' + widget.widgetid + '?';
+    // Delete starttime and endtime from params if present (we don't want embedded
+    // widgets with fixed time frames)
+    delete criteria.starttime;
+    delete criteria.endtime;
 
-    $.each(criteria, function(param, val) {
-        url += encodeURIComponent(param) + '=' + encodeURIComponent(val) + '&';
-    });
+    // Create the url that describes the current widget
+    var url = window.location.href.split('#')[0] +  'widget/' + widget.widgetid +
+              '?' + $.param(criteria);
 
     // Add the actual menu item listener which triggers the modal
     $('#' + widget.widgetid + '_get_embed').click(function() {
