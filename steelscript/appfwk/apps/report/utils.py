@@ -101,4 +101,3 @@ def rm_file(filepath):
     except:
         pass
 
-        pass
