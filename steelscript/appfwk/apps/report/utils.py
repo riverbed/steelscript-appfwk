@@ -100,4 +100,3 @@ def rm_file(filepath):
         os.remove(filepath)
     except:
         pass
-
