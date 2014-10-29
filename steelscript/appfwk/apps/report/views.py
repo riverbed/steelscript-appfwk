@@ -45,7 +45,7 @@ from steelscript.appfwk.apps.preferences.models import SystemSettings
 from steelscript.appfwk.apps.report.models import (Report, Section, Widget,
                                                    WidgetJob)
 from steelscript.appfwk.apps.report.serializers import ReportSerializer
-from steelscript.appfwk.apps.report.utils import create_debug_zipfile
+from steelscript.appfwk.apps.report.utils import create_debug_zipfile, rm_file
 from steelscript.appfwk.apps.report.forms import (ReportEditorForm,
                                                   CopyReportForm)
 
@@ -401,12 +401,25 @@ class ReportCopy(views.APIView):
         if form.is_valid():
             try:
                 shutil.copyfile(report.filepath, form.filepath())
+                # update the title of the new report
+                form.update_title()
+
                 response['redirect'] = reverse('report-editor',
-                                               args=(namespace, report_slug))
+                                               args=(form.namespace,
+                                                     form.slug))
+
                 return Response(json.dumps(response))
             except IOError:
+                rm_file(form.filepath())
                 msg = ('Error copying file from %s to %s' % (report.filepath,
                                                              form.filepath()))
+                template = """<li id="message_ajax"><a href="#" onclick="$('#message_ajax').fadeOut(); return false;"><small>clear</small></a> %s</li>'"""
+                response['messages'] = template % msg
+                return Response(json.dumps(response))
+            except Exception, e:
+                rm_file(form.filepath())
+                msg = ('Error copying report file %s: %s' % (report.filepath,
+                                                             str(e)))
                 template = """<li id="message_ajax"><a href="#" onclick="$('#message_ajax').fadeOut(); return false;"><small>clear</small></a> %s</li>'"""
                 response['messages'] = template % msg
                 return Response(json.dumps(response))

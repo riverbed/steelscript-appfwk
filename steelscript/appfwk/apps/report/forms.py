@@ -17,7 +17,7 @@ from steelscript.appfwk.apps.report.models import Report, Widget
 import logging
 logger = logging.getLogger(__name__)
 
-DURATIONS = ('Default', '15 min', '1 hour', 
+DURATIONS = ('Default', '15 min', '1 hour',
              '2 hours', '4 hours', '12 hours', '1 day',
              '1 week', '4 weeks')
 
@@ -55,7 +55,8 @@ class ReportEditorForm(forms.Form):
             try:
                 shutil.copyfile(self._filepath, backup)
             except IOError:
-                raise ValidationError('unable to create backup file: %s' % backup)
+                raise ValidationError('unable to create backup file: %s' %
+                                      backup)
 
             try:
                 with open(self._filepath, 'w') as f:
@@ -67,6 +68,7 @@ class ReportEditorForm(forms.Form):
 class CopyReportForm(forms.Form):
     filename = forms.CharField()
     namespace = forms.CharField()
+    reportname = forms.CharField()
 
     def __init__(self, report, *args, **kwargs):
         super(CopyReportForm, self).__init__(*args, **kwargs)
@@ -81,6 +83,15 @@ class CopyReportForm(forms.Form):
         fname = os.path.basename(report.filepath)
         self.fields['filename'] = forms.CharField(initial=fname)
         self.fields['namespace'] = forms.CharField(initial=report.namespace)
+        self.fields['reportname'] = forms.CharField(initial=report.title)
+
+    @property
+    def namespace(self):
+        return self.cleaned_data.get('namespace')
+
+    @property
+    def slug(self):
+        return self.cleaned_data.get('filename').split('.')[0]
 
     def clean_filename(self):
         filename = self.cleaned_data.get('filename')
@@ -94,6 +105,11 @@ class CopyReportForm(forms.Form):
             path = self.filepath(cleaned_data)
             if os.path.exists(path):
                 raise ValidationError('File already exists: %s' % path)
+
+            reportname = self.cleaned_data.get('reportname')
+            R = Report.objects.all()
+            if R.filter(title=reportname):
+                raise ValidationError('Report already exists: %s' % reportname)
         return cleaned_data
 
     def basepath(self):
@@ -113,6 +129,24 @@ class CopyReportForm(forms.Form):
         return os.path.join(self.basepath(),
                             namespace,
                             data.get('filename'))
+
+    def update_title(self):
+        """ Writes new title into file"""
+        with open(self.filepath(), "r+") as f:
+            lines = f.read().split("\n")
+            new_line = None
+            for ind, ln in enumerate(lines):
+                if "Report.create" in ln and not ln.startswith('#'):
+                    list = ln.split('"')
+                    list[1] = self.cleaned_data.get('reportname')
+                    new_line = list[0] + '"' + list[1] + '"' + list[2]
+                    break
+            if new_line is None:
+                raise ValidationError("Current report does not have title")
+            lines[ind] = new_line
+            f.seek(0)
+            f.write("\n".join(lines))
+            f.truncate()
 
 
 class WidgetDetailForm(forms.ModelForm):

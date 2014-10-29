@@ -89,3 +89,16 @@ def create_debug_zipfile(no_summary=False):
         os.environ['TZ'] = current_tz
 
     return archive_name
+
+
+def rm_file(filepath):
+    """ remove a file
+
+    :param filepath: file name with path
+    """
+    try:
+        os.remove(filepath)
+    except:
+        pass
+
+        pass

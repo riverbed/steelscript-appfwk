@@ -31,6 +31,10 @@
             $('#copy_name').text($(this).val());
         }
 
+        function update_report_name() {
+            $('#copy_report').text($(this).val());
+        }
+
         function copy_file_modal() {
             var basespan = 'Report will be copied to:<br />{{ ajaxform.basepath }}/';
             {% if ajaxform.namespace.value != 'default' %}
@@ -52,6 +56,11 @@
                     selector: "[id='id_filename']",
                     event: "keyup",
                     handler: update_filepath_name
+                },
+                {
+                    selector: "[id='id_reportname']",
+                    event: "keyup",
+                    handler: update_report_name
                 }
             ];
 
