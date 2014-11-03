@@ -419,8 +419,9 @@ class Table(models.Model):
 
             how = {}
             for k in df.keys():
-                if k == timecol:
+                if k == timecol or k not in colmap:
                     continue
+
                 how[k] = colmap[k].resample_operation
 
             if 'resample_resolution' in job.criteria:
