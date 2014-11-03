@@ -25,17 +25,22 @@ def cleankey(s):
 
 class TableWidget(object):
     @classmethod
-    def create(cls, section, table, title, width=6, rows=1000, height=300):
+    def create(cls, section, table, title, width=6,
+               cols=None, rows=1000, height=300):
         """Create a widget displaying data in a two dimensional table.
 
         :param int width: Width of the widget in columns (1-12, default 6)
         :param int height: Height of the widget in pixels (default 300)
         :param int rows: Number of rows to display (default 1000)
+        :param list cols: List of columns by name to include.  If None,
+            the default, include all data columns.
+
 
         """
         w = Widget(section=section, title=title, rows=rows, width=width,
                    height=height, module=__name__, uiwidget=cls.__name__)
         w.compute_row_col()
+        w.options = JsonDict(columns=cols)
         w.save()
         w.tables.add(table)
 
@@ -53,23 +58,34 @@ class TableWidget(object):
         w_columns = []  # Widget column definitions
 
         for i, wc in enumerate(job.get_columns()):
+            if (widget.options.columns is not None and
+                    wc.name not in widget.options.columns):
+                continue
+
             ci = ColInfo(wc, i, wc.istime())
             colinfo[ci.key] = ci
             w_keys.append(ci.key)
-            w_column = {'key': ci.key, 'label': wc.label, "sortable": True}
 
-            if wc.isnumeric():
-                if wc.units == wc.UNITS_PCT:
+        # Widget column definitions, make sure this is in the order
+        # defined by the widget.options.columns, if specified
+        w_columns = []
+        for key in (widget.options.columns or w_keys):
+            ci = colinfo[key]
+            w_column = {'key': ci.key, 'label': ci.col.label, "sortable": True}
+
+            if ci.col.isnumeric():
+                if ci.col.units == ci.col.UNITS_PCT:
                     w_column['formatter'] = 'formatPct'
                 else:
-                    if wc.datatype == wc.DATATYPE_FLOAT:
+                    if ci.col.datatype == ci.col.DATATYPE_FLOAT:
                         w_column['formatter'] = 'formatMetric'
-                    elif wc.datatype == wc.DATATYPE_INTEGER:
+                    elif ci.col.datatype == ci.col.DATATYPE_INTEGER:
                         w_column['formatter'] = 'formatIntegerMetric'
-            elif wc.istime():
+            elif ci.col.istime():
                 w_column['formatter'] = 'formatTime'
-            elif wc.datatype == wc.DATATYPE_HTML:
+            elif ci.col.datatype == ci.col.DATATYPE_HTML:
                 w_column['allowHTML'] = True
+
             w_columns.append(w_column)
 
         rows = []
@@ -77,15 +93,16 @@ class TableWidget(object):
         for rawrow in data:
             row = {}
 
-            for i, key in enumerate(w_keys):
+            for key in w_keys:
+                ci = colinfo[key]
                 if colinfo[key].istime:
-                    t = rawrow[i]
+                    t = rawrow[ci.dataindex]
                     try:
                         val = timeutils.datetime_to_microseconds(t) / 1000
                     except AttributeError:
                         val = t * 1000
                 else:
-                    val = rawrow[i]
+                    val = rawrow[ci.dataindex]
 
                 row[key] = val
 
@@ -178,14 +195,10 @@ class TimeSeriesWidget(object):
         """Create a widget displaying time-series data in a line chart
 
         :param int width: Width of the widget in columns (1-12, default 6)
-
         :param int height: Height of the widget in pixels (default 300)
-
         :param bool stacked: If True, show multiple series as stacked
-
         :param list cols: List of columns by name to graph.  If None,
             the default, graph all data columns.
-
         :param list altaxis: List of columns to graph using the
             alternate Y-axis
 
