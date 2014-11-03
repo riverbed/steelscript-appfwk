@@ -646,6 +646,8 @@ class DatasourceTable(Table):
             * ms - milliseconds
             * B - bytes
             * B/s - bytes per second
+            * b - bits
+            * b/s - bits per second
             * pct - percentage
 
         :param float position: Display position relative to other columns, automatically
@@ -731,6 +733,8 @@ class Column(models.Model):
     UNITS_BYTES = 3
     UNITS_BYTES_PER_SEC = 4
     UNITS_PCT = 5
+    UNITS_BITS = 6
+    UNITS_BITS_PER_SEC = 7
     units = models.IntegerField(
         default=UNITS_NONE,
         choices=((UNITS_NONE, "none"),
@@ -738,7 +742,10 @@ class Column(models.Model):
                  (UNITS_MSECS, "ms"),
                  (UNITS_BYTES, "B"),
                  (UNITS_BYTES_PER_SEC, "B/s"),
-                 (UNITS_PCT, "pct"))
+                 (UNITS_PCT, "pct"),
+                 (UNITS_BITS, "b"),
+                 (UNITS_BITS_PER_SEC, "b/s"),
+                 )
     )
 
     # default options to populate options field
