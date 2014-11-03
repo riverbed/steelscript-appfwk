@@ -96,11 +96,6 @@ window.Widget.prototype = {
         $(self.div).html(data);
     },
 
-    padZeros: function(n, p) {
-        var pad = (new Array(1 + p)).join("0");
-        return (pad + n).slice(-pad.length);
-    },
-
     roundAndPadRight: function(num, totalPlaces, precision) {
         var digits = Math.floor(num).toString().length;
         if (typeof precision === 'undefined') {
@@ -117,7 +112,13 @@ window.Widget.prototype = {
         return (new Date(t)).toString();
     },
 
+    padZeros: function(n, p) {
+        var pad = (new Array(1 + p)).join("0");
+        return (pad + n).slice(-pad.length);
+    },
+
     formatTimeMs: function(t, precision) {
+        var self = window.Widget.prototype;
         var d = new Date(t);
         return d.getHours() +
             ':' + self.padZeros(d.getMinutes(), 2) +
@@ -129,7 +130,7 @@ window.Widget.prototype = {
      formatMetric: function(num, precision) {
         var self = this;
 
-        if (typeof num === 'undefined') { 
+        if (typeof num === 'undefined') {
             return "";
         } else if (num === 0) {
             return "0";
@@ -151,7 +152,7 @@ window.Widget.prototype = {
 
     formatIntegerMetric: function(num, precision) {
         var self = this;
-        
+
         return self.formatMetric(num, 0);
     },
 
