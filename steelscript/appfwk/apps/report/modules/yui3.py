@@ -304,12 +304,15 @@ class TimeSeriesWidget(object):
             t0 = datetime.datetime.fromtimestamp(t0)
             t1 = datetime.datetime.fromtimestamp(t1)
 
-        if (t1 - t0).seconds < 2:
+        deltaSeconds = timeutils.timedelta_total_seconds(t1-t0)
+        if deltaSeconds < 2:
             w_axes['time']['formatter'] = 'formatTimeMs'
-        elif (t1 - t0).seconds < 120:
+        elif deltaSeconds < 120:
             w_axes['time']['labelFormat'] = '%k:%M:%S'
-        else:
+        elif deltaSeconds < (24 * 60 * 60):
             w_axes['time']['labelFormat'] = '%k:%M'
+        else:
+            w_axes['time']['labelFormat'] = '%D %k:%M'
 
         # Setup the other axes, checking the axis for each column
         for w_key in w_keys:
