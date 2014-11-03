@@ -1263,11 +1263,12 @@ class Job(models.Model):
             worker = Worker(self, queryclass)
             worker.start()
 
-    def mark_error(self, message):
+    def mark_error(self, message, exception=None):
         logger.warning("%s failed: %s" % (self, message))
         self.safe_update(status=Job.ERROR,
                          progress=100,
-                         message=message)
+                         message=message,
+                         exception=exception)
 
     def mark_complete(self):
         logger.info("%s complete" % self)

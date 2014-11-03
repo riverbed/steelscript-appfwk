@@ -146,7 +146,8 @@ class AnalysisQuery(TableQueryBase):
             job = Job.objects.get(id=id)
 
             if job.status == job.ERROR:
-                self.job.mark_error("Dependent Job failed: %s" % job.message)
+                self.job.mark_error("Dependent Job failed: %s" % job.message,
+                                    exception=job.exception)
                 failed = True
                 break
 
