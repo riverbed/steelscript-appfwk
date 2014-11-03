@@ -37,6 +37,7 @@ class WidgetOptions(JsonDict):
 class Report(models.Model):
     """ Defines a Report as a collection of Sections and their Widgets. """
     title = models.CharField(max_length=200)
+    description = models.TextField(null=True)
     position = models.DecimalField(max_digits=7, decimal_places=3, default=10)
     enabled = models.BooleanField(default=True)
 

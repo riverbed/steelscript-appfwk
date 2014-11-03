@@ -1,8 +1,15 @@
-.criteria { 
+.report-description
+{
+  margin-top: 0px;
+  margin-left: 20px;
+  padding-top: 0px;
+ }
+
+.criteria {
     margin-bottom: 10px;
 }
 
-.criteria-group-title 
+.criteria-group-title
 {
     font-weight: bold;
     background-color: #E0E0E0;

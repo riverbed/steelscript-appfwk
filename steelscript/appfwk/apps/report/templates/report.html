@@ -83,9 +83,14 @@
     </style>
 {% endblock %}
 
-{% block header_row %}<h3>{{ report.title }}</h3>{% endblock %}
+{% block header_row %}<h2>{{ report.title }}</h3>{% endblock %}
 
 {% block content %}
+    {% if report.description %}
+    <div class="report-description">
+      {{ report.description | safe }}
+    </div>
+    {% endif %}
     {% if not report.hide_criteria %}
     <div class="container-fluid">
       <div class="row-fluid">
