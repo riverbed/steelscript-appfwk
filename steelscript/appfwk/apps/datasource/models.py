@@ -1271,7 +1271,7 @@ class Job(models.Model):
             worker = Worker(self, queryclass)
             worker.start()
 
-    def mark_error(self, message, exception=None):
+    def mark_error(self, message, exception=''):
         logger.warning("%s failed: %s" % (self, message))
         self.safe_update(status=Job.ERROR,
                          progress=100,
