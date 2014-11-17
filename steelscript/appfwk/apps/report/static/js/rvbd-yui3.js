@@ -151,45 +151,46 @@ window.rvbd_yui3.TimeSeriesWidget.prototype = Object.create(window.rvbd_yui3.YUI
 
 $.extend(window.rvbd_yui3.TimeSeriesWidget.prototype, {
     requirements: ['charts-legend'],
+//    requirements: [],
     widgetClass: 'Chart',
 
-    prepareData: function(data) {
-        var self = this;
+//    prepareData: function(data) {
+//        var self = this;
 
-        $.each(data.axes, function(i, axis) {
-            if ('formatter' in axis) {
-                axis.labelFunction = (function(formatter) {
-                    return function (v, fmt, tooltip) {
-                        return formatter.call(window.rvbd_yui3.TimeSeriesWidget.prototype,
-                                              v, tooltip ? 2 : 1);
-                    }
-                })(window.rvbd_yui3.YUIWidget.prototype[axis.formatter]);
-            } else if ('tickExponent' in axis && axis.tickExponent < 0) {
-                axis.labelFunction = (function (exp) {
-                    return function(v, fmt, tooltip) {
-                        return tooltip ? v.toFixed(3 - exp) : v.toFixed(1 - exp);
-                    }
-                })(axis.tickExponent);
-            }
-        });
+//        $.each(data.axes, function(i, axis) {
+//            if ('formatter' in axis) {
+//                axis.labelFunction = (function(formatter) {
+//                    return function (v, fmt, tooltip) {
+//                        return formatter.call(window.rvbd_yui3.TimeSeriesWidget.prototype,
+//                                              v, tooltip ? 20 : 1);
+//                    }
+//                })(window.rvbd_yui3.YUIWidget.prototype[axis.formatter]);
+//            } else if ('tickExponent' in axis && axis.tickExponent < 0) {
+//                axis.labelFunction = (function (exp) {
+//                    return function(v, fmt, tooltip) {
+//                        return tooltip ? v.toFixed(3 - exp) : v.toFixed(1 - exp);
+//                    }
+//                })(axis.tickExponent);
+//            }
+//        });
 
-        data.tooltip = {};
-        data.tooltip.setTextFunction = function(textField, val) {
-            textField.setHTML(val);
-        };
+//        data.tooltip = {};
+//        data.tooltip.setTextFunction = function(textField, val) {
+//            textField.setHTML(val);
+//       };
 
-        data.tooltip.markerLabelFunction = function(cat, val, idx, s, sidx) {
-            var msg =
-                cat.displayName + ": " +
-                cat.axis.get("labelFunction").apply(self, [cat.value, cat.axis.get("labelFormat"), true]) + "<br>" +
-                val.displayName + ": " +
-                val.axis.get("labelFunction").apply(self, [val.value, val.axis.get("labelFormat"), true]);
+//        data.tooltip.markerLabelFunction = function(cat, val, idx, s, sidx) {
+//            var msg =
+//                cat.displayName + ": " +
+//                cat.axis.get("labelFunction").apply(self, [cat.value, cat.axis.get("labelFormat"), true]) + "<br>" +
+//                val.displayName + ": " +
+//                val.axis.get("labelFunction").apply(self, [val.value, val.axis.get("labelFormat"), true]);
 
-            return msg;
-        };
+//            return msg;
+//        };
 
-        return data;
-    }
+//        return data;
+//    }
 });
 
 window.rvbd_yui3.ChartWidget = function(dataurl, divid, options, criteria) {
@@ -247,6 +248,38 @@ window.rvbd_yui3.PieWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.
 $.extend(window.rvbd_yui3.PieWidget.prototype, {
     requirements: ['charts-legend'],
     widgetClass: 'Chart'
+});
+
+window.rvbd_yui3.CandleStickWidget = function(dataurl, divid, options, criteria) {
+    var self = this;
+
+    window.rvbd_yui3.YUIWidget.apply(self, [dataurl, divid, options, criteria]);
+};
+
+window.rvbd_yui3.CandleStickWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
+$.extend(window.rvbd_yui3.CandleStickWidget.prototype, {
+    requirements: ['series-candlestick', 'charts'],
+    widgetClass: 'Chart',
+    
+    prepareData: function(data) {
+        var self = this;
+        data.tooltip = {
+            setTextFunction: function(textField, val) {
+                textField.setHTML(val);
+            },
+
+            planarLabelFunction: function(cat, val, idx, s, sidx) {
+                return data.dataProvider[idx].date + "<br>" +
+                       "Open: " + data.dataProvider[idx].open.toString() + "<br>" +
+                       "High: " + data.dataProvider[idx].high.toString() + "<br>" +
+                       "Low: " + data.dataProvider[idx].low.toString() + "<br>" +
+                       "Close: " + data.dataProvider[idx].close.toString();
+            }
+        };
+
+        return data;
+
+    }
 });
 
 })();

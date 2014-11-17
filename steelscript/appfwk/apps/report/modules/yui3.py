@@ -652,3 +652,67 @@ class LineWidget(ChartWidget):
         """
         kwargs['rows'] = kwargs.get('rows', 0)
         return ChartWidget.create(*args, charttype='line', **kwargs)
+
+
+class CandleStickWidget(object):
+
+    @classmethod
+    def create(cls, section, table, title, width=6, height=300,
+               keycols=None, valuecols=None, charttype='candlestick'):
+        w = Widget(section=section, title=title, width=width,
+                   height=height, module=__name__, uiwidget=cls.__name__)
+        w.compute_row_col()
+        if keycols is None:
+            keycols = [col.name for col in table.get_columns()
+                       if col.iskey is True]
+        if len(keycols) == 0:
+            raise ValueError("Table %s does not have any key columns defined" %
+                             str(table))
+
+        if valuecols is None:
+            valuecols = [col.name for col in table.get_columns()
+                         if col.iskey is False]
+        w.options = JsonDict(dict={'keycols': keycols,
+                                   'columns': valuecols,
+                                   'axes': None,
+                                   'charttype': charttype})
+        w.save()
+        w.tables.add(table)
+
+    @classmethod
+    def process(cls, widget, job, data):
+
+        PRICE_NAMES = ["open", "high", "low", "close"]
+
+        w_axes = {"date_range": {"keys": ["date"],
+                                 "position": "bottom",
+                                 "type": "time",
+                                 "styles": {"label": {"rotation": "-45",
+                                            "fontSize": "8pt"},
+                                            "majorUnit": {"count": 5}
+                                            },
+                                 },
+                  "candle": {"keys": PRICE_NAMES,
+                             "type": "numeric",
+                             # YUI seems to always add a default axis
+                             # (also can not change the scale)
+                             # thus set position to be none for this axis
+                             # it is required to render the candle stick graph
+                             "position": "none"}
+                  }
+
+        seriesCollection = [{"type": "candlestick",
+                             "xKey": 'date',
+                             "yAxis": "candle"}]
+
+        rows = [dict(zip(["date"] + PRICE_NAMES, day)) for day in data]
+        ret = {
+            "chartTitle": widget.title.format(**job.actual_criteria),
+            "type": widget.options.charttype,
+            "dataProvider": rows,
+            "seriesCollection": seriesCollection,
+            "axes": w_axes,
+            "seriesKeys": [PRICE_NAMES],
+            "interactionType": "planar",
+        }
+        return ret
