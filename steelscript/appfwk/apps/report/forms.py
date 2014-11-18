@@ -93,6 +93,10 @@ class CopyReportForm(forms.Form):
     def slug(self):
         return self.cleaned_data.get('filename').split('.')[0]
 
+    @property
+    def reportname(self):
+        return self.cleaned_data.get('reportname')
+
     def clean_filename(self):
         filename = self.cleaned_data.get('filename')
         if not filename.endswith('.py'):
@@ -129,25 +133,6 @@ class CopyReportForm(forms.Form):
         return os.path.join(self.basepath(),
                             namespace,
                             data.get('filename'))
-
-    def update_title(self):
-        """ Writes new title into file"""
-        with open(self.filepath(), "r+") as f:
-            lines = f.read().split("\n")
-            new_line = None
-            for ind, ln in enumerate(lines):
-                if "Report.create" in ln and not ln.startswith('#'):
-                    list = ln.split('"')
-                    list[1] = self.cleaned_data.get('reportname')
-                    new_line = list[0] + '"' + list[1] + '"' + list[2]
-                    break
-            if new_line is None:
-                raise ValidationError("Current report does not have title")
-            lines[ind] = new_line
-            f.seek(0)
-            f.write("\n".join(lines))
-            f.truncate()
-
 
 class WidgetDetailForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):

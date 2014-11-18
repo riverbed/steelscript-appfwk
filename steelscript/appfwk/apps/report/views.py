@@ -26,6 +26,7 @@ from django.core.urlresolvers import reverse
 from django.core.servers.basehttp import FileWrapper
 from django.utils.datastructures import SortedDict
 from django.utils.safestring import mark_safe
+from django.core.exceptions import ValidationError
 
 from rest_framework import generics, views
 from rest_framework.decorators import api_view
@@ -45,7 +46,7 @@ from steelscript.appfwk.apps.preferences.models import SystemSettings
 from steelscript.appfwk.apps.report.models import (Report, Section, Widget,
                                                    WidgetJob)
 from steelscript.appfwk.apps.report.serializers import ReportSerializer
-from steelscript.appfwk.apps.report.utils import create_debug_zipfile, rm_file
+from steelscript.appfwk.apps.report.utils import create_debug_zipfile
 from steelscript.appfwk.apps.report.forms import (ReportEditorForm,
                                                   CopyReportForm)
 
@@ -91,6 +92,17 @@ def download_debug(request):
     response['Content-Disposition'] = 'attachment; filename=%s' % zipname
     response['Content-Length'] = os.stat(zipfile).st_size
     return response
+
+
+def rm_file(filepath):
+    """ Remove a file, ignoring errors that may occur
+
+    :param filepath: file name with path
+    """
+    try:
+        os.remove(filepath)
+    except:
+        pass
 
 
 class ReportView(views.APIView):
@@ -379,7 +391,6 @@ class ReportEditorDiff(views.APIView):
                                    'diffhtml': html},
                                   context_instance=RequestContext(request))
 
-
 class ReportCopy(views.APIView):
     """ Edit Report files directly.  Requires superuser permissions. """
     renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
@@ -393,6 +404,22 @@ class ReportCopy(views.APIView):
                                   {'form': form},
                                   context_instance=RequestContext(request))
 
+    def update_title(self, report, form):
+        """ Writes new title into file"""
+        with open(form.filepath(), "r+") as f:
+            lines = f.read().split("\n")
+            new_line = None
+            for ind, ln in enumerate(lines):
+                if "Report.create" in ln and not ln.startswith('#'):
+                    new_line = ln.replace(report.title, form.reportname)
+                    break
+            if new_line is None:
+                raise ValidationError("Current report does not have title")
+            lines[ind] = new_line
+            f.seek(0)
+            f.write("\n".join(lines))
+            f.truncate()
+
     def post(self, request, namespace, report_slug):
         report = get_object_or_404(Report, namespace=namespace,
                                    slug=report_slug)
@@ -402,7 +429,7 @@ class ReportCopy(views.APIView):
             try:
                 shutil.copyfile(report.filepath, form.filepath())
                 # update the title of the new report
-                form.update_title()
+                self.update_title(report, form)
 
                 response['redirect'] = reverse('report-editor',
                                                args=(form.namespace,
