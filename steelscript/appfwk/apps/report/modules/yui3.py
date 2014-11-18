@@ -665,8 +665,8 @@ class CandleStickWidget(object):
         :param list keycols: List of key column names to use for x-axis labels
         :param list valuecols: List of data columns to graph
         :param str charttype: Type of chart, defaults to 'candlestick'.
-        
-        The Y axis of this widget can not dynamically scale to different ranges.
+
+        The Y axis of this widget can't dynamically scale to different ranges.
         """
         w = Widget(section=section, title=title, width=width,
                    height=height, module=__name__, uiwidget=cls.__name__)
