@@ -107,6 +107,11 @@ window.run = function() {
     $("#criteria").collapse('hide');
 };
 
+window.updateTimeAndRun = function() {
+    $('#timenow').click();
+    run();
+}
+
 window.dorun = function() {
     if (!window.runRequested) {
         return;
@@ -370,11 +375,6 @@ function addGetEmbedHtmlHandler(widget) {
             });
         });
     });
-}
-
-function updateTimeAndRun() {
-    $('#timenow').click();
-    run();
 }
 
 })();
