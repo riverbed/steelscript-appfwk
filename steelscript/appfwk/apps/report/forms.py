@@ -134,6 +134,7 @@ class CopyReportForm(forms.Form):
                             namespace,
                             data.get('filename'))
 
+
 class WidgetDetailForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(WidgetDetailForm, self).__init__(*args, **kwargs)
