@@ -42,7 +42,7 @@
 
         {% block login %}
                 <small id="report_datetime" class="text-info pull-right">{% now "jS F Y H:i:s" %}</small><br>
-                <small class="text-info pull-right"><span id="report_timezone">{{ TIME_ZONE }}</span>&nbsp;<span class="text-info"><a href='/preferences/user/?next={{ request.path }}'>(update)</a></span></small>
+                <small class="text-info pull-right"><span id="report_timezone">{{ TIME_ZONE }}</span>&nbsp;<span class="text-info"><a id='update-tz' href='/preferences/user/?next={{ request.path }}'>(update)</a></span></small>
         {% endblock %}
 
 {% block content %}{% endblock %}

@@ -27,7 +27,7 @@ function modal_html(heading, body, cancelButtonTxt, okButtonTxt, customClass) {
     if( cancelButtonTxt ){
         modalHtml +=
             '<div class="modal-footer">' +
-                '<a href="#" class="btn" data-dismiss="modal">' +
+                '<a href="#" id="cancelButton" class="btn" data-dismiss="modal">' +
                   cancelButtonTxt +
                 '</a>' +
                 '<a href="#" id="okButton" class="btn btn-primary">' +
@@ -49,13 +49,21 @@ function modal_html(heading, body, cancelButtonTxt, okButtonTxt, customClass) {
 }
 
 // ref http://stackoverflow.com/a/10124151/2157429
-function confirm(heading, question, cancelButtonTxt, okButtonTxt, callback) {
+function confirm(heading, question, cancelButtonTxt, okButtonTxt, okCallback, cancelCallback) {
     var modal = modal_html(heading, question, cancelButtonTxt, okButtonTxt);
 
     modal.find('#okButton').click(function(event) {
-      callback();
+      okCallback();
       modal.modal('hide');
     });
+
+    if (typeof cancelCallback !== 'undefined') {
+        modal.find('#cancelButton').click(function(event) {
+          cancelCallback();
+          modal.modal('hide');
+        });        
+    }
+
 
     modal.modal('show');
     modal.on('hidden', function() {

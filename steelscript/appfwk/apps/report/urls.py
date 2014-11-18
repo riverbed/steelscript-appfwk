@@ -24,6 +24,10 @@ urlpatterns = patterns(
         views.ReportView.as_view(),
         name='report-view'),
 
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/print/$',
+        views.ReportPrintView.as_view(),
+        name='report-print-view'),
+
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/criteria/$',
         views.ReportCriteria.as_view(),
         name='report-criteria'),

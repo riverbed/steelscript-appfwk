@@ -14,6 +14,7 @@
 
 {% block header %}
     <link href="{{ STATIC_URL }}css/report.css" rel="stylesheet"/>
+
     <link href="{{ STATIC_URL }}showLoading/css/showLoading.css" rel="stylesheet"/>
     <script type="text/javascript" src="{{ STATIC_URL }}showLoading/js/jquery.showLoading.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.min.js"></script>
@@ -38,11 +39,14 @@
         <script type="text/javascript" src="{{ STATIC_URL }}js/rvbd-google-maps.js"></script>
     {% endif %}
 
-
     <script type="text/javascript">
+    {% block header_script %}
+      var launchingPrintPage = false;
       var runRequested = false;
       var debugFlag = false;
-      $(document).ready( function() {
+      var expandTables = {% if expand_tables %} true {% else %} false {% endif %};
+
+      $(document).ready(function() {
           $.ajaxSetup({
               beforeSend: function(xhr) {
                   xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
@@ -59,28 +63,20 @@
 
           {% else %}
 
-          $("#criteria").on('hidden', function() { dorun(); });
+          $("#criteria").on('hidden', dorun);
           $('form#criteriaform').submit(function() {
-              run();
-              return false;
+              // If not launching print window, run report. If launching print window,
+              // allow standard POST request.
+              if (!launchingPrintWindow) {
+                  run();
+                  return false;
+              }
           });
 
           {% endif %}
-
         });
-
+    {% endblock %}
     </script>
-
-    <style>
-        .loading-indicator
-        {
-            height: 80px;
-            width: 80px;
-            background: url( '{{ STATIC_URL }}showLoading/images/loading.gif' );
-            background-repeat: no-repeat;
-            background-position: center center;
-        }
-    </style>
 {% endblock %}
 
 {% block header_row %}<h2>{{ report.title }}</h3>{% endblock %}
@@ -93,18 +89,19 @@
     {% endif %}
     {% if not report.hide_criteria %}
     <div class="container-fluid">
-      <div class="row-fluid">
+      <div id="criteria-row" class="row-fluid">
         <div class="span12 widget-box">
           <div class="widget-title">
             <a data-toggle="collapse" data-target="#criteria" href="#">
               Criteria
             </a>
           </div>
-          <div class="collapse in" id="criteria">
+          <div id="criteria" class="collapse in">
             <div class="widget-content">
                 <form class="form-horizontal" action="{% url 'report-view' report.namespace report.slug %}" method="post" id="criteriaform"
-                        {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>
+                        {% if form.is_multipart %}enctype="multipart/form-data"{% endif %} target="_blank">
                     {% csrf_token %}
+                    <input type="hidden" id="id_expand_tables" name="expand_tables">
                     <fieldset>
                         <div id="form-error-info" class="text-error"></div>
 
@@ -171,7 +168,7 @@
     <div class="container-fluid">
       <div class="row-fluid">
         <div class="span12 widget-box">
-          <div class="widget-title">
+          <div class="widget-title report-title">
             <a data-toggle="collapse" data-target="#report-container" href="#">
               {% if report.hide_criteria %}
                 {{ report.title }}
@@ -180,6 +177,7 @@
                 Report
               {% endif %}
             </a>
+            <span class="icon-print print-report" title="Print this report (run report to enable)"></span>
           </div>
           <div class="collapse in" id="report-container">
             <div class="widget-content collapse in" id="report">

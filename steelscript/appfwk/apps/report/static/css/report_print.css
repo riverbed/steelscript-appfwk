@@ -1,0 +1,19 @@
+body {
+    width: 1200px;
+}
+
+.widget-content {
+    border-top: 0px;
+}
+
+.print-report-link,
+.navbar,
+.report-title,
+#update-tz,
+#criteria-row {
+    display: none;
+}
+
+a[href]:after { /* Bootstrap adds URLs next to links when printing. Remove these */
+    content: none;
+}

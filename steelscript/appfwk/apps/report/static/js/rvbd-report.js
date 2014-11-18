@@ -8,13 +8,48 @@
  */
 
 // This script is used by report.html and widget.html to create the graphs/widgets
-
 rvbd_status = {};
 rvbd_debug = false;
 rvbd_debug_url = '';
 
 (function() {
 'use strict';
+
+window.launchPrintWindow = function() {
+    function doLaunch(expandTables) {
+        var $form = $('#criteriaform');
+        var origAction = $form.attr('action');
+
+        $form.attr('action', origAction + 'print/');
+
+        $('#id_expand_tables').val(expandTables ? 'on' : '');
+
+        window.launchingPrintWindow = true;
+        $('#criteriaform').submit();
+        window.launchingPrintWindow = false;
+
+        $form.attr('action', origAction);
+    }
+
+    var oversizedTablesFound = false;
+    $('.yui3-datatable-y-scroller').each(function() {
+        if (this.scrollHeight > this.clientHeight) {
+            oversizedTablesFound = true;
+            return;
+        }
+    });
+
+    if (oversizedTablesFound) {
+        var okCallback = function() { doLaunch(true); },
+            cancelCallback = function() { doLaunch(false); },
+            content = "Some table(s) contain too much content to fit at standard height " +
+                      "and will be cut off. Would you like to extend these tables vertically " +
+                      "to show all data?";
+        confirm("Print report", content, "Don't extend", "Extend", okCallback, cancelCallback);
+    } else {
+        doLaunch(false);
+    }
+}
 
 // If widgetInfo is provided, renders an embedded widget. Otherwise, renders
 // the whole report.
@@ -56,6 +91,17 @@ window.criteria_changed = function() {
     });
 };
 
+window.enablePrintButton = function() {
+    $('<a href="#" class="icon-print print-report" title="Print this report"></a>')
+         .click(window.launchPrintWindow)
+         .replaceAll('.print-report');
+}
+
+window.disablePrintButton = function() {
+    $('<span class="icon-print print-report" title="Print this report (run report to enable)"></span>')
+         .replaceAll('.print-report');
+}
+
 window.run = function() {
     window.runRequested = true;
     $("#criteria").collapse('hide');
@@ -67,38 +113,43 @@ window.dorun = function() {
     }
     window.runRequested = false;
 
-    var $form = $('form#criteriaform');
+    window.disablePrintButton();
 
-    var criteria = $form.serializeArray();
-    criteria.shift();
-    criteria.splice(criteria.length - 2, 2);
+    var $form = $('form#criteriaform'),
+        ajaxParams = {
+            dataType: 'json',
+            type: 'post',
+            url: $form.attr('action'),
+            complete: function(jqXHR, textStatus) {
+                $('body').css('cursor', 'default');
+            },
+            success: function(data, textStatus) {
+                renderWidgets(data);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                if (jqXHR.status === 400) {
+                    $('#criteria').collapse('show');
+                    $('#form-error-info').html(jqXHR.responseText);
+                } else {
+                    alertReportError(textStatus, errorThrown);
+                }
+            }
+        };
+
+    if (typeof window.autoLoadCriteria !== 'undefined'
+        && window.autoLoadCriteria !== null) { // Criteria already provided (print view)
+        ajaxParams.data = window.autoLoadCriteria;
+        $.ajax(ajaxParams);
+    } else { // Standard form submit
+        $form.ajaxSubmit(ajaxParams);
+    }
 
     $('#id_debug').val(window.debugFlag ? 'on' : '');
     $('#form-error-info').empty();
     $('body').css('cursor', 'wait');
 
-    $form.ajaxSubmit({
-        dataType: 'json',
-        type: 'post',
-        url: $form.attr('action'),
-        complete: function(jqXHR, textStatus) {
-            $('body').css('cursor', 'default');
-        },
-        success: function(data, textStatus) {
-            renderWidgets(data);
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-            if (jqXHR.status === 400) {
-                $('#criteria').collapse('show');
-                $('#form-error-info').html(jqXHR.responseText);
-            } else {
-                alertReportError(textStatus, errorThrown);
-            }
-        }
-    });
     window.debugFlag = false;
 }
-
 
 function update_criteria(data) {
     $.each(data, function(i, w) {
@@ -114,7 +165,7 @@ function alertReportError(textStatus, errorThrown) {
     alert("An error occurred: " + textStatus + ": " + errorThrown)
 }
 
-/* Renders all widgets in the current report, or, if widgetId is provided,
+/* Renders all widgets in the current report, or, if widgetInfo is provided,
    just that widget. */
 function renderWidgets(widgets, widgetInfo) {
     var $report = $('#report'),
@@ -129,6 +180,7 @@ function renderWidgets(widgets, widgetInfo) {
     report_meta = widgets.shift();
 
     window.rvbd_debug = report_meta.debug;
+
     $('#report_datetime').html(report_meta.datetime);
     $('#report_timezone').html(report_meta.timezone);
 
@@ -154,7 +206,6 @@ function renderWidgets(widgets, widgetInfo) {
 
     var $row,
         rownum = 0,
-        wId,
         opts;
     $.each(renderWidgets, function(i, w) {
         if (rownum !== w.row) {
@@ -164,53 +215,47 @@ function renderWidgets(widgets, widgetInfo) {
             rownum = w.row;
         }
 
-        wId = 'chart_' + w.widgetid;
-        $('<div></div>')
-            .attr('id', wId)
-            .addClass('blackbox span' + (isEmbedded ? '12' : w.width))
-            .text("Widget " + w.widgetid)
+        // Create empty div that the new widget object will populate
+        var $div = $('<div></div>')
             .appendTo($row);
 
         opts = w.options || {};
         opts.height = w.height;
+        opts.width = w.width;
 
-        new window[w.widgettype[0]][w.widgettype[1]](w.posturl, wId, opts, w.criteria);
+        var widgetModule = w.widgettype[0],
+            widgetClass = w.widgettype[1];
+
+        new window[widgetModule][widgetClass](w.posturl, isEmbedded, $div[0],
+                                              w.widgetid, opts, w.criteria);
         window.rvbd_status[w.posturl] = 'running';
     });
 
-    var completeCallback = isEmbedded ? onEmbedWidgetComplete : onReportWidgetComplete;
+    var completeCallback = (isEmbedded ? onEmbedWidgetComplete : onReportWidgetComplete);
 
-    // wait a short period before checking widget status
-    setTimeout(function() { monitorWidgetStatus(completeCallback, widgets); }, 100);
+    $(document).on('widgetDoneLoading', function(e, widget) { 
+        completeCallback(widget);
+        checkAndProcessCompleteWidgets();
+    });
 }
 
-/**
- * checks if each widget is finished loading, and then calls the provided
- * onComplete() function passing the widget's info of the completed widget. 
- */
-function monitorWidgetStatus(onComplete, widgets) {
-    // Filter widgets down to unfinished ones, and run onComplete() on the ones
-    // that are finished.
-    widgets = $.grep(widgets, function(widget) {
-        if (window.rvbd_status[widget.posturl] === 'complete') {
-            onComplete(widget);
-        } else if (window.rvbd_status[widget.posturl] !== 'error') {
-            return true;
+function checkAndProcessCompleteWidgets() {
+    var widgetsRunning = false;
+    $.each(window.rvbd_status, function(postUrl, status) {
+        if (status === 'running') {
+            widgetsRunning = true;
+            return;
         }
     });
 
-    // If there are still running widgets, monitor again in 0.5 seconds
-    if (widgets) {
-        setTimeout(function() { 
-            monitorWidgetStatus(onComplete, widgets);
-        }, 500);
-        return;
-    }
+    if (!widgetsRunning) {
+        if (window.rvbd_debug) {
+            alert('Complete - you will now be prompted to download a zipfile ' +
+                  'containing the server logs.');
+            window.location = window.rvbd_debug_url;
+        }
 
-    if (window.rvbd_debug) { // No more widgets running and we're in debug mode
-        alert('Complete - you will now be prompted to download a zipfile ' +
-              'containing the server logs.');
-        window.location = window.rvbd_debug_url;
+        window.enablePrintButton();
     }
 }
 
@@ -218,33 +263,28 @@ function monitorWidgetStatus(onComplete, widgets) {
  * Called after each widget in the report finishes loading
  */
 function onReportWidgetComplete(widget) {
-    var $chart_div = $('#chart_' + widget.widgetid),
-        $title_div = $('#chart_' + widget.widgetid + '_content-title'),
-        $content_div = $('#chart_' + widget.widgetid + '_content');
-    addWidgetMenu(widget, $title_div);
+    addWidgetMenu(widget);
 }
 
 /**
  * Called after an embedded widget finishes loading.
  */
 function onEmbedWidgetComplete(widget) {
-    /* var $chart_div = $('#chart_' + widget.widgetid),
-        $title_div = $('#chart_' + widget.widgetid + '_content-title'),
-        $content_div = $('#chart_' + widget.widgetid + '_content');
-
-    // Code here... */
+    // Code here...
 }
 
-function addWidgetMenu(widget, $titleDiv) {
+function addWidgetMenu(widget) {
+    var id = widget.id;
+
     var menuItems = [
-        '<a tabindex="-1" id="' + widget.widgetid + '_get_embed">Embed This Widget...</a>'
+        '<a tabindex="-1" id="' + id + '_get_embed">Embed This Widget...</a>'
     ];
 
     var $menuContainer = $('<div></div>')
             .attr('id', 'reports-dropdown')
             .addClass('dropdown'),
         $menuButton = $('<a></a>')
-            .attr('id', widget.widgetid + '_menu')
+            .attr('id', id + '_menu')
             .addClass('dropdown-toggle widget-dropdown-toggle')
             .attr({
                 href: '#',
@@ -256,7 +296,7 @@ function addWidgetMenu(widget, $titleDiv) {
             .addClass('dropdown-menu widget-dropdown-menu')
             .attr({
                 role: 'menu',
-                'aria-labelledby': widget.widgetid + '_menu'
+                'aria-labelledby': id + '_menu'
             });
 
     // Add each menu item to the menu
@@ -271,7 +311,7 @@ function addWidgetMenu(widget, $titleDiv) {
     $menuButton.append($menuIcon);
     $menuContainer.append($menuButton)
                   .append($menu)
-                  .appendTo($titleDiv);
+                  .appendTo($('#chart_' + id + '_content-title'));
 
     // Add menu item onClick handlers
     addGetEmbedHtmlHandler(widget);
@@ -293,12 +333,12 @@ function addGetEmbedHtmlHandler(widget) {
     delete criteria.endtime;
 
     // Create the url that describes the current widget
-    var url = window.location.href.split('#')[0] +  'widget/' + widget.widgetid +
+    var url = window.location.href.split('#')[0] + 'widget/' + widget.id +
               '?' + $.param(criteria);
 
     // Add the actual menu item listener which triggers the modal
-    $('#' + widget.widgetid + '_get_embed').click(function() {
-        var iframe = generateIFrame(url, 500, widget.height + 12),
+    $('#' + widget.id + '_get_embed').click(function() {
+        var iframe = generateIFrame(url, 500, widget.options.height + 12),
             heading = "Embed Widget HTML",
             okButtonTxt = "OK",
             body = 'Choose dimensions for the embedded widget:<br>' +
@@ -318,8 +358,6 @@ function addGetEmbedHtmlHandler(widget) {
                     '" type="text" style="width:97%">';
 
         alertModal(heading, body, okButtonTxt, function() {
-            // this function is called on 'shown' 
-            
             // automatically set the focus to the iframe text
             $('#embed_text')
                 .on('mouseup focus', function() { this.select(); })

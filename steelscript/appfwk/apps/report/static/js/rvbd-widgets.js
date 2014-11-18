@@ -18,15 +18,20 @@ if (typeof Object.create !== 'function') {
     };
 }
 
-
-window.Widget = function(posturl, divid, options, criteria) {
+window.Widget = function(posturl, isEmbedded, div, id, options, criteria) {
     var self = this;
 
     self.options = options;
     self.posturl = posturl;
-    self.div = document.getElementById(divid);
+    self.div = div;
+    self.id = id;
+    self.criteria = criteria;
 
-    var $div = $(self.div);
+    var $div = $(div);
+
+    $div.attr('id', 'chart_' + id)
+        .addClass('widget blackbox span' + (isEmbedded ? '12' : options.width))
+        .text("Widget " + id);
 
     if (options.height) {
         $div.height(options.height);
@@ -79,9 +84,11 @@ window.Widget.prototype = {
                 $(self.div).hideLoading();
                 self.render(response.data);
                 window.rvbd_status[self.posturl] = 'complete';
+                $(document).trigger('widgetDoneLoading', [self]);
                 break;
             case 4: // ERROR
                 self.displayError(response);
+                $(document).trigger('widgetDoneLoading', [self]);
                 break;
             default:
                 $(self.div).setLoading(response.progress);
@@ -94,6 +101,11 @@ window.Widget.prototype = {
         var self = this;
 
         $(self.div).html(data);
+    },
+
+    padZeros: function(n, p) {
+        var pad = (new Array(1 + p)).join("0");
+        return (pad + n).slice(-pad.length);
     },
 
     roundAndPadRight: function(num, totalPlaces, precision) {
@@ -112,13 +124,7 @@ window.Widget.prototype = {
         return (new Date(t)).toString();
     },
 
-    padZeros: function(n, p) {
-        var pad = (new Array(1 + p)).join("0");
-        return (pad + n).slice(-pad.length);
-    },
-
     formatTimeMs: function(t, precision) {
-        var self = window.Widget.prototype;
         var d = new Date(t);
         return d.getHours() +
             ':' + self.padZeros(d.getMinutes(), 2) +
@@ -130,7 +136,7 @@ window.Widget.prototype = {
      formatMetric: function(num, precision) {
         var self = this;
 
-        if (typeof num === 'undefined') {
+        if (typeof num === 'undefined') { 
             return "";
         } else if (num === 0) {
             return "0";
@@ -152,7 +158,7 @@ window.Widget.prototype = {
 
     formatIntegerMetric: function(num, precision) {
         var self = this;
-
+        
         return self.formatMetric(num, 0);
     },
 
@@ -209,8 +215,8 @@ window.Widget.prototype = {
 
 window.rvbd_raw = {};
 
-window.rvbd_raw.TableWidget = function (dataurl, divid, options, criteria) {
-    Widget.apply(this, [dataurl, divid, options, criteria]);
+window.rvbd_raw.TableWidget = function(posturl, isEmbedded, div, id, options, criteria) {
+    Widget.apply(this, [posturl, isEmbedded, div, id, options, criteria]);
 };
 window.rvbd_raw.TableWidget.prototype = Object.create(window.Widget.prototype);
 

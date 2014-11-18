@@ -28,6 +28,7 @@ from django.utils.datastructures import SortedDict
 from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 
+
 from rest_framework import generics, views
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAdminUser
@@ -105,48 +106,19 @@ def rm_file(filepath):
         pass
 
 
-class ReportView(views.APIView):
-    """ Main handler for /report/{id}
-    """
-    model = Report
-    serializer_class = ReportSerializer
-    renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
+class GenericReportView(views.APIView):
+    def get_media_params(self, request):
+        """ Implement this method in subclasses to compute the values of
+            the template, criteria and expand_tables template params.
+        """
 
-    # ReportView.get()
-    def get(self, request, namespace=None, report_slug=None):
-        # handle REST calls
+        raise NotImplementedError('get_media_params() must be implemented in '
+                                  ' subclass.')
 
-        queryset = Report.objects.filter(enabled=True)
 
-        if request.accepted_renderer.format != 'html':
-            if namespace and report_slug:
-                queryset = queryset.get(namespace=namespace,
-                                        slug=report_slug)
-            elif report_slug:
-                queryset = queryset.get(namespace='default',
-                                        slug=report_slug)
-            elif namespace:
-                queryset = queryset.filter(namespace='default')
-
-            serializer = ReportSerializer(instance=queryset)
-            return Response(serializer.data)
-
-        # handle HTML calls
-        try:
-            if namespace is None:
-                namespace = queryset[0].namespace
-
-            if report_slug is None:
-                qs = queryset.filter(namespace=namespace).order_by('position',
-                                                                   'title')
-                kwargs = {'report_slug': qs[0].slug,
-                          'namespace': namespace}
-                return HttpResponseRedirect(reverse('report-view',
-                                                    kwargs=kwargs))
-            else:
-                report = queryset.get(namespace=namespace, slug=report_slug)
-        except:
-            raise Http404
+    def render_html(self, report, request, namespace, report_slug, isprint):
+        """ Render HTML response
+        """
 
         logging.debug('Received request for report page: %s' % report_slug)
 
@@ -198,7 +170,8 @@ class ReportView(views.APIView):
             section_map.append({'title': 'Common',
                                 'parameters': fields_by_section[0]})
 
-        for s in Section.objects.filter(report=report).order_by('position', 'title'):
+        for s in Section.objects.filter(report=report).order_by('position',
+                                                                'title'):
             show = False
             for v in fields_by_section[s.id].values():
                 if v.keyword not in (report.hidden_fields or []):
@@ -209,7 +182,9 @@ class ReportView(views.APIView):
                 section_map.append({'title': s.title,
                                     'parameters': fields_by_section[s.id]})
 
-        return render_to_response('report.html',
+        template, criteria, expand_tables = self.get_media_params(request)
+
+        return render_to_response(template,
                                   {'report': report,
                                    'developer': system_settings.developer,
                                    'maps_version': system_settings.maps_version,
@@ -217,12 +192,67 @@ class ReportView(views.APIView):
                                    'endtime': 'endtime' in form.fields,
                                    'form': form,
                                    'section_map': section_map,
-                                   'show_sections': (len(section_map) > 1)},
+                                   'show_sections': (len(section_map) > 1),
+                                   'criteria': criteria,
+                                   'expand_tables': expand_tables},
                                   context_instance=RequestContext(request))
+
+
+class ReportView(GenericReportView):
+    """ Main handler for /report/{id}
+    """
+    model = Report
+    serializer_class = ReportSerializer
+    renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
+
+    def get_media_params(self, request):
+        template = 'report.html'
+        criteria = 'null'
+        expand_tables = False
+
+        return (template, criteria, expand_tables)
+
+    # ReportView.get()
+    def get(self, request, namespace=None, report_slug=None):
+        if request.accepted_renderer.format == 'html':  # handle HTML calls
+            queryset = Report.objects.filter(enabled=True)
+
+            try:
+                if namespace is None:
+                    namespace = queryset[0].namespace
+
+                if report_slug is None:
+                    qs = (queryset.filter(namespace=namespace)
+                          ).order_by('position', 'title')
+                    kwargs = {'report_slug': qs[0].slug,
+                              'namespace': namespace}
+                    return HttpResponseRedirect(reverse('report-view',
+                                                        kwargs=kwargs))
+                else:
+                    report = queryset.get(namespace=namespace,
+                                          slug=report_slug)
+            except:
+                raise Http404
+
+            return self.render_html(report, request, namespace, report_slug,
+                                    False)
+        else:  # handle REST calls
+            queryset = Report.objects.filter(enabled=True)
+            if namespace and report_slug:
+                queryset = queryset.get(namespace=namespace,
+                                        slug=report_slug)
+            elif report_slug:
+                queryset = queryset.get(namespace='default',
+                                        slug=report_slug)
+            elif namespace:
+                queryset = queryset.filter(namespace='default')
+
+            serializer = ReportSerializer(instance=queryset)
+            return Response(serializer.data)
+
 
     # ReportView.post()
     def post(self, request, namespace=None, report_slug=None):
-        # handle REST calls
         if namespace is None or report_slug is None:
             return self.http_method_not_allowed(request)
 
@@ -297,6 +327,31 @@ class ReportView(views.APIView):
         else:
             # return form with errors attached in a HTTP 200 Error response
             return HttpResponse(str(form.errors), status=400)
+
+
+class ReportPrintView(GenericReportView):
+    """ Handles printer-friendly report pages
+    """
+    model = Report
+    serializer_class = ReportSerializer
+    renderer_classes = (TemplateHTMLRenderer, )
+
+    def get_media_params(self, request):
+        template = 'report_print.html'
+        criteria = json.dumps(dict(zip(request.POST.keys(),
+                                   request.POST.values())))
+        expand_tables = ('expand_tables' in request.POST and
+                         request.POST['expand_tables'] != '')
+        return (template, criteria, expand_tables)
+
+    def post(self, request, namespace, report_slug):
+        queryset = Report.objects.filter(enabled=True)
+        try:
+            report = queryset.get(namespace=namespace, slug=report_slug)
+        except:
+            raise Http404
+
+        return self.render_html(report, request, namespace, report_slug, True)
 
 
 class WidgetView(views.APIView):
@@ -607,7 +662,6 @@ class ReportTableList(generics.ListAPIView):
 
 
 class WidgetJobsList(views.APIView):
-
     parser_classes = (JSONParser,)
 
     def post(self, request, namespace, report_slug, widget_id, format=None):
@@ -670,8 +724,8 @@ class WidgetJobsList(views.APIView):
 
 
 class WidgetJobDetail(views.APIView):
-
-    def get(self, request, namespace, report_slug, widget_id, job_id, format=None):
+    def get(self, request, namespace, report_slug, widget_id, job_id,
+            format=None):
         wjob = WidgetJob.objects.get(id=job_id)
 
         job = wjob.job
