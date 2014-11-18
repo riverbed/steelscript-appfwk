@@ -115,7 +115,6 @@ class GenericReportView(views.APIView):
         raise NotImplementedError('get_media_params() must be implemented in '
                                   ' subclass.')
 
-
     def render_html(self, report, request, namespace, report_slug, isprint):
         """ Render HTML response
         """
