@@ -131,10 +131,10 @@ $.extend(window.rvbd_yui3.TableWidget.prototype, {
         data.scrollable = 'xy';
 
         $.each(data.columns, function(i, c) {
-            if (typeof c.formatter !== 'undefined' && c.formatter in window.rvbd_yui3.YUIWidget.prototype) {
-                c.formatter = (function(key, f) {
-                    return function(v) { return f.call(window.rvbd_yui3.TableWidget.prototype, v.data[key]); }
-                })(c.key, Widget.prototype[c.formatter]);
+            if (typeof c.formatter !== 'undefined' && c.formatter in window.formatters) {
+                c.formatter = (function(key, formatter) {
+                    return function(v) { return formatter(v.data[key]); }
+                })(c.key, window.formatters[c.formatter]);
             } else {
                 delete c.formatter;
             }
@@ -176,10 +176,9 @@ $.extend(window.rvbd_yui3.TimeSeriesWidget.prototype, {
             if ('formatter' in axis) {
                 axis.labelFunction = (function(formatter) {
                     return function (v, fmt, tooltip) {
-                        return formatter.call(window.rvbd_yui3.TimeSeriesWidget.prototype,
-                                              v, tooltip ? 2 : 1);
+                        return formatter(v, tooltip ? 2 : 1);
                     }
-                })(window.rvbd_yui3.YUIWidget.prototype[axis.formatter]);
+                })(window.formatters[axis.formatter]);
             } else if ('tickExponent' in axis && axis.tickExponent < 0) {
                 axis.labelFunction = (function (exp) {
                     return function(v, fmt, tooltip) {

@@ -18,6 +18,73 @@ if (typeof Object.create !== 'function') {
     };
 }
 
+window.formatters = {
+    padZeros: function(n, p) {
+        var pad = (new Array(1 + p)).join("0");
+        return (pad + n).slice(-pad.length);
+    },
+
+    roundAndPadRight: function(num, totalPlaces, precision) {
+        var digits = Math.floor(num).toString().length;
+        if (typeof precision === 'undefined') {
+           if (digits >= totalPlaces) { // Always at least 1 digit of precision
+               var precision = 1;
+           } else { // Include enough precision digits to get the total we want
+               var precision = (totalPlaces + 1) - digits; // One extra for decimal point
+           }
+        }
+        return num.toFixed(precision);
+    },
+
+    formatTime: function(t, precision) {
+        return (new Date(t)).toString();
+    },
+
+    formatTimeMs: function(t, precision) {
+        var d = new Date(t);
+        return d.getHours() +
+            ':' + formatters.padZeros(d.getMinutes(), 2) +
+            ':' + formatters.padZeros(d.getSeconds(), 2) +
+            '.' + formatters.padZeros(d.getMilliseconds(), 3);
+        // return date.toString();
+     },
+
+     formatMetric: function(num, precision) {
+        if (typeof num === 'undefined') { 
+            return "";
+        } else if (num === 0) {
+            return "0";
+        }
+
+        num = Math.abs(num);
+
+        var e = parseInt(Math.floor(Math.log(num) / Math.log(1000))),
+            v = (num / Math.pow(1000, e));
+
+        var vs = formatters.roundAndPadRight(v, 4, precision);
+
+        if (e >= 0) {
+            return vs + ['', 'k', 'M', 'G', 'T'][e];
+        } else {
+            return vs + ['', 'm', 'u', 'n'][-e];
+        }
+    },
+
+    formatIntegerMetric: function(num, precision) {
+        return formatters.formatMetric(num, 0);
+    },
+
+    formatPct: function(num, precision) {
+        if (typeof num === 'undefined') {
+            return "";
+        } else if (num === 0) {
+            return "0";
+        } else {
+            return formatters.roundAndPadRight(num, 4, precision)
+        }
+    }
+}
+
 window.Widget = function(posturl, isEmbedded, div, id, options, criteria) {
     var self = this;
 
@@ -101,77 +168,6 @@ window.Widget.prototype = {
         var self = this;
 
         $(self.div).html(data);
-    },
-
-    padZeros: function(n, p) {
-        var pad = (new Array(1 + p)).join("0");
-        return (pad + n).slice(-pad.length);
-    },
-
-    roundAndPadRight: function(num, totalPlaces, precision) {
-        var digits = Math.floor(num).toString().length;
-        if (typeof precision === 'undefined') {
-           if (digits >= totalPlaces) { // Always at least 1 digit of precision
-               var precision = 1;
-           } else { // Include enough precision digits to get the total we want
-               var precision = (totalPlaces + 1) - digits; // One extra for decimal point
-           }
-        }
-        return num.toFixed(precision);
-    },
-
-    formatTime: function(t, precision) {
-        return (new Date(t)).toString();
-    },
-
-    formatTimeMs: function(t, precision) {
-        var d = new Date(t);
-        return d.getHours() +
-            ':' + self.padZeros(d.getMinutes(), 2) +
-            ':' + self.padZeros(d.getSeconds(), 2) +
-            '.' + self.padZeros(d.getMilliseconds(), 3);
-        // return date.toString();
-     },
-
-     formatMetric: function(num, precision) {
-        var self = this;
-
-        if (typeof num === 'undefined') { 
-            return "";
-        } else if (num === 0) {
-            return "0";
-        }
-
-        num = Math.abs(num);
-
-        var e = parseInt(Math.floor(Math.log(num) / Math.log(1000))),
-            v = (num / Math.pow(1000, e));
-
-        var vs = self.roundAndPadRight(v, 4, precision);
-
-        if (e >= 0) {
-            return vs + ['', 'k', 'M', 'G', 'T'][e];
-        } else {
-            return vs + ['', 'm', 'u', 'n'][-e];
-        }
-    },
-
-    formatIntegerMetric: function(num, precision) {
-        var self = this;
-        
-        return self.formatMetric(num, 0);
-    },
-
-    formatPct: function(num, precision) {
-        var self = this;
-
-        if (typeof num === 'undefined') {
-            return "";
-        } else if (num === 0) {
-            return "0";
-        } else {
-            return self.roundAndPadRight(num, 4, precision)
-        }
     },
 
     displayError: function(response) {
