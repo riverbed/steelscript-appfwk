@@ -261,7 +261,6 @@ $.extend(window.rvbd_yui3.CandleStickWidget.prototype, {
     widgetClass: 'Chart',
     
     prepareData: function(data) {
-        var self = this;
         data.tooltip = {
             setTextFunction: function(textField, val) {
                 textField.setHTML(val);

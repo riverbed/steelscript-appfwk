@@ -655,10 +655,19 @@ class LineWidget(ChartWidget):
 
 
 class CandleStickWidget(object):
-
     @classmethod
     def create(cls, section, table, title, width=6, height=300,
                keycols=None, valuecols=None, charttype='candlestick'):
+        """Create a widget displaying stock prices as a candle stick chart.
+
+        :param int width: Width of the widget in columns (1-12, default 6)
+        :param int height: Height of the widget in pixels (default 300)
+        :param list keycols: List of key column names to use for x-axis labels
+        :param list valuecols: List of data columns to graph
+        :param str charttype: Type of chart, defaults to 'candlestick'.
+        
+        The Y axis of this widget can not dynamically scale to different ranges.
+        """
         w = Widget(section=section, title=title, width=width,
                    height=height, module=__name__, uiwidget=cls.__name__)
         w.compute_row_col()
@@ -681,8 +690,7 @@ class CandleStickWidget(object):
 
     @classmethod
     def process(cls, widget, job, data):
-
-        PRICE_NAMES = ["open", "high", "low", "close"]
+        price_names = ["open", "high", "low", "close"]
 
         w_axes = {"date_range": {"keys": ["date"],
                                  "position": "bottom",
@@ -692,7 +700,7 @@ class CandleStickWidget(object):
                                             "majorUnit": {"count": 5}
                                             },
                                  },
-                  "candle": {"keys": PRICE_NAMES,
+                  "candle": {"keys": price_names,
                              "type": "numeric",
                              # YUI seems to always add a default axis
                              # (also can not change the scale)
@@ -705,14 +713,14 @@ class CandleStickWidget(object):
                              "xKey": 'date',
                              "yAxis": "candle"}]
 
-        rows = [dict(zip(["date"] + PRICE_NAMES, day)) for day in data]
+        rows = [dict(zip(["date"] + price_names, day)) for day in data]
         ret = {
             "chartTitle": widget.title.format(**job.actual_criteria),
             "type": widget.options.charttype,
             "dataProvider": rows,
             "seriesCollection": seriesCollection,
             "axes": w_axes,
-            "seriesKeys": [PRICE_NAMES],
+            "seriesKeys": [price_names],
             "interactionType": "planar",
         }
         return ret
