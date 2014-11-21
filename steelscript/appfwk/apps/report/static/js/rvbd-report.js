@@ -327,6 +327,40 @@ function addGetEmbedHtmlHandler(widget) {
         // Helper function for generating an iframe from a url and width and height
         return '<iframe width="'+ width + '" height="' + height +
                '" src="' + url + '" frameborder="0"></iframe>';
+    };
+
+    function generateModal(url, widget) {
+        var iframe = generateIFrame(url, 500, widget.options.height + 12),
+            heading = "Embed Widget HTML",
+            okButtonTxt = "OK",
+            body = 'Choose dimensions for the embedded widget:<br>' +
+                '<table>' +
+                '<tr>' +
+                '<td><h4>Width:</h4></td>' +
+                '<td><input value="500" type="text" id="widget-width" ' +
+                'style="width:50px;margin-top:10px;"></td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td><h4>Height:</h4></td>' +
+                '<td><input value="312" type="text" id="widget-height" ' +
+                'style="width:50px;margin-top:10px;"></td>' +
+                '</tr>' +
+                '</table><br>Copy the following HTML to embed the widget:' +
+                '<input id="embed_text" value="' + iframe.replace(/"/g, '&quot;') +
+                '" type="text" style="width:97%">';
+
+        alertModal(heading, body, okButtonTxt, function() {
+            // automatically set the focus to the iframe text
+            $('#embed_text')
+                .on('mouseup focus', function() { this.select(); })
+                .focus();
+
+            // update the iframe to reflect the width and height fields
+            $('#widget-width, #widget-height').keyup(function(){
+                $('#embed_text').attr('value', generateIFrame(url, $('#widget-width').val(),
+                    $('#widget-height').val()));
+            });
+        });
     }
 
     // Create the url that describes the current widget
@@ -343,36 +377,18 @@ function addGetEmbedHtmlHandler(widget) {
 
     // Add the actual menu item listener which triggers the modal
     $('#' + widget.id + '_get_embed').click(function() {
-        var iframe = generateIFrame(url, 500, widget.options.height + 12),
-            heading = "Embed Widget HTML",
-            okButtonTxt = "OK",
-            body = 'Choose dimensions for the embedded widget:<br>' +
-                   '<table>' +
-                   '<tr>' +
-                       '<td><h4>Width:</h4></td>' +
-                       '<td><input value="500" type="text" id="widget-width" ' + 
-                                  'style="width:50px;margin-top:10px;"></td>' +
-                    '</tr>' +
-                    '<tr>' +
-                        '<td><h4>Height:</h4></td>' +
-                        '<td><input value="312" type="text" id="widget-height" ' +
-                                   'style="width:50px;margin-top:10px;"></td>' +
-                    '</tr>' +
-                    '</table><br>Copy the following HTML to embed the widget:' +
-                    '<input id="embed_text" value="' + iframe.replace(/"/g, '&quot;') + 
-                    '" type="text" style="width:97%">';
-
-        alertModal(heading, body, okButtonTxt, function() {
-            // automatically set the focus to the iframe text
-            $('#embed_text')
-                .on('mouseup focus', function() { this.select(); })
-                .focus();
-
-            // update the iframe to reflect the width and height fields
-            $('#widget-width, #widget-height').keyup(function(){
-                $('#embed_text').attr('value', generateIFrame(url, $('#widget-width').val(),
-                                                                   $('#widget-height').val()));
-            });
+        var baseurl = window.location.href.split('#')[0] + 'widget/';
+        $.ajax({
+            dataType: 'json',
+            type: 'get',
+            url: baseurl + widget.id + '/slug/',
+            success: function(data, textStatus, jqXHR) {
+                var url = baseurl + data + '/?' + $.param(criteria);
+                generateModal(url, widget)
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                alertReportError(textStatus, errorThrown);
+            }
         });
     });
 }

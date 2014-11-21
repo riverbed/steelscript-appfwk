@@ -387,6 +387,9 @@ class Widget(models.Model):
     uiwidget = models.CharField(max_length=100)
     uioptions = PickledObjectField()
 
+    # not globally unique, but should be sufficiently unique within a report
+    slug = models.SlugField()
+
     objects = InheritanceManager()
 
     def __repr__(self):
@@ -394,6 +397,10 @@ class Widget(models.Model):
 
     def __unicode__(self):
         return '<Widget %s (%s)>' % (self.title, self.id)
+
+    def save(self, *args, **kwargs):
+        self.slug = '%s-%d-%d' % (slugify(self.title), self.row, self.col)
+        super(Widget, self).save(*args, **kwargs)
 
     def widgettype(self):
         return 'rvbd_%s.%s' % (self.module.split('.')[-1], self.uiwidget)

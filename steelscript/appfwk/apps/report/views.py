@@ -209,7 +209,7 @@ class ReportView(GenericReportView):
         criteria = 'null'
         expand_tables = False
 
-        return (template, criteria, expand_tables)
+        return template, criteria, expand_tables
 
     # ReportView.get()
     def get(self, request, namespace=None, report_slug=None):
@@ -248,7 +248,6 @@ class ReportView(GenericReportView):
 
             serializer = ReportSerializer(instance=queryset)
             return Response(serializer.data)
-
 
     # ReportView.post()
     def post(self, request, namespace=None, report_slug=None):
@@ -338,10 +337,10 @@ class ReportPrintView(GenericReportView):
     def get_media_params(self, request):
         template = 'report_print.html'
         criteria = json.dumps(dict(zip(request.POST.keys(),
-                                   request.POST.values())))
+                                       request.POST.values())))
         expand_tables = ('expand_tables' in request.POST and
                          request.POST['expand_tables'] != '')
-        return (template, criteria, expand_tables)
+        return template, criteria, expand_tables
 
     def post(self, request, namespace, report_slug):
         queryset = Report.objects.filter(enabled=True)
@@ -353,19 +352,38 @@ class ReportPrintView(GenericReportView):
         return self.render_html(report, request, namespace, report_slug, True)
 
 
+class WidgetSlugView(views.APIView):
+    """ Handler for getting Widget slug from an ID """
+    renderer_classes = (JSONRenderer, )
+
+    def get(self, request, namespace, report_slug, widget_id):
+        w = get_object_or_404(Widget, id=widget_id)
+        return HttpResponse(json.dumps(w.slug))
+
+
 class WidgetView(views.APIView):
     """ Handler for displaying one widget which uses default criteria
     """
     serializer_class = ReportSerializer
     renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
 
-    # ReportView.get()
     def get(self, request, namespace=None, report_slug=None, widget_slug=None):
         criteria = request.GET.dict()
         if 'endtime' in criteria and criteria['endtime'] == "now":
             del criteria['endtime']
         criteria = json.dumps(criteria)
-        w = Widget.objects.get(id=widget_slug)
+
+        report = get_object_or_404(Report, namespace=namespace,
+                                   slug=report_slug)
+
+        # widget slugs aren't unique globally, but should be unique within
+        # any given report
+        w = get_object_or_404(
+            Widget,
+            slug=widget_slug,
+            section__in=Section.objects.filter(report=report)
+        )
+
         widget_type = [str(x) for x in w.widgettype().split(".")]
         widget_def = {"namespace": namespace,
                       "report_slug": report_slug,
@@ -373,6 +391,7 @@ class WidgetView(views.APIView):
                       "widgetid": w.id,
                       "criteria": mark_safe(criteria)
                       }
+
         return render_to_response('widget.html', {"widget": widget_def},
                                   context_instance=RequestContext(request))
 
@@ -444,6 +463,7 @@ class ReportEditorDiff(views.APIView):
                                   {'report': report,
                                    'diffhtml': html},
                                   context_instance=RequestContext(request))
+
 
 class ReportCopy(views.APIView):
     """ Edit Report files directly.  Requires superuser permissions. """
