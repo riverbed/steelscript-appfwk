@@ -232,7 +232,6 @@ class TimeSeriesWidget(object):
 
     @classmethod
     def process(cls, widget, job, data):
-
         class ColInfo:
             def __init__(self, col, dataindex, axis, istime=False):
                 self.col = col
@@ -268,8 +267,8 @@ class TimeSeriesWidget(object):
                     ci = ColInfo(c, i, -1, istime=False)
                 else:
                     raise KeyError(
-                        "Cannot graph non-numeric data in timeseries widget: column %s"
-                        % c.name)
+                        "Cannot graph non-numeric data in timeseries widget: "
+                        "column {0}".format(c.name))
 
             colinfo[ci.key] = ci
 
@@ -284,7 +283,7 @@ class TimeSeriesWidget(object):
                         }
         else:
             axes_def = {'0': {'position': 'left',
-                          'columns': valuecolnames}}
+                              'columns': valuecolnames}}
         w_series = []
         axes = Axes(axes_def)
 
@@ -304,7 +303,7 @@ class TimeSeriesWidget(object):
             t0 = datetime.datetime.fromtimestamp(t0)
             t1 = datetime.datetime.fromtimestamp(t1)
 
-        deltaSeconds = timeutils.timedelta_total_seconds(t1-t0)
+        deltaSeconds = timeutils.timedelta_total_seconds(t1 - t0)
         if deltaSeconds < 2:
             w_axes['time']['formatter'] = 'formatTimeMs'
         elif deltaSeconds < 120:
@@ -390,10 +389,11 @@ class TimeSeriesWidget(object):
             if minval and maxval:
                 n = NiceScale(minval[ci.axis], maxval[ci.axis])
 
-                w_axes[axis_name]['minimum'] = "%.10f" % n.niceMin
-                w_axes[axis_name]['maximum'] = "%.10f" % n.niceMax
-                w_axes[axis_name]['tickExponent'] = math.log10(n.tickSpacing)
-                w_axes[axis_name]['styles'] = {'majorUnit': {'count': n.numTicks}}
+                w_axes[axis_name]['minimum'] = "%.10f" % n.nicemin
+                w_axes[axis_name]['maximum'] = "%.10f" % n.nicemax
+                w_axes[axis_name]['tickExponent'] = math.log10(n.tickspacing)
+                w_axes[axis_name]['styles'] = {'majorUnit': {'count':
+                                                                 n.numticks}}
             else:
                 # empty data which would result in keyError above
                 w_axes[axis_name]['minimum'] = "0"
@@ -520,7 +520,6 @@ class ChartWidget(object):
                                       "marker": {"height": 6,
                                                  "width": 20}}})
 
-
             # The rest compute axis min/max for datavalues, so skip keys
             if c.iskey:
                 continue
@@ -566,7 +565,6 @@ class ChartWidget(object):
                 val = rawrow[c.dataindex]
                 row[c.col.name] = val
 
-
                 a = c.axis
                 if c.axis not in rowmin:
                     rowmin[a] = val
@@ -594,10 +592,11 @@ class ChartWidget(object):
             if minval and maxval:
                 n = NiceScale(minval[c.axis], maxval[c.axis])
 
-                w_axes[axis_name]['minimum'] = "%.10f" % n.niceMin
-                w_axes[axis_name]['maximum'] = "%.10f" % n.niceMax
-                w_axes[axis_name]['tickExponent'] = math.log10(n.tickSpacing)
-                w_axes[axis_name]['styles'] = {'majorUnit': {'count': n.numTicks}}
+                w_axes[axis_name]['minimum'] = "%.10f" % n.nicemin
+                w_axes[axis_name]['maximum'] = "%.10f" % n.nicemax
+                w_axes[axis_name]['tickExponent'] = math.log10(n.tickspacing)
+                w_axes[axis_name]['styles'] = {'majorUnit': {'count':
+                                                                 n.numticks}}
             else:
                 # empty data which would result in keyError above
                 w_axes[axis_name]['minimum'] = "0"
@@ -619,6 +618,7 @@ class ChartWidget(object):
 
         return data
 
+
 class BarWidget(ChartWidget):
     @classmethod
     def create(cls, *args, **kwargs):
@@ -635,6 +635,7 @@ class BarWidget(ChartWidget):
         """
         kwargs['rows'] = kwargs.get('rows', 10)
         return ChartWidget.create(*args, charttype='column', **kwargs)
+
 
 class LineWidget(ChartWidget):
     @classmethod
