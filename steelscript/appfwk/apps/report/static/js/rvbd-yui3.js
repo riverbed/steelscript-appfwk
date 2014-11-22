@@ -173,7 +173,7 @@ $.extend(window.rvbd_yui3.TimeSeriesWidget.prototype, {
         var self = this;
 
         $.each(data.axes, function(i, axis) {
-            if ('formatter' in axis) {
+            if ('formatter' in axis) { // A label formatting func is provided
                 axis.labelFunction = (function(formatter) {
                     return function (v, fmt, tooltip) {
                         return formatter(v, tooltip ? 2 : 1);
@@ -291,7 +291,6 @@ $.extend(window.rvbd_yui3.CandleStickWidget.prototype, {
         };
 
         return data;
-
     }
 });
 

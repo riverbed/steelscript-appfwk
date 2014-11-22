@@ -7,7 +7,6 @@
 
 import re
 import math
-import datetime
 import logging
 
 from steelscript.common import timeutils
@@ -15,6 +14,15 @@ from steelscript.common.datastructures import JsonDict
 from steelscript.appfwk.libs.nicescale import NiceScale
 from steelscript.appfwk.apps.report.models import Axes, Widget
 
+# Various time values in seconds, for computing tick intervals
+MIN = 60
+HOUR = MIN * 60
+DAY = HOUR * 24
+WEEK = DAY * 7
+MONTH = WEEK * 4
+
+# Default tick count if time range is too wide to compute tick interval
+DEFAULT_TICK_COUNT = 11
 
 logger = logging.getLogger(__name__)
 
@@ -240,6 +248,65 @@ class TimeSeriesWidget(object):
                 self.axis = axis
                 self.istime = istime
 
+        def calc_tick_info(t0, t1):
+            """Get nice start/end times and tick count for timeseries widget.
+            
+            :param t0: Start datetime of data
+            :param t1: End datetime of data
+
+            Returns a tuple of (min_time_in_ms, max_time_in_ms, tickcount).
+            """
+
+            total_seconds = timeutils.timedelta_total_seconds(t1 - t0)
+
+            use_default_count = False
+            if total_seconds <= 10:
+                tick_interval = 1
+            elif total_seconds <= MIN:
+                tick_interval = 5
+            elif total_seconds <= MIN * 5:
+                tick_interval = 15
+            elif total_seconds <= MIN * 15:
+                tick_interval = MIN
+            elif total_seconds <= HOUR:
+                tick_interval = MIN * 5
+            elif total_seconds <= HOUR * 4:
+                tick_interval = MIN * 15
+            elif total_seconds <= HOUR * 12:
+                tick_interval = HOUR
+            elif total_seconds <= DAY:
+                tick_interval = HOUR * 2
+            elif total_seconds <= WEEK:
+                tick_interval = HOUR * 12
+            elif total_seconds <= WEEK * 2:
+                tick_interval = DAY
+            elif total_seconds <= MONTH:
+                tick_interval = DAY * 2
+            else:  # Big time interval, so resort to default tick count
+                use_default_count = True
+
+            if use_default_count:
+                minsecs = timeutils.datetime_to_seconds(t0.to_datetime())
+                maxsecs = timeutils.datetime_to_seconds(t1.to_datetime())
+                tickcount = DEFAULT_TICK_COUNT
+            else:
+                # Round start time down to the nearest tick interval (e.g.
+                # 12:17 gets rounded to 12:15 if the tick interval is 15
+                # minutes)
+                minsecs = timeutils.datetime_to_seconds(
+                    timeutils.round_time(t0.to_datetime(),
+                                         tick_interval))
+
+                # Round end time up as above
+                maxsecs = timeutils.datetime_to_seconds(
+                    timeutils.round_time(t1.to_datetime(), tick_interval,
+                                         True))
+
+                # YUI displays a tick at the end, so we need one extra
+                tickcount = ((maxsecs - minsecs) / tick_interval) + 1
+
+            return (minsecs * 1000, maxsecs * 1000, tickcount)
+
         t_cols = job.get_columns()
         colinfo = {}  # map by widget key
 
@@ -300,18 +367,24 @@ class TimeSeriesWidget(object):
         t0 = data[0][t_dataindex]
         t1 = data[-1][t_dataindex]
         if not hasattr(t0, 'utcfromtimestamp'):
-            t0 = datetime.datetime.fromtimestamp(t0)
-            t1 = datetime.datetime.fromtimestamp(t1)
+            t0 = timeutils.sec_string_to_datetime(t0)
+            t1 = timeutils.sec_string_to_datetime(t1)
 
-        deltaSeconds = timeutils.timedelta_total_seconds(t1 - t0)
-        if deltaSeconds < 2:
+        total_seconds = timeutils.timedelta_total_seconds(t1 - t0)
+        if total_seconds < 2:
             w_axes['time']['formatter'] = 'formatTimeMs'
-        elif deltaSeconds < 120:
+        elif total_seconds < 120:
             w_axes['time']['labelFormat'] = '%k:%M:%S'
-        elif deltaSeconds < (24 * 60 * 60):
+        elif total_seconds < (24 * 60 * 60):
             w_axes['time']['labelFormat'] = '%k:%M'
         else:
             w_axes['time']['labelFormat'] = '%D %k:%M'
+
+        mintime, maxtime, tickcount = calc_tick_info(t0, t1)
+
+        w_axes['time']['minimum'] = mintime
+        w_axes['time']['maximum'] = maxtime
+        w_axes['time']['styles']['majorUnit'] = {'count': tickcount}
 
         # Setup the other axes, checking the axis for each column
         for w_key in w_keys:
@@ -392,8 +465,9 @@ class TimeSeriesWidget(object):
                 w_axes[axis_name]['minimum'] = "%.10f" % n.nicemin
                 w_axes[axis_name]['maximum'] = "%.10f" % n.nicemax
                 w_axes[axis_name]['tickExponent'] = math.log10(n.tickspacing)
-                w_axes[axis_name]['styles'] = {'majorUnit': {'count':
-                                                                 n.numticks}}
+                w_axes[axis_name]['styles'] = {
+                    'majorUnit': {'count': n.numticks}
+                }
             else:
                 # empty data which would result in keyError above
                 w_axes[axis_name]['minimum'] = "0"
@@ -557,7 +631,6 @@ class ChartWidget(object):
 
             # collect the data values
             for c in colmap.values():
-                #
                 if c.col.iskey:
                     continue
 
@@ -595,8 +668,9 @@ class ChartWidget(object):
                 w_axes[axis_name]['minimum'] = "%.10f" % n.nicemin
                 w_axes[axis_name]['maximum'] = "%.10f" % n.nicemax
                 w_axes[axis_name]['tickExponent'] = math.log10(n.tickspacing)
-                w_axes[axis_name]['styles'] = {'majorUnit': {'count':
-                                                                 n.numticks}}
+                w_axes[axis_name]['styles'] = {
+                    'majorUnit': {'count': n.numticks}
+                }
             else:
                 # empty data which would result in keyError above
                 w_axes[axis_name]['minimum'] = "0"
