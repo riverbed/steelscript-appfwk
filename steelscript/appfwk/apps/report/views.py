@@ -353,17 +353,12 @@ class ReportPrintView(GenericReportView):
         return self.render_html(report, request, namespace, report_slug, True)
 
 
-# XXX change to generic view instead of specific slug view
 class WidgetDetailView(generics.RetrieveAPIView):
     """ Handler for getting Widget slug from an ID """
     model = Widget
     lookup_url_kwarg = 'widget_id'
     serializer_class = WidgetSerializer
     renderer_classes = (JSONRenderer, )
-
-    # def get(self, request, namespace, report_slug, widget_id):
-    #     w = get_object_or_404(Widget, id=widget_id)
-    #     return HttpResponse(json.dumps(w.slug))
 
 
 class WidgetView(views.APIView):
