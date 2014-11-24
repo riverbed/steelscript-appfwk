@@ -334,20 +334,20 @@ function addGetEmbedHtmlHandler(widget) {
             heading = "Embed Widget HTML",
             okButtonTxt = "OK",
             body = 'Choose dimensions for the embedded widget:<br>' +
-                '<table>' +
-                '<tr>' +
-                '<td><h4>Width:</h4></td>' +
-                '<td><input value="500" type="text" id="widget-width" ' +
-                'style="width:50px;margin-top:10px;"></td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td><h4>Height:</h4></td>' +
-                '<td><input value="312" type="text" id="widget-height" ' +
-                'style="width:50px;margin-top:10px;"></td>' +
-                '</tr>' +
-                '</table><br>Copy the following HTML to embed the widget:' +
-                '<input id="embed_text" value="' + iframe.replace(/"/g, '&quot;') +
-                '" type="text" style="width:97%">';
+                   '<table>' +
+                   '<tr>' +
+                       '<td><h4>Width:</h4></td>' +
+                       '<td><input value="500" type="text" id="widget-width" ' +
+                                  'style="width:50px;margin-top:10px;"></td>' +
+                   '</tr>' +
+                   '<tr>' +
+                        '<td><h4>Height:</h4></td>' +
+                        '<td><input value="312" type="text" id="widget-height" ' +
+                                   'style="width:50px;margin-top:10px;"></td>' +
+                   '</tr>' +
+                   '</table><br>Copy the following HTML to embed the widget:' +
+                   '<input id="embed_text" value="' + iframe.replace(/"/g, '&quot;') +
+                   '" type="text" style="width:97%">';
 
         alertModal(heading, body, okButtonTxt, function() {
             // automatically set the focus to the iframe text
@@ -358,7 +358,7 @@ function addGetEmbedHtmlHandler(widget) {
             // update the iframe to reflect the width and height fields
             $('#widget-width, #widget-height').keyup(function(){
                 $('#embed_text').attr('value', generateIFrame(url, $('#widget-width').val(),
-                    $('#widget-height').val()));
+                                                                   $('#widget-height').val()));
             });
         });
     }
