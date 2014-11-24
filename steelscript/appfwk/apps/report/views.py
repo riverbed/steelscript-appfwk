@@ -671,18 +671,16 @@ class ReportWidgets(views.APIView):
 
 
 class ReportTableList(generics.ListAPIView):
-    model = Table
+    """Return list of tables associated with a given Report."""
     serializer_class = TableSerializer
 
-    def get(self, request, *args, **kwargs):
-        report = Report.objects.get(namespace=kwargs['namespace'],
-                                    slug=kwargs['report_slug'])
-        qs = (table
-              for section in report.section_set.all()
-              for widget in section.widget_set.all()
-              for table in widget.tables.all())
-        serializer = TableSerializer(instance=qs)
-        return Response(serializer.data)
+    def get_queryset(self):
+        report = Report.objects.get(namespace=self.kwargs['namespace'],
+                                    slug=self.kwargs['report_slug'])
+        return (table
+                for section in report.section_set.all()
+                for widget in section.widget_set.all()
+                for table in widget.tables.all())
 
 
 class WidgetJobsList(views.APIView):
