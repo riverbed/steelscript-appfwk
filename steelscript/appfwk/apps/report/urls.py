@@ -60,13 +60,13 @@ urlpatterns = patterns(
         views.ReportWidgets.as_view(),
         name='report-widgets'),
 
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widget/(?P<widget_id>[0-9]+)/$',
+        views.WidgetDetailView.as_view(),
+        name='widget-slug'),
+
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widget/(?P<widget_id>[0-9]+)/jobs/$',
         views.WidgetJobsList.as_view(),
         name='widget-job-list'),
-
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widget/(?P<widget_id>[0-9]+)/slug/$',
-        views.WidgetSlugView.as_view(),
-        name='widget-slug'),
 
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widget/(?P<widget_id>[0-9]+)/criteria/$',
         views.ReportCriteria.as_view(),

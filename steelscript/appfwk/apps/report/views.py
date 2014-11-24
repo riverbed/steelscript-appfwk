@@ -46,7 +46,8 @@ from steelscript.appfwk.apps.geolocation.models import Location, LocationIP
 from steelscript.appfwk.apps.preferences.models import SystemSettings
 from steelscript.appfwk.apps.report.models import (Report, Section, Widget,
                                                    WidgetJob)
-from steelscript.appfwk.apps.report.serializers import ReportSerializer
+from steelscript.appfwk.apps.report.serializers import ReportSerializer, \
+    WidgetSerializer
 from steelscript.appfwk.apps.report.utils import create_debug_zipfile
 from steelscript.appfwk.apps.report.forms import (ReportEditorForm,
                                                   CopyReportForm)
@@ -352,13 +353,17 @@ class ReportPrintView(GenericReportView):
         return self.render_html(report, request, namespace, report_slug, True)
 
 
-class WidgetSlugView(views.APIView):
+# XXX change to generic view instead of specific slug view
+class WidgetDetailView(generics.RetrieveAPIView):
     """ Handler for getting Widget slug from an ID """
+    model = Widget
+    lookup_url_kwarg = 'widget_id'
+    serializer_class = WidgetSerializer
     renderer_classes = (JSONRenderer, )
 
-    def get(self, request, namespace, report_slug, widget_id):
-        w = get_object_or_404(Widget, id=widget_id)
-        return HttpResponse(json.dumps(w.slug))
+    # def get(self, request, namespace, report_slug, widget_id):
+    #     w = get_object_or_404(Widget, id=widget_id)
+    #     return HttpResponse(json.dumps(w.slug))
 
 
 class WidgetView(views.APIView):

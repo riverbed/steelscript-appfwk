@@ -363,17 +363,11 @@ function addGetEmbedHtmlHandler(widget) {
         });
     }
 
-    // Create the url that describes the current widget
-    var criteria = $.extend({}, widget.criteria);
-
     // Delete starttime and endtime from params if present (we don't want embedded
     // widgets with fixed time frames)
+    var criteria = $.extend({}, widget.criteria);
     delete criteria.starttime;
     delete criteria.endtime;
-
-    // Create the url that describes the current widget
-    var url = window.location.href.split('#')[0] + 'widget/' + widget.id +
-              '?' + $.param(criteria);
 
     // Add the actual menu item listener which triggers the modal
     $('#' + widget.id + '_get_embed').click(function() {
@@ -381,9 +375,10 @@ function addGetEmbedHtmlHandler(widget) {
         $.ajax({
             dataType: 'json',
             type: 'get',
-            url: baseurl + widget.id + '/slug/',
+            url: baseurl + widget.id + '/',
             success: function(data, textStatus, jqXHR) {
-                var url = baseurl + data + '/?' + $.param(criteria);
+                // Create the url that describes the current widget
+                var url = baseurl + data['slug'] + '/?' + $.param(criteria);
                 generateModal(url, widget)
             },
             error: function(jqXHR, textStatus, errorThrown) {
