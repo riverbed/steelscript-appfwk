@@ -85,13 +85,14 @@ window.formatters = {
     }
 }
 
-window.Widget = function(posturl, isEmbedded, div, id, options, criteria) {
+window.Widget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
     self.options = options;
     self.posturl = posturl;
     self.div = div;
     self.id = id;
+    self.slug = slug;
     self.criteria = criteria;
 
     var $div = $(div);
@@ -211,8 +212,8 @@ window.Widget.prototype = {
 
 window.rvbd_raw = {};
 
-window.rvbd_raw.TableWidget = function(posturl, isEmbedded, div, id, options, criteria) {
-    Widget.apply(this, [posturl, isEmbedded, div, id, options, criteria]);
+window.rvbd_raw.TableWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
+    Widget.apply(this, [posturl, isEmbedded, div, id, slug, options, criteria]);
 };
 window.rvbd_raw.TableWidget.prototype = Object.create(window.Widget.prototype);
 

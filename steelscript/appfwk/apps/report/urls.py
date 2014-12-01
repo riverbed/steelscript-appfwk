@@ -56,29 +56,29 @@ urlpatterns = patterns(
         'reload_config',
         name='reload-report'),
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets$',
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/$',
         views.ReportWidgets.as_view(),
         name='report-widgets'),
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widget/(?P<widget_id>[0-9]+)/$',
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/$',
         views.WidgetDetailView.as_view(),
         name='widget-slug'),
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widget/(?P<widget_id>[0-9]+)/jobs/$',
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/render/$',
+        views.WidgetView.as_view(),
+        name='widget-stand-alone'),
+
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/jobs/$',
         views.WidgetJobsList.as_view(),
         name='widget-job-list'),
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widget/(?P<widget_id>[0-9]+)/criteria/$',
-        views.ReportCriteria.as_view(),
-        name='widget-criteria'),
-
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widget/(?P<widget_id>[0-9]+)/jobs/(?P<job_id>[0-9]+)/$',
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/jobs/(?P<job_id>[0-9]+)/$',
         views.WidgetJobDetail.as_view(),
         name='report-job-detail'),
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widget/(?P<widget_slug>[0-9_a-zA-Z-]+)/$',
-        views.WidgetView.as_view(),
-        name='widget-stand-alone'),
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/criteria/$',
+        views.ReportCriteria.as_view(),
+        name='widget-criteria'),
 
     # this makes more sense at the project level, but since its implemented
     # under `report`, lets have the url here for now

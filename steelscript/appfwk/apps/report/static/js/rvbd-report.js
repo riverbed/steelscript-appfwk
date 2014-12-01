@@ -176,7 +176,7 @@ function renderWidgets(widgets, widgetInfo) {
     var $report = $('#report'),
         isEmbedded = (typeof widgetInfo !== 'undefined'),
         report_meta,
-        renderWidgets;
+        widgetsToRender;
 
     // reset the status
     window.rvbd_status = {};
@@ -192,7 +192,7 @@ function renderWidgets(widgets, widgetInfo) {
     $report.html(widgets);
 
     if (!isEmbedded) { // Full report
-        renderWidgets = widgets;
+        widgetsToRender = widgets;
     } else { // Embedded widget
         // Find the widget we want to render
         var targetWidget;
@@ -201,18 +201,18 @@ function renderWidgets(widgets, widgetInfo) {
                 targetWidget = widget;
                 return false;
             }
-        })
+        });
 
         // Replace the default criteria with the criteria from the widget request URL.
         $.extend(targetWidget.criteria, JSON.parse(widgetInfo.criteria));
 
-        renderWidgets = [targetWidget];
+        widgetsToRender = [targetWidget];
     }
 
     var $row,
         rownum = 0,
         opts;
-    $.each(renderWidgets, function(i, w) {
+    $.each(widgetsToRender, function(i, w) {
         if (rownum !== w.row) {
             $row = $('<div></div>')
                 .addClass('row-fluid')
@@ -232,7 +232,7 @@ function renderWidgets(widgets, widgetInfo) {
             widgetClass = w.widgettype[1];
 
         new window[widgetModule][widgetClass](w.posturl, isEmbedded, $div[0],
-                                              w.widgetid, opts, w.criteria);
+                                              w.widgetid, w.widgetslug, opts, w.criteria);
         window.rvbd_status[w.posturl] = 'running';
     });
 
