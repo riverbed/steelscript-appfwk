@@ -425,7 +425,7 @@ class TimeSeriesWidget(object):
 class ChartWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, rows=10, height=300,
-               keycols=None, valuecols=None, charttype='line'):
+               keycols=None, valuecols=None, charttype='line', dynamic=False):
         """Create a widget displaying data as a chart.
 
         This class is typically not used directly, but via LineWidget
@@ -438,6 +438,7 @@ class ChartWidget(object):
         :param list valuecols: List of data columns to graph
         :param str charttype: Type of chart, defaults to 'line'.  This may be
            any YUI3 'type'
+        :param boolean dynamic: columns will be added later from criteria if True.
 
         """
         w = Widget(section=section, title=title, rows=rows, width=width,
@@ -456,7 +457,8 @@ class ChartWidget(object):
         w.options = JsonDict(dict={'keycols': keycols,
                                    'columns': valuecols,
                                    'axes': None,
-                                   'charttype': charttype})
+                                   'charttype': charttype,
+                                   'dynamic': dynamic})
         w.save()
         w.tables.add(table)
 
@@ -476,7 +478,7 @@ class ChartWidget(object):
 
         # columns of '*' is a special case, just use all
         # defined columns other than time
-        if widget.options.columns == '*':
+        if widget.options.columns == '*' or widget.options.dynamic:
             cols = [c for c in all_cols if not c.iskey]
         else:
             # The value columns - one set of bars for each
@@ -491,6 +493,7 @@ class ChartWidget(object):
         catname = '-'.join([k.name for k in keycols])
         w_axes = {catname: {"keys": [catname],
                             "position": "bottom",
+                            "type": "time",
                             "styles": {"label": {"rotation": -60}}}}
 
         # Map of column info by column name
@@ -610,6 +613,7 @@ class ChartWidget(object):
             "dataProvider": rows,
             "seriesCollection": series,
             "axes": w_axes,
+            "interactionType" : "planar",
             "legend": {"position": "bottom",
                        "fontSize": "8pt",
                        "styles": {"gap": 0}}
@@ -632,7 +636,7 @@ class BarWidget(ChartWidget):
            any YUI3 'type'
 
         """
-        kwargs['rows'] = kwargs.get('rows', 10)
+        kwargs['rows'] = kwargs.get('rows', 0)
         return ChartWidget.create(*args, charttype='column', **kwargs)
 
 
