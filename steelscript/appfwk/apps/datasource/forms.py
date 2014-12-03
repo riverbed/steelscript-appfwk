@@ -157,9 +157,9 @@ class ReportSplitDateTimeWidget(forms.SplitDateTimeWidget):
 class ReportSplitDateWidget(forms.SplitDateTimeWidget):
     """A Date Widget with """
     def __init__(self, attrs=None):
-        # Simply using DateWidget will not work, the script javascript code
-        # does not get executed but displayed on browser, has sth to do with
-        # quotes. MultiWidget is able to format the javascript code correctly
+        # Simply using DateWidget will not work, the javascript code
+        # will be displayed on browser instead of rendering the widget
+        # Using MultiWidget can render the widget correctly
         forms.MultiWidget.__init__(self, [DateWidget], attrs)
 
 
