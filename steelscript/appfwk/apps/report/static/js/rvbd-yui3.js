@@ -12,10 +12,10 @@
 
 window.rvbd_yui3 = {};
 
-window.rvbd_yui3.YUIWidget = function(posturl, isEmbedded, div, id, options, criteria) {
+window.rvbd_yui3.YUIWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    Widget.apply(self, [posturl, isEmbedded, div, id, options, criteria]);
+    Widget.apply(self, [posturl, isEmbedded, div, id, slug, options, criteria]);
 };
 window.rvbd_yui3.YUIWidget.prototype = Object.create(window.Widget.prototype);
 $.extend(window.rvbd_yui3.YUIWidget.prototype, {
@@ -116,10 +116,10 @@ $.extend(window.rvbd_yui3.YUIWidget.prototype, {
 });
 
 
-window.rvbd_yui3.TableWidget = function(posturl, isEmbedded, div, id, options, criteria) {
+window.rvbd_yui3.TableWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, options, criteria]);
+    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, slug, options, criteria]);
 };
 window.rvbd_yui3.TableWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
 
@@ -158,10 +158,10 @@ $.extend(window.rvbd_yui3.TableWidget.prototype, {
 });
 
 
-window.rvbd_yui3.TimeSeriesWidget = function(posturl, isEmbedded, div, id, options, criteria) {
+window.rvbd_yui3.TimeSeriesWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, options, criteria]);
+    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, slug, options, criteria]);
 };
 window.rvbd_yui3.TimeSeriesWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
 
@@ -207,10 +207,10 @@ $.extend(window.rvbd_yui3.TimeSeriesWidget.prototype, {
     }
 });
 
-window.rvbd_yui3.ChartWidget = function(posturl, isEmbedded, div, id, options, criteria) {
+window.rvbd_yui3.ChartWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, options, criteria]);
+    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, slug, options, criteria]);
 };
 
 window.rvbd_yui3.ChartWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
@@ -252,10 +252,10 @@ $.extend(window.rvbd_yui3.ChartWidget.prototype, {
     }
 });
 
-window.rvbd_yui3.PieWidget = function(posturl, isEmbedded, div, id, options, criteria) {
+window.rvbd_yui3.PieWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, options, criteria]);
+    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, slug, options, criteria]);
 };
 
 window.rvbd_yui3.PieWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);

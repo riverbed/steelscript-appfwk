@@ -9,8 +9,8 @@
 
 var rvbd_maps = {};
 
-rvbd_maps.MapWidget = function (posturl, isEmbedded, div, id, options, criteria) {
-    Widget.apply(this, [posturl, isEmbedded, div, id, options, criteria]);
+rvbd_maps.MapWidget = function (posturl, isEmbedded, div, id, slug, options, criteria) {
+    Widget.apply(this, [posturl, isEmbedded, div, id, slug, options, criteria]);
 };
 rvbd_maps.MapWidget.prototype = Object.create(Widget.prototype)
 

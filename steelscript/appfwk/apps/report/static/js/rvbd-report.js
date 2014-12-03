@@ -176,7 +176,7 @@ function renderWidgets(widgets, widgetInfo) {
     var $report = $('#report'),
         isEmbedded = (typeof widgetInfo !== 'undefined'),
         report_meta,
-        renderWidgets;
+        widgetsToRender;
 
     // reset the status
     window.rvbd_status = {};
@@ -192,27 +192,27 @@ function renderWidgets(widgets, widgetInfo) {
     $report.html(widgets);
 
     if (!isEmbedded) { // Full report
-        renderWidgets = widgets;
+        widgetsToRender = widgets;
     } else { // Embedded widget
         // Find the widget we want to render
         var targetWidget;
         $.each(widgets, function(i, widget) {
-            if (widget.widgetid === widgetInfo.widgetid) {
+            if (widget.widgetslug === widgetInfo.widgetslug) {
                 targetWidget = widget;
                 return false;
             }
-        })
+        });
 
         // Replace the default criteria with the criteria from the widget request URL.
         $.extend(targetWidget.criteria, JSON.parse(widgetInfo.criteria));
 
-        renderWidgets = [targetWidget];
+        widgetsToRender = [targetWidget];
     }
 
     var $row,
         rownum = 0,
         opts;
-    $.each(renderWidgets, function(i, w) {
+    $.each(widgetsToRender, function(i, w) {
         if (rownum !== w.row) {
             $row = $('<div></div>')
                 .addClass('row-fluid')
@@ -232,7 +232,7 @@ function renderWidgets(widgets, widgetInfo) {
             widgetClass = w.widgettype[1];
 
         new window[widgetModule][widgetClass](w.posturl, isEmbedded, $div[0],
-                                              w.widgetid, opts, w.criteria);
+                                              w.widgetid, w.widgetslug, opts, w.criteria);
         window.rvbd_status[w.posturl] = 'running';
     });
 
@@ -327,22 +327,9 @@ function addGetEmbedHtmlHandler(widget) {
         // Helper function for generating an iframe from a url and width and height
         return '<iframe width="'+ width + '" height="' + height +
                '" src="' + url + '" frameborder="0"></iframe>';
-    }
+    };
 
-    // Create the url that describes the current widget
-    var criteria = $.extend({}, widget.criteria);
-
-    // Delete starttime and endtime from params if present (we don't want embedded
-    // widgets with fixed time frames)
-    delete criteria.starttime;
-    delete criteria.endtime;
-
-    // Create the url that describes the current widget
-    var url = window.location.href.split('#')[0] + 'widget/' + widget.id +
-              '?' + $.param(criteria);
-
-    // Add the actual menu item listener which triggers the modal
-    $('#' + widget.id + '_get_embed').click(function() {
+    function generateModal(url, widget) {
         var iframe = generateIFrame(url, 500, widget.options.height + 12),
             heading = "Embed Widget HTML",
             okButtonTxt = "OK",
@@ -350,17 +337,17 @@ function addGetEmbedHtmlHandler(widget) {
                    '<table>' +
                    '<tr>' +
                        '<td><h4>Width:</h4></td>' +
-                       '<td><input value="500" type="text" id="widget-width" ' + 
+                       '<td><input value="500" type="text" id="widget-width" ' +
                                   'style="width:50px;margin-top:10px;"></td>' +
-                    '</tr>' +
-                    '<tr>' +
+                   '</tr>' +
+                   '<tr>' +
                         '<td><h4>Height:</h4></td>' +
                         '<td><input value="312" type="text" id="widget-height" ' +
                                    'style="width:50px;margin-top:10px;"></td>' +
-                    '</tr>' +
-                    '</table><br>Copy the following HTML to embed the widget:' +
-                    '<input id="embed_text" value="' + iframe.replace(/"/g, '&quot;') + 
-                    '" type="text" style="width:97%">';
+                   '</tr>' +
+                   '</table><br>Copy the following HTML to embed the widget:' +
+                   '<input id="embed_text" value="' + iframe.replace(/"/g, '&quot;') +
+                   '" type="text" style="width:97%">';
 
         alertModal(heading, body, okButtonTxt, function() {
             // automatically set the focus to the iframe text
@@ -374,6 +361,19 @@ function addGetEmbedHtmlHandler(widget) {
                                                                    $('#widget-height').val()));
             });
         });
+    }
+
+    // Delete starttime and endtime from params if present (we don't want embedded
+    // widgets with fixed time frames)
+    var criteria = $.extend({}, widget.criteria);
+    delete criteria.starttime;
+    delete criteria.endtime;
+
+    // Add the actual menu item listener which triggers the modal
+    $('#' + widget.id + '_get_embed').click(function() {
+        var baseurl = window.location.href.split('#')[0] + 'widgets/';
+        var url = baseurl + widget.slug + '/render/?' + $.param(criteria);
+        generateModal(url, widget)
     });
 }
 

@@ -46,7 +46,8 @@ from steelscript.appfwk.apps.geolocation.models import Location, LocationIP
 from steelscript.appfwk.apps.preferences.models import SystemSettings
 from steelscript.appfwk.apps.report.models import (Report, Section, Widget,
                                                    WidgetJob)
-from steelscript.appfwk.apps.report.serializers import ReportSerializer
+from steelscript.appfwk.apps.report.serializers import ReportSerializer, \
+    WidgetSerializer
 from steelscript.appfwk.apps.report.utils import create_debug_zipfile
 from steelscript.appfwk.apps.report.forms import (ReportEditorForm,
                                                   CopyReportForm)
@@ -209,7 +210,7 @@ class ReportView(GenericReportView):
         criteria = 'null'
         expand_tables = False
 
-        return (template, criteria, expand_tables)
+        return template, criteria, expand_tables
 
     # ReportView.get()
     def get(self, request, namespace=None, report_slug=None):
@@ -248,7 +249,6 @@ class ReportView(GenericReportView):
 
             serializer = ReportSerializer(instance=queryset)
             return Response(serializer.data)
-
 
     # ReportView.post()
     def post(self, request, namespace=None, report_slug=None):
@@ -309,9 +309,10 @@ class ReportView(GenericReportView):
                                   "posturl": reverse('widget-job-list',
                                                      args=(report.namespace,
                                                            report.slug,
-                                                           w.id)),
+                                                           w.slug)),
                                   "options": w.uioptions,
                                   "widgetid": w.id,
+                                  "widgetslug": w.slug,
                                   "row": w.row,
                                   "width": w.width,
                                   "height": w.height,
@@ -338,10 +339,10 @@ class ReportPrintView(GenericReportView):
     def get_media_params(self, request):
         template = 'report_print.html'
         criteria = json.dumps(dict(zip(request.POST.keys(),
-                                   request.POST.values())))
+                                       request.POST.values())))
         expand_tables = ('expand_tables' in request.POST and
                          request.POST['expand_tables'] != '')
-        return (template, criteria, expand_tables)
+        return template, criteria, expand_tables
 
     def post(self, request, namespace, report_slug):
         queryset = Report.objects.filter(enabled=True)
@@ -351,30 +352,6 @@ class ReportPrintView(GenericReportView):
             raise Http404
 
         return self.render_html(report, request, namespace, report_slug, True)
-
-
-class WidgetView(views.APIView):
-    """ Handler for displaying one widget which uses default criteria
-    """
-    serializer_class = ReportSerializer
-    renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
-
-    # ReportView.get()
-    def get(self, request, namespace=None, report_slug=None, widget_slug=None):
-        criteria = request.GET.dict()
-        if 'endtime' in criteria and criteria['endtime'] == "now":
-            del criteria['endtime']
-        criteria = json.dumps(criteria)
-        w = Widget.objects.get(id=widget_slug)
-        widget_type = [str(x) for x in w.widgettype().split(".")]
-        widget_def = {"namespace": namespace,
-                      "report_slug": report_slug,
-                      "widgettype": [widget_type[0], widget_type[1]],
-                      "widgetid": w.id,
-                      "criteria": mark_safe(criteria)
-                      }
-        return render_to_response('widget.html', {"widget": widget_def},
-                                  context_instance=RequestContext(request))
 
 
 class ReportEditor(views.APIView):
@@ -444,6 +421,7 @@ class ReportEditorDiff(views.APIView):
                                   {'report': report,
                                    'diffhtml': html},
                                   context_instance=RequestContext(request))
+
 
 class ReportCopy(views.APIView):
     """ Edit Report files directly.  Requires superuser permissions. """
@@ -522,21 +500,24 @@ class ReportCriteria(views.APIView):
     """
     renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
 
-    def get(self, request, namespace=None, report_slug=None, widget_id=None):
-        try:
-            all_fields = SortedDict()
+    def get(self, request, namespace=None, report_slug=None, widget_slug=None):
+        all_fields = SortedDict()
 
-            if widget_id:
-                w = Widget.objects.get(pk=widget_id)
-                all_fields = w.collect_fields()
-            else:
-                report = Report.objects.get(namespace=namespace,
-                                            slug=report_slug)
-                fields_by_section = report.collect_fields_by_section()
-                for c in fields_by_section.values():
-                    all_fields.update(c)
-        except:
-            raise Http404
+        report = get_object_or_404(Report,
+                                   namespace=namespace,
+                                   slug=report_slug)
+
+        if widget_slug:
+            w = get_object_or_404(
+                Widget,
+                slug=widget_slug,
+                section__in=Section.objects.filter(report=report)
+            )
+            all_fields = w.collect_fields()
+        else:
+            fields_by_section = report.collect_fields_by_section()
+            for c in fields_by_section.values():
+                all_fields.update(c)
 
         form = TableFieldForm(all_fields, use_widgets=False)
 
@@ -620,7 +601,7 @@ class ReportWidgets(views.APIView):
             criteria = ReportCriteria.as_view()(request,
                                                 w.section.report.namespace,
                                                 w.section.report.slug,
-                                                w.id)
+                                                w.slug)
             widget_criteria = json.loads(criteria.content)
             if 'endtime' in widget_criteria:
                 widget_criteria['endtime'] = now.isoformat()
@@ -631,9 +612,10 @@ class ReportWidgets(views.APIView):
                 "posturl": reverse('widget-job-list',
                                    args=(w.section.report.namespace,
                                          w.section.report.slug,
-                                         w.id)),
+                                         w.slug)),
                 "options": w.uioptions,
                 "widgetid": w.id,
+                "widgetslug": w.slug,
                 "row": w.row,
                 "width": w.width,
                 "height": w.height,
@@ -646,32 +628,79 @@ class ReportWidgets(views.APIView):
 
 
 class ReportTableList(generics.ListAPIView):
-    model = Table
+    """Return list of tables associated with a given Report."""
     serializer_class = TableSerializer
 
-    def get(self, request, *args, **kwargs):
-        report = Report.objects.get(namespace=kwargs['namespace'],
-                                    slug=kwargs['report_slug'])
-        qs = (table
-              for section in report.section_set.all()
-              for widget in section.widget_set.all()
-              for table in widget.tables.all())
-        serializer = TableSerializer(instance=qs)
-        return Response(serializer.data)
+    def get_queryset(self):
+        report = Report.objects.get(namespace=self.kwargs['namespace'],
+                                    slug=self.kwargs['report_slug'])
+        return (table
+                for section in report.section_set.all()
+                for widget in section.widget_set.all()
+                for table in widget.tables.all())
+
+
+class WidgetDetailView(generics.RetrieveAPIView):
+    """ Return Widget details looked up by slug field. """
+    model = Widget
+    lookup_field = 'slug'
+    lookup_url_kwarg = 'widget_slug'
+    serializer_class = WidgetSerializer
+    renderer_classes = (JSONRenderer, )
+
+
+class WidgetView(views.APIView):
+    """ Handler for displaying one widget which uses default criteria
+    """
+    serializer_class = ReportSerializer
+    renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
+
+    def get(self, request, namespace=None, report_slug=None, widget_slug=None):
+        criteria = request.GET.dict()
+        if 'endtime' in criteria and criteria['endtime'] == "now":
+            del criteria['endtime']
+        criteria = json.dumps(criteria)
+
+        report = get_object_or_404(Report, namespace=namespace,
+                                   slug=report_slug)
+
+        # widget slugs aren't unique globally, but should be unique within
+        # any given report
+        w = get_object_or_404(
+            Widget,
+            slug=widget_slug,
+            section__in=Section.objects.filter(report=report)
+        )
+
+        widget_type = [str(x) for x in w.widgettype().split(".")]
+        widget_def = {
+            "namespace": namespace,
+            "report_slug": report_slug,
+            "widgettype": [widget_type[0], widget_type[1]],
+            "widgetid": w.id,
+            "widgetslug": w.slug,
+            "criteria": mark_safe(criteria)
+        }
+
+        return render_to_response('widget.html', {"widget": widget_def},
+                                  context_instance=RequestContext(request))
 
 
 class WidgetJobsList(views.APIView):
     parser_classes = (JSONParser,)
 
-    def post(self, request, namespace, report_slug, widget_id, format=None):
+    def post(self, request, namespace, report_slug, widget_slug, format=None):
         logger.debug("Received POST for report %s, widget %s: %s" %
-                     (report_slug, widget_id, request.POST))
+                     (report_slug, widget_slug, request.POST))
 
-        try:
-            report = Report.objects.get(namespace=namespace, slug=report_slug)
-            widget = Widget.objects.get(id=widget_id)
-        except:
-            raise Http404
+        report = get_object_or_404(Report, namespace=namespace,
+                                   slug=report_slug)
+
+        widget = get_object_or_404(
+            Widget,
+            slug=widget_slug,
+            section__in=Section.objects.filter(report=report)
+        )
 
         req_json = json.loads(request.POST['criteria'])
 
@@ -711,7 +740,7 @@ class WidgetJobsList(views.APIView):
                 return Response({"joburl": reverse('report-job-detail',
                                                    args=[namespace,
                                                          report_slug,
-                                                         widget_id,
+                                                         widget_slug,
                                                          wjob.id])})
             except Exception as e:
                 logger.exception("Failed to start job, an exception occurred")
@@ -723,7 +752,7 @@ class WidgetJobsList(views.APIView):
 
 
 class WidgetJobDetail(views.APIView):
-    def get(self, request, namespace, report_slug, widget_id, job_id,
+    def get(self, request, namespace, report_slug, widget_slug, job_id,
             format=None):
         wjob = WidgetJob.objects.get(id=job_id)
 
@@ -781,8 +810,8 @@ geolocation documentation</a> for more information.'''
                     logger.debug("%s complete" % str(wjob))
 
             except:
-                logger.exception("Widget %s Job %s processing failed" %
-                                 (widget.id, job.id))
+                logger.exception("Widget %s (%s) Job %s processing failed" %
+                                 (widget.slug, widget.id, job.id))
                 resp = job.json()
                 resp['status'] = Job.ERROR
                 ei = sys.exc_info()
