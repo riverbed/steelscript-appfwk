@@ -677,7 +677,8 @@ class WidgetView(views.APIView):
             "namespace": namespace,
             "report_slug": report_slug,
             "widgettype": [widget_type[0], widget_type[1]],
-            "widgetid": w.slug,
+            "widgetid": w.id,
+            "widgetslug": w.slug,
             "criteria": mark_safe(criteria)
         }
 

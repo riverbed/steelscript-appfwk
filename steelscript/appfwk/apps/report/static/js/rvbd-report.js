@@ -197,7 +197,7 @@ function renderWidgets(widgets, widgetInfo) {
         // Find the widget we want to render
         var targetWidget;
         $.each(widgets, function(i, widget) {
-            if (widget.widgetid === widgetInfo.widgetid) {
+            if (widget.widgetslug === widgetInfo.widgetslug) {
                 targetWidget = widget;
                 return false;
             }
@@ -372,7 +372,7 @@ function addGetEmbedHtmlHandler(widget) {
     // Add the actual menu item listener which triggers the modal
     $('#' + widget.id + '_get_embed').click(function() {
         var baseurl = window.location.href.split('#')[0] + 'widgets/';
-        var url = baseurl + widget.slug + '/?' + $.param(criteria);
+        var url = baseurl + widget.slug + '/render/?' + $.param(criteria);
         generateModal(url, widget)
     });
 }

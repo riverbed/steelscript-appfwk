@@ -56,7 +56,8 @@ Add header
               }
           });
           // Immediately render the page and run the widget
-          var widget_info = {"widgetid": {{ widget.widgetid }},
+          var widget_info = {"widgetid": '{{ widget.widgetid }}',
+                             "widgetslug": '{{ widget.widgetslug }}',
                              "criteria": '{{ widget.criteria }}'
                             };
           renderPage("{% url 'report-widgets' widget.namespace widget.report_slug %}", widget_info);
