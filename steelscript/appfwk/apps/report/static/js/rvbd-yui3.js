@@ -264,10 +264,10 @@ $.extend(window.rvbd_yui3.PieWidget.prototype, {
     widgetClass: 'Chart'
 });
 
-window.rvbd_yui3.CandleStickWidget = function(posturl, isEmbedded, div, id, options, criteria) {
+window.rvbd_yui3.CandleStickWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, options, criteria]);
+    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, slug, options, criteria]);
 };
 
 window.rvbd_yui3.CandleStickWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
