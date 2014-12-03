@@ -371,20 +371,9 @@ function addGetEmbedHtmlHandler(widget) {
 
     // Add the actual menu item listener which triggers the modal
     $('#' + widget.id + '_get_embed').click(function() {
-        var baseurl = window.location.href.split('#')[0] + 'widget/';
-        $.ajax({
-            dataType: 'json',
-            type: 'get',
-            url: baseurl + widget.id + '/',
-            success: function(data, textStatus, jqXHR) {
-                // Create the url that describes the current widget
-                var url = baseurl + data['slug'] + '/?' + $.param(criteria);
-                generateModal(url, widget)
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                alertReportError(textStatus, errorThrown);
-            }
-        });
+        var baseurl = window.location.href.split('#')[0] + 'widgets/';
+        var url = baseurl + widget.slug + '/?' + $.param(criteria);
+        generateModal(url, widget)
     });
 }
 

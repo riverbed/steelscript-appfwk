@@ -641,7 +641,7 @@ class ReportTableList(generics.ListAPIView):
 
 
 class WidgetDetailView(generics.RetrieveAPIView):
-    """ Handler for getting Widget slug from an ID """
+    """ Return Widget details looked up by slug field. """
     model = Widget
     lookup_field = 'slug'
     lookup_url_kwarg = 'widget_slug'
