@@ -140,15 +140,10 @@ class GenericReportView(views.APIView):
             # only redirect if first login
             return HttpResponseRedirect(reverse('preferences')+'?next=/report')
 
-        # factory this to make it extensible
-
+        # Setup default criteria for the report based on underlying tables
         system_settings = SystemSettings.get_system_settings()
         form_init = {'ignore_cache': system_settings.ignore_cache}
-        tables = (table
-                  for section in report.section_set.all()
-                  for widget in section.widget_set.all()
-                  for table in widget.tables.all())
-        for table in tables:
+        for table in report.tables():
             if table.criteria:
                 form_init.update(table.criteria)
 
@@ -634,10 +629,7 @@ class ReportTableList(generics.ListAPIView):
     def get_queryset(self):
         report = Report.objects.get(namespace=self.kwargs['namespace'],
                                     slug=self.kwargs['report_slug'])
-        return (table
-                for section in report.section_set.all()
-                for widget in section.widget_set.all()
-                for table in widget.tables.all())
+        return report.tables()
 
 
 class WidgetDetailView(generics.RetrieveAPIView):

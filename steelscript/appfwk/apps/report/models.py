@@ -211,6 +211,14 @@ class Report(models.Model):
         return Widget.objects.filter(
             section__in=Section.objects.filter(report=self)).order_by('id')
 
+    def tables(self, order_by='id'):
+        """Return all tables from this report, ordered by `order_by`."""
+        return (Table.objects.filter(
+                widget__in=Widget.objects.filter(
+                    section__in=Section.objects.filter(
+                        report=self)))
+                .distinct().order_by(order_by))
+
 
 class Section(models.Model):
     """ Define a section of a report.
