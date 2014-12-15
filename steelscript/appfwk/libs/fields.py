@@ -175,7 +175,7 @@ class PickledObjectField(models.Field):
 
 
 class Function(object):
-
+    """Serializable object for callable objects with their parameters."""
     def __init__(self, function=None, params=None):
         if function:
             self.module = function.__module__
@@ -228,6 +228,7 @@ class Function(object):
 
 
 class FunctionField(PickledObjectField):
+    """Model field which stores a Function object."""
 
     __metaclass__ = models.SubfieldBase
 

@@ -36,8 +36,7 @@ class AnalysisTable(DatasourceTable):
     `tables` is hashmap of dependent tables, mapping a names expected
         by the analysis functon to table ids
 
-    `function` is a pointer to the user defined analysis function, or
-        a Function object which includes parameters
+    `function` is a pointer to the user defined analysis function
 
     For example, consider an input of two tables A and B, and an
     AnalysisTable that simply concatenates A and B:
@@ -76,15 +75,18 @@ class AnalysisTable(DatasourceTable):
     Note that the function must defined in a separate file in the 'helpers'
     directory.
     """
-    class Meta: proxy = True
+    class Meta:
+        proxy = True
 
     _ANALYSIS_TABLE_OPTIONS = {
         'tables': None,            # dependent tables to be run first
-        'related_tables': None}    # related tables that are reference only
+        'related_tables': None,    # related tables that are reference only
+        'function': None           # optional function for post process
+    }
 
     _ANALYSIS_FIELD_OPTIONS = {
-        'copy_fields': True }      # If true, copy TableFields from tables
-                                   # and related_tables
+        'copy_fields': True      # If true, copy TableFields from tables
+    }                            # and related_tables
 
     _query_class = 'AnalysisQuery'
 
@@ -95,6 +97,11 @@ class AnalysisTable(DatasourceTable):
         for i in ['tables', 'related_tables']:
             for k, v in (table_options[i] or {}).iteritems():
                 table_options[i][k] = Table.to_ref(v)
+
+        tf = table_options['function']
+        if tf and not isinstance(tf, Function):
+            raise AttributeError('Option `function` must be an instance '
+                                 'of Function.')
 
         return table_options
 
@@ -161,12 +168,44 @@ class AnalysisQuery(TableQueryBase):
 
         self.tables = tables
 
-        logger.debug("%s: deptables completed successfully" % (self))
+        logger.debug("%s: deptables completed successfully" % self)
+        return True
+
+    def post_run(self):
+        """Execute any Functions saved to Table.
+
+        In most cases, this function will be simply overridden by a
+        subclass which will implement its own detailed processing.  This
+        method provides a shortcut to support passing a Function
+        directly to the create method.
+        """
+        options = self.table.options
+
+        try:
+            df = options.function(self, options.tables, self.job.criteria)
+
+        except AnalysisException as e:
+            self.job.mark_error("Analysis function %s failed: %s" %
+                                (options.function, e.message))
+            logger.exception("%s raised an exception" % self)
+            return False
+
+        except Exception as e:
+            self.job.mark_error("Analysis function %s failed: %s" %
+                                (options.function, str(e)))
+            logger.exception("%s: Analysis function %s raised an exception" %
+                             (self, options.function))
+            return False
+
+        self.data = df
+
+        logger.debug("%s: completed successfully" % self)
         return True
 
 
 class CriteriaTable(AnalysisTable):
-    class Meta: proxy = True
+    class Meta:
+        proxy = True
 
     _query_class = 'CriteriaQuery'
 
@@ -177,6 +216,7 @@ class CriteriaTable(AnalysisTable):
                         datatype=Column.DATATYPE_STRING)
         self.add_column('value', 'Criteria Value',
                         datatype=Column.DATATYPE_STRING)
+
 
 class CriteriaQuery(AnalysisQuery):
 
@@ -190,6 +230,7 @@ class CriteriaQuery(AnalysisQuery):
 
         self.data = df
         return True
+
 
 def resample(df, timecol, interval, how):
     """Resample the input dataframe.

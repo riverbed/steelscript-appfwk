@@ -1,5 +1,13 @@
+# Copyright (c) 2014 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+
+
 from steelscript.appfwk.apps.datasource.modules.analysis import \
      AnalysisTable, AnalysisQuery
+
 
 class WhoisTable(AnalysisTable):
     class Meta:
@@ -16,6 +24,7 @@ class WhoisTable(AnalysisTable):
 def make_whois_link(ip):
     return ('<a href="http://whois.arin.net/rest/nets;q=%s?showDetails=true&'
             'showARIN=false&ext=netref2" target="_blank">Whois record</a>' % ip)
+
 
 class WhoisQuery(AnalysisQuery):
 
