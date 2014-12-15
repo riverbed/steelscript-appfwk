@@ -12,6 +12,8 @@ rvbd_status = {};
 rvbd_debug = false;
 rvbd_debug_url = '';
 
+reportHasRendered = false;
+
 (function() {
 'use strict';
 
@@ -236,12 +238,16 @@ function renderWidgets(widgets, widgetInfo) {
         window.rvbd_status[w.posturl] = 'running';
     });
 
-    var completeCallback = (isEmbedded ? onEmbedWidgetComplete : onReportWidgetComplete);
+    if (!window.reportHasRendered) { // If first time rendering the report, attach widgetDoneLoading handler
+        window.reportHasRendered = true;
 
-    $(document).on('widgetDoneLoading', function(e, widget) { 
-        completeCallback(widget);
-        checkAndProcessCompleteWidgets();
-    });
+        var completeCallback = (isEmbedded ? onEmbedWidgetComplete : onReportWidgetComplete);
+
+        $(document).on('widgetDoneLoading', function(e, widget) { 
+            completeCallback(widget);
+            checkAndProcessCompleteWidgets();
+        });
+    }
 }
 
 function checkAndProcessCompleteWidgets() {
