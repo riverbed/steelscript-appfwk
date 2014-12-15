@@ -169,15 +169,17 @@
       <div class="row-fluid">
         <div class="span12 widget-box">
           <div class="widget-title report-title">
-            <a data-toggle="collapse" data-target="#report-container" href="#">
               {% if report.hide_criteria %}
-                {{ report.title }}
+                <span class="icon-print print-report pull-right" title="Print this report (run report to enable)"></span>
+                <a data-toggle="collapse" data-target="#report-container" href="#">
                 <small id="report_datetime" class="text-info pull-right">{% now "jS F Y H:i:s" %}</small><br>
+                </a>
               {% else %}
+                <a data-toggle="collapse" data-target="#report-container" href="#">
                 Report
+                </a>
+                <span class="icon-print print-report" title="Print this report (run report to enable)"></span>
               {% endif %}
-            </a>
-            <span class="icon-print print-report" title="Print this report (run report to enable)"></span>
           </div>
           <div class="collapse in" id="report-container">
             <div class="widget-content collapse in" id="report">

@@ -64,7 +64,7 @@ rvbd_maps.MapWidget.prototype.render = function(data)
         c.center = [c.center[0], c.center[1]];
         bounds.extend(c.center)
 
-        var valstr = (c.formatter ? Widget.prototype[c.formatter].call(self, c.value, 2)
+        var valstr = (c.formatter ? window.formatters[c.formatter](c.value, 2)
                                   : c.value) + c.units;
 
         var title = c.title + '\n' + valstr;
