@@ -16,7 +16,6 @@
     padding: 5px;
     margin-bottom: 10px;
 }
-.mapcanvas img { max-width: none; }
 
 .date { width: 100px; }
 .time { width: 100px; }
@@ -43,47 +42,51 @@
     font-size: 13px;
 }
 
-.yui-widget-outer-container {
+.wid-outer-container {
     overflow: hidden;
     width: 100%;
     height: 100%;
 }
 
-.yui-widget-title {
+.wid-title {
     height: 20px;
     text-align: center;
 }
 
-.yui-widget-content {
+.wid-content {
     margin: 10px;
 }
 
-.map-widget-title {
-    position: absolute;
-    left: 0px;
-    right: 0px;
-    top: 0px;
-}
-
-.mapcanvas {
-    position: absolute;
-    left: 0px;
-    right: 0px;
-    bottom: 0px;
-    margin: 10px;
-}
-
-.print-report {
+#print-report {
     float: right;
     margin-top: 2px;
     margin-right: 1px;
     margin-left: 4px;
 }
 
-/* When the print report is a span (rather than a link), gray it out */
-span.print-report {
+/* When the print report icon is a span (rather than a link), gray it out */
+span#print-report {
     opacity: 0.4;
 }
+
+.modal-content { /* All modal content divs hidden initially */
+    display: none;
+}
+
+.modal .modal-content { /* But shown if they're inside a modal */
+    display: block;
+}
+
+/* Inputs for embed widget dimensions */
+#embed-widget-width, #embed-widget-height {
+    width: 50px;
+    margin-top: 10px;
+}
+
+#embed-widget-code {
+    width: 97%;
+}
+
 
 input[type="file"] {
     padding-top: 5px;

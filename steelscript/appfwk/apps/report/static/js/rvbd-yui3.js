@@ -10,37 +10,16 @@
 (function() {
 'use strict';
 
-window.rvbd_yui3 = {};
+rvbd.widgets.yui3 = {};
 
-window.rvbd_yui3.YUIWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.yui3.YUIWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    Widget.apply(self, [posturl, isEmbedded, div, id, slug, options, criteria]);
+    rvbd.widgets.Widget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria]);
 };
-window.rvbd_yui3.YUIWidget.prototype = Object.create(window.Widget.prototype);
-$.extend(window.rvbd_yui3.YUIWidget.prototype, {
-    buildInnerLayout: function(title) {
-        var self = this;
+rvbd.widgets.yui3.YUIWidget.prototype = Object.create(rvbd.widgets.Widget.prototype);
 
-        var $div = $(self.div);
-
-        self.title = $('<div></div>')
-            .attr('id', $div.attr('id') + '_content-title')
-            .html(title)
-            .addClass('widget-title yui-widget-title'),
-        self.content = $('<div></div>')
-            .attr('id', $div.attr('id') + '_content')
-            .addClass('yui3-skin-sam yui-widget-content');
-
-        self.outerContainer = $('<div></div>')
-            .addClass('yui-widget-outer-container')
-            .append($(self.title))
-            .append($(self.content));
-
-        $div.empty()
-            .append(self.outerContainer);
-    },
-
+$.extend(rvbd.widgets.yui3.YUIWidget.prototype, {
     addBasicParams: function(data) {
         var self = this;
 
@@ -63,10 +42,15 @@ $.extend(window.rvbd_yui3.YUIWidget.prototype, {
         return data;
     },
 
+    /**
+     * Implement in children to customize the config dictionary that will be passed to the YUI widget
+     * constructor.
+     */
     prepareData: function(data) {
         return data;
     },
 
+    /* Called when the YUI widget is resized (or created) */
     onResize: function() {
         var self = this;
 
@@ -78,6 +62,7 @@ $.extend(window.rvbd_yui3.YUIWidget.prototype, {
         var width = $(self.outerContainer).width() - self.contentExtraWidth,
             height = $(self.outerContainer).height() - self.contentExtraHeight - self.titleHeight;
 
+        // Chart widgets take an integer pixels for dimensions, others take CSS dimensions 
         if (self.widgetClass === 'Chart') {
             self.yuiWidget.set('width', width);
             self.yuiWidget.set('height', height);
@@ -87,17 +72,25 @@ $.extend(window.rvbd_yui3.YUIWidget.prototype, {
         }
     },
 
+    /* Called immediately after onResize after the YUI widget is created. */
+    onRender: function() {
+        // Behavior implemented in subclasses
+    },
+
     render: function(data) {
         var self = this;
 
-        self.buildInnerLayout(data.chartTitle);
+        $(self.div).addClass('yui3-skin-sam');
+
+        self.titleMsg = data['chartTitle'];
+        self.buildInnerLayout();
 
         var $content = $(self.content)
         self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
                                   parseInt($content.css('margin-right'), 10);
         self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
                                   parseInt($content.css('margin-bottom'), 10);
-        self.titleHeight  = $(self.title).outerHeight();
+        self.titleHeight = $(self.title).outerHeight();
 
 
         data = self.addBasicParams(data);
@@ -105,25 +98,24 @@ $.extend(window.rvbd_yui3.YUIWidget.prototype, {
         self.data = data;
 
         var requirements = self.requirements.concat(['event-resize']); // All widgets need event-resize
+        
         YUI().use(requirements, function(Y) {
             self.yuiWidget = new Y[self.widgetClass](data);
             Y.on('windowresize', self.onResize.bind(self));
-            if (typeof self.onRender !== 'undefined') {
-                self.onRender();
-            }
+            self.onRender();
         });
     }
 });
 
 
-window.rvbd_yui3.TableWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.yui3.TableWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, slug, options, criteria]);
+    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria]);
 };
-window.rvbd_yui3.TableWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
+rvbd.widgets.yui3.TableWidget.prototype = Object.create(rvbd.widgets.yui3.YUIWidget.prototype);
 
-$.extend(window.rvbd_yui3.TableWidget.prototype, {
+$.extend(rvbd.widgets.yui3.TableWidget.prototype, {
     requirements: ['datatable-scroll', 'datatable-sort'],
     widgetClass: 'DataTable',
 
@@ -131,10 +123,10 @@ $.extend(window.rvbd_yui3.TableWidget.prototype, {
         data.scrollable = 'xy';
 
         $.each(data.columns, function(i, c) {
-            if (typeof c.formatter !== 'undefined' && c.formatter in window.formatters) {
+            if (typeof c.formatter !== 'undefined' && c.formatter in rvbd.formatters) {
                 c.formatter = (function(key, formatter) {
                     return function(v) { return formatter(v.data[key]); }
-                })(c.key, window.formatters[c.formatter]);
+                })(c.key, rvbd.formatters[c.formatter]);
             } else {
                 delete c.formatter;
             }
@@ -143,29 +135,36 @@ $.extend(window.rvbd_yui3.TableWidget.prototype, {
         return data;
     },
 
+    isOversized: function() {
+        var self = this;
+
+        var $scroller = $(self.div).find('.yui3-datatable-y-scroller');
+
+        // Return false if scroller is missing (i.e. widget failed to load properly)
+        return $scroller.length === 0 || $scroller[0].scrollHeight > $scroller[0].clientHeight;
+    },
+
     onRender: function() {
         var self = this;
 
-        if (window.expandTables) {
+        if (rvbd.report.expandTables && self.isOversized()) {
+            // Table is oversized--expand widget to fit content
             var scroller = $(self.div).find('.yui3-datatable-y-scroller')[0];
-            if (scroller.scrollHeight > scroller.clientHeight) {
-                // Table is oversized--expand widget to fit content
-                self.yuiWidget.set('height', (scroller.scrollHeight + 2) + 'px');
-                $(this.div).css('height', 'auto');
-            }
+            self.yuiWidget.set('height', (scroller.scrollHeight + 2) + 'px');
+            $(this.div).css('height', 'auto');
         }
     }
 });
 
 
-window.rvbd_yui3.TimeSeriesWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.yui3.TimeSeriesWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, slug, options, criteria]);
+    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria]);
 };
-window.rvbd_yui3.TimeSeriesWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
+rvbd.widgets.yui3.TimeSeriesWidget.prototype = Object.create(rvbd.widgets.yui3.YUIWidget.prototype);
 
-$.extend(window.rvbd_yui3.TimeSeriesWidget.prototype, {
+$.extend(rvbd.widgets.yui3.TimeSeriesWidget.prototype, {
     requirements: ['charts-legend'],
     widgetClass: 'Chart',
 
@@ -178,7 +177,7 @@ $.extend(window.rvbd_yui3.TimeSeriesWidget.prototype, {
                     return function (v, fmt, tooltip) {
                         return formatter(v, tooltip ? 2 : 1);
                     }
-                })(window.formatters[axis.formatter]);
+                })(rvbd.formatters[axis.formatter]);
             } else if ('tickExponent' in axis && axis.tickExponent < 0) {
                 axis.labelFunction = (function (exp) {
                     return function(v, fmt, tooltip) {
@@ -207,14 +206,14 @@ $.extend(window.rvbd_yui3.TimeSeriesWidget.prototype, {
     }
 });
 
-window.rvbd_yui3.ChartWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.yui3.ChartWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, slug, options, criteria]);
+    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria]);
 };
+rvbd.widgets.yui3.ChartWidget.prototype = Object.create(rvbd.widgets.yui3.YUIWidget.prototype);
 
-window.rvbd_yui3.ChartWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
-$.extend(window.rvbd_yui3.ChartWidget.prototype, {
+$.extend(rvbd.widgets.yui3.ChartWidget.prototype, {
     requirements: ['charts-legend'],
     widgetClass: 'Chart',
 
@@ -252,26 +251,26 @@ $.extend(window.rvbd_yui3.ChartWidget.prototype, {
     }
 });
 
-window.rvbd_yui3.PieWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.yui3.PieWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, slug, options, criteria]);
+    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria]);
 };
+rvbd.widgets.yui3.PieWidget.prototype = Object.create(rvbd.widgets.yui3.YUIWidget.prototype);
 
-window.rvbd_yui3.PieWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
-$.extend(window.rvbd_yui3.PieWidget.prototype, {
+$.extend(rvbd.widgets.yui3.PieWidget.prototype, {
     requirements: ['charts-legend'],
     widgetClass: 'Chart'
 });
 
-window.rvbd_yui3.CandleStickWidget = function(posturl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.yui3.CandleStickWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    window.rvbd_yui3.YUIWidget.apply(self, [posturl, isEmbedded, div, id, slug, options, criteria]);
+    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria]);
 };
+rvbd.widgets.yui3.CandleStickWidget.prototype = Object.create(rvbd.widgets.yui3.YUIWidget.prototype);
 
-window.rvbd_yui3.CandleStickWidget.prototype = Object.create(window.rvbd_yui3.YUIWidget.prototype);
-$.extend(window.rvbd_yui3.CandleStickWidget.prototype, {
+$.extend(rvbd.widgets.yui3.CandleStickWidget.prototype, {
     requirements: ['series-candlestick', 'charts'],
     widgetClass: 'Chart',
     

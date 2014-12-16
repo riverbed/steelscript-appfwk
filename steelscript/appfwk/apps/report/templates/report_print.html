@@ -1,17 +1,9 @@
 {% extends "report.html" %}
 {% block header_script %}
-{% if criteria == None %}
-var autoLoadCriteria = null;
-{% else %}
 {% autoescape off %}
-var autoLoadCriteria = {{criteria}};
+rvbd.report.printCriteria = {{criteria}};
 {% endautoescape %}
-{% endif %}
 {{ block.super }}
-$(function() {
-    runRequested = true;
-    dorun();
- });
 {% endblock %}
 {% block header %}
 {{ block.super }}

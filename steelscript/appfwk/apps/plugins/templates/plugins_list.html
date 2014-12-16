@@ -43,8 +43,8 @@
             '</label>';
         var okButtonTxt = 'Go!';
         var cancelButtonTxt = 'Cancel';
-        confirm(heading, question, cancelButtonTxt, okButtonTxt,
-                function(){ reloadingHandler(collect_url, reload_url) });
+        rvbd.modal.confirm(heading, question, cancelButtonTxt, okButtonTxt,
+                           function(){ reloadingHandler(collect_url, reload_url) });
     }
 
 
@@ -70,7 +70,7 @@
         }
         if(!url)
             return;
-        modal = loadingModal(modalText[0], modalText[1]);
+        modal = rvbd.modal.loading(modalText[0], modalText[1]);
         modal.modal('show');
         sendGet(url, onSuccess);
     };
@@ -84,7 +84,7 @@
                 if (errorThrown == "INTERNAL SERVER ERROR"){
                     errorThrown += "<br><br>Check appfwk log for more details.";
                 }
-                alertModal(statusText, errorThrown, "OK", function(){});
+                rvbd.modal.alert(statusText, errorThrown, "OK", function(){});
             },
             success: function(data){
                 if(!onSuccess){

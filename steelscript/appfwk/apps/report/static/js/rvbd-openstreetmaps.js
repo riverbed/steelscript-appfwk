@@ -7,35 +7,18 @@
  # This software is distributed "AS IS" as set forth in the License.
  */
 
-var rvbd_maps = {};
+rvbd.widgets.maps = {};
 
-rvbd_maps.MapWidget = function (posturl, isEmbedded, div, id, slug, options, criteria) {
-    Widget.apply(this, [posturl, isEmbedded, div, id, slug, options, criteria]);
+rvbd.widgets.maps.MapWidget = function (postUrl, isEmbedded, div, id, slug, options, criteria) {
+    rvbd.widgets.Widget.apply(this, [postUrl, isEmbedded, div, id, slug, options, criteria]);
 };
-rvbd_maps.MapWidget.prototype = Object.create(Widget.prototype)
+rvbd.widgets.maps.MapWidget.prototype = Object.create(rvbd.widgets.Widget.prototype)
 
-rvbd_maps.MapWidget.prototype.render = function(data)
+rvbd.widgets.maps.MapWidget.prototype.render = function(data)
 {
     var self = this;
 
     var $div = $(self.div);
-
-    var contentid = $div.attr('id') + '_content';
-
-    $(self.div)
-        .css('position', 'relative')
-        .empty()
-        .append('<div id="' + contentid + '-title" class="widget-title map-widget-title">' + data['chartTitle'] + '</div>')
-        .append('<div id="' + contentid + '" class="mapcanvas"></div>');
-
-    $('#' + contentid + '-title')
-        .height(20)
-        .css('text-align', 'center');
-
-    $('#' + contentid)
-        .height($div.height() - 52);
-
-    var map;
 
  // Ignore options here due to bug:
  // https://github.com/Leaflet/Leaflet/issues/2071
@@ -43,8 +26,15 @@ rvbd_maps.MapWidget.prototype.render = function(data)
  //       center: [42.3583, -71.063],
  //       zoom: 3,
     };
-    map = new L.map(document.getElementById(contentid),
-                    mapOptions);
+
+    self.titleMsg = data['chartTitle'];
+    self.buildInnerLayout();
+
+    $(self.content)
+        .height($div.height() - 52);
+
+
+    var map = new L.map(self.content, mapOptions);
 
     L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', {
         subdomains: ['otile1', 'otile2', 'otile3', 'otile4'],
@@ -60,16 +50,17 @@ rvbd_maps.MapWidget.prototype.render = function(data)
         bounds = new L.LatLngBounds();
     }
 
+    var valStr, title, marker;
     $.each(data.circles, function(i,c) {
         c.center = [c.center[0], c.center[1]];
         bounds.extend(c.center)
 
-        var valstr = (c.formatter ? window.formatters[c.formatter](c.value, 2)
-                                  : c.value) + c.units;
+        valStr = (c.formatter ? rvbd.formatters[c.formatter](c.value, 2)
+                              : c.value) + c.units;
 
-        var title = c.title + '\n' + valstr;
+        title = c.title + '\n' + valStr;
 
-        var marker = L.marker(c.center, {
+        marker = L.marker(c.center, {
             title: title,
             icon: L.divIcon({
                 className: 'circleMarker',

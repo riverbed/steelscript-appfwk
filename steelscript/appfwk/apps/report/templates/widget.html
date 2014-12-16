@@ -47,22 +47,16 @@ Add header
 
 
     <script type="text/javascript">
-      var runRequested = false;
-      var debugFlag = false;
-      $(document).ready( function() {
-          $.ajaxSetup({
-              beforeSend: function(xhr) {
-                  xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
-              }
-          });
-          // Immediately render the page and run the widget
-          var widget_info = {"widgetid": '{{ widget.widgetid }}',
-                             "widgetslug": '{{ widget.widgetslug }}',
-                             "criteria": '{{ widget.criteria }}'
-                            };
-          renderPage("{% url 'report-widgets' widget.namespace widget.report_slug %}", widget_info);
-        });
+      rvbd.report.isEmbedded = true;
+      rvbd.report.widgetsUrl = "{% url 'report-widgets' widget.namespace widget.report_slug %}";
+      rvbd.report.csrfToken = "{{ csrf_token }}";
+      rvbd.report.embedWidgetInfo = {
+          "widgetid": '{{ widget.widgetid }}',
+          "widgetslug": '{{ widget.widgetslug }}',
+          "criteria": '{{ widget.criteria }}'
+      };
 
+      $(rvbd.report.start);
     </script>
   </head>
   <body>

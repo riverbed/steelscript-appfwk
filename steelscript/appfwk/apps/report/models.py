@@ -403,7 +403,7 @@ class Widget(models.Model):
         super(Widget, self).save(*args, **kwargs)
 
     def widgettype(self):
-        return 'rvbd_%s.%s' % (self.module.split('.')[-1], self.uiwidget)
+        return '%s.%s' % (self.module.split('.')[-1], self.uiwidget)
 
     def table(self, i=0):
         return self.tables.all()[i]

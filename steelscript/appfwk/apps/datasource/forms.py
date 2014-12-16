@@ -483,7 +483,7 @@ class TableFieldForm(forms.Form):
 
         f = field_cls(**fkwargs)
         self.fields[field_id] = f
-        f.widget.attrs.update({'onchange': 'criteria_changed()'})
+        f.widget.attrs.update({'onchange': 'rvbd.report.criteriaChanged()'})
         if widget_attrs:
             f.widget.attrs.update(widget_attrs)
 

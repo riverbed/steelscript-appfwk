@@ -41,40 +41,19 @@
 
     <script type="text/javascript">
     {% block header_script %}
-      var launchingPrintPage = false;
-      var runRequested = false;
-      var debugFlag = false;
-      var expandTables = {% if expand_tables %} true {% else %} false {% endif %};
+      rvbd.report.isEmbedded = false;
+      rvbd.report.widgetsUrl = "{% url 'report-widgets' report.namespace report.slug %}";
+      rvbd.report.csrfToken = "{{ csrf_token }}";
 
-      $(document).ready(function() {
-          $.ajaxSetup({
-              beforeSend: function(xhr) {
-                  xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
-              }
-          });
-          // rvbd_debug_url is used in report.js to allow the user to download a zip
-          // of the debug information if rvbd_debug is set to true.
-          rvbd_debug_url = "{% url 'steelscript.appfwk.apps.report.views.download_debug' %}";
+      rvbd.report.autoLoad = {% if report.hide_criteria %} true {% else %} false {% endif %};
+      rvbd.report.reloadMinutes = {{ report.reload_minutes }};
+      rvbd.report.expandTables = {% if expand_tables %} true {% else %} false {% endif %};
 
-          {% if report.hide_criteria %}
+      // rvbd.report.debugUrl is used in rvbd-report.js to allow the user to download a zip
+      // of the debug information if rvbd_debug is set to true.
+      rvbd.report.debugUrl = "{% url 'steelscript.appfwk.apps.report.views.download_debug' %}";
 
-          renderPage("{% url 'report-widgets' report.namespace report.slug %}");
-          {% if report.reload_minutes > 0 %}setInterval(function() { renderPage("{% url 'report-widgets' report.namespace report.slug %}"); }, {{ report.reload_minutes }} * 60 * 1000);{% endif %}
-
-          {% else %}
-
-          $("#criteria").on('hidden', dorun);
-          $('form#criteriaform').submit(function() {
-              // If not launching print window, run report. If launching print window,
-              // allow standard POST request.
-              if (!launchingPrintWindow) {
-                  run();
-                  return false;
-              }
-          });
-
-          {% endif %}
-        });
+      $(rvbd.report.start);
     {% endblock %}
     </script>
 {% endblock %}
@@ -98,7 +77,7 @@
           </div>
           <div id="criteria" class="collapse in">
             <div class="widget-content">
-                <form class="form-horizontal" action="{% url 'report-view' report.namespace report.slug %}" method="post" id="criteriaform"
+                <form class="form-horizontal" action="{% url 'report-view' report.namespace report.slug %}" method="post" id="criteria-form"
                         {% if form.is_multipart %}enctype="multipart/form-data"{% endif %} target="_blank">
                     {% csrf_token %}
                     <input type="hidden" id="id_expand_tables" name="expand_tables">
@@ -145,17 +124,17 @@
               </form>
               <p></p>
               <div class="btn-group dropup">
-                  <button class="btn btn-primary" onclick="run()">Run</button>
+                  <button id="button-run" class="btn btn-primary">Run</button>
                   <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
                     <span class="caret"></span>
                   </button>
                   <ul class="dropdown-menu">
                       {% if developer %}
-                          <li><a href="#" onclick="runDebug()"> Debug This Report </a></li>
+                          <li><a href="#" id="menu-debug">Debug This Report</a></li>
                       {% endif %}
-                      <li><a href="#" onclick="updateTimeAndRun()"> Update Time & Run </a></li>
+                      <li><a href="#" id="menu-update-time-run">Update Time & Run</a></li>
                       <li class="divider"></li>
-                      <li><a href="#" onclick="run()"> Run Report </a></li>
+                      <li><a href="#" id="menu-run">Run Report</a></li>
                   </ul>
               </div>
             </div>
@@ -170,15 +149,15 @@
         <div class="span12 widget-box">
           <div class="widget-title report-title">
               {% if report.hide_criteria %}
-                <span class="icon-print print-report pull-right" title="Print this report (run report to enable)"></span>
+                <span id="print-report" class="icon-print pull-right" title="Print this report (run report to enable)"></span>
                 <a data-toggle="collapse" data-target="#report-container" href="#">
-                <small id="report_datetime" class="text-info pull-right">{% now "jS F Y H:i:s" %}</small><br>
+                <small id="report-datetime" class="text-info pull-right">{% now "jS F Y H:i:s" %}</small><br>
                 </a>
               {% else %}
                 <a data-toggle="collapse" data-target="#report-container" href="#">
                 Report
                 </a>
-                <span class="icon-print print-report" title="Print this report (run report to enable)"></span>
+                <span id="print-report" class="icon-print" title="Print this report (run report to enable)"></span>
               {% endif %}
           </div>
           <div class="collapse in" id="report-container">
@@ -189,4 +168,19 @@
       </div> <!-- row-fluid -->
     </div>
 
-{% endblock %}
+    <div id="embed-modal" class="modal-content">
+    Choose dimensions for the embedded widget:<br>
+    <table>
+    <tr>
+       <th>Width:</th>
+       <td><input value="500" type="text" id="embed-widget-width"></td>
+    </tr>
+    <tr>
+        <th>Height:</th>
+        <td><input value="312" type="text" id="embed-widget-height"></td>
+    </tr>
+    </table><br>
+    Copy the following HTML to embed the widget:
+    <input id="embed-widget-code" type="text">
+    </div>
+    {% endblock %}

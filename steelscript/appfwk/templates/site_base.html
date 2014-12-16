@@ -51,9 +51,9 @@
                                       <li><a href="{% url 'report-editor' report.namespace report.slug %}"><i class="icon-edit"></i> Edit Report</a></li>
                                   {% endif %}
                                   {% if reports and 'report' in request.path %}
-                                      <li><a href="#" onClick="reloadingModal('reload', false)"><i class="icon-repeat"></i> Reload This Report</a></li>
+                                      <li><a href="#" onClick="rvbd.modal.reloading('reload', false)"><i class="icon-repeat"></i> Reload This Report</a></li>
                                   {% endif %}
-                                  <li><a href="#" onClick="reloadingModal('{% url 'reload-all' %}', true)"><i class="icon-retweet"></i> Reload All Reports</a></li>
+                                  <li><a href="#" onClick="rvbd.modal.reloading('{% url 'reload-all' %}', true)"><i class="icon-retweet"></i> Reload All Reports</a></li>
                               {% endif %}
                               <li class="divider"></li>
                               <li><a href="/accounts/logout/"><i class="icon-off"></i> Logout</a></li>
