@@ -1621,13 +1621,15 @@ class Worker(base_worker_class):
                 # Make sure we are UTC, must use internal tzutc because
                 # pytz timezones will cause an error when unpickling
                 # https://github.com/pydata/pandas/issues/6871
+                # -- problem appears solved with latest pandas
+                utc = pytz.utc
                 try:
                     df[col.name] = df[col.name].apply(lambda x:
-                                                      x.tz_localize(tzutc()))
+                                                      x.tz_localize(utc))
                 except BaseException as e:
                     if e.message.startswith('Cannot convert'):
                         df[col.name] = df[col.name].apply(lambda x:
-                                                          x.tz_convert(tzutc()))
+                                                          x.tz_convert(utc))
                     else:
                         raise
 
