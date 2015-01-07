@@ -189,7 +189,7 @@ class PieWidget(object):
 class TimeSeriesWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, height=300,
-               stacked=False, cols=None, altaxis=None):
+               stacked=False, cols=None, altaxis=None, daily=False, bar=False):
         """Create a widget displaying time-series data in a line chart
 
         :param int width: Width of the widget in columns (1-12, default 6)
@@ -224,7 +224,9 @@ class TimeSeriesWidget(object):
 
         w.options = JsonDict(columns=cols,
                              altaxis=altaxis,
-                             stacked=stacked)
+                             stacked=stacked,
+                             daily=daily,
+                             bar=bar)
         w.save()
         w.tables.add(table)
 
@@ -308,6 +310,8 @@ class TimeSeriesWidget(object):
             w_axes['time']['labelFormat'] = '%k:%M:%S'
         elif total_seconds < (24 * 60 * 60):
             w_axes['time']['labelFormat'] = '%k:%M'
+        elif widget.options.daily:
+            w_axes['time']['labelFormat'] = '%D'
         else:
             w_axes['time']['labelFormat'] = '%D %k:%M'
 
@@ -405,9 +409,16 @@ class TimeSeriesWidget(object):
             else:
                 w_axes[axis_name]['formatter'] = 'formatMetric'
 
+        if stacked:
+            charttype = "area"
+        elif widget.options.bar:
+            charttype = "column"
+        else:
+            charttype = "combo"
+
         data = {
             "chartTitle": widget.title.format(**job.actual_criteria),
-            "type": "area" if stacked else "combo",
+            "type": charttype,
             "stacked": stacked,
             "dataProvider": rows,
             "seriesCollection": w_series,
@@ -415,7 +426,7 @@ class TimeSeriesWidget(object):
             "legend": {"position": "bottom",
                        "fontSize": "8pt",
                        "styles": {"gap": 0}},
-            "interactionType": "planar" if stacked else "marker"
+            "interactionType": "planar"
         }
 
         # logger.debug("data:\n\n%s\n" % data)
@@ -493,7 +504,6 @@ class ChartWidget(object):
         catname = '-'.join([k.name for k in keycols])
         w_axes = {catname: {"keys": [catname],
                             "position": "bottom",
-                            "type": "time",
                             "styles": {"label": {"rotation": -60}}}}
 
         # Map of column info by column name
@@ -636,7 +646,7 @@ class BarWidget(ChartWidget):
            any YUI3 'type'
 
         """
-        kwargs['rows'] = kwargs.get('rows', 0)
+        kwargs['rows'] = kwargs.get('rows', 10)
         return ChartWidget.create(*args, charttype='column', **kwargs)
 
 
