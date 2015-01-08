@@ -132,10 +132,12 @@ class PieWidget(object):
         w = Widget(section=section, title=title, rows=rows, width=width,
                    height=height, module=__name__, uiwidget=cls.__name__)
         w.compute_row_col()
-        keycols = [col.name for col in table.get_columns() if col.iskey is True]
+        keycols = [col.name for col in table.get_columns()
+                   if col.iskey is True]
+
         if len(keycols) == 0:
-            raise ValueError("Table %s does not have any key columns defined" %
-                             str(table))
+            raise ValueError("Table %s does not have any key columns defined"
+                             % str(table))
 
         if table.sortcols is None:
             raise ValueError("Table %s does not have a sort column defined" %
@@ -370,10 +372,10 @@ class TimeSeriesWidget(object):
                     rowmin[a] = val if val != '' else 0
                     rowmax[a] = val if val != '' else 0
                 else:
-                    rowmin[a] = (rowmin[a] + val) if stacked else min(rowmin[a],
-                                                                      val)
-                    rowmax[a] = (rowmax[a] + val) if stacked else max(rowmax[a],
-                                                                      val)
+                    rowmin[a] = ((rowmin[a] + val) if stacked
+                                 else min(rowmin[a], val))
+                    rowmax[a] = ((rowmax[a] + val) if stacked
+                                 else max(rowmax[a], val))
 
             for a in rowmin.keys():
                 minval[a] = rowmin[a] if (a not in minval) else min(minval[a],
@@ -451,7 +453,7 @@ class ChartWidget(object):
         :param list valuecols: List of data columns to graph
         :param str charttype: Type of chart, defaults to 'line'.  This may be
            any YUI3 'type'
-        :param boolean dynamic: columns will be added later from criteria if True.
+        :param bool dynamic: columns will be added later from criteria if True
 
         """
         w = Widget(section=section, title=title, rows=rows, width=width,
@@ -527,7 +529,8 @@ class ChartWidget(object):
             colmap[c.name] = ci
 
             series.append({"xKey": '-'.join([k.name for k in keycols]),
-                           "xDisplayName": ','.join([k.label for k in keycols]),
+                           "xDisplayName": ','.join([k.label
+                                                     for k in keycols]),
                            "yKey": c.name,
                            "yDisplayName": c.label,
                            "styles": {"line": {"weight": 1},
@@ -583,10 +586,10 @@ class ChartWidget(object):
                     rowmin[a] = val
                     rowmax[a] = val
                 else:
-                    rowmin[a] = (rowmin[a] + val) if stacked else min(rowmin[a],
-                                                                      val)
-                    rowmax[a] = (rowmax[a] + val) if stacked else max(rowmax[a],
-                                                                      val)
+                    rowmin[a] = ((rowmin[a] + val) if stacked
+                                 else min(rowmin[a], val))
+                    rowmax[a] = ((rowmax[a] + val) if stacked
+                                 else max(rowmax[a], val))
 
             for a in rowmin.keys():
                 minval[a] = rowmin[a] if (a not in minval) else min(minval[a],
@@ -625,7 +628,6 @@ class ChartWidget(object):
             "dataProvider": rows,
             "seriesCollection": series,
             "axes": w_axes,
-            "interactionType" : "planar",
             "legend": {"position": "bottom",
                        "fontSize": "8pt",
                        "styles": {"gap": 0}}
