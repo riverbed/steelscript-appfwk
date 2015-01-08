@@ -36,7 +36,7 @@ from django.utils.text import slugify
 
 from steelscript.common.datastructures import JsonDict
 from steelscript.common.datastructures import DictObject
-from steelscript.common.timeutils import timedelta_total_seconds, tzutc
+from steelscript.common.timeutils import timedelta_total_seconds
 from steelscript.appfwk.project.utils import (get_module_name, get_sourcefile,
                                               get_namespace)
 from steelscript.appfwk.apps.datasource.exceptions import *
@@ -438,10 +438,6 @@ class Table(models.Model):
             logger.debug('%s: resampling to %ss' % (self, int(resolution)))
 
             indexed = df.set_index(timecol)
-            # XXX pandas 0.13.1 drops timezones when moving time cols around
-            # take timezone of first value from timecol, if there is one
-            if df[timecol][0].tz:
-                indexed.index = indexed.index.tz_localize(df[timecol][0].tz)
 
             resampled = indexed.resample('%ss' % int(resolution), how,
                                          convention='end').reset_index()

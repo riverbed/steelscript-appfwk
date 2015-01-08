@@ -65,7 +65,8 @@ class NoResample(SyntheticTest):
     report = 'synthetic_noresample'
 
     def test_basic(self):
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:00 am',
+        self.run_with_criteria({'endtime_0': '12/1/2013',
+                                'endtime_1': '11:00 am',
                                 'duration': '15min'},
                                # 11 AM UTC
                                [self.make_data(1385894700, 1385895600, 60)])
@@ -75,7 +76,8 @@ class NoResample(SyntheticTest):
         tz = user.timezone
         user.timezone = pytz.timezone('US/Eastern')
         user.save()
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:00 am',
+        self.run_with_criteria({'endtime_0': '12/1/2013',
+                                'endtime_1': '11:00 am',
                                 'duration': '15min'},
                                # 11 AM EDT
                                [self.make_data(1385912700, 1385913600, 60)])
@@ -87,7 +89,8 @@ class NoResample(SyntheticTest):
         tz = user.timezone
         user.timezone = pytz.timezone('US/Pacific')
         user.save()
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:00 am',
+        self.run_with_criteria({'endtime_0': '12/1/2013',
+                                'endtime_1': '11:00 am',
                                 'duration': '15min'},
                                # 11 AM Pacific
                                [self.make_data(1385923500, 1385924400, 60)])
@@ -100,22 +103,26 @@ class Resample(SyntheticTest):
     report = 'synthetic_resample'
 
     def test_basic(self):
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:00 am',
+        self.run_with_criteria({'endtime_0': '12/1/2013',
+                                'endtime_1': '11:00 am',
                                 'duration': '15min',
                                 'resolution': '2min'},
                                [self.make_data(1385894700, 1385895600, 120)])
 
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:01 am',
+        self.run_with_criteria({'endtime_0': '12/1/2013',
+                                'endtime_1': '11:01 am',
                                 'duration': '16min',
                                 'resolution': '2min'},
                                [self.make_data(1385894700, 1385895660, 120)])
 
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:01 am',
+        self.run_with_criteria({'endtime_0': '12/1/2013',
+                                'endtime_1': '11:01 am',
                                 'duration': '15min',
                                 'resolution': '2min'},
                                [self.make_data(1385894760, 1385895660, 120)])
 
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:01 am',
+        self.run_with_criteria({'endtime_0': '12/1/2013',
+                                'endtime_1': '11:01 am',
                                 'duration': '16min',
                                 'resolution': '2min'},
                                [self.make_data(1385894700, 1385895660, 120)])
@@ -125,7 +132,8 @@ class Resample(SyntheticTest):
         tz = user.timezone
         user.timezone = pytz.timezone('US/Eastern')
         user.save()
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:00 am',
+        self.run_with_criteria({'endtime_0': '12/1/2013',
+                                'endtime_1': '11:00 am',
                                 'duration': '15min', 'resolution': '2min'},
                                # 11 AM EDT
                                [self.make_data(1385912700, 1385913600, 120)])
@@ -137,7 +145,8 @@ class Resample(SyntheticTest):
         tz = user.timezone
         user.timezone = pytz.timezone('US/Pacific')
         user.save()
-        self.run_with_criteria({'endtime_0': '12/1/2013', 'endtime_1': '11:00 am',
+        self.run_with_criteria({'endtime_0': '12/1/2013',
+                                'endtime_1': '11:00 am',
                                 'duration': '15min', 'resolution': '2min'},
                                # 11 AM Pacific
                                [self.make_data(1385923500, 1385924400, 120)])
