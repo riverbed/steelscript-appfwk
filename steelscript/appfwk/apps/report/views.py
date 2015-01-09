@@ -532,10 +532,9 @@ class ReportCriteria(views.APIView):
         logger.debug("Received POST for report %s, with params: %s" %
                      (report_slug, request.POST))
 
-        try:
-            report = Report.objects.get(slug=report_slug)
-        except:
-            raise Http404
+        report = get_object_or_404(Report,
+                                   namespace=namespace,
+                                   slug=report_slug)
 
         fields_by_section = report.collect_fields_by_section()
         all_fields = SortedDict()
