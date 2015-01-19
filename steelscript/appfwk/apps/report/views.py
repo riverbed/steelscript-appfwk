@@ -122,6 +122,10 @@ class GenericReportView(views.APIView):
 
         logging.debug('Received request for report page: %s' % report_slug)
 
+        if not request.user.profile_seen:
+            # only redirect if first login
+            return HttpResponseRedirect(reverse('preferences')+'?next=/report')
+
         devices = Device.objects.all()
         if len(devices) == 0:
             # redirect if no devices defined
@@ -135,10 +139,6 @@ class GenericReportView(views.APIView):
                                     device.password == '')):
                 return HttpResponseRedirect('%s?invalid=true' %
                                             reverse('device-list'))
-
-        if not request.user.profile_seen:
-            # only redirect if first login
-            return HttpResponseRedirect(reverse('preferences')+'?next=/report')
 
         # factory this to make it extensible
 

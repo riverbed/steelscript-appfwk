@@ -85,7 +85,9 @@ class PortalUser(AbstractUser):
     """ Extend base user class with additional profile prefs. """
     timezone = models.CharField(max_length=50,
                                 default='UTC',
-                                choices=TIMEZONE_CHOICES)
+                                choices=TIMEZONE_CHOICES,
+                                verbose_name = 'Local Timezone',
+                                help_text = 'Please use the timezone of the local system')
 
     # hidden fields
     timezone_changed = models.BooleanField(default=False)

@@ -108,11 +108,7 @@ class DeviceList(generics.ListAPIView):
         if formset.is_valid():
             formset.save()
             DeviceManager.clear()
-            if not request.user.profile_seen:
-                # only redirect if first login
-                return HttpResponseRedirect(
-                    reverse('preferences') + '?next=/report')
-            elif '/devices' not in request.META['HTTP_REFERER']:
+            if '/devices' not in request.META['HTTP_REFERER']:
                 return HttpResponseRedirect(request.META['HTTP_REFERER'])
             else:
                 return HttpResponseRedirect(reverse('device-list'))

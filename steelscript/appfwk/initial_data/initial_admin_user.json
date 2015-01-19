@@ -6,7 +6,7 @@
       "username": "admin", 
       "first_name": "", 
       "last_name": "", 
-      "profile_seen": true, 
+      "profile_seen": false, 
       "is_active": true, 
       "timezone_changed": false, 
       "is_superuser": true, 
