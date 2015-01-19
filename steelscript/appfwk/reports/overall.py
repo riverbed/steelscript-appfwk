@@ -37,7 +37,7 @@ p.add_column('server_delay', label='Srv Delay',  units='ms')
 # Adding a widget using the Report object will apply them
 # to the last defined Section, here that will be 'Locations'
 report.add_widget(maps.MapWidget, p, "Response Time", width=6, height=300)
-report.add_widget(yui3.TableWidget, p, "Locations by Avg Bytes", width=6)
+report.add_widget(yui3.TableWidget, p, "Locations by Response Time", width=6)
 
 # Define a Overall TimeSeries showing Avg Bytes/s
 report.add_section('NetProfiler Overall',
@@ -46,7 +46,7 @@ report.add_section('NetProfiler Overall',
 p = NetProfilerTimeSeriesTable.create('ts1', duration=1440, resolution='15min')
 
 p.add_column('time', label='Time', datatype='time', iskey=True)
-p.add_column('avg_bits', label='Avg Bits/s', units='b/s')
+p.add_column('avg_bytes', label='Avg Bytes/s', units='B/s')
 
 report.add_widget(yui3.TimeSeriesWidget, p, "NetProfiler Overall Traffic", width=6)
 
