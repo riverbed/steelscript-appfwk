@@ -87,7 +87,7 @@ class PortalUser(AbstractUser):
                                 default='UTC',
                                 choices=TIMEZONE_CHOICES,
                                 verbose_name='Local Timezone',
-                                help_text='Please use the timezone'
+                                help_text='Please use the timezone '
                                           'of the local system')
 
     # hidden fields
