@@ -5,8 +5,10 @@
 # as set forth in the License.
 
 
+import time
 import logging
 from datetime import timedelta
+
 import pandas
 
 from steelscript.common.timeutils import \
@@ -200,6 +202,95 @@ class AnalysisQuery(TableQueryBase):
         self.data = df
 
         logger.debug("%s: completed successfully" % self)
+        return True
+
+
+class FocusedAnalysisTable(AnalysisTable):
+    """
+    Finds the max/min of a source table, and runs a new table focused
+    around that time period.
+
+    Takes two source tables, 'template' and 'source'.  An example definition:
+
+    a = FocusedAnalysisTable.create(name='zoomed table',
+                                    max=True,
+                                    zoom_duration='1s',
+                                    zoom_resolution='1ms',
+                                    tables={'source': table1},
+                                    related_tables={'template': table2})
+
+    The template table defines the datasource and associated columns, no
+    columns should be added to a FocusedAnalysisTable.
+
+    This requires a time-series based 'source' table, but the secondary
+    'template' table to run can be arbitrary.  For instance, a long-running
+    NetProfiler table can be used as the source, and with a NetShark template,
+    the peaks or valleys can be inspected using more granular data.
+    """
+    class Meta:
+        proxy = True
+
+    _query_class = 'FocusedAnalysisQuery'
+
+    TABLE_OPTIONS = {'max': True,
+                     'zoom_duration': '1s',
+                     'zoom_resolution': '1ms',
+                     }
+
+    def post_process_table(self, field_options):
+        super(FocusedAnalysisTable, self).post_process_table(field_options)
+
+        # take template table and copy its columns
+        ref = self.options['related_tables']['template']
+        self.copy_columns(ref)
+
+
+class FocusedAnalysisQuery(AnalysisQuery):
+    def post_run(self):
+        basetable = Table.from_ref(
+            self.table.options.related_tables['template']
+        )
+        data = self.tables['source']
+
+        # find column whose min/max is largest deviation from mean
+        if self.table.options.max:
+            idx = (data.max() / data.mean()).idxmax()
+            zrow = data.ix[data[idx].idxmax()]
+        else:
+            idx = (data.min() / data.mean()).idxmin()
+            zrow = data.ix[data[idx].idxmin()]
+
+        ztime = zrow['time']
+        duration = parse_timedelta(self.table.options.zoom_duration)
+        resolution = parse_timedelta(self.table.options.zoom_resolution)
+        stime = ztime - (duration / 2)
+        etime = ztime + (duration / 2)
+
+        criteria = self.job.criteria
+        criteria['resolution'] = resolution
+        criteria['duration'] = duration
+        criteria['_orig_duration'] = duration
+        criteria['starttime'] = stime
+        criteria['_orig_starttime'] = stime
+        criteria['endtime'] = etime
+        criteria['_orig_endtime'] = etime
+
+        logging.debug('Creating FocusedAnalysis job with updated criteria %s'
+                      % criteria)
+
+        job = Job.create(basetable, criteria)
+        job.start()
+
+        while job.status == Job.RUNNING:
+            time.sleep(1)
+
+        if job.status == job.ERROR:
+            self.job.mark_error("Dependent Job failed: %s" % job.message,
+                                exception=job.exception)
+            return False
+
+        self.data = job.data()
+
         return True
 
 
