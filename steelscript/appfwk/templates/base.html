@@ -13,8 +13,19 @@
               <li class="dropdown active">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown"> Reports <b class="caret"></b></a>
                 <ul class="dropdown-menu">
-                  {% for d in reports %}
-                  <li><a href="{% url 'report-view' d.namespace d.slug %}">{{ d.title }}</a></li>
+                  {% for ns in reports %}
+                      {% if ns|length == 2 %}
+                          <li class="dropdown-submenu">
+                              <a tabindex="-1" href="#"><b>{{ ns.0|lower }}</b></a>
+                              <ul class="dropdown-menu">
+                                  {% for r in ns.1 %}
+                                      <li><a href="{% url 'report-view' r.namespace r.slug %}">{{ r.title }}</a></li>
+                                  {% endfor %}
+                              </ul>
+                          </li>
+                      {% else %}
+                          <li><a href="{% url 'report-view' ns.namespace ns.slug %}">{{ ns.title }}</a></li>
+                      {% endif %}
                   {% endfor %}
                 </ul>
               </li>
