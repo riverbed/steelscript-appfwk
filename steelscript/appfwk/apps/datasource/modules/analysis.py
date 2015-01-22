@@ -54,19 +54,19 @@ class AnalysisTable(DatasourceTable):
         from config.reports.helpers.analysis_funcs import combine_by_host
 
         Combined = AnalysisTable('Combined',
-                                 tables = {'t1': A,
-                                           't2': B},
-                                 function = combine_by_host)
+                                 tables={'t1': A,
+                                         't2': B},
+                                 function=combine_by_host)
         Combined.add_column('host')
         Combined.add_column('bytes')
         Combined.add_column('pkts')
 
     Then in config/reports/helpers/analysis_func.py
 
-        def combine_by_host(dst, srcs):
+        def combine_by_host(query, tables, criteria, params):
             # Get the pandas.DataFrame objects for t1 and t2
-            t1 = srcs['t1']
-            t2 = srcs['t2']
+            t1 = tables['t1']
+            t2 = tables['t2']
 
             # Now create a new DataFrame that joins these
             # two tables by the 'host'
@@ -102,8 +102,7 @@ class AnalysisTable(DatasourceTable):
 
         tf = table_options['function']
         if tf and not isinstance(tf, Function):
-            raise AttributeError('Option `function` must be an instance '
-                                 'of Function.')
+            table_options['function'] = Function(tf)
 
         return table_options
 
