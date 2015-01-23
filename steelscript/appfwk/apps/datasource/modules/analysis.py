@@ -5,8 +5,10 @@
 # as set forth in the License.
 
 
+import time
 import logging
 from datetime import timedelta
+
 import pandas
 
 from steelscript.common.timeutils import \
@@ -36,8 +38,7 @@ class AnalysisTable(DatasourceTable):
     `tables` is hashmap of dependent tables, mapping a names expected
         by the analysis functon to table ids
 
-    `function` is a pointer to the user defined analysis function, or
-        a Function object which includes parameters
+    `function` is a pointer to the user defined analysis function
 
     For example, consider an input of two tables A and B, and an
     AnalysisTable that simply concatenates A and B:
@@ -53,19 +54,19 @@ class AnalysisTable(DatasourceTable):
         from config.reports.helpers.analysis_funcs import combine_by_host
 
         Combined = AnalysisTable('Combined',
-                                 tables = {'t1': A,
-                                           't2': B},
-                                 function = combine_by_host)
+                                 tables={'t1': A,
+                                         't2': B},
+                                 function=combine_by_host)
         Combined.add_column('host')
         Combined.add_column('bytes')
         Combined.add_column('pkts')
 
     Then in config/reports/helpers/analysis_func.py
 
-        def combine_by_host(dst, srcs):
+        def combine_by_host(query, tables, criteria, params):
             # Get the pandas.DataFrame objects for t1 and t2
-            t1 = srcs['t1']
-            t2 = srcs['t2']
+            t1 = tables['t1']
+            t2 = tables['t2']
 
             # Now create a new DataFrame that joins these
             # two tables by the 'host'
@@ -76,15 +77,18 @@ class AnalysisTable(DatasourceTable):
     Note that the function must defined in a separate file in the 'helpers'
     directory.
     """
-    class Meta: proxy = True
+    class Meta:
+        proxy = True
 
     _ANALYSIS_TABLE_OPTIONS = {
         'tables': None,            # dependent tables to be run first
-        'related_tables': None}    # related tables that are reference only
+        'related_tables': None,    # related tables that are reference only
+        'function': None           # optional function for post process
+    }
 
     _ANALYSIS_FIELD_OPTIONS = {
-        'copy_fields': True }      # If true, copy TableFields from tables
-                                   # and related_tables
+        'copy_fields': True      # If true, copy TableFields from tables
+    }                            # and related_tables
 
     _query_class = 'AnalysisQuery'
 
@@ -95,6 +99,10 @@ class AnalysisTable(DatasourceTable):
         for i in ['tables', 'related_tables']:
             for k, v in (table_options[i] or {}).iteritems():
                 table_options[i][k] = Table.to_ref(v)
+
+        tf = table_options['function']
+        if tf and not isinstance(tf, Function):
+            table_options['function'] = Function(tf)
 
         return table_options
 
@@ -161,12 +169,136 @@ class AnalysisQuery(TableQueryBase):
 
         self.tables = tables
 
-        logger.debug("%s: deptables completed successfully" % (self))
+        logger.debug("%s: deptables completed successfully" % self)
+        return True
+
+    def post_run(self):
+        """Execute any Functions saved to Table.
+
+        In most cases, this function will be simply overridden by a
+        subclass which will implement its own detailed processing.  This
+        method provides a shortcut to support passing a Function
+        directly to the create method.
+        """
+        options = self.table.options
+
+        try:
+            df = options.function(self, options.tables, self.job.criteria)
+
+        except AnalysisException as e:
+            self.job.mark_error("Analysis function %s failed: %s" %
+                                (options.function, e.message))
+            logger.exception("%s raised an exception" % self)
+            return False
+
+        except Exception as e:
+            self.job.mark_error("Analysis function %s failed: %s" %
+                                (options.function, str(e)))
+            logger.exception("%s: Analysis function %s raised an exception" %
+                             (self, options.function))
+            return False
+
+        self.data = df
+
+        logger.debug("%s: completed successfully" % self)
+        return True
+
+
+class FocusedAnalysisTable(AnalysisTable):
+    """
+    Finds the max/min of a source table, and runs a new table focused
+    around that time period.
+
+    Takes two source tables, 'template' and 'source'.  An example definition:
+
+    a = FocusedAnalysisTable.create(name='zoomed table',
+                                    max=True,
+                                    zoom_duration='1s',
+                                    zoom_resolution='1ms',
+                                    tables={'source': table1},
+                                    related_tables={'template': table2})
+
+    The template table defines the datasource and associated columns, no
+    columns should be added to a FocusedAnalysisTable.
+
+    This requires a time-series based 'source' table, but the secondary
+    'template' table to run can be any type of datasource table.  For instance,
+    a 24-hour NetProfiler table can be used as the source, and with a NetShark
+    template table, the peaks or valleys can be shown in a separate widget
+    using more granular timeframe and resolution.
+    """
+    class Meta:
+        proxy = True
+
+    _query_class = 'FocusedAnalysisQuery'
+
+    TABLE_OPTIONS = {'max': True,
+                     'zoom_duration': '1s',
+                     'zoom_resolution': '1ms',
+                     }
+
+    def post_process_table(self, field_options):
+        super(FocusedAnalysisTable, self).post_process_table(field_options)
+
+        # take template table and copy its columns
+        ref = self.options['related_tables']['template']
+        self.copy_columns(ref)
+
+
+class FocusedAnalysisQuery(AnalysisQuery):
+    def post_run(self):
+        basetable = Table.from_ref(
+            self.table.options['related_tables']['template']
+        )
+        data = self.tables['source']
+
+        # find column whose min/max is largest deviation from mean
+        # then take row from that column where min/max occurs
+        if self.table.options['max']:
+            idx = (data.max() / data.mean()).idxmax()
+            frow = data.ix[data[idx].idxmax()]
+        else:
+            idx = (data.min() / data.mean()).idxmin()
+            frow = data.ix[data[idx].idxmin()]
+
+        # get time value from extracted row to calculate new start/end times
+        ftime = frow['time']
+        duration = parse_timedelta(self.table.options['zoom_duration'])
+        resolution = parse_timedelta(self.table.options['zoom_resolution'])
+        stime = ftime - (duration / 2)
+        etime = ftime + (duration / 2)
+
+        criteria = self.job.criteria
+        criteria['resolution'] = resolution
+        criteria['duration'] = duration
+        criteria['_orig_duration'] = duration
+        criteria['starttime'] = stime
+        criteria['_orig_starttime'] = stime
+        criteria['endtime'] = etime
+        criteria['_orig_endtime'] = etime
+
+        logging.debug('Creating FocusedAnalysis job with updated criteria %s'
+                      % criteria)
+
+        job = Job.create(basetable, criteria)
+        job.start()
+
+        while job.status == Job.RUNNING:
+            time.sleep(1)
+
+        if job.status == job.ERROR:
+            self.job.mark_error("Dependent Job failed: %s" % job.message,
+                                exception=job.exception)
+            return False
+
+        self.data = job.data()
+
         return True
 
 
 class CriteriaTable(AnalysisTable):
-    class Meta: proxy = True
+    class Meta:
+        proxy = True
 
     _query_class = 'CriteriaQuery'
 
@@ -177,6 +309,7 @@ class CriteriaTable(AnalysisTable):
                         datatype=Column.DATATYPE_STRING)
         self.add_column('value', 'Criteria Value',
                         datatype=Column.DATATYPE_STRING)
+
 
 class CriteriaQuery(AnalysisQuery):
 
@@ -190,6 +323,7 @@ class CriteriaQuery(AnalysisQuery):
 
         self.data = df
         return True
+
 
 def resample(df, timecol, interval, how):
     """Resample the input dataframe.

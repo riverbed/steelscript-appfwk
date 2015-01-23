@@ -29,15 +29,15 @@ report.add_section('Locations', section_keywords=['resolution', 'duration'])
 p = NetProfilerGroupbyTable.create('maploc', groupby='host_group', duration=60,
                                    resolution='auto')
 
-p.add_column('group_name',    label='Group Name', iskey=True, datatype="string")
+p.add_column('group_name', label='Group Name', iskey=True, datatype="string")
 p.add_column('response_time', label='Resp Time',  units='ms', sortdesc=True)
-p.add_column('network_rtt',   label='Net RTT',    units='ms')
-p.add_column('server_delay',  label='Srv Delay',  units='ms')
+p.add_column('network_rtt', label='Net RTT',    units='ms')
+p.add_column('server_delay', label='Srv Delay',  units='ms')
 
 # Adding a widget using the Report object will apply them
 # to the last defined Section, here that will be 'Locations'
 report.add_widget(maps.MapWidget, p, "Response Time", width=6, height=300)
-report.add_widget(yui3.TableWidget, p, "Locations by Avg Bytes", width=6)
+report.add_widget(yui3.TableWidget, p, "Locations by Response Time", width=6)
 
 # Define a Overall TimeSeries showing Avg Bytes/s
 report.add_section('NetProfiler Overall',
@@ -50,19 +50,19 @@ p.add_column('avg_bytes', label='Avg Bytes/s', units='B/s')
 
 report.add_widget(yui3.TimeSeriesWidget, p, "NetProfiler Overall Traffic", width=6)
 
-### NetShark Time Series
+# NetShark Time Series
 section = report.add_section('NetShark Traffic',
                              section_keywords=['resolution', 'duration'])
 
-shark = NetSharkTable.create('Total Traffic Bytes', duration=15, resolution='1sec',
-                             aggregated=False)
+shark = NetSharkTable.create('Total Traffic Bits', duration=15,
+                             resolution='1sec', aggregated=False)
 
 shark.add_column('time', extractor='sample_time', iskey=True,
                  label='Time', datatype='time')
-shark.add_column('generic_bytes', label='Bytes', iskey=False,
-                 extractor='generic.bytes', operation='sum', units='B')
+shark.add_column('generic_bits', label='bits', iskey=False,
+                 extractor='generic.bits', operation='sum', units='b')
 
 # Widgets can also be added to Section objects explicitly
 section.add_widget(yui3.TimeSeriesWidget, shark,
-                   'Overall Bandwidth (Bytes) at (1-second resolution)',
+                   'Overall Bandwidth (Bits) at (1-second resolution)',
                    width=6)

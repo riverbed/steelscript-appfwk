@@ -140,15 +140,14 @@ class GenericReportView(views.APIView):
                 return HttpResponseRedirect('%s?invalid=true' %
                                             reverse('device-list'))
 
-        # factory this to make it extensible
+        if not request.user.profile_seen:
+            # only redirect if first login
+            return HttpResponseRedirect(reverse('preferences')+'?next=/report')
 
+        # Setup default criteria for the report based on underlying tables
         system_settings = SystemSettings.get_system_settings()
         form_init = {'ignore_cache': system_settings.ignore_cache}
-        tables = (table
-                  for section in report.section_set.all()
-                  for widget in section.widget_set.all()
-                  for table in widget.tables.all())
-        for table in tables:
+        for table in report.tables():
             if table.criteria:
                 form_init.update(table.criteria)
 
@@ -537,10 +536,9 @@ class ReportCriteria(views.APIView):
         logger.debug("Received POST for report %s, with params: %s" %
                      (report_slug, request.POST))
 
-        try:
-            report = Report.objects.get(slug=report_slug)
-        except:
-            raise Http404
+        report = get_object_or_404(Report,
+                                   namespace=namespace,
+                                   slug=report_slug)
 
         fields_by_section = report.collect_fields_by_section()
         all_fields = SortedDict()
@@ -634,10 +632,7 @@ class ReportTableList(generics.ListAPIView):
     def get_queryset(self):
         report = Report.objects.get(namespace=self.kwargs['namespace'],
                                     slug=self.kwargs['report_slug'])
-        return (table
-                for section in report.section_set.all()
-                for widget in section.widget_set.all()
-                for table in widget.tables.all())
+        return report.tables()
 
 
 class WidgetDetailView(generics.RetrieveAPIView):

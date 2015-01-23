@@ -1527,7 +1527,7 @@ class Worker(base_worker_class):
                               .append(sorted[sorted[n].isnull()]))
 
                     if job.table.rows > 0:
-                        df = df[job.table.rows]
+                        df = df[:job.table.rows]
 
                 if df is not None:
                     df.to_pickle(job.datafile())

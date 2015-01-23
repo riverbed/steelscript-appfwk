@@ -555,8 +555,9 @@ class TableFieldForm(forms.Form):
         return ordered_ids
 
     def dynamic_fields(self):
-        return [self[id] for id, tablefield in self._tablefields.iteritems()
-                if tablefield.dynamic]
+        """Return dynamic, non-hidden fields."""
+        return [self[id_] for id_, tablefield in self._tablefields.iteritems()
+                if tablefield.dynamic and id_ in self.fields]
 
     def as_text(self):
         """ Return certain field values as a dict for simple json parsing

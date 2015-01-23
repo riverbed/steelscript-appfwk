@@ -75,7 +75,8 @@ class Report(models.Model):
         :param list hidden_fields: List of criteria fields to hide from UI
 
         :param bool hide_criteria: Set to true to hide criteria and run on load
-        :param int reload_minuntes: If non-zero, automatically reloads the report
+        :param int reload_minutes: If non-zero, report will be reloaded
+            automatically at the given duration in minutes
 
         """
 
@@ -91,10 +92,10 @@ class Report(models.Model):
     def save(self, *args, **kwargs):
         """ Apply sourcefile and namespaces to newly created Reports.
 
-        Sourcefiles will be parsed into the following namespaces:
+        sourcefiles will be parsed into the following namespaces:
         'config.reports.1_overall' --> 'default'
         'steelscript.netshark.appfwk.reports.3_shark' --> 'netshark'
-        'steelscript.appfwk.business_hours.reports.x_report' --> 'business_hours'
+        'steelscript.appfwk.business_hours.reports.x_rpt' --> 'business_hours'
         """
         if not self.sourcefile:
             mod = get_module()
@@ -211,6 +212,14 @@ class Report(models.Model):
         return Widget.objects.filter(
             section__in=Section.objects.filter(report=self)).order_by('id')
 
+    def tables(self, order_by='id'):
+        """Return all tables from this report, ordered by `order_by`."""
+        return (Table.objects.filter(
+                widget__in=Widget.objects.filter(
+                    section__in=Section.objects.filter(
+                        report=self)))
+                .distinct().order_by(order_by))
+
 
 class Section(models.Model):
     """ Define a section of a report.
@@ -270,15 +279,19 @@ class Section(models.Model):
 
         """
         if position is None:
-            posmax = Section.objects.filter(report=report).aggregate(Max('position'))
+            posmax = (Section.objects
+                      .filter(report=report)
+                      .aggregate(Max('position')))
             position = (posmax['position__max'] or 0) + 1
 
         section = Section(report=report, title=title, position=position)
         section.save()
 
-        critmode = SectionFieldMode(section=section,
-                                    keyword='',
-                                    mode=default_field_mode or SectionFieldMode.INHERIT)
+        critmode = SectionFieldMode(
+            section=section,
+            keyword='',
+            mode=default_field_mode or SectionFieldMode.INHERIT
+        )
         critmode.save()
 
         if section_keywords is not None:
@@ -349,12 +362,14 @@ class Section(models.Model):
         try:
             m = self.sectionfieldmode_set.get(keyword=keyword)
             return m.mode
-        except ObjectDoesNotExist: pass
+        except ObjectDoesNotExist:
+            pass
 
         try:
             m = self.sectionfieldmode_set.get(keyword='')
             return m.mode
-        except ObjectDoesNotExist: pass
+        except ObjectDoesNotExist:
+            pass
 
         return SectionFieldMode.INHERIT
 
@@ -415,10 +430,13 @@ class Widget(models.Model):
             row = 1
             col = 1
         else:
-            widthsum = self.section.report.widgets().filter(row=row).aggregate(Sum('width'))
+            widthsum = (self.section
+                        .report.widgets()
+                        .filter(row=row)
+                        .aggregate(Sum('width')))
             width = widthsum['width__sum']
             if width + self.width > 12:
-                row = row + 1
+                row += 1
                 col = 1
             else:
                 col = width + 1
@@ -487,6 +505,7 @@ class Axes:
     def position(self, axis):
         axis = str(axis)
         if ((self.definition is not None) and
-            (axis in self.definition) and ('position' in self.definition[axis])):
+                (axis in self.definition) and
+                ('position' in self.definition[axis])):
             return self.definition[axis]['position']
         return 'left'

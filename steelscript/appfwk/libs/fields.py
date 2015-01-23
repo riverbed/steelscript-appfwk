@@ -21,14 +21,17 @@ from django.utils.encoding import force_unicode
 
 logger = logging.getLogger(__name__)
 
+
 # see http://djangosnippets.org/snippets/1694/
 # and http://djangosnippets.org/snippets/2346/
 
 class FunctionError(Exception):
     pass
 
+
 class ClassError(Exception):
     pass
+
 
 class PickledObject(str):
     """
@@ -44,6 +47,7 @@ class PickledObject(str):
 
     """
     pass
+
 
 def dbsafe_encode(value, compress_object=False):
     """
@@ -61,12 +65,14 @@ def dbsafe_encode(value, compress_object=False):
         value = b64encode(compress(dumps(deepcopy(value))))
     return PickledObject(value)
 
+
 def dbsafe_decode(value, compress_object=False):
     if not compress_object:
         value = loads(b64decode(value))
     else:
         value = loads(decompress(b64decode(value)))
     return value
+
 
 class PickledObjectField(models.Field):
     """
@@ -150,8 +156,8 @@ class PickledObjectField(models.Field):
             # isn't rejected by the postgresql_psycopg2 backend. Alternatively,
             # we could have just registered PickledObject with the psycopg
             # marshaller (telling it to store it like it would a string), but
-            # since both of these methods result in the same value being stored,
-            # doing things this way is much easier.
+            # since both of these methods result in the same value being
+            # stored, doing things this way is much easier.
             value = force_unicode(dbsafe_encode(value, self.compress))
         return value
 
@@ -167,8 +173,9 @@ class PickledObjectField(models.Field):
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
         return self.get_prep_value(value)
 
-class Function(object):
 
+class Function(object):
+    """Serializable object for callable objects with their parameters."""
     def __init__(self, function=None, params=None):
         if function:
             self.module = function.__module__
@@ -210,7 +217,8 @@ class Function(object):
                 % self.module)
         except KeyError:
             raise FunctionError(
-                "Function reference is invalid, could not find function <%s> in module <%s>"
+                "Function reference is invalid, could not find function "
+                "<%s> in module <%s>"
                 % (self.function, self.module))
 
         if 'params' in func.func_code.co_varnames:
@@ -218,7 +226,9 @@ class Function(object):
 
         return func(*args, **kwargs)
 
+
 class FunctionField(PickledObjectField):
+    """Model field which stores a Function object."""
 
     __metaclass__ = models.SubfieldBase
 
@@ -274,31 +284,14 @@ class Class(object):
                 % self.module)
         except KeyError:
             raise ClassError(
-                "Class reference is invalid, could not find class <%s> in module <%s>"
+                "Class reference is invalid, could not find class "
+                "<%s> in module <%s>"
                 % (self.name, self.module))
 
         return cls(*args, **kwargs)
 
-class FunctionField(PickledObjectField):
 
-    __metaclass__ = models.SubfieldBase
-
-    def to_python(self, value):
-        if isinstance(value, Function):
-            return value
-
-        value = super(FunctionField, self).to_python(value)
-        if value is not None:
-            return Function.from_dict(value)
-        else:
-            return None
-
-    def get_prep_value(self, value):
-        if value is not None:
-            value = super(FunctionField, self).get_prep_value(value.to_dict())
-        return value
 # See http://stackoverflow.com/questions/1110153/what-is-the-most-efficent-way-to-store-a-list-in-the-django-models
-
 class SeparatedValuesField(models.TextField):
     __metaclass__ = models.SubfieldBase
 
@@ -320,12 +313,14 @@ class SeparatedValuesField(models.TextField):
     def value_to_string(self, obj):
         value = self._get_val_from_obj(obj)
 
+
 def check_field_choice(model, field, value):
     field_choices = model._meta.get_field(field).choices
     try:
         return [c[0] for c in field_choices if value in c][0]
     except IndexError:
         raise IndexError("Invalid choice '%s' for field '%s'" % (value, field))
+
 
 def field_choice_str(model, field, value):
     field_choices = model._meta.get_field(field).choices
