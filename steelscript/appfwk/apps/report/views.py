@@ -748,7 +748,7 @@ class WidgetJobsList(views.APIView):
 
 class WidgetJobDetail(views.APIView):
     def get(self, request, namespace, report_slug, widget_slug, job_id,
-            format=None):
+            format=None, status=None):
         wjob = WidgetJob.objects.get(id=job_id)
 
         job = wjob.job
@@ -799,6 +799,8 @@ See <a href="https://support.riverbed.com/apis/steelscript/appfwk/configuration.
 geolocation documentation</a> for more information.'''
                     resp['message'] = msg
                     logger.debug("%s Error: geo location data not loaded.")
+                elif status is not None:  # Only status metadata requested
+                    resp = job.json()
                 else:
                     data = widget_func(widget, job, tabledata)
                     resp = job.json(data)

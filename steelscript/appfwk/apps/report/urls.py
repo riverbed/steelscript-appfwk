@@ -76,6 +76,10 @@ urlpatterns = patterns(
         views.WidgetJobDetail.as_view(),
         name='report-job-detail'),
 
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/jobs/(?P<job_id>[0-9]+)/(?P<status>status)/$',
+        views.WidgetJobDetail.as_view(),
+        name='report-job-detail'),
+
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/criteria/$',
         views.ReportCriteria.as_view(),
         name='widget-criteria'),

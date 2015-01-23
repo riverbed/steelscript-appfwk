@@ -11,7 +11,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from steelscript.appfwk.apps.datasource.views import TableList, TableDetail
 from steelscript.appfwk.apps.datasource.views import TableColumnList, TableJobList
 from steelscript.appfwk.apps.datasource.views import ColumnList, ColumnDetail
-from steelscript.appfwk.apps.datasource.views import JobList, JobDetail, JobDetailData
+from steelscript.appfwk.apps.datasource.views import JobList, JobDetail, JobDetailData, JobDetailDataExport
 
 
 urlpatterns = patterns(
@@ -51,6 +51,10 @@ urlpatterns = patterns(
 
     url(r'^jobs/(?P<pk>[0-9]+)/data/$',
         JobDetailData.as_view(),
+        name='job-detail-data'),
+
+    url(r'^jobs/(?P<pk>[0-9]+)/data/csv/$',
+        JobDetailDataExport.as_view(),
         name='job-detail-data'),
 )
 

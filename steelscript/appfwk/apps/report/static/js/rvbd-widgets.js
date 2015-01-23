@@ -233,7 +233,8 @@ rvbd.widgets.Widget.prototype = {
         var self = this;
 
         var menuItems = [
-            '<a tabindex="-1" class="get-embed" href="#">Embed This Widget...</a>'
+            '<a tabindex="-1" class="get-embed" href="#">Embed This Widget...</a>',
+            '<a tabindex="0" id="' + self.id + '_export_widget_csv" class="export_widget_csv" href="#">Export CSV (Table Data)...</a>'
         ];
 
         var $menuContainer = $('<div></div>')
@@ -269,8 +270,63 @@ rvbd.widgets.Widget.prototype = {
                       .append($menu)
                       .appendTo($(self.title));
 
+        $menuContainer.find('.export_widget_csv').click($.proxy(self.onCsvExport, self));
+
         $(self.title).find('.get-embed').click($.proxy(self.embedModal, self));
     },
+
+    onCsvExport: function() {
+        var self = this;
+
+        $.ajax({
+            dataType: 'json',
+            type: 'POST',
+            url: self.postUrl,
+            data: { criteria: JSON.stringify(self.criteria) },
+            success: function(data, textStatus, jqXHR) {
+                self.checkCsvExportStatus(data.joburl);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                var alertBody = ("The server returned the following HTTP error: <pre>" +
+                                 + errorThrown + '</pre>');
+                rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { })
+            }
+        });
+    },
+
+    checkCsvExportStatus: function(csvJobUrl) {
+        var self = this;
+
+        $.ajax({
+            dataType: "json",
+            url: csvJobUrl + 'status/',
+            data: null,
+            success: function(data, textStatus) {
+                switch (data.status) {
+                    case 3: // Complete
+                        var origin = window.location.protocol + '//' + window.location.host;
+                        console.log('herre')
+                        window.location = origin + '/data/jobs/' + data.id + '/data/csv/'; // Should trigger file download
+                        break;
+                    case 4: // Error
+                        var alertBody = ('The server returned the following error: <pre>' +
+                                        data['message'] + '</pre>');
+                        rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { });
+                        break;
+                    default: // Loading
+                        setTimeout(function() { self.checkCsvExportStatus(csvJobUrl); }, 200);
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.log('bar');
+
+                var alertBody = ('The server returned the following HTTP error: <pre>' + textStatus +
+                                 ': ' + errorThrown + '</pre>');
+                rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { });
+            }
+        });
+    },
+
 
     /**
      * Construct this widget's basic layout--outer container, title bar, content

@@ -13,6 +13,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
+from rest_framework_csv.renderers import CSVRenderer
+
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
 from steelscript.appfwk.apps.datasource.exceptions import JobCreationError
 from steelscript.appfwk.apps.datasource.serializers import (TableSerializer,
@@ -126,3 +128,8 @@ class JobDetail(generics.RetrieveAPIView):
 class JobDetailData(generics.RetrieveAPIView):
     model = Job
     serializer_class = JobDataSerializer
+
+class JobDetailDataExport(generics.RetrieveAPIView):
+    model = Job
+    serializer_class = JobDataSerializer
+    renderer_classes = (CSVRenderer, )
