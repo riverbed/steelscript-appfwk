@@ -8,7 +8,7 @@
 from rest_framework import serializers
 
 from steelscript.appfwk.apps.alerting.models import Alert, Event
-from steelscript.appfwk.apps.datasource.serializers import JobSerializer
+from steelscript.appfwk.apps.jobs.serializers import JobSerializer
 
 
 class PickledObjectField(serializers.Field):

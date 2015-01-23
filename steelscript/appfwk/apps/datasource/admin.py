@@ -7,7 +7,8 @@
 
 from django.contrib import admin
 
-from steelscript.appfwk.apps.datasource.models import Table, Column, Job, TableField
+from steelscript.appfwk.apps.datasource.models import Table, Column, TableField
+from steelscript.appfwk.apps.jobs.models import Job
 
 
 class TableAdmin(admin.ModelAdmin):

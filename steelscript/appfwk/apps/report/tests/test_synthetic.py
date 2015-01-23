@@ -10,7 +10,7 @@ import logging
 from django.conf import settings
 import pytz
 
-from steelscript.appfwk.apps.datasource.models import Job
+from steelscript.appfwk.apps.jobs.models import Job
 from steelscript.appfwk.apps.preferences.models import AppfwkUser
 from steelscript.appfwk.apps.report.tests import reportrunner
 
@@ -37,7 +37,6 @@ class SyntheticTest(reportrunner.ReportRunnerTestCase):
             logger.debug("Expected: %s" % expected)
             self.assertEqual(len(data), len(e))
 
-            #from IPython import embed; embed()
             for k, v in e.iteritems():
                 self.assertEqual(data[k], v,
                                  "Time %s => %s vs %s" %
@@ -48,8 +47,8 @@ class SyntheticTest(reportrunner.ReportRunnerTestCase):
         value = delta / 60
 
         if (t0 % delta) != 0:
-            data[t0-(t0%delta)] = ((delta - (t0 % delta)) / 60)
-            t0 = t0-(t0%delta) + delta
+            data[t0 - (t0 % delta)] = ((delta - (t0 % delta)) / 60)
+            t0 = t0 - (t0 % delta) + delta
 
         for t in range(t0, t1, delta):
             if t + delta <= t1:

@@ -10,7 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist
 #from django.contrib.auth.tests.utils import skipIfCustomUser
 from django.test.utils import override_settings
 
-from steelscript.appfwk.apps.datasource.models import Job
+from steelscript.appfwk.apps.jobs.models import Job
 from steelscript.appfwk.apps.report.models import Report, Widget
 from steelscript.appfwk.apps.preferences.models import AppfwkUser
 
