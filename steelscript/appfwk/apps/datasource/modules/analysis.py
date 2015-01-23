@@ -222,9 +222,10 @@ class FocusedAnalysisTable(AnalysisTable):
     columns should be added to a FocusedAnalysisTable.
 
     This requires a time-series based 'source' table, but the secondary
-    'template' table to run can be arbitrary.  For instance, a long-running
-    NetProfiler table can be used as the source, and with a NetShark template,
-    the peaks or valleys can be inspected using more granular data.
+    'template' table to run can be any type of datasource table.  For instance,
+    a 24-hour NetProfiler table can be used as the source, and with a NetShark
+    template table, the peaks or valleys can be shown in a separate widget
+    using more granular timeframe and resolution.
     """
     class Meta:
         proxy = True
@@ -247,23 +248,25 @@ class FocusedAnalysisTable(AnalysisTable):
 class FocusedAnalysisQuery(AnalysisQuery):
     def post_run(self):
         basetable = Table.from_ref(
-            self.table.options.related_tables['template']
+            self.table.options['related_tables']['template']
         )
         data = self.tables['source']
 
         # find column whose min/max is largest deviation from mean
-        if self.table.options.max:
+        # then take row from that column where min/max occurs
+        if self.table.options['max']:
             idx = (data.max() / data.mean()).idxmax()
-            zrow = data.ix[data[idx].idxmax()]
+            frow = data.ix[data[idx].idxmax()]
         else:
             idx = (data.min() / data.mean()).idxmin()
-            zrow = data.ix[data[idx].idxmin()]
+            frow = data.ix[data[idx].idxmin()]
 
-        ztime = zrow['time']
-        duration = parse_timedelta(self.table.options.zoom_duration)
-        resolution = parse_timedelta(self.table.options.zoom_resolution)
-        stime = ztime - (duration / 2)
-        etime = ztime + (duration / 2)
+        # get time value from extracted row to calculate new start/end times
+        ftime = frow['time']
+        duration = parse_timedelta(self.table.options['zoom_duration'])
+        resolution = parse_timedelta(self.table.options['zoom_resolution'])
+        stime = ftime - (duration / 2)
+        etime = ftime + (duration / 2)
 
         criteria = self.job.criteria
         criteria['resolution'] = resolution
