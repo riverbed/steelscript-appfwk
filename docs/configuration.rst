@@ -45,9 +45,11 @@ command.
 
 Devices
 -------
+Logging in to the server will bring up the "Edit Devices" page, except
+for the first time after initializing the server, in which case the
+the :ref:`User Preference <User Preferences>` page will be brought up instead.
 
-With a freshly initialized server, the first login to the server will bring
-up the "Edit Devices" page.  This page is only accessible to admin users,
+This page is only accessible to admin users,
 and provides a means to add devices for use throughout the site.
 
 Click on "Add New Device" and fill out the requested information for
@@ -59,9 +61,11 @@ each device you'd like to be able to use as a datasource.
 User Preferences
 ----------------
 
-After setting up devices, navigate to the upper-right button and choose
-"Preferences".  This will bring up a simple dialog allowing updates to
-the admin user password, email address, and timezone.  Further discussion of
+With a freshly initialized server, the first login to the server will bring
+up the "User Preferences" page. Besides, you can navigate to the upper-right
+button and choose "Preferences".  This will bring up a simple dialog allowing
+updates to the admin user password, email address, and timezone.  It is required
+to update the timezone to be the same as the local system. Further discussion of
 user management is described in the section below, :ref:`managing users`.
 
 Note that each user will be able to change their own timezone and email address.
