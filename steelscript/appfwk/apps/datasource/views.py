@@ -7,11 +7,13 @@
 
 import logging
 
+from django.http import HttpResponse
 from rest_framework.reverse import reverse
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.renderers import JSONRenderer
 
 from rest_framework_csv.renderers import CSVRenderer
 
@@ -128,8 +130,27 @@ class JobDetail(generics.RetrieveAPIView):
 class JobDetailData(generics.RetrieveAPIView):
     model = Job
     serializer_class = JobDataSerializer
+    renderer_classes = (JSONRenderer, CSVRenderer, )
+
 
 class JobDetailDataExport(generics.RetrieveAPIView):
     model = Job
     serializer_class = JobDataSerializer
     renderer_classes = (CSVRenderer, )
+
+    def get(self, request, *args, **kwargs):
+        job = self.get_object()
+        data = job.data().to_dict('records')
+        columns = job.get_columns()
+
+        if request.accepted_renderer.format == 'csv':
+            content_type = 'text/csv'
+            renderer = CSVRenderer()
+            renderer.headers = [col.name for col in columns]
+            resp = data
+
+        response = HttpResponse(renderer.render(resp),
+                                content_type=content_type)
+        response['Content-Disposition'] = 'attachment; filename=render.csv'
+
+        return response

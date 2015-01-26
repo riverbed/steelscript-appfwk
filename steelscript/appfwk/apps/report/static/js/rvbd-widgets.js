@@ -305,12 +305,12 @@ rvbd.widgets.Widget.prototype = {
                 switch (data.status) {
                     case 3: // Complete
                         var origin = window.location.protocol + '//' + window.location.host;
-                        console.log('herre')
+                        console.log('Job complete, getting csv data ...');
                         window.location = origin + '/data/jobs/' + data.id + '/data/csv/'; // Should trigger file download
                         break;
                     case 4: // Error
                         var alertBody = ('The server returned the following error: <pre>' +
-                                        data['message'] + '</pre>');
+                                         data['message'] + '</pre>');
                         rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { });
                         break;
                     default: // Loading
@@ -318,7 +318,7 @@ rvbd.widgets.Widget.prototype = {
                 }
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                console.log('bar');
+                console.log('Error when checking csv status');
 
                 var alertBody = ('The server returned the following HTTP error: <pre>' + textStatus +
                                  ': ' + errorThrown + '</pre>');

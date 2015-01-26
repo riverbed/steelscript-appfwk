@@ -1212,7 +1212,7 @@ class Job(models.Model):
         return self.table.get_columns(**kwargs)
 
     def json(self, data=None):
-        """ Return a JSON represention of this Job. """
+        """ Return a JSON representation of this Job. """
         return {'id': self.id,
                 'handle': self.handle,
                 'progress': self.progress,

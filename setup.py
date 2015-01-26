@@ -73,6 +73,7 @@ http://pythonhosted.org/steelscript/
         'steelscript.netprofiler>=0.9.4',
 
         'djangorestframework==2.3.13',
+        'djangorestframework-csv==1.3.3',
         'django-extensions==1.3.7',
         'django-model-utils==2.0.3',
         'jsonfield==0.9.20',
