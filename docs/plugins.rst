@@ -23,6 +23,34 @@ all the benefits that such packaging provides:
 * versioning - major.minor.patch version numbers to faciitate tracking and upgrade
 * simple installation both from source as well as from a single distribution file
 
+Managing plugins
+----------------
+
+SteelScript Application Framework provides a page allowing easy management of
+reports within each of your installed Application Framework plugins.
+To open the page, choose the "Edit Plugins" option from the upper-right drop-down
+menu in the browser. Then a table with all installed Application Framework
+plugins will show up. 
+
+The first column of each plugin shows the status of the plugin. By checking
+the box of each row, the reports belonging to the plugin will be accessible
+in the Reports drop-down upper-left in the browser. For instance, by enabling the
+Netshark Datasource Plugin, a total of 5 reports are available, shown as below. 
+
+.. image:: app-fwk-plugins.png
+   :align: center
+
+The Action column provides an interface to update the reports with source files
+in your plugin directory. By clicking "Update Reports" link, a pop-up window
+will appear with options. Checking off the "Collect Reports" option will copy the
+reports over to the project directory, and reports with same names will be overwritten
+if the "and Overwrite Reports" option is checked, as described in :ref:`collecting reports`.
+Checking the "Reload Reports" option will reload all the reports of the
+installed plugins after they have been collected, as described in :ref:`reload reports
+<reloading reports>`. The pop-up window is shown as below.
+
+.. image:: plugins-popup.png
+   :align: center
 
 Creating a new plugin
 ---------------------
@@ -165,35 +193,6 @@ described in :ref:`collecting reports` (probably with the
 ``--overwrite`` flag).  Then you must :ref:`reload reports <reloading
 reports>`.  This must be executed each time you make a change to the
 reports.
-
-Besides using command line to manage plugin reports, SteelScript Application
-Framework also provides a page allowing easy management of
-reports within each of your installed Application Framework plugins.
-To open the page, choose the "Edit Plugins" option from the upper-right drop-down
-menu in the browser. Then a table with all installed Application Framework
-plugins will show up. 
-
-The first column of each plugin shows the status of the plugin. By checking
-off the box of each row, the reports belonging to the plugin will be accessible
-in the Reports drop-down upper-left in the browser. For instance, by enabling the
-Netshark Datasource Plugin, a total of 5 reports are available, shown as below. 
-
-.. image:: app-fwk-plugins.png
-   :align: center
-
-The Action column provides an interface to update the reports with source files
-in your plugin directory. By clicking "Update Reports" link, a pop-up window
-will appear with options. Checking off the "Collect Reports" option will copy the
-reports over to the project directory, and reports with same names will be overwritten
-if the "and Overwrite Reports" option is checked, as described in :ref:`collecting reports`.
-Clearly, checking off the "Reload Reports" option will :ref:`reload reports <reloading
-reports>`. The pop-up window is shown as below.
-
-.. image:: plugins-popup.png
-   :align: center
-
-
-
 
 Creating a Distribution
 -----------------------
