@@ -1493,8 +1493,8 @@ class Worker(base_worker_class):
             query = self.queryclass(job.table, job)
 
             if (query.pre_run() and
-                  query.run() and
-                  query.post_run()):
+                    query.run() and
+                    query.post_run()):
 
                 logger.info("%s query finished" % self)
                 if isinstance(query.data, list) and len(query.data) > 0:

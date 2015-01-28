@@ -305,8 +305,10 @@ rvbd.widgets.Widget.prototype = {
                 switch (data.status) {
                     case 3: // Complete
                         var origin = window.location.protocol + '//' + window.location.host;
-                        console.log('Job complete, getting csv data ...');
-                        window.location = origin + '/data/jobs/' + data.id + '/data/csv/'; // Should trigger file download
+                        // remove spaces and special chars from widget title
+                        var fname = self.titleMsg.replace(/\W/g, '');
+                        // Should trigger file download
+                        window.location = origin + '/data/jobs/' + data.id + '/data/csv/?filename=' + fname;
                         break;
                     case 4: // Error
                         var alertBody = ('The server returned the following error: <pre>' +

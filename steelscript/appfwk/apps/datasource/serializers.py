@@ -15,7 +15,6 @@ from steelscript.appfwk.apps.datasource.models import Table, Column, Job
 class PickledObjectField(serializers.Field):
     def field_to_native(self, obj, fieldname):
         field = getattr(obj, fieldname)
-        #field = dbsafe_decode(field)
         if field and 'func' in field:
             field['func'] = repr(field['func'])
         return field
@@ -23,6 +22,7 @@ class PickledObjectField(serializers.Field):
 
 class JobDataField(serializers.Field):
     def field_to_native(self, obj, fieldname):
+        # calls values() on the Job object to get list of lists
         try:
             return obj.values()
         except AttributeError:

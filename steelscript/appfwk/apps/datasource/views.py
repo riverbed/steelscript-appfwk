@@ -7,7 +7,7 @@
 
 import logging
 
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from rest_framework.reverse import reverse
 from rest_framework import generics
 from rest_framework.views import APIView
@@ -132,25 +132,33 @@ class JobDetailData(generics.RetrieveAPIView):
     serializer_class = JobDataSerializer
     renderer_classes = (JSONRenderer, CSVRenderer, )
 
-
-class JobDetailDataExport(generics.RetrieveAPIView):
-    model = Job
-    serializer_class = JobDataSerializer
-    renderer_classes = (CSVRenderer, )
-
     def get(self, request, *args, **kwargs):
         job = self.get_object()
-        data = job.data().to_dict('records')
-        columns = job.get_columns()
+        base_filename = (request.QUERY_PARAMS.get('filename', None) or
+                         job.table.name)
 
         if request.accepted_renderer.format == 'csv':
             content_type = 'text/csv'
+            filename = base_filename + '.csv'
+
+            columns = job.get_columns()
+            data = job.data().to_dict('records')
             renderer = CSVRenderer()
             renderer.headers = [col.name for col in columns]
-            resp = data
+        elif request.accepted_renderer.format == 'json':
+            content_type = 'application/json'
+            filename = base_filename + '.json'
+            data = job.values()
+            renderer = JSONRenderer()
+        else:
+            # chances are we won't get here because the DRF
+            # content negotiation will have already failed
+            msg = 'Invalid format requested.'
+            logging.debug(msg)
+            raise Http404(msg)
 
-        response = HttpResponse(renderer.render(resp),
+        response = HttpResponse(renderer.render(data),
                                 content_type=content_type)
-        response['Content-Disposition'] = 'attachment; filename=render.csv'
+        response['Content-Disposition'] = 'attachment; filename=%s' % filename
 
         return response
