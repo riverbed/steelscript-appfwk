@@ -5,11 +5,11 @@
 # as set forth in the License.
 
 
+import sys
 import time
 import datetime
-import optparse
-import sys
 import logging
+import optparse
 logger = logging.getLogger(__name__)
 
 from django.core.management.base import BaseCommand
