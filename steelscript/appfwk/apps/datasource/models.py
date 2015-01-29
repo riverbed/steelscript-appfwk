@@ -929,7 +929,7 @@ class Criteria(DictObject):
                 raise ValueError(msg)
 
         elif endtime is None:
-            endtime = datetime.datetime.now()
+            endtime = datetime.datetime.now(pytz.UTC)
 
         if duration is not None and (isinstance(duration, datetime.datetime) or
                                      isinstance(duration, datetime.timedelta)):
