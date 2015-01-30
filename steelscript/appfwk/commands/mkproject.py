@@ -67,8 +67,8 @@ LOCAL_ERROR_HANDLERS = (
 )
 GLOBAL_ERROR_HANDLERS += LOCAL_ERROR_HANDLERS
 
-# To enable syslog handling instead of local logging,
-# uncomment next block of LOGGING statements
+# To enable syslog handling instead of local logging, see the next blocks of
+# LOGGING statements.  Note the different section for Linux/Mac vs Windows.
 
 # remove these loggers since the configuration will attempt to write the
 # files even if they don't have a logger declared for them
@@ -76,12 +76,24 @@ GLOBAL_ERROR_HANDLERS += LOCAL_ERROR_HANDLERS
 #LOGGING['handlers'].pop('logfile')
 #LOGGING['handlers'].pop('backend-log')
 #
+# Use the following handler for Linux/BSD/Mac machines
 #LOGGING['handlers']['syslog'] = {
 #    'level': 'DEBUG',
 #    'class': 'logging.handlers.SysLogHandler',
 #    'formatter': 'standard_syslog',
 #    'facility': SysLogHandler.LOG_USER,
 #    'address': '/var/run/syslog' if sys.platform == 'darwin' else '/dev/log'
+#}
+#
+# Use the following handler for sending to Windows Event logs,
+# you will need an additional package for Windows: Python for Windows
+# Extensions, which can be found here:
+#    http://sourceforge.net/projects/pywin32/files/pywin32/
+#LOGGING['handlers']['syslog'] = {
+#    'level': 'DEBUG',
+#    'class': 'logging.handlers.NTEventLogHandler',
+#    'formatter': 'standard_syslog',
+#    'appname': 'steelscript',
 #}
 #
 #LOGGING['loggers'] = {
