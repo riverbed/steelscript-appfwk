@@ -140,11 +140,17 @@ class JobDetailData(generics.RetrieveAPIView):
         if request.accepted_renderer.format == 'csv':
             content_type = 'text/csv'
             filename = base_filename + '.csv'
+            renderer = CSVRenderer()
 
             columns = job.get_columns()
-            data = job.data().to_dict('records')
-            renderer = CSVRenderer()
-            renderer.headers = [col.name for col in columns]
+            renderer.headers = [col.label for col in columns]
+
+            # map the label names to data source columns
+            names = dict((col.name, col.label) for col in columns)
+            df = job.data()
+            df.rename(columns=lambda c: names.get(c, c), inplace=True)
+            data = df.to_dict('records')
+
         elif request.accepted_renderer.format == 'json':
             content_type = 'application/json'
             filename = base_filename + '.json'
