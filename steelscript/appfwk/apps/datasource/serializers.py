@@ -55,6 +55,9 @@ class ColumnSerializer(serializers.ModelSerializer):
 
 
 class JobListSerializer(serializers.ModelSerializer):
+    criteria = PickledObjectField()
+    actual_criteria = PickledObjectField()
+
     class Meta:
         model = Job
         fields = ('id', 'table', 'criteria', 'actual_criteria', 'status',

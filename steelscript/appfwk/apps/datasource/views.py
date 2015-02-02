@@ -7,7 +7,7 @@
 
 import logging
 
-from django.http import HttpResponse, Http404
+from django.http import Http404
 from rest_framework.reverse import reverse
 from rest_framework import generics
 from rest_framework.views import APIView
@@ -137,25 +137,29 @@ class JobDetailData(generics.RetrieveAPIView):
         base_filename = (request.QUERY_PARAMS.get('filename', None) or
                          job.table.name)
 
+        df = job.data()
+
+        # normalize time column to user timezone
+        if 'time' in df:
+            tz = request.user.timezone
+            df = df.set_index('time').tz_convert(tz).reset_index()
+
         if request.accepted_renderer.format == 'csv':
             content_type = 'text/csv'
             filename = base_filename + '.csv'
-            renderer = CSVRenderer()
 
+            # use nicer column labels for CSV, and in the correct order
             columns = job.get_columns()
-            renderer.headers = [col.label for col in columns]
+            request.accepted_renderer.headers = [col.label for col in columns]
 
             # map the label names to data source columns
             names = dict((col.name, col.label) for col in columns)
-            df = job.data()
             df.rename(columns=lambda c: names.get(c, c), inplace=True)
-            data = df.to_dict('records')
 
         elif request.accepted_renderer.format == 'json':
             content_type = 'application/json'
             filename = base_filename + '.json'
-            data = job.values()
-            renderer = JSONRenderer()
+
         else:
             # chances are we won't get here because the DRF
             # content negotiation will have already failed
@@ -163,8 +167,9 @@ class JobDetailData(generics.RetrieveAPIView):
             logging.debug(msg)
             raise Http404(msg)
 
-        response = HttpResponse(renderer.render(data),
-                                content_type=content_type)
-        response['Content-Disposition'] = 'attachment; filename=%s' % filename
+        headers = {'Content-Disposition': 'attachment; filename=%s' % filename}
+        response = Response(df.to_dict('records'),
+                            content_type=content_type,
+                            headers=headers)
 
         return response
