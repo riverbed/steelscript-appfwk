@@ -60,6 +60,13 @@ LOGGING['handlers']['logfile']['filename'] = os.path.join(DATAHOME, 'logs',
 LOGGING['handlers']['backend-log']['filename'] = os.path.join(DATAHOME, 'logs',
                                                               'log-db.txt')
 
+# Optionally add additional global error handlers
+
+LOCAL_ERROR_HANDLERS = (
+    # additional global error handlers can be listed here
+)
+GLOBAL_ERROR_HANDLERS += LOCAL_ERROR_HANDLERS
+
 # To enable syslog handling instead of local logging, uncomment next block of LOGGING
 # statements
 

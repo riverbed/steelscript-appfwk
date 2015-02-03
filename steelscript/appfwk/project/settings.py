@@ -314,6 +314,11 @@ LOGGING = {
     }
 }
 
+GLOBAL_ERROR_HANDLERS = (
+    {'sender': 'LoggingSender',
+     'template': 'Error processing job: {message}'},
+)
+
 #
 # App Framework custom settings
 #

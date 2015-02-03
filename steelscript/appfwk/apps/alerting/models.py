@@ -10,14 +10,16 @@ from django.db import models
 from django.dispatch import Signal, receiver
 from django_extensions.db.fields import UUIDField
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.conf import settings
 
 from steelscript.appfwk.libs.fields import (PickledObjectField,
                                             FunctionField, Function)
 from steelscript.appfwk.apps.alerting.senders import find_sender
 from steelscript.appfwk.apps.alerting.source import Source
-from steelscript.appfwk.apps.alerting.caches import ModelCache
+from steelscript.appfwk.apps.alerting.caches import ModelCache, GlobalCache
 from steelscript.appfwk.apps.alerting.datastructures import (AlertLevels,
                                                              ERROR_SEVERITY)
+from steelscript.appfwk.apps.preferences.models import SystemSettings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -139,6 +141,12 @@ def process_error(sender, **kwargs):
     logger.debug('New Event created: %s' % event)
     for h in handlers:
         DestinationThread(h.destination, event, is_error=True).start()
+
+    system_settings = SystemSettings.get_system_settings()
+    if system_settings.global_error_handler:
+        if not handlers or any([h.allow_global for h in handlers]):
+            for d in GlobalErrorHandlerCache.data():
+                DestinationThread(d, event, is_error=True).start()
 
 
 #
@@ -264,14 +272,17 @@ class Trigger(models.Model):
         self.destinations.add(r)
 
     def add_error_handler(self, sender, options=None,
-                          template=None, template_func=None):
+                          template=None, template_func=None,
+                          allow_global=False):
         """Convenience method to create error handler for same source."""
         e = ErrorHandler.create(name=self.name + 'ErrorHandler',
                                 source=self.source,
                                 sender=sender,
                                 options=options,
                                 template=template,
-                                template_func=template_func)
+                                template_func=template_func,
+                                allow_global=allow_global)
+
         return e
 
 
@@ -334,13 +345,14 @@ class ErrorHandler(models.Model):
     name = models.CharField(max_length=100)
     source = PickledObjectField()
     destination = models.ForeignKey('Destination')
+    allow_global = models.BooleanField(default=False)
 
     def __unicode__(self):
         return '<ErrorHandler %d/%s>' % (self.id, self.name)
 
     @classmethod
     def create(cls, name, source, sender, options=None,
-               template=None, template_func=None):
+               template=None, template_func=None, allow_global=False):
         """Create new ErrorHandler and its associated Destination."""
         destination = Destination.create(sender, options,
                                          template, template_func)
@@ -349,10 +361,17 @@ class ErrorHandler(models.Model):
         if not isinstance(source, frozenset):
             source = Source.encode(source)
 
-        e = ErrorHandler(name=name, source=source, destination=destination)
+        e = ErrorHandler(name=name, source=source, destination=destination,
+                         allow_global=allow_global)
         e.save()
         return e
 
+
+class GlobalErrorHandlerCache(GlobalCache):
+    """List of GlobalErrorHandler objects"""
+    _source = settings.GLOBAL_ERROR_HANDLERS
+    _default_func = lambda: None
+    _class = Destination
 
 create_trigger = Trigger.create
 create_destination = Destination.create

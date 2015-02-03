@@ -121,6 +121,11 @@ class SystemSettings(models.Model):
         blank=True,
         null=True
     )
+    global_error_handler = models.BooleanField(
+        default=True,
+        help_text='Apply global error handlers',
+        verbose_name='Global Error Handlers'
+    )
 
     def save(self, *args, **kwargs):
         self.pk = 1
