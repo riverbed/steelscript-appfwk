@@ -66,7 +66,7 @@
               window.location = '/devices/' + {{ form.instance.pk }} + '/delete';
             };
 
-            confirm(heading, question, cancelButtonTxt, okButtonTxt, callback);
+            rvbd.modal.confirm(heading, question, cancelButtonTxt, okButtonTxt, callback);
         })
     </script>
 {% endblock %}
