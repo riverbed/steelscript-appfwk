@@ -49,6 +49,7 @@ class CriteriaPostProcessError(CriteriaError):
 # Map of all possible timezone names to tzinfo structures
 ALL_TIMEZONES_MAP = None
 
+
 def all_timezones_map():
     global ALL_TIMEZONES_MAP
     if ALL_TIMEZONES_MAP is None:
@@ -199,7 +200,8 @@ class FileSelectField(forms.Field):
 
 
 class DateTimeField(forms.DateTimeField):
-    """ Field that takes a date/time string and parses it to a datetime object. """
+    """Field that takes a date/time string and parses it to datetime object.
+    """
 
     def to_python(self, value):
         if value in validators.EMPTY_VALUES:
@@ -335,9 +337,13 @@ def fields_add_time_selection(obj, show_duration=True, initial_duration=None,
         field = TableField(keyword='starttime',
                            label='Start Time',
                            field_cls=DateTimeField,
-                           field_kwargs={'widget': ReportSplitDateTimeWidget,
-                                         'widget_attrs': {'initial_time': initial_start_time,
-                                                          'initial_date': initial_start_date}},
+                           field_kwargs={
+                               'widget': ReportSplitDateTimeWidget,
+                               'widget_attrs': {
+                                   'initial_time': initial_start_time,
+                                   'initial_date': initial_start_date
+                               }
+                           },
                            required=False)
         field.save()
         obj.fields.add(field)
@@ -346,9 +352,13 @@ def fields_add_time_selection(obj, show_duration=True, initial_duration=None,
         field = TableField(keyword='endtime',
                            label='End Time',
                            field_cls=DateTimeField,
-                           field_kwargs={'widget': ReportSplitDateTimeWidget,
-                                         'widget_attrs': {'initial_time': initial_end_time,
-                                                          'initial_date': initial_end_date}},
+                           field_kwargs={
+                               'widget': ReportSplitDateTimeWidget,
+                               'widget_attrs': {
+                                   'initial_time': initial_end_time,
+                                   'initial_date': initial_end_date
+                               }
+                           },
                            required=False)
         field.save()
         obj.fields.add(field)
@@ -521,7 +531,6 @@ class TableFieldForm(forms.Form):
                     # look first to see if a keyword in the same section exists
                     # at all, and if it does whether it's processed
 
-
                     if section and (section + parent_keyword) in ids:
                         check_keyword = section+parent_keyword
                     else:
@@ -593,7 +602,7 @@ class TableFieldForm(forms.Form):
             raise ValidationError("Form data is not valid")
 
         data = copy.copy(self.initial)
-        for k,v in self.cleaned_data.iteritems():
+        for k, v in self.cleaned_data.iteritems():
             if k in (self._hidden_fields or []):
                 data[k] = self.fields[k].clean(self._tablefields[k].initial)
             else:
@@ -652,7 +661,7 @@ class TableFieldForm(forms.Form):
         if not self.is_valid():
             raise ValidationError("Form data is not valid")
 
-        for k,v in self.cleaned_data.iteritems():
+        for k, v in self.cleaned_data.iteritems():
             if isinstance(v, datetime.datetime) and v.tzinfo is None:
                 self.cleaned_data[k] = v.replace(tzinfo=tzinfo)
 

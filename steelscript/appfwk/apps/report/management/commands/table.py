@@ -5,11 +5,11 @@
 # as set forth in the License.
 
 
+import sys
 import time
 import datetime
-import optparse
-import sys
 import logging
+import optparse
 logger = logging.getLogger(__name__)
 
 from django.core.management.base import BaseCommand
@@ -32,11 +32,12 @@ class Command(BaseCommand):
     help = 'Run a defined table and return results in nice tabular format'
 
     def create_parser(self, prog_name, subcommand):
-        """ Override super version to include special option grouping
-        """
+        """ Override super version to include special option grouping. """
         parser = super(Command, self).create_parser(prog_name, subcommand)
-        group = optparse.OptionGroup(parser, "Run Table Help",
-                                     "Helper commands to display list of tables to run")
+        group = optparse.OptionGroup(
+            parser, "Run Table Help",
+            "Helper commands to display list of tables to run"
+        )
         group.add_option('--table-list',
                          action='store_true',
                          dest='table_list',
@@ -49,22 +50,34 @@ class Command(BaseCommand):
                          help='List tables organized by report')
         parser.add_option_group(group)
 
-        group = optparse.OptionGroup(parser, "Run Table Criteria",
-                                     "Options to specify criteria for specified run table")
-        group.add_option('--table-id',
-                         action='store',
-                         dest='table_id',
-                         help='Table ID to execute (use --table-list to find the right ID)')
-        group.add_option('--table-name',
-                         action='store',
-                         dest='table_name',
-                         help='Table name to execute (use --table-list to list all tables)')
-        group.add_option('-C', '--criteria',
-                         action='append',
-                         type='str',
-                         dest='criteria',
-                         default=None,
-                         help='Specify criteria as <key>:<value>, repeat as necessary')
+        group = optparse.OptionGroup(
+            parser, "Run Table Criteria",
+            "Options to specify criteria for specified run table.\n"
+            "When adding time-based criteria, the timezone offset "
+            "must be included, otherwise the time will be assumed as UTC.\n"
+            "For example:\n"
+            '"python manage.py table --table-id 19 -C endtime:9:01-0500"',
+        )
+        group.add_option(
+            '--table-id',
+            action='store',
+            dest='table_id',
+            help='Table ID to execute (use --table-list to find the right ID)'
+        )
+        group.add_option(
+            '--table-name',
+            action='store',
+            dest='table_name',
+            help='Table name to execute (use --table-list to list all tables)'
+        )
+        group.add_option(
+            '-C', '--criteria',
+            action='append',
+            type='str',
+            dest='criteria',
+            default=None,
+            help='Specify criteria as <key>:<value>, repeat as necessary'
+        )
         group.add_option('--criteria-list',
                          action='store_true',
                          dest='criteria_list',
@@ -94,7 +107,7 @@ class Command(BaseCommand):
         return parser
 
     def console(self, msg, ending=None):
-        """ Print text to console except if we are writing CSV file """
+        """ Print text to console except if we are writing CSV file. """
         if not self.options['as_csv']:
             self.stdout.write(msg, ending=ending)
             self.stdout.flush()
@@ -117,8 +130,7 @@ class Command(BaseCommand):
         return TableFieldForm(all_fields, use_widgets=False, data=data)
 
     def handle(self, *args, **options):
-        """ Main command handler
-        """
+        """ Main command handler. """
         self.options = options
 
         if options['table_list']:
@@ -133,11 +145,10 @@ class Command(BaseCommand):
             output = []
             reports = Report.objects.all()
             for report in reports:
-                for section in report.section_set.all():
-                    for widget in section.widget_set.all():
-                        for table in widget.tables.all():
-                            line = [table.id, report.title, widget.title, table]
-                            output.append(line)
+                for table in report.tables():
+                    for widget in table.widget_set.all():
+                        line = [table.id, report.title, widget.title, table]
+                        output.append(line)
             Formatter.print_table(output, ['ID', 'Report', 'Widget', 'Table'])
         elif options['criteria_list']:
             if 'table_id' in options and options['table_id'] is not None:
@@ -150,7 +161,12 @@ class Command(BaseCommand):
 
             form = self.get_form(table)
 
-            output = [[c.keyword, c.label] for c in form._tablefields.values()]
+            # Only show criteria options that were included in report
+            # and given a label, other ones are for internal table use.
+            # criteria like ignore_cache can still be passed in, they
+            # just won't be shown in this list
+            output = [(k, v.label)
+                      for k, v in form.fields.iteritems() if v.label]
             Formatter.print_table(output, ['Keyword', 'Label'])
         else:
             if 'table_id' in options and options['table_id'] is not None:
@@ -223,7 +239,8 @@ class Command(BaseCommand):
                 if options['as_csv']:
                     if options['output_file']:
                         with open(options['output_file'], 'w') as f:
-                            for line in Formatter.get_csv(job.values(), columns):
+                            for line in Formatter.get_csv(job.values(),
+                                                          columns):
                                 f.write(line)
                                 f.write('\n')
                     else:

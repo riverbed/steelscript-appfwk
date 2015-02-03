@@ -929,7 +929,7 @@ class Criteria(DictObject):
                 raise ValueError(msg)
 
         elif endtime is None:
-            endtime = datetime.datetime.now()
+            endtime = datetime.datetime.now(pytz.UTC)
 
         if duration is not None and (isinstance(duration, datetime.datetime) or
                                      isinstance(duration, datetime.timedelta)):
@@ -1212,7 +1212,7 @@ class Job(models.Model):
         return self.table.get_columns(**kwargs)
 
     def json(self, data=None):
-        """ Return a JSON represention of this Job. """
+        """ Return a JSON representation of this Job. """
         return {'id': self.id,
                 'handle': self.handle,
                 'progress': self.progress,
@@ -1493,8 +1493,8 @@ class Worker(base_worker_class):
             query = self.queryclass(job.table, job)
 
             if (query.pre_run() and
-                  query.run() and
-                  query.post_run()):
+                    query.run() and
+                    query.post_run()):
 
                 logger.info("%s query finished" % self)
                 if isinstance(query.data, list) and len(query.data) > 0:
