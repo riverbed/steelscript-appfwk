@@ -7,6 +7,7 @@
 
 import logging
 
+import pytz
 import numpy
 import pandas
 
@@ -99,7 +100,6 @@ class AlertAnalysisGroupbyQuery(AlertQuery):
 
         if self.data is not None:
             dfg = self.data.groupby(groupby).count()
-            dfg.pop(groupby)
             self.data = dfg.reset_index()
         return True
 
@@ -122,8 +122,8 @@ class AlertAnalysisTimeseriesQuery(AlertQuery):
             dft = self.data.set_index(timecol)[datacol]
             # add null value to beginning and end of time series to make sure
             # resample interval lines up
-            dft[self.starttime] = numpy.nan
-            dft[self.endtime] = numpy.nan
+            dft[self.starttime.astimezone(pytz.UTC)] = numpy.nan
+            dft[self.endtime.astimezone(pytz.UTC)] = numpy.nan
             dft = dft.resample('5min', how='count')
             self.data = dft.reset_index().rename(columns={'index': timecol})
         return True
