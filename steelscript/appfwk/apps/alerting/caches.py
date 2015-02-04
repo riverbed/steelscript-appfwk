@@ -72,16 +72,43 @@ class ModelCache(Cache):
 
 
 class GlobalCache(Cache):
-    """Provide loading and iterating ability against data configured
-    in local_settings.py
+    """This class provides functionality to load a list of dicts and
+    populate  in-memory cache with a list of django model objects. It also
+    provides an interface to iterate through the cache data.
 
-    This is in-memory cache and will be re-populated depending on the
-    scenario where the specific cache data will be used.
+    This class will not be used directly. It will be only used by its
+    subclasses, with defined _source, _default_func and _model.
+
+    _source: a list of python dicts;
+    _model: the dotted reference to the django model, e.g. 'app_name.Model'
+    _default_func: a function which returns a default value if some
+    _model's field is not found in one dict in _source.
+
+    Below shows how this class should be used.
+        class OneClass(models.Model):
+            x = models.IntegerField()
+            y = models.IntegerField()
+            z = models.IntegerField()
+
+            @classmethod
+            def create(cls, x, y=None, z=None):
+                return OneClass(x=x,y=y,z=z)
+
+        class OneClassCache(GlobalCache):
+            _source = ({'x': 1,
+                        'y': 2},)
+            _model = 'app_name.OneClass' #app_name is the application name
+            _default_func = lambda: 3
+
+        for one_object in OneClassCache.data():
+            'the value of one_object.z is 3'
     """
-
-    _source = None        # Macro for the Global Config Data
+    # Override these three values in subclass
+    _source = None        # list/tuple of dicts to populate _model object
     _default_func = None  # Default func of each key in the dict
-    _class = None         # the name of class to create object
+    _model = None          # dotted reference to model, e.g. 'appname.Model'
+
+    # Leave this value as None
     _lookup = None
 
     @classmethod
@@ -90,9 +117,16 @@ class GlobalCache(Cache):
         if cls._lookup is None:
             cls.debug('loading new data')
             cls._lookup = []
+            cls._model = get_model(*cls._model.rsplit('.', 1))
             for one in cls._source:
+                # create defaultdict 'one_dict' using dict 'one' and
+                # _default_func, where one_dict is used as a list of keyword
+                # arguments, and if some keyword are missing from dict 'one'
+                # according to function cls._model.create, then the missing
+                # keyword arguments will be automatically added in 'one_dict'
+                # using the value returned from cls._default_func
                 one_dict = defaultdict(cls._default_func, one)
-                cls._lookup.append(cls._class.create(**one_dict))
+                cls._lookup.append(cls._model.create(**one_dict))
         lock.release()
 
     @classmethod

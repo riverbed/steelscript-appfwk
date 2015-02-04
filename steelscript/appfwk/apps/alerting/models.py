@@ -43,6 +43,13 @@ class ErrorHandlerCache(ModelCache):
     _key = 'source'
 
 
+class GlobalErrorHandlerCache(GlobalCache):
+    """Cache of global error handler objects"""
+    _source = settings.GLOBAL_ERROR_HANDLERS
+    _default_func = lambda: None
+    _model = 'alerting.Destination'
+
+
 class DestinationThread(threading.Thread):
     def __init__(self, destination, event,
                  is_error=False, **kwargs):
@@ -366,12 +373,6 @@ class ErrorHandler(models.Model):
         e.save()
         return e
 
-
-class GlobalErrorHandlerCache(GlobalCache):
-    """List of GlobalErrorHandler objects"""
-    _source = settings.GLOBAL_ERROR_HANDLERS
-    _default_func = lambda: None
-    _class = Destination
 
 create_trigger = Trigger.create
 create_destination = Destination.create
