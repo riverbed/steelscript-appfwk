@@ -82,7 +82,7 @@ class GlobalCache(Cache):
     _source: a list of python dicts;
     _model: the dotted reference to the django model, e.g. 'app_name.Model'
     _default_func: a function which returns a default value if some
-    _model's field is not found in one dict in _source.
+        _model's field is not found in one dict in _source.
 
     Below shows how this class should be used.
         class OneClass(models.Model):
