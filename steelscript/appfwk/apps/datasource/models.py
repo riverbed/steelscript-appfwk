@@ -1038,6 +1038,10 @@ class Job(models.Model):
 
     def refresh(self):
         """ Refresh dynamic job parameters from the database. """
+        # fix bug 227119, by avoiding mysql caching problems
+        # http://stackoverflow.com/a/7028362
+        # should be fixed in Django 1.6
+        Job.objects.update()
         job = Job.objects.get(pk=self.pk)
         for k in ['status', 'message', 'exception', 'progress', 'remaining',
                   'actual_criteria', 'touched', 'refcount']:
