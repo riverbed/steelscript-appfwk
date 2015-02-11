@@ -86,7 +86,7 @@ http://pythonhosted.org/steelscript/
         'wsgiref>=0.1.2',
         'django-announcements==1.2.0',
 
-        'django-admin-tools==0.5.1',
+        'django-admin-tools==0.5.2',
 
         'ansi2html>=1.0.6',
         'django-ace==1.0.1',
