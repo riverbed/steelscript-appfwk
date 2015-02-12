@@ -13,9 +13,6 @@ except ImportError:
     pass
 
 import urllib
-import os
-import vagrant
-import time
 
 from steelscript.common import timeutils
 from steelscript.appfwk.apps.alerting.datastructures import AlertLevels
