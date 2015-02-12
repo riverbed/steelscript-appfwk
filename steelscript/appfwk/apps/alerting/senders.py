@@ -13,9 +13,13 @@ except ImportError:
     pass
 
 import urllib
+import os
+import vagrant
+import time
 
 from steelscript.common import timeutils
 from steelscript.appfwk.apps.alerting.datastructures import AlertLevels
+from steelscript.cmdline import cli
 
 import logging
 logger = logging.getLogger(__name__)
@@ -208,6 +212,112 @@ class SNMPSenderCascadeDefault(SNMPBaseSender):
             ('1.3.6.1.4.1.7054.71.2.20.0', rfc1902.Integer(0)),              # Protocol Count
             ('1.3.6.1.4.1.7054.71.2.22.0', rfc1902.Integer(0)),              # Port Count
         )
+
+
+class VMBaseSender(BaseSender):
+    """Base sender class for spinning up/down vms"""
+    def process_alert(self, alert):
+        for k, v in (alert.options or {}).iteritems():
+            setattr(self, k, v)
+
+    def send(self, alert):
+        self.process_alert(alert)
+        self.execute()
+
+
+class BareMetalVMSender(VMBaseSender):
+    """Sender class for managing VMs on bare metal machines.
+    Note that one instance of this class only maps to one Vagrantfile,
+    which is located on one directory at one host. Thus when adding
+    destination to your report trigger, it is required to configure
+    the host, username, password, directory of vagrantfile, the list
+    of vms to start, and the list of vms to shutdown. Note that the
+    names of VMs need to match the names in the vagrantfile. If all
+    VMs are required to start/shutdown, just put down 'all'. If none
+    of VMs are to be strated/shutdown, just do not put up_list/down_list
+    in options. An example is shown as below.
+
+    trigger.add_destination(sender='BareMetalVMSender',
+                            options={'host' : 'hostname',
+                                     'username': 'username',
+                                     'password': 'password',
+                                     'vagrant_dir': 'directory',
+                                     'up_list': ['vm1','vm2],
+                                     'down_list': ['vm3','vm4']},
+                            template = 'Starting or shutting vms'
+                           )
+    """
+    def __init__(self):
+        self._cli = None
+        self._running_vms = None
+        self._status = {}
+        self.up_list = None
+        self.down_list = None
+
+    def get_status(self):
+        """Return the status of VMs in this directory. Need to parse
+        output of 'vagrant status' as below:
+
+        Current machine states:
+
+        web                       poweroff (virtualbox)
+        db                        poweroff (virtualbox)
+
+        This environment represents multiple VMs. The VMs are all listed
+        above with their current state. For more information about a specific
+        VM, run `vagrant status NAME`.
+        """
+        self._status = {}
+        output = self._cli.exec_command('vagrant status')
+        output = output.split('\n\n')[1]
+        for line in output.split('\n'):
+            list = line.split()
+            if list[1] == 'running':
+                if 'running' not in self._status:
+                    self._status['running'] = [list[0]]
+                else:
+                    self._status['running'].append(list[0])
+            elif list[1] == 'poweroff':
+                if 'poweroff' not in self._status:
+                    self._status['poweroff'] = [list[0]]
+                else:
+                    self._status['poweroff'].append(list[0])
+        return self._status
+
+    def execute(self):
+
+        if self._cli is None:
+            self._cli = cli.CLI(hostname=self.host,
+                                username=self.username,
+                                password=self.password)
+            self._cli.start()
+
+        # get in the directory
+        if hasattr(self, 'vagrant_dir'):
+            self._cli.exec_command('cd %s' % self.vagrant_dir)
+
+        if self.up_list == 'all':
+            self._cli.exec_command('vagrant up')
+        elif self.up_list:
+            self._cli.exec_command('vagrant up %s' % ' '.join(self.up_list))
+
+        if self.down_list == 'all':
+            self._cli.exec_command('vagrant halt')
+        elif self.down_list:
+            self._cli.exec_command('vagrant halt %s' %
+                                   ' '.join(self.down_list))
+
+        self.get_status()
+
+
+class AWSVMSender(VMBaseSender):
+    """Not implemented yet"""
+    pass
+
+
+class AzureVMSender(VMBaseSender):
+    """Not implemented yet"""
+    pass
 
 
 def find_sender(name):
