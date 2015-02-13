@@ -93,6 +93,8 @@ http://pythonhosted.org/steelscript/
         'apscheduler>=3.0',
     ),
 
+    'extras_require' : {'all':['steelscript.cmdline', 'pysnmp']},
+
     'tests_require': (),
 
 }

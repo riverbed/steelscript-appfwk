@@ -83,7 +83,11 @@ class DestinationThread(threading.Thread):
         alert.save()
         logger.debug('Sending Alert %s via Destination %s' %
                      (alert, self.destination))
-        sender.send(alert)
+        try:
+            sender.send(alert)
+        except:
+            logger.exception("An error occurred while sending alert %s"
+                             " via Destination %s" % (alert, self.destination))
 
 
 class TriggerThread(threading.Thread):
