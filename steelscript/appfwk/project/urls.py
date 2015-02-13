@@ -23,6 +23,7 @@ urlpatterns = patterns('',
     url(r'^report/', include('steelscript.appfwk.apps.report.urls')),
     url(r'^devices/', include('steelscript.appfwk.apps.devices.urls')),
     url(r'^data/', include('steelscript.appfwk.apps.datasource.urls')),
+    url(r'^alerting/', include('steelscript.appfwk.apps.alerting.urls')),
     url(r'^geolocation/', include(
         'steelscript.appfwk.apps.geolocation.urls')),
     url(r'^help/', include('steelscript.appfwk.apps.help.urls')),
