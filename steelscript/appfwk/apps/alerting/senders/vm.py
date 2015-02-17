@@ -25,6 +25,7 @@ class VMBaseSender(BaseSender):
     def send(self, alert):
         self.process_alert(alert)
         self.execute()
+        self.verify()
 
 
 class BareMetalVMSender(VMBaseSender):
@@ -51,24 +52,34 @@ class BareMetalVMSender(VMBaseSender):
                             template = 'Starting or shutting vms'
                            )
     """
-    STATES = ['running', 'poweroff', 'aborted', 'not created']
 
     def __init__(self):
+        # Attributes that come from alerts
+        self.host = None          # host/ip for the bare metal host of VMs
+        self.username = None      # username to access the host
+        self.password = None      # password to access the host
+        self.vagrant_dir = None   # directory of the vagrant file
+        self.up_list = []         # list of VM names to start (optional)
+        self.down_list = []       # list of VM names to shutdown (optional)
+        self.timeout = 300        # max time in seconds for vagrant commands
+
+        # Internal attributes
         self._cli = None
         self._status = {}
-        self.up_list = None
-        self.down_list = None
+        self._cd_dir = ''
+        self._running_vms = None
+        self._non_running_vms = None
 
     def vagrant(self, args):
         """Execute a vagrant command
 
         :param command: a list of arguments/options in a vagrant command
         """
-        command = self.cd_dir + 'vagrant ' + ' '.join(args)
-        timeout = self.timeout if hasattr(self, 'timeout') else 60
-        logger.debug("Executing command '%s' timeout %d" % (command, timeout))
+        command = self._cd_dir + 'vagrant ' + ' '.join(args)
+        logger.debug("Executing command '%s' timeout %d" %
+                     (command, self.timeout))
 
-        return self._cli.exec_command(command, timeout=timeout)
+        return self._cli.exec_command(command, timeout=self.timeout)
 
     def get_status(self):
         """Return the status of VMs in this directory. Need to parse
@@ -84,31 +95,39 @@ class BareMetalVMSender(VMBaseSender):
         specific VM, run `vagrant status NAME`.
         """
         self._status = {}
-        try:
-            output = self.vagrant(['status'])
-            output = output.split('\n\n')[1]
-            for line in output.split('\n'):
-                list = line.split()
-                if list[1] == 'not' and list[2] == 'created':
-                    state = 'not created'
-                else:
-                    state = list[1]
+        self._running_vms = []
+        self._non_running_vms = []
 
-                if state in self.STATES:
-                    if state not in self._status:
-                        self._status[state] = [list[0]]
-                    else:
-                        self._status[state].append(list[0])
-            if not self._status:
-                # None VMs are found to be a valid, as one of STATES
-                # raise environment error
-                raise
+        output = self.vagrant(['status'])
+        output = output.split('\n\n')[1]
+        for line in output.split('\n'):
+            # parsing each line as
+            # 'vmname                     state (provider)'
+            # state is one of
+            # ['running', 'poweroff', 'aborted', 'not created']
 
-            logger.debug("the status of VMs are %s " % self._status)
-        except:
-            raise EnvironmentError("Failed to obtain status for VMs from"
-                                   " output of 'vagrant status' as below.\n"
-                                   "\n %s " % output)
+            list = line.split()
+            if list[-2] == 'created' and list[-3] == 'not':
+                state = 'not created'
+            else:
+                state = list[-2]
+
+            # remove trailing white spaces
+            vm_name = line[:-line.find(state)].rstrip()
+
+            self._status[vm_name] = state
+
+            # cache running vms to verify success easily
+            if state == 'running':
+                self._running_vms.append(vm_name)
+            else:
+                self._non_running_vms.append(vm_name)
+
+        if not self._status:
+            # no vm is found, raise environment error
+            raise EnvironmentError("No vm is found while deriving status")
+
+        logger.debug("the status of VMs are %s " % self._status)
 
     def execute(self):
 
@@ -117,20 +136,59 @@ class BareMetalVMSender(VMBaseSender):
                               user=self.username,
                               password=self.password)
 
-        self.cd_dir = 'cd %s; ' % (self.vagrant_dir
-                                   if hasattr(self, 'vagrant_dir') else '')
+        self._cd_dir = 'cd %s;' % (self.vagrant_dir
+                                   if self.vagrant_dir else '')
 
         if self.up_list == 'all':
             self.vagrant(['up'])
         elif self.up_list:
-            self.vagrant(['up'] + self.up_list)
+            self.vagrant(['up'] + ["'%s'" % vm for vm in self.up_list])
 
         if self.down_list == 'all':
             self.vagrant(['halt'])
         elif self.down_list:
-            self.vagrant(['halt'] + self.down_list)
+            self.vagrant(['halt'] + ["'%s'" % vm for vm in self.down_list])
+
+    def verify(self):
+        "Verify the VMs are at correct states after execution"
 
         self.get_status()
+
+        # check all vms in down_list are not running
+        if self.down_list == 'all':
+            self.down_list = self._status.keys()
+
+        if not set(self.down_list).issubset(set(self._non_running_vms)):
+            logger.error("Failed to shutdown vms on host: %s, dir: %s, "
+                         "the list vms to be shut down is %s, "
+                         "the list of actual non-running vms is %s." %
+                         (self.host, self.vagrant_dir,
+                          self.down_list, self._non_running_vms))
+
+        # check all vms in up_list minus down_list are not running
+        # as shutdown execution is implemented after the start operation
+        # there can be vms started first then being shutdown after
+        if self.up_list == 'all':
+            self.up_list = self._status.keys()
+
+        to_be_up_vms = set(self.up_list) - set(self.down_list)
+        if not to_be_up_vms.issubset(set(self._running_vms)):
+            logger.error("Failed to start vms on host: %s, dir: %s, "
+                         "the list vms to be started is %s, "
+                         "the list of actual running vms is %s." %
+                         (self.host, self.vagrant_dir,
+                          list(to_be_up_vms), self._running_vms))
+            return False
+
+        logger.info("Success in running vagrant command on host: %s, dir: %s, "
+                    "the list vms to be started is %s, "
+                    "the list of actual running vms is %s, "
+                    "the list vms to be shut down is %s, "
+                    "the list of actual non-running vms is %s." %
+                    (self.host, self.vagrant_dir,
+                     list(to_be_up_vms), self._running_vms,
+                     self.down_list, self._non_running_vms))
+        return True
 
 
 class AWSVMSender(VMBaseSender):
