@@ -7,26 +7,43 @@
 
 from rest_framework import serializers
 
-from steelscript.appfwk.libs.fields import PickledObjectField
 from steelscript.appfwk.apps.alerting.models import Alert, Event
+from steelscript.appfwk.apps.datasource.serializers import JobSerializer
 
 
-class EventSerializer(serializers.ModelSerializer):
-    alerts = serializers.PrimaryKeyRelatedField(many=True)
+class PickledObjectField(serializers.Field):
+    def to_native(self, value):
+        return self.parent.to_native(value)
+
+    def field_to_native(self, obj, fieldname):
+        field = getattr(obj, fieldname)
+        if field and 'func' in field:
+            field['func'] = repr(field['func'])
+        return field
+
+
+class EventSerializer(serializers.HyperlinkedModelSerializer):
+    alerts = serializers.HyperlinkedRelatedField(many=True,
+                                                 view_name='alert-detail')
     context = PickledObjectField()
     trigger_result = PickledObjectField()
 
+    def transform_context(self, obj, value):
+        if 'job' in value:
+            value['job'] = JobSerializer(value['job']).data
+        return value
+
     class Meta:
         model = Event
-        fields = ('id', 'timestamp', 'eventid', 'severity', 'log_message',
+        fields = ('url', 'timestamp', 'eventid', 'severity', 'log_message',
                   'context', 'trigger_result', 'alerts')
 
 
-class AlertSerializer(serializers.ModelSerializer):
+class AlertSerializer(serializers.HyperlinkedModelSerializer):
     options = PickledObjectField()
-    event = serializers.Field(source='event')
+    event = serializers.HyperlinkedRelatedField(view_name='event-detail')
 
     class Meta:
         model = Alert
-        fields = ('id', 'timestamp', 'event', 'level', 'sender',
+        fields = ('url', 'timestamp', 'event', 'level', 'sender',
                   'options', 'message')

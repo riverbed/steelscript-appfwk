@@ -24,6 +24,14 @@ from steelscript.appfwk.apps.alerting.models import Alert, Event
 logger = logging.getLogger(__name__)
 
 
+class AlertingRoot(APIView):
+    def get(self, request, format=None):
+        return Response({
+            'events': reverse('event-list', request=request, format=format),
+            'alerts': reverse('alert-list', request=request, format=format),
+        })
+
+
 class AlertList(generics.ListAPIView):
     model = Alert
     serializer_class = serializers.AlertSerializer

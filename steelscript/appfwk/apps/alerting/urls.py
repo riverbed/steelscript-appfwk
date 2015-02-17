@@ -11,20 +11,24 @@ from steelscript.appfwk.apps.alerting import views
 urlpatterns = patterns(
     '',
 
+    url(r'^$',
+        views.AlertingRoot.as_view(),
+        name='alerting-root'),
+
     url(r'^alerts/$',
         views.AlertList.as_view(),
-        name='table-list'),
+        name='alert-list'),
 
     url(r'^alerts/(?P<pk>[0-9]+)/$',
         views.AlertDetail.as_view(),
-        name='table-detail'),
+        name='alert-detail'),
 
     url(r'^events/$',
         views.EventList.as_view(),
-        name='column-list'),
+        name='event-list'),
 
     url(r'^events/(?P<pk>[0-9]+)/$',
         views.EventDetail.as_view(),
-        name='column-detail'),
+        name='event-detail'),
 
 )
