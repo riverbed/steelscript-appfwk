@@ -28,6 +28,14 @@ urlpatterns = patterns(
         views.TableJobList.as_view(),
         name='table-job-list'),
 
+    url(r'^tables/fields/$',
+        views.TableFieldList.as_view(),
+        name='table-field-list'),
+
+    url(r'^tables/fields/(?P<pk>[0-9]+)/$',
+        views.TableFieldDetail.as_view(),
+        name='table-field-detail'),
+
     url(r'^columns/$',
         views.ColumnList.as_view(),
         name='column-list'),
