@@ -54,26 +54,26 @@ class ColumnSerializer(serializers.ModelSerializer):
                   'synthetic', 'datatype', 'units')
 
 
-class JobListSerializer(serializers.ModelSerializer):
+class JobListSerializer(serializers.HyperlinkedModelSerializer):
     criteria = PickledObjectField()
     actual_criteria = PickledObjectField()
 
     class Meta:
         model = Job
-        fields = ('id', 'table', 'criteria', 'actual_criteria', 'status',
+        fields = ('url', 'table', 'criteria', 'actual_criteria', 'status',
                   'message', 'progress', 'remaining')
-        read_only_fields = ('id', 'status', 'message', 'progress', 'remaining')
+        read_only_fields = ('status', 'message', 'progress', 'remaining')
 
 
-class JobSerializer(serializers.ModelSerializer):
+class JobSerializer(serializers.HyperlinkedModelSerializer):
     criteria = PickledObjectField()
     actual_criteria = PickledObjectField()
 
     class Meta:
         model = Job
-        fields = ('id', 'table', 'criteria', 'actual_criteria', 'status',
+        fields = ('url', 'table', 'criteria', 'actual_criteria', 'status',
                   'message', 'progress', 'remaining')
-        read_only_fields = ('id', 'status', 'message', 'progress', 'remaining')
+        read_only_fields = ('status', 'message', 'progress', 'remaining')
 
     def save(self, **kwargs):
         return super(JobSerializer, self).save(**kwargs)

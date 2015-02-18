@@ -12,9 +12,6 @@ from steelscript.appfwk.apps.datasource.serializers import JobSerializer
 
 
 class PickledObjectField(serializers.Field):
-    def to_native(self, value):
-        return self.parent.to_native(value)
-
     def field_to_native(self, obj, fieldname):
         field = getattr(obj, fieldname)
         if field and 'func' in field:
@@ -22,16 +19,21 @@ class PickledObjectField(serializers.Field):
         return field
 
 
+class ContextField(serializers.Field):
+    def field_to_native(self, obj, fieldname):
+        field = getattr(obj, fieldname)
+        if field and 'job' in field:
+            # include just job url instead of whole serialized instance
+            job = JobSerializer(field['job'], context=self.context).data
+            field['job'] = job['url']
+        return field
+
+
 class EventSerializer(serializers.HyperlinkedModelSerializer):
     alerts = serializers.HyperlinkedRelatedField(many=True,
                                                  view_name='alert-detail')
-    context = PickledObjectField()
+    context = ContextField()
     trigger_result = PickledObjectField()
-
-    def transform_context(self, obj, value):
-        if 'job' in value:
-            value['job'] = JobSerializer(value['job']).data
-        return value
 
     class Meta:
         model = Event
