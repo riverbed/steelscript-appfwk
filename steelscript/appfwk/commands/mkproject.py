@@ -67,8 +67,8 @@ LOCAL_ERROR_HANDLERS = (
 )
 GLOBAL_ERROR_HANDLERS += LOCAL_ERROR_HANDLERS
 
-# To enable syslog handling instead of local logging, uncomment next block of LOGGING
-# statements
+# To enable syslog handling instead of local logging,
+# uncomment next block of LOGGING statements
 
 # remove these loggers since the configuration will attempt to write the
 # files even if they don't have a logger declared for them
@@ -136,10 +136,12 @@ class Command(BaseCommand):
         parser.add_option('--no-init', action='store_true',
                           help='Do not initialize project with default '
                                'local settings')
-        parser.add_option('--offline-js', action='store_true',
-            help='Download local copies of cloud JavaScript libraries to '
-                 'allow for offline use. (Google Maps and OpenStreetMaps are '
-                 'not available offline.)')
+        parser.add_option(
+            '--offline-js', action='store_true',
+            help=('Download local copies of cloud JavaScript libraries to '
+                  'allow for offline use. (Google Maps and OpenStreetMaps are '
+                  'not available offline.)')
+        )
 
     def debug(self, msg, newline=False):
         if self.options.verbose:
@@ -308,15 +310,13 @@ class Command(BaseCommand):
                 if url in failedurls:
                     console("    {0}".format(url))
                     if dirname is not None:
-                        console("        (this file is an archive -- extract to " +
-                                os.path.join(offline_js_dir, dirname) + ")")
+                        console("   (this file is an archive -- extract to %s)"
+                                % os.path.join(offline_js_dir, dirname) + ")")
         else:
             console("Done.")
 
-
     def initialize_git(self, dirpath):
-        """If git installed, initialize project folder as new repo.
-        """
+        """Initialize project folder as new repo, if git installed."""
         try:
             check_git()
         except ShellFailed:
