@@ -31,4 +31,8 @@ urlpatterns = patterns(
         views.EventDetail.as_view(),
         name='event-detail'),
 
+    # event detail by eventid instead
+    url(r'^events/(?P<eventid>[a-z0-9-]+)/$',
+        views.EventLookup.as_view(),
+        name='event-lookup'),
 )
