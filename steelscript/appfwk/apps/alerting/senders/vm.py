@@ -152,43 +152,39 @@ class BareMetalVMSender(VMBaseSender):
     def verify(self):
         "Verify the VMs are at correct states after execution"
 
+        failure = False
+
         self.get_status()
 
         # check all vms in down_list are not running
-        if self.down_list == 'all':
-            self.down_list = self._status.keys()
+        to_be_down_vms = (self._status.keys() if self.down_list == 'all'
+                          else self.down_list)
 
-        if not set(self.down_list).issubset(set(self._non_running_vms)):
-            logger.error("Failed to shutdown vms on host: %s, dir: %s, "
-                         "the list vms to be shut down is %s, "
-                         "the list of actual non-running vms is %s." %
-                         (self.host, self.vagrant_dir,
-                          self.down_list, self._non_running_vms))
+        if not set(to_be_down_vms).issubset(set(self._non_running_vms)):
+            failure = True
 
         # check all vms in up_list minus down_list are not running
         # as shutdown execution is implemented after the start operation
         # there can be vms started first then being shutdown after
-        if self.up_list == 'all':
-            self.up_list = self._status.keys()
+        up_vms = self._status.keys() if self.up_list == 'all' else self.up_list
+        to_be_up_vms = set(up_vms) - set(to_be_down_vms)
 
-        to_be_up_vms = set(self.up_list) - set(self.down_list)
         if not to_be_up_vms.issubset(set(self._running_vms)):
-            logger.error("Failed to start vms on host: %s, dir: %s, "
-                         "the list vms to be started is %s, "
-                         "the list of actual running vms is %s." %
-                         (self.host, self.vagrant_dir,
-                          list(to_be_up_vms), self._running_vms))
-            return False
+            failure = True
 
-        logger.info("Success in running vagrant command on host: %s, dir: %s, "
-                    "the list vms to be started is %s, "
-                    "the list of actual running vms is %s, "
-                    "the list vms to be shut down is %s, "
-                    "the list of actual non-running vms is %s." %
-                    (self.host, self.vagrant_dir,
-                     list(to_be_up_vms), self._running_vms,
-                     self.down_list, self._non_running_vms))
-        return True
+        msg = (" in running vagrant command on host: %s, dir: %s, "
+               "the list vms to be started is %s, "
+               "the list of actual running vms is %s, "
+               "the list vms to be shut down is %s, "
+               "the list of actual non-running vms is %s." %
+               (self.host, self.vagrant_dir,
+                list(to_be_up_vms), self._running_vms,
+                to_be_down_vms, self._non_running_vms))
+
+        if failure:
+            logger.error("Failure" + msg)
+        else:
+            logger.info("Success" + msg)
 
 
 class AWSVMSender(VMBaseSender):
