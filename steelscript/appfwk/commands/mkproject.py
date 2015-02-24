@@ -323,7 +323,7 @@ class Command(BaseCommand):
                     console("    {0}".format(url))
                     if dirname is not None:
                         console("   (this file is an archive -- extract to %s)"
-                                % os.path.join(offline_js_dir, dirname) + ")")
+                                % os.path.join(offline_js_dir, dirname))
         else:
             console("Done.")
 
