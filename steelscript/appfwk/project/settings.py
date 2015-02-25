@@ -8,6 +8,10 @@
 # Django settings for SteelScript project project.
 import os
 import sys
+import pkg_resources
+
+# version information
+VERSION = pkg_resources.get_distribution("steelscript.appfwk").version
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -173,7 +177,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.tz',
     'django.contrib.messages.context_processors.messages',
     'steelscript.appfwk.project.context_processors.offline_js',
-    'steelscript.appfwk.project.context_processors.js_versions',
+    'steelscript.appfwk.project.context_processors.versions',
     'steelscript.appfwk.apps.report.context_processors.report_list_processor',
 )
 
