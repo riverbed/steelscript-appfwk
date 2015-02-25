@@ -12,6 +12,10 @@ from steelscript.appfwk.apps.datasource import views
 urlpatterns = patterns(
     '',
 
+    url(r'^$',
+        views.DatasourceRoot.as_view(),
+        name='datasource-root'),
+
     url(r'^tables/$',
         views.TableList.as_view(),
         name='table-list'),

@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
+from rest_framework.permissions import IsAdminUser
 
 from rest_framework_csv.renderers import CSVRenderer
 
@@ -25,6 +26,16 @@ from steelscript.appfwk.apps.datasource.models import \
 
 
 logger = logging.getLogger(__name__)
+
+
+class DatasourceRoot(APIView):
+    permission_classes = (IsAdminUser, )
+
+    def get(self, request, format=None):
+        return Response({
+            'tables': reverse('table-list', request=request, format=format),
+            'jobs': reverse('job-list', request=request, format=format),
+        })
 
 
 class TableList(generics.ListCreateAPIView):
