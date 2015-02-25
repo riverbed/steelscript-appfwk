@@ -136,8 +136,8 @@ class BareMetalVMSender(VMBaseSender):
                               user=self.username,
                               password=self.password)
 
-        self._cd_dir = 'cd %s;' % (self.vagrant_dir
-                                   if self.vagrant_dir else '')
+        if self.vagrant_dir:
+            self._cd_dir = 'cd %s;' % self.vagrant_dir
 
         if self.up_list == 'all':
             self.vagrant(['up'])
