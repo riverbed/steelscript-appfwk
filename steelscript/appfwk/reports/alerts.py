@@ -14,13 +14,13 @@ report.add_section()
 
 atable = alerting.AlertTable.create('Appfwk Alerts')
 atable.add_column('timestamp', 'Timestamp', datatype='time',
-                  iskey=True, sortasc=True)
-atable.add_column('id', 'ID', datatype='string')
-atable.add_column('eventid', 'Event ID', datatype='string')
+                  iskey=True, sortdesc=True)
+atable.add_column('id', 'ID', datatype='html')
+atable.add_column('eventid', 'Event ID', datatype='html')
 atable.add_column('level', 'Level', datatype='string')
 atable.add_column('severity', 'Severity', datatype='integer')
 atable.add_column('sender', 'Sender', datatype='string')
-atable.add_column('options', 'Dest Options', datatype='string')
+atable.add_column('options', 'Dest Options', datatype='html')
 atable.add_column('message', 'Message', datatype='string')
 
 report.add_widget(yui3.TableWidget, atable, 'App Framework Alerts', width=12)
