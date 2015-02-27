@@ -68,6 +68,10 @@ urlpatterns = patterns(
         views.WidgetView.as_view(),
         name='widget-stand-alone'),
 
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/authtoken/$',
+        views.WidgetTokenView.as_view(),
+        name='widget-auth-token'),
+
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/jobs/$',
         views.WidgetJobsList.as_view(),
         name='widget-job-list'),

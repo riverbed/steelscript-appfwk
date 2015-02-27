@@ -366,12 +366,6 @@ rvbd.widgets.Widget.prototype = {
     embedModal: function() {
         var self = this;
 
-        /* Generates the source code for the embed iframe */
-        function genEmbedCode(url, width, height) {
-            return '<iframe width="'+ width + '" height="' + height +
-                   '" src="' + url + '" frameborder="0"></iframe>';
-        };
-
         var urlCriteria = $.extend({}, self.criteria);
 
         // Delete starttime and endtime from params if present (we don't want embedded
@@ -380,9 +374,39 @@ rvbd.widgets.Widget.prototype = {
         delete urlCriteria.endtime;
 
         var baseUrl = window.location.href.split('#')[0] + 'widgets/'; // Current URL minus anchor
-        var url = baseUrl + self.slug + '/render/?' + $.param(urlCriteria);
+        var url = baseUrl + self.slug + '/render/?';
 
-        var embedCode = genEmbedCode(url, 500, self.options.height + 12);
+        //call server for auth token
+        $.ajax({
+            dataType: 'json',
+            type: 'POST',
+            url: baseUrl + self.slug + '/authtoken/',
+            data: { criteria: JSON.stringify(urlCriteria) },
+            success: function(data, textStatus) {
+                   self.genEmbedWindow(url, data.auth);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                var alertBody = ("The server returned the following HTTP error: <pre>" +
+                                 + errorThrown + '</pre>');
+                rvbd.modal.alert("Auth Token Generation Error", alertBody, "OK", function() { })
+            }
+        });
+        
+
+    },
+
+    genEmbedWindow: function(url, token) {
+
+        var self = this;
+        var authUrl = url + 'auth=' + token;
+
+        /* Generates the source code for the embed iframe */
+        function genEmbedCode(url, width, height) {
+            return '<iframe width="'+ width + '" height="' + height +
+                   '" src="' + url + '" frameborder="0"></iframe>';
+        };
+
+        var embedCode = genEmbedCode(authUrl, 500, self.options.height + 12);
 
         $('#embed-modal #embed-widget-code').attr('value', embedCode);
 
@@ -395,11 +419,11 @@ rvbd.widgets.Widget.prototype = {
             // update the embed code to reflect the width and height fields
             $('#widget-width, #widget-height').keyup(function() {
                 $('#embed-widget-code').attr('value',
-                    genEmbedCode(url, $('#embed-widget-width').val(),
-                                      $('#embed-widget-height').val()));
+                    genEmbedCode(authUrl, $('#embed-widget-width').val(),
+                                          $('#embed-widget-height').val()));
             });
         });
-    }
+    },
 };
 
 rvbd.widgets.raw = {};

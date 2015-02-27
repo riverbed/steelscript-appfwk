@@ -5,9 +5,11 @@
 # as set forth in the License.
 
 import os
+import re
 import sys
 import cgi
 import json
+import uuid
 import shutil
 import datetime
 import importlib
@@ -43,14 +45,16 @@ from steelscript.appfwk.apps.datasource.serializers import TableSerializer
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
 from steelscript.appfwk.apps.devices.models import Device
 from steelscript.appfwk.apps.geolocation.models import Location, LocationIP
-from steelscript.appfwk.apps.preferences.models import SystemSettings
+from steelscript.appfwk.apps.preferences.models import (SystemSettings,
+                                                        PortalUser)
 from steelscript.appfwk.apps.report.models import (Report, Section, Widget,
-                                                   WidgetJob)
+                                                   WidgetJob, WidgetAuthToken)
 from steelscript.appfwk.apps.report.serializers import ReportSerializer, \
     WidgetSerializer
 from steelscript.appfwk.apps.report.utils import create_debug_zipfile
 from steelscript.appfwk.apps.report.forms import (ReportEditorForm,
                                                   CopyReportForm)
+from steelscript.appfwk.project.middleware import URLTokenAuthentication
 
 
 logger = logging.getLogger(__name__)
@@ -563,6 +567,8 @@ class ReportWidgets(views.APIView):
         necessary.
     """
 
+    authentication_classes = (URLTokenAuthentication,)
+
     def get(self, request, namespace=None, report_slug=None):
         try:
             report = Report.objects.get(namespace=namespace,
@@ -650,11 +656,13 @@ class WidgetView(views.APIView):
     serializer_class = ReportSerializer
     renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
 
+    authentication_classes = (URLTokenAuthentication,)
+
     def get(self, request, namespace=None, report_slug=None, widget_slug=None):
-        criteria = request.GET.dict()
-        if 'endtime' in criteria and criteria['endtime'] == "now":
-            del criteria['endtime']
-        criteria = json.dumps(criteria)
+        token = request.GET.dict()['auth']
+
+        criteria = WidgetAuthToken.objects.get(token=token).criteria
+        criteria = json.dumps(eval(criteria))
 
         report = get_object_or_404(Report, namespace=namespace,
                                    slug=report_slug)
@@ -674,15 +682,48 @@ class WidgetView(views.APIView):
             "widgettype": [widget_type[0], widget_type[1]],
             "widgetid": w.id,
             "widgetslug": w.slug,
-            "criteria": mark_safe(criteria)
+            "criteria": mark_safe(criteria),
+            "authtoken": token
         }
 
         return render_to_response('widget.html', {"widget": widget_def},
                                   context_instance=RequestContext(request))
 
 
+class WidgetTokenView(views.APIView):
+    parser_classes = (JSONParser,)
+
+    def post(self, request, namespace=None, report_slug=None, widget_slug=None):
+        logger.debug("Received POST for report %s, widget %s: %s" %
+                     (report_slug, widget_slug, request.POST))
+
+        token = uuid.uuid4().hex
+        user = PortalUser.objects.get(username=request.user)
+        pre_url = request.path[:-10]  # remove authtoken/ at the end
+
+        # need to create a dict according to a dict-like string
+        # '{"<key>":"<value>", "<key>":<boolean>,...}'
+        criteria = request.POST.dict()['criteria']
+        kv_list = criteria.strip('{').rstrip('}').split(',')
+        crt = {}
+        for kv_str in kv_list:
+            s = kv_str.split(':')
+            k = re.sub(r'^"|"$', '', s[0])  # to remove '"' at head and tail
+            v = re.sub(r'^"|"$', '', s[1])  # to remove '"' at head and tail
+            crt[k] = v
+
+        widget_auth = WidgetAuthToken(token=token,
+                                      user=user,
+                                      pre_url=pre_url,
+                                      criteria=crt)
+        widget_auth.save()
+        return Response({'auth': token})
+
+
 class WidgetJobsList(views.APIView):
     parser_classes = (JSONParser,)
+
+    authentication_classes = (URLTokenAuthentication,)
 
     def post(self, request, namespace, report_slug, widget_slug, format=None):
         logger.debug("Received POST for report %s, widget %s: %s" %
@@ -747,6 +788,9 @@ class WidgetJobsList(views.APIView):
 
 
 class WidgetJobDetail(views.APIView):
+    
+    authentication_classes = (URLTokenAuthentication,)
+    
     def get(self, request, namespace, report_slug, widget_slug, job_id,
             format=None, status=None):
         wjob = WidgetJob.objects.get(id=job_id)

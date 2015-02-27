@@ -24,7 +24,7 @@ from steelscript.appfwk.project.utils import (get_module, get_module_name,
 from steelscript.appfwk.apps.datasource.models import Table, Job, TableField
 from steelscript.appfwk.libs.fields import \
     PickledObjectField, SeparatedValuesField
-
+from steelscript.appfwk.apps.preferences.models import PortalUser
 logger = logging.getLogger(__name__)
 
 
@@ -481,6 +481,24 @@ class WidgetJob(models.Model):
         with transaction.commit_on_success():
             self.job.reference(str(self))
             super(WidgetJob, self).save(*args, **kwargs)
+
+
+class WidgetAuthToken(models.Model):
+    """ Authentication token fr each user per widget per report """
+
+    # As only one field is required to be primary key for a given model,
+    # combine report_slug and widget_slug together to form one field, as:
+    # <report_slug>_<widget_slug>
+
+    token = models.CharField(max_length=200)
+    user = models.ForeignKey(PortalUser)
+    pre_url = models.CharField(max_length=200)
+    criteria = models.CharField(max_length=400)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __unicode__(self):
+        return ("<Token %s, User %s, pre_url %s>" %
+                (self.token, self.user, self.pre_url))
 
 
 @receiver(pre_delete, sender=WidgetJob)

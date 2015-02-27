@@ -31,6 +31,7 @@ rvbd.report = {
         $.ajaxSetup({
             beforeSend: function(xhr) {
                 xhr.setRequestHeader('X-CSRFToken', rvbd.report.csrfToken);
+                xhr.setRequestHeader('X-AuthToken', rvbd.report.authToken);
             }
         });
 
