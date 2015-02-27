@@ -117,9 +117,9 @@ class URLTokenAuthentication(authentication.BaseAuthentication):
 
     def authenticate(self, request):
         if ((not self._is_embed_widget_url(request) and
-             self._token_in_header(request))
-            or (self._is_embed_widget_url(request) and
-                self._token_in_criteria(request))):
+             self._token_in_header(request)) or
+            (self._is_embed_widget_url(request) and
+             self._token_in_criteria(request))):
             # First check token from database
             token = self._get_token(request)
 

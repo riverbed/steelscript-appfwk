@@ -693,7 +693,8 @@ class WidgetView(views.APIView):
 class WidgetTokenView(views.APIView):
     parser_classes = (JSONParser,)
 
-    def post(self, request, namespace=None, report_slug=None, widget_slug=None):
+    def post(self, request, namespace=None,
+             report_slug=None, widget_slug=None):
         logger.debug("Received POST for report %s, widget %s: %s" %
                      (report_slug, widget_slug, request.POST))
 
@@ -788,9 +789,9 @@ class WidgetJobsList(views.APIView):
 
 
 class WidgetJobDetail(views.APIView):
-    
+
     authentication_classes = (URLTokenAuthentication,)
-    
+
     def get(self, request, namespace, report_slug, widget_slug, job_id,
             format=None, status=None):
         wjob = WidgetJob.objects.get(id=job_id)
