@@ -74,7 +74,7 @@ http://pythonhosted.org/steelscript/
 
         'djangorestframework==2.3.13',
         'djangorestframework-csv==1.3.3',
-        'django-extensions==1.3.7',
+        'django-extensions==1.4.6',
         'django-model-utils==2.0.3',
         'jsonfield==0.9.20',
         'numpy>=1.8.0,<2.0',
