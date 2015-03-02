@@ -3,18 +3,19 @@
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
-
+import functools
 
 import logging
 
 import pytz
 import numpy
 import pandas
+from rest_framework.reverse import reverse
 
 from steelscript.appfwk.apps.alerting.models import Alert
 from steelscript.appfwk.apps.datasource.forms import fields_add_time_selection
 from steelscript.appfwk.apps.datasource.models import (DatasourceTable,
-                                                       TableQueryBase)
+                                                       TableQueryBase, Column)
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +51,17 @@ class AlertQuery(TableQueryBase):
 
         Raises AttributeError if attr not found in either object.
         """
+        # Forces string-like objects to strings, since dicts get
+        # passed in json and look like js objects when rendered by YUI
+
         for obj in (alert, alert.event):
             try:
-                return getattr(obj, attr)
+                val = getattr(obj, attr.name)
+                if attr.datatype in (Column.DATATYPE_STRING,
+                                     Column.DATATYPE_HTML):
+                    val = str(val)
+                return val
+
             except AttributeError:
                 continue
         raise AttributeError('%s not a valid attribute of Alert '
@@ -69,19 +78,45 @@ class AlertQuery(TableQueryBase):
             alerts = Alert.objects.filter(timestamp__range=(self.starttime,
                                                             self.endtime))
 
-        columns = [col.name for col in self.table.get_columns(synthetic=False)]
+        columns = [col for col in self.table.get_columns(synthetic=False)]
         rows = [[self._get(a, c) for c in columns] for a in alerts]
 
         logger.debug('Alert query for duration %s returned %d rows' %
                      (self.duration, len(rows)))
 
         if rows:
-            df = pandas.DataFrame(rows, columns=columns)
+            df = pandas.DataFrame(rows, columns=[c.name for c in columns])
         else:
             df = None
 
         self.data = df
 
+        return True
+
+
+class AlertHyperlinkedTable(AlertTable):
+    """Return values grouped by given parameter."""
+    class Meta:
+        proxy = True
+    _query_class = 'AlertHyperlinkedQuery'
+
+
+class AlertHyperlinkedQuery(AlertQuery):
+    def make_link(self, view_name, id_):
+        link = reverse(view_name, args=[id_])
+        s = ('<a href="%s" target="_blank">%s</a>' % (link, id_))
+        return s
+
+    def post_run(self):
+        df = self.data
+        if df is not None:
+            if 'eventid' in df:
+                make_link = functools.partial(self.make_link, 'event-lookup')
+                df['eventid'] = df['eventid'].map(make_link)
+            elif 'id' in df:
+                make_link = functools.partial(self.make_link, 'alert-detail')
+                df['id'] = df['id'].map(make_link)
+            self.data = df
         return True
 
 

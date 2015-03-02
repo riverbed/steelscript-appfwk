@@ -14,36 +14,55 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
+from rest_framework.permissions import IsAdminUser
 
 from rest_framework_csv.renderers import CSVRenderer
 
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
 from steelscript.appfwk.apps.datasource.exceptions import JobCreationError
-from steelscript.appfwk.apps.datasource.serializers import (TableSerializer,
-                                                            ColumnSerializer,
-                                                            JobSerializer,
-                                                            JobDataSerializer,
-                                                            JobListSerializer)
-from steelscript.appfwk.apps.datasource.models import Table, Column, Job
+from steelscript.appfwk.apps.datasource import serializers
+from steelscript.appfwk.apps.datasource.models import \
+    Table, TableField, Column, Job
 
 
 logger = logging.getLogger(__name__)
 
 
+class DatasourceRoot(APIView):
+    permission_classes = (IsAdminUser, )
+
+    def get(self, request, format=None):
+        return Response({
+            'tables': reverse('table-list', request=request, format=format),
+            'jobs': reverse('job-list', request=request, format=format),
+        })
+
+
 class TableList(generics.ListCreateAPIView):
     model = Table
-    serializer_class = TableSerializer
+    serializer_class = serializers.TableSerializer
     paginate_by = 20
 
 
 class TableDetail(generics.RetrieveUpdateDestroyAPIView):
     model = Table
-    serializer_class = TableSerializer
+    serializer_class = serializers.TableSerializer
+
+
+class TableFieldList(generics.ListCreateAPIView):
+    model = TableField
+    serializer_class = serializers.TableFieldSerializer
+    paginate_by = 20
+
+
+class TableFieldDetail(generics.RetrieveUpdateDestroyAPIView):
+    model = TableField
+    serializer_class = serializers.TableFieldSerializer
 
 
 class TableColumnList(generics.ListCreateAPIView):
     model = Column
-    serializer_class = ColumnSerializer
+    serializer_class = serializers.ColumnSerializer
     paginate_by = 20
 
     def get_queryset(self):
@@ -69,7 +88,7 @@ class TableJobList(APIView):
     def get(self, request, pk):
         """Return list of Job objects for given table."""
         job = self.get_queryset()
-        serializer = JobSerializer(job, many=True)
+        serializer = serializers.JobSerializer(job, many=True)
         return Response(serializer.data)
 
     def post(self, request, pk):
@@ -89,7 +108,7 @@ class TableJobList(APIView):
         try:
             job = Job.create(table, criteria)
             job.start()
-            serializer = JobSerializer(job, many=False)
+            serializer = serializers.JobSerializer(job, many=False)
             return Response(serializer.data, status=status.HTTP_201_CREATED,
                             headers=self.get_success_headers(job))
         except Exception as e:
@@ -99,13 +118,13 @@ class TableJobList(APIView):
 
 class ColumnList(generics.ListCreateAPIView):
     model = Column
-    serializer_class = ColumnSerializer
+    serializer_class = serializers.ColumnSerializer
     paginate_by = 20
 
 
 class ColumnDetail(generics.RetrieveUpdateDestroyAPIView):
     model = Column
-    serializer_class = ColumnSerializer
+    serializer_class = serializers.ColumnSerializer
 
 
 class JobList(generics.ListAPIView):
@@ -114,7 +133,7 @@ class JobList(generics.ListAPIView):
     Creation of Jobs must be done via a TableJobList endpoint.
     """
     model = Job
-    serializer_class = JobListSerializer
+    serializer_class = serializers.JobListSerializer
     paginate_by = 10
 
     def post_save(self, obj, created=False):
@@ -124,12 +143,12 @@ class JobList(generics.ListAPIView):
 
 class JobDetail(generics.RetrieveAPIView):
     model = Job
-    serializer_class = JobSerializer
+    serializer_class = serializers.JobSerializer
 
 
 class JobDetailData(generics.RetrieveAPIView):
     model = Job
-    serializer_class = JobDataSerializer
+    serializer_class = serializers.JobDataSerializer
     renderer_classes = (JSONRenderer, CSVRenderer, )
 
     def get(self, request, *args, **kwargs):

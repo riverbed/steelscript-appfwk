@@ -203,7 +203,7 @@ class Event(models.Model):
 class Alert(models.Model):
     """Individual notification sent by a Sender for a specific Event."""
     timestamp = models.DateTimeField(auto_now=True)
-    event = models.ForeignKey('Event')
+    event = models.ForeignKey('Event', related_name='alerts')
     level = models.CharField(max_length=50, choices=AlertLevels.get_choices())
     sender = models.CharField(max_length=100)
     options = PickledObjectField(blank=True, null=True)
