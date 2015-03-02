@@ -12,7 +12,7 @@ report = Report.create('App Framework Alerts')
 
 report.add_section()
 
-atable = alerting.AlertTable.create('Appfwk Alerts')
+atable = alerting.AlertHyperlinkedTable.create('Appfwk Alerts')
 atable.add_column('timestamp', 'Timestamp', datatype='time',
                   iskey=True, sortdesc=True)
 atable.add_column('id', 'ID', datatype='html')
