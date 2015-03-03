@@ -5,7 +5,6 @@
 # as set forth in the License.
 
 import os
-import re
 import sys
 import cgi
 import json
@@ -37,7 +36,8 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.authentication import (SessionAuthentication,
+                                           BasicAuthentication)
 
 from steelscript.common.timeutils import round_time
 from steelscript.commands.steel import shell, ShellFailed

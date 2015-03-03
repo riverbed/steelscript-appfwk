@@ -20,7 +20,6 @@ from rest_framework.exceptions import NotAuthenticated
 
 from steelscript.appfwk.apps.preferences.models import PortalUser
 from steelscript.appfwk.project.utils import get_request
-from steelscript.appfwk.project.settings import REST_FRAMEWORK
 from steelscript.appfwk.apps.report.models import WidgetAuthToken
 
 logger = logging.getLogger(__name__)
