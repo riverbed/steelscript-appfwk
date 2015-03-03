@@ -484,17 +484,13 @@ class WidgetJob(models.Model):
 
 
 class WidgetAuthToken(models.Model):
-    """ Authentication token fr each user per widget per report """
-
-    # As only one field is required to be primary key for a given model,
-    # combine report_slug and widget_slug together to form one field, as:
-    # <report_slug>_<widget_slug>
+    """ Authentication token for each user per widget per report """
 
     token = models.CharField(max_length=200)
     user = models.ForeignKey(PortalUser)
     pre_url = models.CharField(max_length=200)
-    criteria = models.CharField(max_length=400)
-    created = models.DateTimeField(auto_now_add=True)
+    criteria = PickledObjectField()
+    touched = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
         return ("<Token %s, User %s, pre_url %s>" %

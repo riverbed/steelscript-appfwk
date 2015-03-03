@@ -37,6 +37,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 
 from steelscript.common.timeutils import round_time
 from steelscript.commands.steel import shell, ShellFailed
@@ -567,7 +568,9 @@ class ReportWidgets(views.APIView):
         necessary.
     """
 
-    authentication_classes = (URLTokenAuthentication,)
+    authentication_classes = (SessionAuthentication,
+                              BasicAuthentication,
+                              URLTokenAuthentication)
 
     def get(self, request, namespace=None, report_slug=None):
         try:
@@ -661,8 +664,10 @@ class WidgetView(views.APIView):
     def get(self, request, namespace=None, report_slug=None, widget_slug=None):
         token = request.GET.dict()['auth']
 
-        criteria = WidgetAuthToken.objects.get(token=token).criteria
-        criteria = json.dumps(eval(criteria))
+        token_obj = WidgetAuthToken.objects.get(token=token)
+        criteria = json.dumps(token_obj.criteria)
+
+        token_obj.save()
 
         report = get_object_or_404(Report, namespace=namespace,
                                    slug=report_slug)
@@ -695,28 +700,21 @@ class WidgetTokenView(views.APIView):
 
     def post(self, request, namespace=None,
              report_slug=None, widget_slug=None):
-        logger.debug("Received POST for report %s, widget %s: %s" %
-                     (report_slug, widget_slug, request.POST))
+        logger.debug("Received POST for widget token, widget %s: %s" %
+                     (widget_slug, request.POST))
 
         token = uuid.uuid4().hex
         user = PortalUser.objects.get(username=request.user)
-        pre_url = request.path[:-10]  # remove authtoken/ at the end
 
-        # need to create a dict according to a dict-like string
-        # '{"<key>":"<value>", "<key>":<boolean>,...}'
-        criteria = request.POST.dict()['criteria']
-        kv_list = criteria.strip('{').rstrip('}').split(',')
-        crt = {}
-        for kv_str in kv_list:
-            s = kv_str.split(':')
-            k = re.sub(r'^"|"$', '', s[0])  # to remove '"' at head and tail
-            v = re.sub(r'^"|"$', '', s[1])  # to remove '"' at head and tail
-            crt[k] = v
+        # First remove last '/' at the end
+        # then remove authtoken at the end
+        pre_url = request.path.rstrip('/').rsplit('/', 1)[0]
 
+        criteria = json.loads(request.POST.dict()['criteria'])
         widget_auth = WidgetAuthToken(token=token,
                                       user=user,
                                       pre_url=pre_url,
-                                      criteria=crt)
+                                      criteria=criteria)
         widget_auth.save()
         return Response({'auth': token})
 
@@ -724,7 +722,9 @@ class WidgetTokenView(views.APIView):
 class WidgetJobsList(views.APIView):
     parser_classes = (JSONParser,)
 
-    authentication_classes = (URLTokenAuthentication,)
+    authentication_classes = (SessionAuthentication,
+                              BasicAuthentication,
+                              URLTokenAuthentication)
 
     def post(self, request, namespace, report_slug, widget_slug, format=None):
         logger.debug("Received POST for report %s, widget %s: %s" %
@@ -790,7 +790,9 @@ class WidgetJobsList(views.APIView):
 
 class WidgetJobDetail(views.APIView):
 
-    authentication_classes = (URLTokenAuthentication,)
+    authentication_classes = (SessionAuthentication,
+                              BasicAuthentication,
+                              URLTokenAuthentication)
 
     def get(self, request, namespace, report_slug, widget_slug, job_id,
             format=None, status=None):
