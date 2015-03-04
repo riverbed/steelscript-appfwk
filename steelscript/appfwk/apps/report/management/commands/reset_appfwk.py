@@ -23,6 +23,13 @@ from steelscript.appfwk.apps.preferences.models import SystemSettings, \
 # list of files/directories to ignore
 IGNORE_FILES = ['helpers']
 
+# appname.model and desc for saving/loading data
+USER_MODEL = 'preferences.PortalUser'
+TOKEN_MODEL = 'report.WidgetAuthToken'
+
+USER_DESC = 'users'
+TOKEN_DESC = 'widget tokens for authentication'
+
 
 class Command(BaseCommand):
     args = None
@@ -43,36 +50,51 @@ class Command(BaseCommand):
                                   'default admin account will be enabled '
                                   'afterwards. Default will keep all user '
                                   'accounts across reset.'),
+        optparse.make_option('--drop-tokens',
+                             action='store_true',
+                             dest='drop_tokens',
+                             default=False,
+                             help='Drop all widget authentication tokens. '
+                                  'After the operation, all existing embedded '
+                                  'widgets will fail on authentication')
     )
 
-    def save_users(self):
+    def save_data(self, model=None, desc=None):
         """ Store user definitions to buffer in memory rather than disk. """
-        self.stdout.write('Saving existing users ... ', ending='')
+        self.stdout.write('Saving existing %s ... ' % desc, ending='')
         try:
             buf = StringIO()
-            management.call_command('dumpscript', 'preferences', stdout=buf)
+            management.call_command('dumpscript', model, stdout=buf)
             buf.seek(0)
             clean_buf = buf.read().replace('<UTC>', 'pytz.UTC')
             clean_buf = clean_buf.replace('import datetime\n',
                                           'import datetime\nimport pytz\n')
-            self.user_buffer = clean_buf
         except DatabaseError:
-            self.user_buffer = None
+            clean_buf = None
+
+        if model == USER_MODEL:
+            self.user_buffer = clean_buf
+        elif model == TOKEN_MODEL:
+            self.token_buffer = clean_buf
 
         db.close_connection()
         self.stdout.write('done.')
 
-    def load_users(self):
+    def load_data(self, desc=None):
         """ Load stored user module and run it, creating new user objects.
 
         This script is run under a transaction to avoid committing partial
         settings in case of some exception.
         """
+        if desc == USER_DESC:
+            buf = self.user_buffer
+        elif desc == TOKEN_DESC:
+            buf = self.token_buffer
         # ref http://stackoverflow.com/a/14192708/2157429
-        if self.user_buffer is not None:
-            self.stdout.write('Loading saved users ... ', ending='')
+        if buf is not None:
+            self.stdout.write('Loading saved %s ... ' % desc, ending='')
             m = imp.new_module('runscript')
-            exec self.user_buffer in m.__dict__
+            exec buf in m.__dict__
             with transaction.commit_on_success():
                 m.run()
             db.close_connection()
@@ -94,7 +116,11 @@ class Command(BaseCommand):
 
         self.user_buffer = None
         if not options['drop_users']:
-            self.save_users()
+            self.save_data(model=USER_MODEL, desc=USER_DESC)
+
+        self.token_buffer = None
+        if not options['drop_tokens']:
+            self.save_data(model=TOKEN_MODEL, desc=TOKEN_DESC)
 
         # lets clear it
         self.stdout.write('Resetting database ... ', ending='')
@@ -123,7 +149,8 @@ class Command(BaseCommand):
         if initial_data:
             management.call_command('loaddata', *initial_data)
 
-        self.load_users()
+        self.load_data(desc=USER_DESC)
+        self.load_data(desc=TOKEN_DESC)
 
         # if we don't have a settings fixture, create new default item
         if not SystemSettings.objects.all():

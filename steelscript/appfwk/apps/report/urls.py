@@ -7,6 +7,8 @@
 
 from django.conf.urls import patterns, url
 import steelscript.appfwk.apps.report.views as views
+from steelscript.appfwk.apps.report.models import (EMBED_URL_NAME,
+                                                   REPORT_URL_NAME)
 
 urlpatterns = patterns(
     'steelscript.appfwk.apps.report.views',
@@ -58,7 +60,7 @@ urlpatterns = patterns(
 
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/$',
         views.ReportWidgets.as_view(),
-        name='report-widgets'),
+        name=REPORT_URL_NAME),
 
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/$',
         views.WidgetDetailView.as_view(),
@@ -66,7 +68,7 @@ urlpatterns = patterns(
 
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/render/$',
         views.WidgetView.as_view(),
-        name='widget-stand-alone'),
+        name=EMBED_URL_NAME),
 
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/authtoken/$',
         views.WidgetTokenView.as_view(),

@@ -26,4 +26,5 @@ class Command(BaseCommand):
         db.close_connection()
         management.call_command('reset_appfwk',
                                 force=True,
-                                drop_users=True)
+                                drop_users=True,
+                                drop_tokens=True)

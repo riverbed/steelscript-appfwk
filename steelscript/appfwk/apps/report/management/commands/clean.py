@@ -94,7 +94,7 @@ class Command(BaseCommand):
             apps = ['report', 'datasource', 'alerting']
             for app in apps:
                 for model in get_models(get_app(app)):
-                    if model.__name__ != 'Alert':
+                    if model.__name__ not in ['Alert', 'WidgetAuthToken']:
                         # Avoid deleting Alerts when running a basic clean
                         self.stdout.write('Deleting objects from %s\n' % model)
                         model.objects.all().delete()

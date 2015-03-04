@@ -10,7 +10,6 @@ from re import compile
 
 from django.http import HttpResponseRedirect
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.core.urlresolvers import resolve
 
 from rest_framework import authentication
@@ -18,9 +17,10 @@ from rest_framework import exceptions
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import NotAuthenticated
 
-from steelscript.appfwk.apps.preferences.models import PortalUser
 from steelscript.appfwk.project.utils import get_request
-from steelscript.appfwk.apps.report.models import WidgetAuthToken
+from steelscript.appfwk.apps.report.models import (WidgetAuthToken,
+                                                   EMBED_URL_NAME,
+                                                   REPORT_URL_NAME)
 
 logger = logging.getLogger(__name__)
 
@@ -100,13 +100,11 @@ class URLTokenAuthentication(authentication.BaseAuthentication):
 
     TOKEN_KEY_HEADER = 'HTTP_X_AUTHTOKEN'
     TOKEN_KEY_URL_PARAMS = 'auth'
-    REPORT_URL_NAME = 'report-widgets'
-    EMBED_URL_NAME = 'widget-stand-alone'
 
     def _is_embed_widget_url(self, request):
         """Return True if the request uses the embed widget url"""
 
-        return resolve(request.path).url_name == self.EMBED_URL_NAME
+        return resolve(request.path).url_name == EMBED_URL_NAME
 
     def _token_in_header(self, request):
         """Return True if the authentication token is in the header"""
@@ -125,7 +123,7 @@ class URLTokenAuthentication(authentication.BaseAuthentication):
         '^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/'
         """
 
-        return resolve(request.path).url_name == self.REPORT_URL_NAME
+        return resolve(request.path).url_name == REPORT_URL_NAME
 
     def authenticate(self, request):
         if (self._is_embed_widget_url(request) and
@@ -145,7 +143,24 @@ class URLTokenAuthentication(authentication.BaseAuthentication):
             logger.error("Token %s does not exist in db" % token)
             raise exceptions.AuthenticationFailed('Invalid token')
 
-        # checking if pre_url of the token object matches request's path
+        # The below boolean expression ensures if the request is to get widgets
+        # then its path needs to be the prefix of the token object's pre_url.
+        # otherwise the request's path must have the token object's pre_url
+        # as prefix.
+
+        # For example, the pre_url of one token object is as follows:
+        # /report/netprofiler/netprofiler/widgets/overall-traffic-1-1/
+        # There are two kinds of paths from requests that are authenticated
+        # in this method, one is the report widgets request, with path as a
+        # prefix of the pre_url of the token object, shown as:
+        # /report/netprofiler/netprofiler/widgets/,
+        # the other one consists of requests with paths with the pre_url of
+        # the token object as prefix, i.e. embed widget request'path is as:
+        # /report/netprofiler/netprofiler/widgets/overall-traffic-1-1/render/
+        # widget joblist path is shown as:
+        # /report/netprofiler/netprofiler/widgets/overall-traffic-1-1/jobs/
+        # widget job status path is shown as:
+        # /report/netprofiler/netprofiler/widgets/overall-traffic-1-1/jobs/1/
         if ((not self._is_report_widgets_url(request) and
              not request.path.startswith(token_obj.pre_url)) or
             (self._is_report_widgets_url(request) and
@@ -155,11 +170,7 @@ class URLTokenAuthentication(authentication.BaseAuthentication):
                          request.path, token_obj.pre_url)
             raise exceptions.AuthenticationFailed('url does not match')
 
-        try:
-            user = PortalUser.objects.get(username=token_obj.user)
-        except User.DoesNotExist:
-            logger.error("User %s does not exist" % token_obj.user.username)
-            raise exceptions.AuthenticationFailed('No such user')
+        user = token_obj.user
 
         token_obj.save()
         return (user, None)

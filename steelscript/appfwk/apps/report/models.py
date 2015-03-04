@@ -27,6 +27,8 @@ from steelscript.appfwk.libs.fields import \
 from steelscript.appfwk.apps.preferences.models import PortalUser
 logger = logging.getLogger(__name__)
 
+EMBED_URL_NAME = 'widget-stand-alone'
+REPORT_URL_NAME = 'report-widgets'
 
 class WidgetOptions(JsonDict):
     _default = {'key': None,
@@ -488,9 +490,10 @@ class WidgetAuthToken(models.Model):
 
     token = models.CharField(max_length=200)
     user = models.ForeignKey(PortalUser)
-    pre_url = models.CharField(max_length=200)
+    pre_url = models.CharField(max_length=200, verbose_name='URL')
+    #from steelscript.appfwk.apps.datasource.serializers import PickledObjectField
     criteria = PickledObjectField()
-    touched = models.DateTimeField(auto_now=True)
+    touched = models.DateTimeField(auto_now=True, verbose_name='Last Time used')
 
     def __unicode__(self):
         return ("<Token %s, User %s, pre_url %s>" %
