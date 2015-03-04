@@ -57,7 +57,7 @@ http://pythonhosted.org/steelscript/
         'Topic :: Software Development'
     ),
 
-    'packages': find_packages(exclude=('gitpy_versioning','data')),
+    'packages': find_packages(exclude=('gitpy_versioning', 'data')),
 
     'entry_points': {
         'steel.commands': [
@@ -95,7 +95,10 @@ http://pythonhosted.org/steelscript/
 
     'extras_require': {'all': ['steelscript.cmdline', 'pysnmp']},
 
-    'tests_require': (),
+    'tests_require': (
+        'selenium',
+        'mock'
+    ),
 
 }
 
