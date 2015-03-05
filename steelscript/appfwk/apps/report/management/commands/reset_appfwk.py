@@ -33,10 +33,10 @@ class Command(BaseCommand):
     # users need to be loaded first as foreign keys in tokens
     # keys need to the latter half of the drop options
     # for key 'users', 'drop_' + 'users' equals to option 'drop_users'
-    buffers = OrderedDict([('users',{'model':'preferences.PortalUser',
-                                     'buffer': None}),
-                           ('tokens',{'model': 'report.WidgetAuthToken',
-                                     'buffer': None}),
+    buffers = OrderedDict([('users', {'model': 'preferences.PortalUser',
+                                      'buffer': None}),
+                           ('tokens', {'model': 'report.WidgetAuthToken',
+                                       'buffer': None}),
                            ])
 
     option_list = BaseCommand.option_list + (
@@ -75,7 +75,7 @@ class Command(BaseCommand):
                                           'import datetime\nimport pytz\n')
         except DatabaseError:
             clean_buf = None
-                
+
         self.buffers[name]['buffer'] = clean_buf
 
         db.close_connection()
