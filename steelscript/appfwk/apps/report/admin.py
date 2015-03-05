@@ -11,8 +11,7 @@ from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 
-from steelscript.appfwk.apps.report.models import (Report, Widget, WidgetJob,
-                                                   WidgetAuthToken)
+from steelscript.appfwk.apps.report.models import Report, WidgetAuthToken
 
 
 class ReportAdmin(admin.ModelAdmin):
@@ -68,6 +67,8 @@ class ReportAdmin(admin.ModelAdmin):
                 messages.add_message(request, messages.ERROR, msg)
     delete_modelset.short_description = 'Delete reports and their source files'
 
+admin.site.register(Report, ReportAdmin)
+
 
 class WidgetAuthTokenAdmin(admin.ModelAdmin):
     list_display = ('token', 'user', 'pre_url', 'criteria', 'touched')
@@ -76,7 +77,6 @@ class WidgetAuthTokenAdmin(admin.ModelAdmin):
     readonly_fields = ('touched', 'criteria')
     fields = ('token', 'user', 'pre_url', 'criteria', 'touched')
 
-admin.site.register(Report, ReportAdmin)
 admin.site.register(WidgetAuthToken, WidgetAuthTokenAdmin)
 
 

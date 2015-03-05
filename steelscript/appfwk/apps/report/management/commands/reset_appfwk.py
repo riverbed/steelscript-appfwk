@@ -11,6 +11,7 @@ import glob
 import optparse
 import imp
 
+from collections import OrderedDict
 from django.core.management.base import BaseCommand
 from django.core import management
 from django.conf import settings
@@ -23,18 +24,20 @@ from steelscript.appfwk.apps.preferences.models import SystemSettings, \
 # list of files/directories to ignore
 IGNORE_FILES = ['helpers']
 
-# appname.model and desc for saving/loading data
-USER_MODEL = 'preferences.PortalUser'
-TOKEN_MODEL = 'report.WidgetAuthToken'
-
-USER_DESC = 'users'
-TOKEN_DESC = 'widget tokens for authentication'
-
 
 class Command(BaseCommand):
     args = None
     help = ('Reset the database. Prompts for confirmation unless '
             '`--force` is included as an argument.')
+
+    # users need to be loaded first as foreign keys in tokens
+    # keys need to the latter half of the drop options
+    # for key 'users', 'drop_' + 'users' equals to option 'drop_users'
+    buffers = OrderedDict([('users',{'model':'preferences.PortalUser',
+                                     'buffer': None}),
+                           ('tokens',{'model': 'report.WidgetAuthToken',
+                                     'buffer': None}),
+                           ])
 
     option_list = BaseCommand.option_list + (
         optparse.make_option('--force',
@@ -59,40 +62,35 @@ class Command(BaseCommand):
                                   'widgets will fail on authentication')
     )
 
-    def save_data(self, model=None, desc=None):
+    def save_data(self, name):
         """ Store user definitions to buffer in memory rather than disk. """
-        self.stdout.write('Saving existing %s ... ' % desc, ending='')
+        self.stdout.write('Saving existing %s ... ' % name, ending='')
         try:
             buf = StringIO()
-            management.call_command('dumpscript', model, stdout=buf)
+            management.call_command('dumpscript', self.buffers[name]['model'],
+                                    stdout=buf)
             buf.seek(0)
             clean_buf = buf.read().replace('<UTC>', 'pytz.UTC')
             clean_buf = clean_buf.replace('import datetime\n',
                                           'import datetime\nimport pytz\n')
         except DatabaseError:
             clean_buf = None
-
-        if model == USER_MODEL:
-            self.user_buffer = clean_buf
-        elif model == TOKEN_MODEL:
-            self.token_buffer = clean_buf
+                
+        self.buffers[name]['buffer'] = clean_buf
 
         db.close_connection()
         self.stdout.write('done.')
 
-    def load_data(self, desc=None):
+    def load_data(self, name):
         """ Load stored user module and run it, creating new user objects.
 
         This script is run under a transaction to avoid committing partial
         settings in case of some exception.
         """
-        if desc == USER_DESC:
-            buf = self.user_buffer
-        elif desc == TOKEN_DESC:
-            buf = self.token_buffer
         # ref http://stackoverflow.com/a/14192708/2157429
+        buf = self.buffers[name]['buffer']
         if buf is not None:
-            self.stdout.write('Loading saved %s ... ' % desc, ending='')
+            self.stdout.write('Loading saved %s ...' % (name), ending='')
             m = imp.new_module('runscript')
             exec buf in m.__dict__
             with transaction.commit_on_success():
@@ -114,13 +112,10 @@ class Command(BaseCommand):
             self.stdout.write('Aborting.')
             return
 
-        self.user_buffer = None
-        if not options['drop_users']:
-            self.save_data(model=USER_MODEL, desc=USER_DESC)
-
-        self.token_buffer = None
-        if not options['drop_tokens']:
-            self.save_data(model=TOKEN_MODEL, desc=TOKEN_DESC)
+        # Iterating keys in buffers and save data based on options
+        for name in self.buffers:
+            if not options['drop_' + name]:
+                self.save_data(name)
 
         # lets clear it
         self.stdout.write('Resetting database ... ', ending='')
@@ -149,8 +144,8 @@ class Command(BaseCommand):
         if initial_data:
             management.call_command('loaddata', *initial_data)
 
-        self.load_data(desc=USER_DESC)
-        self.load_data(desc=TOKEN_DESC)
+        for name in self.buffers:
+            self.load_data(name)
 
         # if we don't have a settings fixture, create new default item
         if not SystemSettings.objects.all():
@@ -158,8 +153,9 @@ class Command(BaseCommand):
 
         management.call_command('reload', report_id=None)
 
-        if not options['drop_users'] and (self.user_buffer is None or
-                                          len(PortalUser.objects.all()) == 0):
+        if (not options['drop_users'] and
+            (self.buffers['users']['buffer'] is None or
+             len(PortalUser.objects.all()) == 0)):
             self.stdout.write('WARNING: No users added to database.  '
                               'If you would like to include the default '
                               'admin user, rerun this command with the '

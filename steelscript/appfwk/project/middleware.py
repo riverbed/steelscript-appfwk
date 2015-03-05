@@ -18,9 +18,7 @@ from rest_framework.views import exception_handler
 from rest_framework.exceptions import NotAuthenticated
 
 from steelscript.appfwk.project.utils import get_request
-from steelscript.appfwk.apps.report.models import (WidgetAuthToken,
-                                                   EMBED_URL_NAME,
-                                                   REPORT_URL_NAME)
+from steelscript.appfwk.apps.report.models import WidgetAuthToken
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +102,7 @@ class URLTokenAuthentication(authentication.BaseAuthentication):
     def _is_embed_widget_url(self, request):
         """Return True if the request uses the embed widget url"""
 
-        return resolve(request.path).url_name == EMBED_URL_NAME
+        return resolve(request.path).url_name == 'widget-stand-alone'
 
     def _token_in_header(self, request):
         """Return True if the authentication token is in the header"""
@@ -123,7 +121,7 @@ class URLTokenAuthentication(authentication.BaseAuthentication):
         '^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/'
         """
 
-        return resolve(request.path).url_name == REPORT_URL_NAME
+        return resolve(request.path).url_name == 'report-widgets'
 
     def authenticate(self, request):
         if (self._is_embed_widget_url(request) and
