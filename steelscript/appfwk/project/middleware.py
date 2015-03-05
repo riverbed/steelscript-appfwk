@@ -167,7 +167,7 @@ class URLTokenAuthentication(authentication.BaseAuthentication):
              not token_obj.pre_url.startswith(request.path))):
 
             logger.error("request url %s does not match %s in db" %
-                         request.path, token_obj.pre_url)
+                         (request.path, token_obj.pre_url))
             raise exceptions.AuthenticationFailed('url does not match')
 
         user = token_obj.user
