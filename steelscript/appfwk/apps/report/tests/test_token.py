@@ -30,12 +30,18 @@ class WidgetTokenTest(reportrunner.ReportRunnerTestCase):
                                     data={'criteria': criteria_json})
 
         self.token = response.data['auth']
+        # log out only token is used for authentication
+        self.client.logout()
 
     def run_get_url(self, url=None, code=None):
         response = self.client.get(url)
         assert response.status_code == code
 
-    def test_normal(self):
+    def test_get_user(self):
+        """Test normal GET URL would fail to authenticate due to logged out"""
+        self.run_get_url(url='/preferences/user/', code=403)
+
+    def test_normal_render(self):
         get_url = self.base_url + '/render/?auth=%s' % self.token
         self.run_get_url(url=get_url, code=200)
 
