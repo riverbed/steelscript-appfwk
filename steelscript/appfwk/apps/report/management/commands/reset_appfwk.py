@@ -63,7 +63,7 @@ class Command(BaseCommand):
     )
 
     def save_data(self, name):
-        """ Store user definitions to buffer in memory rather than disk. """
+        """ Store model definitions to buffer in memory rather than disk. """
         self.stdout.write('Saving existing %s ... ' % name, ending='')
         try:
             buf = StringIO()
@@ -82,7 +82,7 @@ class Command(BaseCommand):
         self.stdout.write('done.')
 
     def load_data(self, name):
-        """ Load stored user module and run it, creating new user objects.
+        """ Load stored model module and run it, creating new model objects.
 
         This script is run under a transaction to avoid committing partial
         settings in case of some exception.
