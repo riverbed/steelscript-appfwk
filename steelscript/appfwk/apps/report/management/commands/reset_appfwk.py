@@ -11,7 +11,6 @@ import glob
 import optparse
 import imp
 
-from collections import OrderedDict
 from django.core.management.base import BaseCommand
 from django.core import management
 from django.conf import settings
@@ -33,11 +32,18 @@ class Command(BaseCommand):
     # users need to be loaded first as foreign keys in tokens
     # keys need to the latter half of the drop options
     # for key 'users', 'drop_' + 'users' equals to option 'drop_users'
-    buffers = OrderedDict([('users', {'model': 'preferences.PortalUser',
-                                      'buffer': None}),
-                           ('tokens', {'model': 'report.WidgetAuthToken',
-                                       'buffer': None}),
-                           ])
+
+    # originally used OrderedDict, unfortunately it is not supported in
+    # Python2.6. In order to maintain the plug-and-play feature of drop
+    # options (Just change the static attributes to add one drop option),
+    # introduced buffer_names list to keep order of loading sequeces of
+    # different buffers
+    buffer_names = ['users', 'tokens']
+    buffers = {'users': {'model': 'preferences.PortalUser',
+                         'buffer': None},
+               'tokens': {'model': 'report.WidgetAuthToken',
+                          'buffer': None},
+               }
 
     option_list = BaseCommand.option_list + (
         optparse.make_option('--force',
@@ -113,7 +119,7 @@ class Command(BaseCommand):
             return
 
         # Iterating keys in buffers and save data based on options
-        for name in self.buffers:
+        for name in self.buffer_names:
             if not options['drop_' + name]:
                 self.save_data(name)
 
@@ -144,7 +150,7 @@ class Command(BaseCommand):
         if initial_data:
             management.call_command('loaddata', *initial_data)
 
-        for name in self.buffers:
+        for name in self.buffer_names:
             self.load_data(name)
 
         # if we don't have a settings fixture, create new default item
