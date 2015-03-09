@@ -15,6 +15,16 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
 
+REQUIRED_SETTINGS = ('TEST_DEVICES', 'TEST_USER_TIMEZONE')
+
+for value in REQUIRED_SETTINGS:
+    if not hasattr(settings, value):
+        raise AttributeError("Missing 'settings.%s'.\n"
+                             'Please see apps/ui_tests/README.rst for '
+                             'required settings for these UI selenium tests.' %
+                             value)
+
+
 @contextmanager
 def local_timezone():
     """Temporarily set environment TZ to local timezone."""
@@ -25,34 +35,34 @@ def local_timezone():
     os.environ['TZ'] = current_tz
 
 
-class NewUserSetupTests(LiveServerTestCase):
-    """Test the sequence of events when a new user logs into the system."""
+class BaseSeleniumTests(LiveServerTestCase):
+    """Base class for selenium based tests."""
 
     @classmethod
     def setUpClass(cls):
+        super(BaseSeleniumTests, cls).setUpClass()
         # load a single report
         management.call_command(
             'reload',
             report_name='steelscript.appfwk.reports.overall'
         )
         try:
-            PortalUser.objects.get(username='admin')
+            cls.user = PortalUser.objects.get(username='admin')
         except ObjectDoesNotExist:
-            PortalUser.objects.create_superuser(
+            cls.user = PortalUser.objects.create_superuser(
                 'admin', 'admin@admin.com', 'admin')
 
         with local_timezone():
             cls.driver = WebDriver()
             cls.driver.implicitly_wait(3)
 
-        super(NewUserSetupTests, cls).setUpClass()
-
     @classmethod
     def tearDownClass(cls):
+        super(BaseSeleniumTests, cls).tearDownClass()
         cls.driver.quit()
-        super(NewUserSetupTests, cls).tearDownClass()
 
-    def test_login_sequence(self):
+    def login(self):
+        """Login to new instance of server."""
         # get login page as a new user
         self.driver.get('%s%s' % (self.live_server_url, '/accounts/login/'))
         username_input = self.driver.find_element_by_name("username")
@@ -66,6 +76,21 @@ class NewUserSetupTests(LiveServerTestCase):
         submit = self.driver.find_element_by_id('submit')
         submit.click()
 
+
+class NewUserSetupTests(BaseSeleniumTests):
+    """Test the sequence of events when a new user logs into the system."""
+
+    @classmethod
+    def setUpClass(cls):
+        super(NewUserSetupTests, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(NewUserSetupTests, cls).tearDownClass()
+
+    def test_login_sequence(self):
+        self.login()
+
         # new users are presented with their preferences to update
         # wait for page load
         WebDriverWait(self.driver, 5).until(EC.title_contains('User Pref'))
@@ -77,7 +102,7 @@ class NewUserSetupTests(LiveServerTestCase):
         email_input.send_keys('admin@test.com')
 
         timezone = Select(self.driver.find_element_by_id('id_timezone'))
-        timezone.select_by_visible_text('US/Eastern')
+        timezone.select_by_visible_text(settings.TEST_USER_TIMEZONE)
 
         update = self.driver.find_element_by_xpath('//input[@value="Update"]')
         update.click()
@@ -135,23 +160,12 @@ class NewUserSetupTests(LiveServerTestCase):
         )
 
 
-class RunOverallReportTests(LiveServerTestCase):
+class RunOverallReportTests(BaseSeleniumTests):
     """Test that basic reports run successfully."""
 
     @classmethod
     def setUpClass(cls):
-        # load a single report
-        management.call_command(
-            'reload',
-            report_name='steelscript.appfwk.reports.overall'
-        )
-
-        # add admin user with profile already set
-        try:
-            cls.user = PortalUser.objects.get(username='admin')
-        except ObjectDoesNotExist:
-            cls.user = PortalUser.objects.create_superuser(
-                'admin', 'admin@admin.com', 'admin')
+        super(RunOverallReportTests, cls).setUpClass()
 
         cls.user.profile_seen = True
         cls.user.timezone = settings.TEST_USER_TIMEZONE
@@ -162,33 +176,14 @@ class RunOverallReportTests(LiveServerTestCase):
             d = Device(**device)
             d.save()
 
-        with local_timezone():
-            cls.driver = WebDriver()
-            cls.driver.implicitly_wait(3)
-
-        super(RunOverallReportTests, cls).setUpClass()
-
     @classmethod
     def tearDownClass(cls):
-        cls.driver.quit()
         super(RunOverallReportTests, cls).tearDownClass()
-
-    def login(self):
-        self.driver.get('%s%s' % (self.live_server_url, '/accounts/login/'))
-        username_input = self.driver.find_element_by_name("username")
-        self.assertEqual(username_input.get_attribute('placeholder'),
-                         'type your username')
-        username_input.send_keys('admin')
-        password_input = self.driver.find_element_by_name("password")
-        self.assertEqual(password_input.get_attribute('placeholder'),
-                         'type your password')
-        password_input.send_keys('admin')
-        submit = self.driver.find_element_by_id('submit')
-        submit.click()
 
     def test_overall_report(self):
         self.login()
 
+        # wait until we see one of the report pages
         WebDriverWait(self.driver, 5).until(EC.title_contains('Report'))
         self.assertTrue('report' in self.driver.current_url)
 
@@ -202,6 +197,7 @@ class RunOverallReportTests(LiveServerTestCase):
             EC.title_contains('Overall Report')
         )
 
+        # run the report with the default criteria
         run_button = self.driver.find_element_by_id('button-run')
         run_button.click()
 
