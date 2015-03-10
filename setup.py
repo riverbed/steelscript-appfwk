@@ -5,6 +5,7 @@
 # as set forth in the License.
 
 import os
+import itertools
 
 try:
     from setuptools import setup, find_packages, Command
@@ -15,9 +16,13 @@ except ImportError:
     packagedata = False
 
     def find_packages(where='steelscript', exclude=None):
-        return [p for p, files, dirs in os.walk(where) if '__init__.py' in files]
+        return [p for (p, files, dirs)
+                in os.walk(where) if '__init__.py' in files]
 
 from gitpy_versioning import get_version
+
+test = ('selenium', 'mock')
+doc = []
 
 setup_args = {
     'name':               'steelscript.appfwk',
@@ -93,12 +98,14 @@ http://pythonhosted.org/steelscript/
         'apscheduler>=3.0',
     ),
 
-    'extras_require': {'all': ['steelscript.cmdline', 'pysnmp']},
+    'extras_require': {
+        'test': test,
+        'doc': doc,
+        'dev': [pkg for pkg in itertools.chain(test, doc)],
+        'all': ['steelscript.cmdline', 'pysnmp']
+    },
 
-    'tests_require': (
-        'selenium',
-        'mock'
-    ),
+    'tests_require': test,
 
 }
 
@@ -112,7 +119,7 @@ for path, subdirs, files in os.walk('steelscript/appfwk/commands/data'):
         data_files.append(
             os.path.join(path.replace('steelscript/appfwk/commands/', ''), n))
 
-setup_args['package_data'] = {'steelscript.appfwk.commands' : data_files}
+setup_args['package_data'] = {'steelscript.appfwk.commands': data_files}
 
 if packagedata:
     setup_args['include_package_data'] = True

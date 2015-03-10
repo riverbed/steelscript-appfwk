@@ -80,14 +80,6 @@ class BaseSeleniumTests(LiveServerTestCase):
 class NewUserSetupTests(BaseSeleniumTests):
     """Test the sequence of events when a new user logs into the system."""
 
-    @classmethod
-    def setUpClass(cls):
-        super(NewUserSetupTests, cls).setUpClass()
-
-    @classmethod
-    def tearDownClass(cls):
-        super(NewUserSetupTests, cls).tearDownClass()
-
     def test_login_sequence(self):
         self.login()
 
@@ -110,7 +102,7 @@ class NewUserSetupTests(BaseSeleniumTests):
         # next new users will see the devices page
         # wait for page load
         WebDriverWait(self.driver, 5).until(EC.title_contains('Devices'))
-        self.assertTrue('devices' in self.driver.current_url)
+        self.assertTrue('/devices/' in self.driver.current_url)
 
         # verify we have no devices defined yet
         table = self.driver.find_element_by_xpath('//form/table/tbody/tr/td')
@@ -122,7 +114,7 @@ class NewUserSetupTests(BaseSeleniumTests):
             addbtn.click()
 
             WebDriverWait(self.driver, 5).until(EC.title_contains('Detail'))
-            self.assertTrue('devices/add' in self.driver.current_url)
+            self.assertTrue('/devices/add/' in self.driver.current_url)
 
             self.driver.find_element_by_id('id_name').send_keys(device['name'])
 
@@ -147,7 +139,7 @@ class NewUserSetupTests(BaseSeleniumTests):
             savebtn.click()
 
             WebDriverWait(self.driver, 5).until(EC.title_contains('Devices'))
-            self.assertTrue('devices' in self.driver.current_url)
+            self.assertTrue(self.driver.current_url.endswith('/devices/'))
 
         # load Overall report
         self.driver.find_element_by_xpath(
@@ -158,6 +150,7 @@ class NewUserSetupTests(BaseSeleniumTests):
         WebDriverWait(self.driver, 5).until(
             EC.title_contains('Overall Report')
         )
+        self.assertTrue('Overall Report' in self.driver.title)
 
 
 class RunOverallReportTests(BaseSeleniumTests):
@@ -175,10 +168,6 @@ class RunOverallReportTests(BaseSeleniumTests):
         for device in settings.TEST_DEVICES:
             d = Device(**device)
             d.save()
-
-    @classmethod
-    def tearDownClass(cls):
-        super(RunOverallReportTests, cls).tearDownClass()
 
     def test_overall_report(self):
         self.login()
