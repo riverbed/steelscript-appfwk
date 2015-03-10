@@ -9,7 +9,7 @@ import logging
 
 from django.core.urlresolvers import reverse
 from django.forms.models import modelformset_factory
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, views
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
@@ -62,17 +62,7 @@ class DeviceDetail(views.APIView):
     def delete(self, request, device_id):
         device = get_object_or_404(Device, pk=device_id)
         device.delete()
-        return HttpResponseRedirect(reverse('device-list'))
-
-
-class DeviceDelete(views.APIView):
-    # XXX remove this once we can RESTify the delete method
-    permission_classes = (IsAdminUser,)
-
-    def get(self, request, device_id):
-        device = get_object_or_404(Device, pk=device_id)
-        device.delete()
-        return HttpResponseRedirect(reverse('device-list'))
+        return HttpResponse(status=204)
 
 
 class DeviceList(generics.ListAPIView):
@@ -100,6 +90,12 @@ class DeviceList(generics.ListAPIView):
         return Response(data)
 
     def put(self, request, *args, **kwargs):
+        """ Function to save changes to multiple devices once.
+
+        This function is called only when the "Save Changes" button is
+        clicked on /devices/ page. However, it only supports enable/disable
+        device(s). The url sent out will only include 'enable' field.
+        """
         DeviceFormSet = modelformset_factory(Device,
                                              form=DeviceListForm,
                                              extra=0)

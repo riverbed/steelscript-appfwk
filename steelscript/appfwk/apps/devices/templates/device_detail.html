@@ -55,7 +55,9 @@
     </div>
 
     <script type="text/javascript">document.getElementById("id_name").focus();</script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/rvbd-report.js"></script>
     <script type="text/javascript">
+        rvbd.report.csrfToken = "{{ csrf_token }}";
         $('.delete').click(function() {
             var heading = 'Confirm Device Delete';
             var question = "Are you sure you would like to delete '{{ form.instance.name }}'?";
@@ -63,9 +65,18 @@
             var okButtonTxt = 'Delete';
 
             var callback = function() {
-              window.location = '/devices/' + {{ form.instance.pk }} + '/delete';
-            };
+                $.ajaxSetup({
+                        headers: { "X-CSRFToken": rvbd.report.csrfToken }
+                    });
 
+              $.ajax({
+                      type: 'DELETE',
+                      url: '/devices/' + {{ form.instance.pk }} + '/',
+                      success: function(){
+                            window.location = '/devices/';
+                            }
+                     }); 
+            };
             rvbd.modal.confirm(heading, question, cancelButtonTxt, okButtonTxt, callback);
         })
     </script>

@@ -8,7 +8,7 @@
 from django.conf.urls import patterns, url
 from rest_framework.urlpatterns import format_suffix_patterns
 
-from steelscript.appfwk.apps.devices.views import DeviceList, DeviceDetail, DeviceDelete
+from steelscript.appfwk.apps.devices.views import DeviceList, DeviceDetail
 
 
 urlpatterns = patterns(
@@ -21,11 +21,6 @@ urlpatterns = patterns(
     url(r'^(?P<device_id>[0-9]+)/$',
         DeviceDetail.as_view(),
         name='device-detail'),
-
-    # replace these with more REST-ful interfaces
-    url(r'^(?P<device_id>[0-9]+)/delete$',
-        DeviceDelete.as_view(),
-        name='device-delete'),
 
     url(r'^add/$',
         DeviceDetail.as_view(),
