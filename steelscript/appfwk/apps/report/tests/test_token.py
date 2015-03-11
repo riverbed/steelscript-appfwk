@@ -16,7 +16,7 @@ class WidgetTokenTest(reportrunner.ReportRunnerTestCase):
     def setUp(self):
         super(WidgetTokenTest, self).setUp()
         self.criteria = {'endtime_0': '3/4/2015',
-                         'endtime_1': '16:00 pm',
+                         'endtime_1': '4:00 pm',
                          'duration': '15min',
                          'resolution': '2min'}
         widgets = self.run_report(self.criteria)

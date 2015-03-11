@@ -329,7 +329,7 @@ class ReportView(GenericReportView):
 
             return HttpResponse(json.dumps(definition))
         else:
-            # return form with errors attached in a HTTP 200 Error response
+            # return form with errors attached in a HTTP 400 Error response
             return HttpResponse(str(form.errors), status=400)
 
 
