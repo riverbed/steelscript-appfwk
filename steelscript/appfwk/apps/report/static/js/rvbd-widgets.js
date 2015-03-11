@@ -231,11 +231,16 @@ rvbd.widgets.Widget.prototype = {
      */
     addMenu: function() {
         var self = this;
+        var menuItems = [];
 
-        var menuItems = [
-            '<a tabindex="-1" class="get-embed" href="#">Embed This Widget...</a>',
+        // Don't include the embed option when already embedded!
+        if (!rvbd.report.isEmbedded) {
+            menuItems.push('<a tabindex="-1" class="get-embed" href="#">Embed This Widget...</a>');
+        }
+
+        menuItems.push(
             '<a tabindex="0" id="' + self.id + '_export_widget_csv" class="export_widget_csv" href="#">Export CSV (Table Data)...</a>'
-        ];
+        );
 
         var $menuContainer = $('<div></div>')
                 .attr('id', 'reports-dropdown')
@@ -423,7 +428,7 @@ rvbd.widgets.Widget.prototype = {
                                           $('#embed-widget-height').val()));
             });
         });
-    },
+    }
 };
 
 rvbd.widgets.raw = {};
