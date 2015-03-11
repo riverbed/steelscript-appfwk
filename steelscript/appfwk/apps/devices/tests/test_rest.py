@@ -94,9 +94,10 @@ class DeviceRestTestCase(TestCase):
         self.assertEqual(self.device, self._get_device(1))
 
         # Modify the device's data
-        self.device['name'] = 'profiler1'
-        self._modify_device(self.device, 1)
-        self.assertEqual(self.device, self._get_device(1))
+        device = self._get_device(1)
+        device['name'] = 'profiler1'
+        self._modify_device(device, 1)
+        self.assertEqual(device, self._get_device(1))
 
         # Delete the device's data
         self._delete_device(1)

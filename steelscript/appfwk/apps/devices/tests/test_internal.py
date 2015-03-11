@@ -6,6 +6,7 @@
 
 import unittest
 import sys
+import copy
 
 from mock import patch, Mock
 from steelscript.appfwk.apps.devices.models import Device
@@ -23,7 +24,8 @@ class MockDevice(object):
 
 class DeviceManagerTestCase(unittest.TestCase):
 
-    dev = {'name': 'dev_name',
+    dev = {'id': 1,
+           'name': 'dev_name',
            'module': 'dev_module',
            'host': 'dev_host',
            'port': 443,
@@ -40,6 +42,11 @@ class DeviceManagerTestCase(unittest.TestCase):
         plugins.devices = Mock(return_value=self.devices)
         sys.modules['dev_pkg'] = Mock()
 
+    def tearDown(self):
+        Device.objects.all().delete()
+        del sys.modules['dev_pkg']
+        plugins.devices = self.stash
+
     def test_get_devices(self):
         with patch("dev_pkg.new_device_instance", MockDevice):
             device = DeviceManager.get_device(1)
@@ -50,9 +57,11 @@ class DeviceManagerTestCase(unittest.TestCase):
         self.assertEqual(device.auth.password, self.dev['password'])
 
     def test_get_devices_with_unknown_module(self):
-        self.dev['module'] = 'unknown_module'
-        dev = Device(**self.dev)
-        dev.save()
+        dev = copy.copy(self.dev)
+        dev['id'] = 2
+        dev['module'] = 'unknown_module'
+        dev_obj = Device(**dev)
+        dev_obj.save()
         with self.assertRaises(DeviceModuleNotFound):
             DeviceManager.get_device(2)
 
@@ -66,8 +75,3 @@ class DeviceManagerTestCase(unittest.TestCase):
 
     def test_get_modules(self):
         self.assertTrue('dev_module' in DeviceManager.get_modules())
-
-    def tearDown(self):
-        Device.objects.all().delete()
-        del sys.modules['dev_pkg']
-        plugins.devices = self.stash
