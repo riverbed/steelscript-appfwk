@@ -15,22 +15,23 @@ class WidgetTokenTest(reportrunner.ReportRunnerTestCase):
 
     def setUp(self):
         super(WidgetTokenTest, self).setUp()
-        self.criteria = {'endtime_0': '3/4/2015',
-                         'endtime_1': '4:00 pm',
-                         'duration': '15min',
-                         'resolution': '2min'}
-        widgets = self.run_report(self.criteria)
+        criteria = {'endtime_0': '3/4/2015',
+                    'endtime_1': '4:00 pm',
+                    'duration': '15min',
+                    'resolution': '2min'}
+        widgets = self.run_report(criteria)
         url = widgets.keys()[0]
         # url="/report/appfwk/<report_slug>/widgets/<widget_slug>/jobs/1/"
         self.base_url = url.rsplit('/', 3)[0]
 
-        post_url = self.base_url+'/authtoken/'
-        criteria_json = json.dumps(self.criteria)
-        response = self.client.post(post_url,
-                                    data={'criteria': criteria_json})
+        self.post_url = self.base_url+'/authtoken/'
+        self.criteria_json = json.dumps(criteria)
+        response = self.client.post(self.post_url,
+                                    data={'criteria': self.criteria_json})
 
         self.token = response.data['auth']
-        # log out only token is used for authentication
+
+        # log out so that only token is used for authentication
         self.client.logout()
 
     def run_get_url(self, url=None, code=None):
@@ -57,3 +58,13 @@ class WidgetTokenTest(reportrunner.ReportRunnerTestCase):
         no_widget_slug = self.base_url.rsplit('/', 1)[0]
         get_url = no_widget_slug + '/wrong-widget/render/?auth=%s' % self.token
         self.run_get_url(url=get_url, code=403)
+
+    def test_same_token(self):
+        """Test when posting token url again with same user, url and criteria,
+        the same token should be returned.
+        """
+        # log back in the server to run the post using same credentials
+        super(WidgetTokenTest, self).setUp()
+        response = self.client.post(self.post_url,
+                                    data={'criteria': self.criteria_json})
+        self.assertEqual(response.data['auth'], self.token)

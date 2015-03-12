@@ -703,7 +703,6 @@ class WidgetTokenView(views.APIView):
         logger.debug("Received POST for widget token, widget %s: %s" %
                      (widget_slug, request.POST))
 
-        token = uuid.uuid4().hex
         user = PortalUser.objects.get(username=request.user)
 
         # First remove last '/' at the end
@@ -711,11 +710,18 @@ class WidgetTokenView(views.APIView):
         pre_url = request.path.rstrip('/').rsplit('/', 1)[0]
 
         criteria = json.loads(request.POST.dict()['criteria'])
-        widget_auth = WidgetAuthToken(token=token,
-                                      user=user,
-                                      pre_url=pre_url,
-                                      criteria=criteria)
-        widget_auth.save()
+
+        tokens = WidgetAuthToken.objects.filter(user=user, pre_url=pre_url,
+                                                criteria=criteria)
+        if tokens:
+            token = tokens[0].token
+        else:
+            token = uuid.uuid4().hex
+            widget_auth = WidgetAuthToken(token=token,
+                                          user=user,
+                                          pre_url=pre_url,
+                                          criteria=criteria)
+            widget_auth.save()
         return Response({'auth': token})
 
 
