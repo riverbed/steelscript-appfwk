@@ -15,17 +15,17 @@ class WidgetTokenTest(reportrunner.ReportRunnerTestCase):
 
     def setUp(self):
         super(WidgetTokenTest, self).setUp()
-        criteria = {'endtime_0': '3/4/2015',
-                    'endtime_1': '4:00 pm',
-                    'duration': '15min',
-                    'resolution': '2min'}
-        widgets = self.run_report(criteria)
+        self.criteria = {'endtime_0': '3/4/2015',
+                         'endtime_1': '4:00 pm',
+                         'duration': '15min',
+                         'resolution': '2min'}
+        widgets = self.run_report(self.criteria)
         url = widgets.keys()[0]
         # url="/report/appfwk/<report_slug>/widgets/<widget_slug>/jobs/1/"
         self.base_url = url.rsplit('/', 3)[0]
 
         self.post_url = self.base_url+'/authtoken/'
-        self.criteria_json = json.dumps(criteria)
+        self.criteria_json = json.dumps(self.criteria)
         response = self.client.post(self.post_url,
                                     data={'criteria': self.criteria_json})
 
@@ -68,3 +68,11 @@ class WidgetTokenTest(reportrunner.ReportRunnerTestCase):
         response = self.client.post(self.post_url,
                                     data={'criteria': self.criteria_json})
         self.assertEqual(response.data['auth'], self.token)
+
+        # different criteria should return different token
+        criteria = self.criteria
+        criteria['duration'] = '1min'
+        criteria_json = json.dumps(criteria)
+        response = self.client.post(self.post_url,
+                                    data={'criteria': criteria_json})
+        self.assertNotEqual(response.data['auth'], self.token)
