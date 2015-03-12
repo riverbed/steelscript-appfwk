@@ -11,7 +11,7 @@
 'use strict';
 
 /**
- * Utility funcs for formatting numbers and times. Called on every data point 
+ * Utility funcs for formatting numbers and times. Called on every data point
  * in raw widget data to pre-format the values for the JS lib (or just to make
  * them look nicer to for the end user). Server-side code decides which of
  * these gets called to process the data for a given widget.
@@ -47,7 +47,7 @@ rvbd.formatters = {
      },
 
      formatMetric: function(num, precision) {
-        if (typeof num === 'undefined') { 
+        if (typeof num === 'undefined') {
             return "";
         } else if (num === 0) {
             return "0";
@@ -166,7 +166,7 @@ rvbd.widgets.Widget.prototype = {
         }
     },
 
-    /** 
+    /**
      *  Take the raw JSON object returned from the server and generate HTML to
      *  fill the widget DIV.
      */
@@ -396,7 +396,7 @@ rvbd.widgets.Widget.prototype = {
                 rvbd.modal.alert("Auth Token Generation Error", alertBody, "OK", function() { })
             }
         });
-        
+
 
     },
 
@@ -412,7 +412,21 @@ rvbd.widgets.Widget.prototype = {
         };
 
         var embedCode = genEmbedCode(authUrl, 500, self.options.height + 12);
-
+        $('body').append('<div id="embed-modal" class="modal-content">' +
+            '  Choose dimensions for the embedded widget:<br>' +
+            '  <table>' +
+            '  <tr>' +
+            '     <th>Width:</th>' +
+            '     <td><input value="500" type="text" id="embed-widget-width"></td>' +
+            '  </tr>' +
+            '  <tr>' +
+            '      <th>Height:</th>' +
+            '      <td><input value="312" type="text" id="embed-widget-height"></td>' +
+            '  </tr>' +
+            '  </table><br>' +
+            '  Copy the following HTML to embed the widget:' +
+            '  <input id="embed-widget-code" type="text">' +
+            '</div>');
         $('#embed-modal #embed-widget-code').attr('value', embedCode);
 
         rvbd.modal.alert("Embed Widget HTML", $('#embed-modal')[0], "OK", function() {
@@ -422,8 +436,8 @@ rvbd.widgets.Widget.prototype = {
                 .focus();
 
             // update the embed code to reflect the width and height fields
-            $('#widget-width, #widget-height').keyup(function() {
-                $('#embed-widget-code').attr('value',
+            $('#embed-widget-width, #embed-widget-height').keyup(function() {
+                $('#embed-modal #embed-widget-code').attr('value',
                     genEmbedCode(authUrl, $('#embed-widget-width').val(),
                                           $('#embed-widget-height').val()));
             });
