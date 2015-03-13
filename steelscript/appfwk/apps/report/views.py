@@ -680,6 +680,7 @@ class WidgetView(views.APIView):
             section__in=Section.objects.filter(report=report)
         )
 
+        system_settings = SystemSettings.get_system_settings()
         widget_type = [str(x) for x in w.widgettype().split(".")]
         widget_def = {
             "namespace": namespace,
@@ -691,8 +692,13 @@ class WidgetView(views.APIView):
             "authtoken": token
         }
 
-        return render_to_response('widget.html', {"widget": widget_def},
-                                  context_instance=RequestContext(request))
+        return render_to_response(
+            'widget.html',
+            {"widget": widget_def,
+             'maps_version': system_settings.maps_version,
+             'maps_api_key': system_settings.maps_api_key},
+            context_instance=RequestContext(request)
+        )
 
 
 class WidgetTokenView(views.APIView):
