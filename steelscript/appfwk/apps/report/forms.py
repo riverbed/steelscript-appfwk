@@ -28,6 +28,7 @@ class ReportDetailForm(forms.ModelForm):
 
     class Meta:
         model = Report
+        fields = '__all__'
 
 
 class AceReportWidget(AceWidget):

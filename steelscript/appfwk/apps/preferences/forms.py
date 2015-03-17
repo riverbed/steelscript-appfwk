@@ -22,13 +22,14 @@ class UserProfileForm(forms.ModelForm):
         fields = ('email', 'timezone')
 
 
-class PortalUserCreationForm(forms.ModelForm):
+class AppfwkUserCreationForm(forms.ModelForm):
     """ Create unprivileged user. """
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
 
     class Meta:
         model = AppfwkUser
+        fields = '__all__'
 
     def clean_password2(self):
         # Check that the two password entries match
@@ -40,19 +41,20 @@ class PortalUserCreationForm(forms.ModelForm):
 
     def save(self, commit=True):
         # Save the provided password in hashed format
-        user = super(PortalUserCreationForm, self).save(commit=False)
+        user = super(AppfwkUserCreationForm, self).save(commit=False)
         user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
         return user
 
 
-class PortalUserChangeForm(forms.ModelForm):
+class AppfwkUserChangeForm(forms.ModelForm):
     """ Update user form. """
     password = ReadOnlyPasswordHashField()
 
     class Meta:
         model = AppfwkUser
+        fields = '__all__'
 
     def clean_password(self):
         # Regardless of what the user provides, return the initial value.
@@ -67,6 +69,8 @@ class SystemSettingsForm(forms.ModelForm):
 
     class Meta:
         model = SystemSettings
+        fields = ('ignore_cache', 'developer', 'maps_version',
+                  'maps_api_key', 'global_error_handler')
         widgets = {'maps_version': forms.HiddenInput(),
                    'maps_api_key': forms.HiddenInput()}
 
