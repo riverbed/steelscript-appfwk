@@ -343,5 +343,6 @@ APPS_DATASOURCE = {
 }
 
 TESTING = 'test' in sys.argv
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 LOCAL_APPS = None
