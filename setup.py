@@ -73,7 +73,7 @@ http://pythonhosted.org/steelscript/
     'scripts': None,
 
     'install_requires': (
-        'Django>=1.5.1,<1.6',
+        'Django>=1.6,<1.7',
         'steelscript>=0.9.5',
         'steelscript.netprofiler>=0.9.4',
 
