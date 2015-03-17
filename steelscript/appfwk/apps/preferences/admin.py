@@ -8,7 +8,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from steelscript.appfwk.apps.preferences.models import PortalUser
+from steelscript.appfwk.apps.preferences.models import AppfwkUser
 from steelscript.appfwk.apps.preferences.forms import (PortalUserCreationForm,
                                                 PortalUserChangeForm)
 
@@ -30,4 +30,4 @@ class PortalUserAdmin(UserAdmin):
     search_fields = ('username', 'email', 'first_name', 'last_name')
     ordering = ('username',)
 
-admin.site.register(PortalUser, PortalUserAdmin)
+admin.site.register(AppfwkUser, PortalUserAdmin)

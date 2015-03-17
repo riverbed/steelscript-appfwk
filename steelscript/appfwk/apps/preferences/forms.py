@@ -9,7 +9,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 
-from steelscript.appfwk.apps.preferences.models import PortalUser, SystemSettings
+from steelscript.appfwk.apps.preferences.models import AppfwkUser, SystemSettings
 
 
 class UserProfileForm(forms.ModelForm):
@@ -28,7 +28,7 @@ class PortalUserCreationForm(forms.ModelForm):
     password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
 
     class Meta:
-        model = PortalUser
+        model = AppfwkUser
 
     def clean_password2(self):
         # Check that the two password entries match
@@ -52,7 +52,7 @@ class PortalUserChangeForm(forms.ModelForm):
     password = ReadOnlyPasswordHashField()
 
     class Meta:
-        model = PortalUser
+        model = AppfwkUser
 
     def clean_password(self):
         # Regardless of what the user provides, return the initial value.

@@ -81,7 +81,7 @@ def create_preference_fixture(initial_admin_only=True):
                                                               fname))
 
 
-class PortalUser(AbstractUser):
+class AppfwkUser(AbstractUser):
     """ Extend base user class with additional profile prefs. """
     timezone = models.CharField(max_length=50,
                                 default='UTC',

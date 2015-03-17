@@ -47,7 +47,7 @@ from steelscript.appfwk.apps.datasource.forms import TableFieldForm
 from steelscript.appfwk.apps.devices.models import Device
 from steelscript.appfwk.apps.geolocation.models import Location, LocationIP
 from steelscript.appfwk.apps.preferences.models import (SystemSettings,
-                                                        PortalUser)
+                                                        AppfwkUser)
 from steelscript.appfwk.apps.report.models import (Report, Section, Widget,
                                                    WidgetJob, WidgetAuthToken)
 from steelscript.appfwk.apps.report.serializers import ReportSerializer, \
@@ -709,7 +709,7 @@ class WidgetTokenView(views.APIView):
         logger.debug("Received POST for widget token, widget %s: %s" %
                      (widget_slug, request.POST))
 
-        user = PortalUser.objects.get(username=request.user)
+        user = AppfwkUser.objects.get(username=request.user)
 
         # First remove last '/' at the end
         # then remove authtoken at the end
