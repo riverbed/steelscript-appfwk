@@ -4,6 +4,7 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+from collections import OrderedDict
 
 from django import forms
 
@@ -17,11 +18,13 @@ def get_device_choices(device_type):
 
 
 def get_groupbys():
-    return [('', '---')] + sorted(((v, k) for k,v in _constants.groupbys.iteritems()))
+    return [('', '---')] + sorted(((v, k) for
+                                   k, v in _constants.groupbys.iteritems()))
 
 
 def get_realms():
-    return [('', '---')] + [(c, c.title().replace('_', ' ')) for c in _constants.realms]
+    return ([('', '---')] +
+            [(c, c.title().replace('_', ' ')) for c in _constants.realms])
 
 
 def get_centricities():
@@ -41,11 +44,15 @@ class NetProfilerInputForm(DeviceInputForm):
     def __init__(self, *args, **kwargs):
         super(NetProfilerInputForm, self).__init__(*args, **kwargs)
         cf = forms.ChoiceField(choices=get_device_choices('netprofiler'))
-        self.fields.insert(0, 'device', cf)
+        field_list = ([('device', cf)] +
+                      [(k, v) for k, v in self.fields.iteritems()])
+        self.fields = OrderedDict(field_list)
 
 
 class NetSharkInputForm(DeviceInputForm):
     def __init__(self, *args, **kwargs):
         super(NetSharkInputForm, self).__init__(*args, **kwargs)
         cf = forms.ChoiceField(choices=get_device_choices('netshark'))
-        self.fields.insert(0, 'device', cf)
+        field_list = ([('device', cf)] +
+                      [(k, v) for k, v in self.fields.iteritems()])
+        self.fields = OrderedDict(field_list)
