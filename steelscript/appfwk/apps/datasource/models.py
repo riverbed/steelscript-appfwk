@@ -1024,6 +1024,9 @@ class Job(models.Model):
     # exception text with traceback.
     exception = models.TextField(default="")
 
+    # Whether to update detailed progress
+    update_progress = models.BooleanField(default=True)
+
     # While RUNNING, this provides an indicator of progress 0-100
     progress = models.IntegerField(default=-1)
 
@@ -1081,7 +1084,7 @@ class Job(models.Model):
                 Job.objects.filter(parent=self).update(**child_kwargs)
 
     @classmethod
-    def create(cls, table, criteria):
+    def create(cls, table, criteria, update_progress=True):
 
         with LocalLock():
             with transaction.commit_on_success():
@@ -1124,6 +1127,7 @@ class Job(models.Model):
                               handle=handle,
                               parent=parent,
                               ischild=True,
+                              update_progress=parent.update_progress,
                               progress=parent.progress,
                               remaining=parent.remaining,
                               message='',
@@ -1143,6 +1147,7 @@ class Job(models.Model):
                               handle=handle,
                               parent=None,
                               ischild=False,
+                              update_progress=update_progress,
                               progress=0,
                               remaining=-1,
                               message='',
@@ -1286,9 +1291,10 @@ class Job(models.Model):
 
     def mark_progress(self, progress, remaining=None):
         # logger.debug("%s progress %s" % (self, progress))
-        self.safe_update(status=Job.RUNNING,
-                         progress=progress,
-                         remaining=remaining)
+        if self.update_progress:
+            self.safe_update(status=Job.RUNNING,
+                             progress=progress,
+                             remaining=remaining)
 
     def datafile(self):
         """ Return the data file for this job. """
@@ -1676,7 +1682,7 @@ class BatchJobRunner(object):
             def next(self):
                 if self.index < self.count:
                     job = self.jobs[self.index]
-                    self.index = self.index + 1
+                    self.index += 1
                     return job
                 return None
 
@@ -1703,7 +1709,7 @@ class BatchJobRunner(object):
                 job.refresh()
                 if job.done():
                     something_done = True
-                    done_count = done_count + 1
+                    done_count += 1
                     if joblist:
                         batch[i] = joblist.next()
                         batch[i].start()
@@ -1713,7 +1719,7 @@ class BatchJobRunner(object):
                         batch[i] = None
                         rebuild_batch = True
                 else:
-                    batch_progress = batch_progress + float(job.progress)
+                    batch_progress += float(job.progress)
 
             total_progress = (float(done_count * 100) + batch_progress) / joblist.count
             job_progress = (float(self.min_progress) +
@@ -1732,44 +1738,3 @@ class BatchJobRunner(object):
                 batch = [j for j in batch if j is not None]
 
         return
-
-        for i in range(0, len(jobs), self.batchsize):
-            batch = jobs[i:i + self.batchsize]
-            batch_status = {}
-            for j, job in enumerate(batch):
-                batch_status[job.id] = False
-                logger.debug("%s: starting job #%d (%s)"
-                             % (self, j + i, job))
-                job.start()
-
-            interval = 0.2
-            max_interval = 2
-            batch_done = False
-            while not batch_done:
-                batch_progress = 0
-                batch_done = True
-                for job in batch:
-                    job.refresh()
-
-                    if batch_status[job.id] is False:
-                        if job.done():
-                            batch_status[job.id] = True
-                        else:
-                            batch_done = False
-                            batch_progress += (float(job.progress) /
-                                               float(self.batchsize))
-                    else:
-                        batch_progress += (100.0 / float(self.batchsize))
-
-                total_progress = (i * 100.0 + batch_progress * self.batchsize) / len(jobs)
-                job_progress = (self.min_progress +
-                                (total_progress * (self.max_progress -
-                                                   self.min_progress)) / 100)
-                logger.debug("%s: batch[%d:%d] %d%% / total %d%% / job %d%%",
-                             self, i, i + self.batchsize, int(batch_progress),
-                             int(total_progress), int(job_progress))
-                self.basejob.mark_progress(job_progress)
-                if not batch_done:
-                    time.sleep(interval)
-                    # interval = ((interval * 2)
-                    #     if interval < max_interval else max_interval)

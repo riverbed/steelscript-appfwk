@@ -138,7 +138,8 @@ class AnalysisQuery(TableQueryBase):
 
         for (name, ref) in deptables.items():
             deptable = Table.from_ref(ref)
-            job = Job.create(deptable, self.job.criteria)
+            job = Job.create(deptable, self.job.criteria,
+                             update_progress=self.job.update_progress)
 
             batch.add_job(job)
             logger.debug("%s: starting dependent job %s" % (self, job))
@@ -280,7 +281,7 @@ class FocusedAnalysisQuery(AnalysisQuery):
         logging.debug('Creating FocusedAnalysis job with updated criteria %s'
                       % criteria)
 
-        job = Job.create(basetable, criteria)
+        job = Job.create(basetable, criteria, self.job.update_progress)
         job.start()
 
         while job.status == Job.RUNNING:
