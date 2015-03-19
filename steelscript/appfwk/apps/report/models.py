@@ -44,7 +44,7 @@ class Report(models.Model):
     slug = models.SlugField(unique=True)
     namespace = models.CharField(max_length=100)
     sourcefile = models.CharField(max_length=200)
-    filepath = models.FilePathField(path=settings.REPORTS_DIR)
+    filepath = models.FilePathField(max_length=200, path=settings.REPORTS_DIR)
 
     fields = models.ManyToManyField(TableField, null=True, blank=True)
     field_order = SeparatedValuesField(null=True,
