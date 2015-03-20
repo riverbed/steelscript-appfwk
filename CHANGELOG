@@ -1,0 +1,449 @@
+CHANGELOG
+=========
+
+[0.9.8.2]
+[0.9.8.2rc1]
+ * Add update_progress option to Job model
+
+[0.9.8.1]
+ * Support maps in embedded widgets
+ * Add new line at the end
+ * Add devices internal and rest tests
+ * Replace DeviceDelete with DeviceDetail.delete
+
+[0.9.8]
+[0.9.8rc3]
+ * Enhance one test case for token generation
+ * Use same token with same user/url/criteria
+ * Fix Embed window
+
+[0.9.8rc2]
+ * Remove Embed menu option from embedded widgets
+
+[0.9.8rc1]
+ * Fix tests for latest python-dateutil
+ * Minor cleanup
+ * Replace OrderedDict in reset_appfwk
+ * Refactor UI tests, restore missing text in README
+ * Update doc string
+ * Log out before testing widget token
+ * Add test for widget authtoken and fix a bug
+ * Add widget token to areas in appfwk
+ * Address reviews for embed widget auth
+ * Embedded Widget Token Authentication
+ * Add UI functional tests for login, and simple report
+ * Update django-extensions dependency
+ * Update alerting report
+ * Change branding of default browsable API template
+ * Update alert report display table
+ * Add datasource browsable api root
+ * Fix one bug about vagrant dir
+ * Remove extra text
+ * Add comment to local_settings for Windows Event logging
+ * Handle no git in mkproject gracefully
+ * Update django-admin-tools version
+ * Add Hyperlinks to Alert report
+ * Fix STEEELSCRIPT-MIB jobFailed notification
+ * Hyperlink Tables and TableFields
+ * Hyperlink Jobs and Event context
+ * Hyperlink alerting models
+ * Breaking up senders.py; address some reviews
+ * Basic alerting views
+ * Add one test report for VMSender
+ * Add BareMetalVMSender class for start/shutdown VMs
+ * Fix bug 227119, Business Hours Report via CLI never completes
+ * Fix pandas errors in Alerting report
+ * Address reviews for global error handers
+ * Support for global error handlers
+ * Update to use more native DRF renderer functions
+ * Fix device delete button
+ * Return labels for column headers
+ * table.py docstrings and PEP8 cleanup
+ * Avoid naive timestamps in form creation
+ * Combine JobDetailData views for both csv and json
+ * Working CSV render
+ * Add docs for Edit Plugins page
+ * Table CSV (new approach)
+ * Cleanup docscring and address comments from review
+ * Major JavaScript Refactor
+ * Update analysis function docs and examples
+ * Add FocusedAnalysisTable for use in report definitions
+ * Add a space between words for a help message
+ * 1. Direct users to timezone/user preference page first time when the user log in 2. Add explanation for the timezone field 3. Do not direct the first-time users to preference page when saving devices, only direct the first-time user to preference page when the user tries to run a report
+ * Fix overall report
+ * Handle hidden dynamic fields in criteria
+ * Fix limiting rows on table vs widget
+ * Convert Overall report to bits from bytes
+ * Add Analysis function option
+ * Add Report.tables method
+ * Cleanup redundant function
+ * Add documentation links to help dropdown
+ * Update resampling for latest pandas; minor pep8
+ * 1. resolve pep8 issues in yui3.py; 2. remove interactiontype=planar from chartwidget, as it does not exist there before
+ * Add parameters bar and daily to timeserieswidget to render daily reports and bar reports
+ * Fix a comment to be understandable
+ * Support for multistock report
+ * Update pandas to version 0.15, and expand numpy versions
+ * Roll back changes to x-axis labels on timeseries widgets (bug 223117)
+ * Fix duplicate menu carets on auto-load reports
+ * Fix rvbd-google-maps.js formatters bug to prepare main post
+ * Make timeseries widget x-axis labels space out at nice intervals (e.g. 15 sec, 1 min, 1 hour)
+ * PEP 8 fixes and minor cleanup
+ * Update candlestick to new widget approach
+ * Fix for updated url
+ * Remove unused ajax call when clicking embed link
+ * Update all widget URLs to use widget slug instead of ID
+ * Undo indent changes
+ * Cleanup comments
+ * Small adaptation to DRF approach for ReportTableList
+ * Update candlestick widget js code according to recent print report code
+ * Refactor to WidgetDetailView
+ * Use slug field for embedded widget urls
+ * Fixed "Update Time & Run" option
+ * Move formatting functions from Widget object into new 'formatters' object
+ * remove a blank line from views.py
+ * adding candle stick stock widget support
+ * fix a small issue in utils.py
+ * fix copy report by adding report name to widgets and updating report title
+ * Created report print view; rewrote widget status monitoring to use events
+
+[0.9.7.1]
+ * Handle empty exception errors
+
+[0.9.7]
+ * Patch for problem with formatTimeMs() with padZeros
+ * Fix problem with picking the right formatter for time, add dates when long enough
+ * Support cols argument for yui3.TableWidget to restrict columns and set order
+ * Support report description field at the top of a report
+ * Don't resample any columns not associated with the table explicitly
+ * Bug fix for whether key is a time related criteria key
+ * Add support for Bits/s units
+ * Pass along exceptions from AnalysisTable failures
+
+[0.9.6]
+ * Update minimum steelscript version
+ * Change embedded widget option text
+ * Fix DSCP report
+ * Follow proper precedence for criteria fields from report down to table
+ * Follow links when reloading reports
+ * Fixes for offline js
+ * Strip starttime/endtime constraints from embedded widgets
+ * Update to gitpy 0.2.1
+ * Update gitpy to version 0.2.0
+ * In scheduler, avoid getting data when table has error
+ * Improve widget error messages + refactor JS
+ * Add missing slash
+ * Fix context_processor namespacing
+ * Look in plugins for admin modules for dashboard
+ * Add missing requirements
+ * Python 2.6 compat
+ * Keep Sender level consistently as string
+ * Add settings option to save device pws to disk for development
+ * address minor issues
+ * Refactor Results, add AlertLevels, and add some tests
+ * Handle https downloads for jquery ui
+ * fix imports due to refactor of steelscript.common.utils
+ * Fixed parser error call
+ * Add severity to Events; new Results class for trigger results
+ * Made format strings Py2.6 compatible in mkproject/mkplugin
+ * Clean up MIB to use eventID and eventContext in the trap
+ * Sanitize input to mkplugin. Also some PEP 8 cleanup on mkplugin and mkproject
+ * Python 2.6 format backwards compatability
+ * Support scheduler commands against servers with self-signed certs
+ * Update SNMPSenderSteelScript
+ * Support referencing criteria fields in synthetic compute_expressions
+ * Fix ErrorHandler
+ * Add intermediate Event model which Alerts are linked to
+ * Rename 'Routers' to 'Senders'
+ * Rename 'Route' to 'Destination'
+ * Scheduler can use REST API for table connections
+ * Handle large event_ids in DB
+ * Initial work to send traps with STEELSCRIPT-MIB
+ * Add support for pre-defined criteria from table definition
+ * Update datasource API to support posting new Jobs
+ * More improvements
+ * More work on Offline JS and bumped YUI version
+ * Add offline JS support
+ * Handle next_run_time more cleanly
+ * Support params for trigger functions
+ * Handle job offsets
+ * Clarify how the reload_minutes calculation gets made
+ * Add error_signal for special error handling alerts and ErrorHandler class
+ * Handle criteria configs
+ * Add steel command scheduler for cron-like table execution
+ * Refactor Routes to plugin approach, add eventid to Alerts
+ * Add built-in Alerts report
+ * Enhance Alert datasource with groupby and timeseries options
+ * Do not delete Alerts on reload all clean
+ * Handle special durations better
+ * Add Alerting datasource
+ * Add support for special_values under Duration fields
+ * Add alert management command
+ * Make Route destination pickledobject and include with Alerts
+ * Add SNMP Router and Cascade example subclass
+ * Add missing source.py file
+ * Handle mutiple trigger results; make context consistent throughout
+ * Add Alert model, find router classes
+ * Move source encoding to separate class of staticmethods
+ * Initial alerting implementation
+
+[0.9.5]
+ * fix some small name conventions
+ * fix small indentation issue
+ * add dscp_timeseries.py to substitute qos_timeseries.py in appfwk/reports due to upgrade on the profiler
+
+[0.9.4]
+ * Enhance plugin management page
+ * Reduce redundancy in formatMetric
+ * Fix negative numbers and integer bug
+ * Fix indenting in plugin template
+ * Add django-announcements back with updated version
+ * Fix indentation
+ * Change login to be responsive
+ * Fix logo behind table in embed widget
+ * Fix monitor widgets, it was broken in last commit
+ * Fix monitorWidgetStatus bug
+ * More cleaning of report.js + fix alertModal params
+ * Cleaned up rvbd-report.js more
+ * Clean up rvbd-report.js
+ * Add get embed HTML menu to reports
+ * Add logo to embedded widgets
+ * Fix .gitignore to only ignore root dir static
+ * Rename _general_imports and small fixes
+ * Fix bug and add comments
+ * Add criteria and DRYed the new widget code
+ * Slightly improve documentation
+ * Add stand-alone widget with default criteria
+ * Enhance plugins administration page
+ * Add option to collect reports per plugin, remove collection from reload operation
+ * Adjust Table unique criteria to triplet of: namespace, name, sourcefile
+ * Warn if users table is empty after reset
+ * Include init command as part of mkproject
+ * Fix for boolean fields with a default of True
+ * Minor tweaks to tests and datetime handling
+ * Fix sharepoint reports
+ * Fix naive timestamps within pandas dataframes
+ * Redirect installation instructions to base SteelScript package
+ * Cleanup table of contents in docs
+ * Add missing spinners to package manifest
+ * Fix location import, add some geolocation tests
+ * Correct import statement
+ * Migrate link_pkg_files/link_pkg_dir to steelscript.common
+ * Change import TableFieldh to TableField
+ * Implement field_map to customize table fields
+ * Fix reference to changed function name get_module_name()
+ * Move Table sourcefile/namespace logic to DatasourceTable.create to check dups
+ * Add --no-collect option to reload
+ * Add analysis.resample helper function
+
+[0.9.3]
+ * Fix mysql error on location import
+ * Implement 'Copy Report' option, and delete/edit options from admin panel
+ * New devices default to port '443'
+ * Minor typos in plugin template code
+ * Add editor page with diff viewer using Ace javascript
+ * Add filepath to Report model
+ * Fix Help page device selections
+
+[0.9.2]
+ * Add support for Windows dev projects
+
+[0.9.1]
+ * Update setup.py info
+
+[0.9.0]
+ * Add default import for reports in new plugins
+ * Clean up steel_bootstrap.py link
+ * Add README
+ * Use relative paths for mkproject
+ * Docs: Added geolocation, cleaned up misc errors
+ * Update TOC
+ * Enhance config docs, add using appfwk
+ * Misc bug fixes related to business hour report
+ * Fix up meta/proxy for all Tables, add helpful exception
+ * Implement AnaysisTable and AnalysisQuery
+ * Merge AnalysisTable fields/functions into Table
+ * Enhance configuration and managing docs
+ * Copy example locations files with mkproject
+ * Fix zipfile creation
+ * Fix for yui3 problem with cols None and altaxis
+ * Docs: cleanup some appfwk installation instructions
+ * Issue warning when no locations stored in DB
+ * Fix help page permissions
+ * Tweak to mkproject local_settings
+ * Docs: added reports and tables
+ * Add dev/production server docs
+ * Load reports from only local project directory, add collectreports command
+ * Initialize new project as git repo
+ * Update configuration docs
+ * Update project docs
+ * Update mkproject and example configs
+ * Docs: overview, installation
+ * Update MANIFEST
+ * Add development subcommand
+ * Added overview page for docs
+ * Don't ask about wave plugin, only at command line
+ * Fix test for run_table to table
+ * Migrate to dict for setup args
+ * Cleanup Table naming, add 'datasource' attribute with source class name
+ * Rename commands, reset_portal to reset_appfwk, run_table to table
+ * Implement multi-column sorting with sortcols/sortdir
+ * Added default NullHandler for py 2.6 compatibility
+
+[0.9.0rc3]
+ * Include images in pkg
+ * Remove straggling references to console
+
+[0.9.0rc2]
+ * Minor tweaks, fix job threads, mispellings
+
+[0.9.0rc1]
+ * Minor setup.py cleanup
+ * Fix admin branding
+ * Cleanup dangling flybox reference
+ * Cleanup dangling flyscript references
+ * Fix reload of tables when using analysis tables/related_tables
+ * Cleanup wave and plugin template file names to avoid collisions with user provided name
+ * Support a generic plugin without sample code
+ * Change position to be a decimal, renumber reports
+ * Remove submodule from Commands
+ * Cleaned up sample plugin
+ * Add appfwk reload command; enhance debug output
+ * Added mkplugin command along with supporting data files
+ * Update template headers, 2014
+ * Update gitpy reference
+ * Update headers, 2014
+ * Update LICENSE
+ * Update mkproject subcommand, add init and reset subcommands
+ * Add Sharepoint as built-in plugin (disabled by default, warns if needed packages aren't installed)
+ * Add Solarwinds as built-in plugin (disabled by default)
+ * Include initial_data in package
+ * Update requirements, add reqs to setup.py
+ * Add base reports to new project directories
+ * Fix some relative imports
+ * Add initialization option for mkproject
+ * Add requirements file
+ * Update project name
+ * Clean up
+ * Move back to single settings.py file
+ * Add mkproject command
+ * Incorporate appfwk project files
+ * Remove .core from appfwk namespace
+ * Update setup.py dependencies
+ * Add add_widget method to Section class too
+ * Naming updates
+ * Support INITIAL_DATA setting
+ * Handle other logging handlers when rotating logs
+ * Update setup.py packaging
+ * Update gitpy-versioning url reference
+ * Clarify App Framework code by renaming from appfw to appfwk
+ * Refactor shark to netshark
+ * Additional netprofiler renames
+ * Refactor profiler to netprofiler
+ * Add missing system_settings template
+ * Replace imports to steelscript.appfw.core
+ * Add license file
+ * Packaging setup
+
+[0.1.0]
+ * Reorganize into steelscript.appfw.core
+ * Update namespace assignment for Tables and Reports
+ * Update for steelscript.common; extract profiler
+ * Migrate reports to new report api
+ * Handle initial_data better with clean/reset; avoid cleaning geolocation
+ * Update report API consistent with Datasource approach
+ * Initial ReportFactory refactor
+ * Support dropping/keeping users over database resets (keep by default)
+ * Working admin interface for creating/updating PortalUsers
+ * Working PortalUser and SystemSettings
+ * Initial migration to Custom User model
+ * Fix for report criteria tests
+ * Fix for clean with no related_tables
+ * Remove locations.py, support import via manage locations command
+ * Change analysis tables/related_tables to namespace/name refs
+ * Remove datasource holdover module
+ * Fix tests for datasource model refactor
+ * Apply model-based refactor to remaining datasources
+ * Merge DatasourceColumn and Column; simplify Column position calculation
+ * Call JsonDict directly, fix Table class naming
+ * Model-based datasource refactor
+ * Support more options for time selection, including start/end instead of end/duration
+ * Fix for disappearing criteria/table fields attached to reports
+ * Fix messed up __unicode__ function that called itself.
+ * Remove initial_devices.json from repo
+ * Support 'custom' namespace for reports
+ * Minor bug fixes
+ * Implement new datatype/units model based on enumerations
+ * Handle time rounding better, especially for long-duration reload periods.
+ * Changed Function references to reference module/function by name
+ * Convert AnalysisFunction 'related_tables' by either id, table refernce, or datasource table, just like 'tables'
+ * Update report/tests based on new Table model, fix a few exposed bugs
+ * Minor fixes to handle cases when there is no traffic
+ * Add min_bounds option for maps to ensure minimum zoom level
+ * Update leaflet to version 0.7.2
+ * Add namespace to Table models
+ * Fix race condition with widgets painting as empty
+ * Fix business hour reporting to store timestable as datetime
+ * Add thread/transaction-safety to Job.age_jobs
+ * Add timestamp for landing pages; tweak raw TableWidget
+ * Only delete job datafiles when there are no parents; add parent id to job-list output
+ * Update maps to support explicit lat/long columns; OSM maps can now display tooltips
+ * Add logging to jobs/datafiles; support bool conversions from numpy
+ * Better fix for deleting jobs without a db
+ * Fix for spurious problem when loading initial data
+ * Proper locking to ensure two jobs starting simultaneously on the same table don't collide
+ * Fix ephemeral columns, minor yui3 cleanup to enable line widgets
+ * Define AnalysisTable.options 'related_tables' to make it easier to track tables
+ * Add better repr() for most objects, minor cleanup
+ * Flush any incomplete jobs at startup, otherwise they may be linked to by new jobs.
+ * Update datasources per reviewboard comments
+ * Ignore db errors on clean
+ * Optimized BatchJobRunner, fix problems with profiler device merging
+ * Clear jobs along with datacache; remember enabled reports on reload
+ * Datasource cleanup, handle class vars more appropriately
+ * Convert remaining datasources and reports to class-based approach
+ * Refactor shark, wireshark, and anaysis datasources
+ * Base-class datasource and profiler update
+ * Added sample plugin structure
+ * Refactor datasource modules and reports
+ * Refactor settings - separate out active module from base
+ * Make pandas datetime transformation more universal
+ * Only display enabled reports
+ * Correct action labels
+ * Fix Report objects in admin panel, add enable/disable actions
+ * Handle timezones better, show report names when criteria hidden
+ * Use restframework view so auth exceptions will work on auto-reports
+ * Round endtime for auto-reload reports to better cache results
+ * Avoid clearing cache on reload, jobs clear it themselves now
+ * Remove datafiles when deleting jobs, and avoid tz warning
+ * Improved wireshark plugin.  Better time column handling from data sources
+ * Support Profiler template-based reports, fix Pie-Charts
+ * Ensure widgets are ordered consistently
+ * Support separate settings files such as 'settings_local'
+ * Add support for 'auto-load' reports and example script
+ * Format title of widgets
+ * Add static html datasource and example report
+ * Minor 2.6 compatibility
+ * Add view to retrieve json criteria by report or widget
+ * Add sharepoint plugin
+ * Fix mutable default arg, some PEP8 cleanup
+ * Only save preferences for admin user, avoids conflicts if new users added and db reset
+ * Remove debug logging and pdb statement
+ * Enhance admin site, lockdown some views to admin-user only
+ * Fix problems with QoS Criteria processing and hidden criteria fields
+ * Clean up resolutions / durations a bit, support ms-resolution for shark
+ * Clean data values of numpy types because json can't always stringify them
+ * Merge branch 'master' into messages
+ * Fix criteria tests for namespace change
+ * Fix widget and table handlers for namespace
+ * Fix url and handler for changed criteria to include namespace
+ * Add report namespace support, and support reload-all, and reload by name
+ * Improve timeseries labels
+ * Handle plugin devices separately
+ * Device selection is not a required form field on submit
+ * Extract tshark to plugin datasource
+ * Extract shark to plugin datasource
+ * Extract profiler to plugin datasource
+ * Add datasource support to plugins, move profiler_devices to separate plugin
+ * Update import references to rvbd_portal
+ * Rename package rvbd-common to rvbd-portal
