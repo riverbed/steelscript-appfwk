@@ -2,10 +2,10 @@ import os
 from contextlib import contextmanager
 
 from steelscript.appfwk.apps.devices.models import Device
-from steelscript.appfwk.apps.preferences.models import PortalUser
+from steelscript.appfwk.apps.preferences.models import AppfwkUser
 
 import tzlocal
-from django.test import LiveServerTestCase
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core import management
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
@@ -35,7 +35,7 @@ def local_timezone():
     os.environ['TZ'] = current_tz
 
 
-class BaseSeleniumTests(LiveServerTestCase):
+class BaseSeleniumTests(StaticLiveServerTestCase):
     """Base class for selenium based tests."""
 
     @classmethod
@@ -47,9 +47,9 @@ class BaseSeleniumTests(LiveServerTestCase):
             report_name='steelscript.appfwk.reports.overall'
         )
         try:
-            cls.user = PortalUser.objects.get(username='admin')
+            cls.user = AppfwkUser.objects.get(username='admin')
         except ObjectDoesNotExist:
-            cls.user = PortalUser.objects.create_superuser(
+            cls.user = AppfwkUser.objects.create_superuser(
                 'admin', 'admin@admin.com', 'admin')
 
         with local_timezone():

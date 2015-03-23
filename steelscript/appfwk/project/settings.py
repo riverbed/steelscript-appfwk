@@ -32,7 +32,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-AUTH_USER_MODEL = 'preferences.PortalUser'
+AUTH_USER_MODEL = 'preferences.AppfwkUser'
 LOGIN_REDIRECT_URL = '/report'
 
 DATABASES = {
@@ -200,7 +200,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'django_extensions',
     'django_ace',
-    'announcements',
+    #'announcements',
 
     # portal apps
     'steelscript.appfwk.apps.datasource',
@@ -343,5 +343,6 @@ APPS_DATASOURCE = {
 }
 
 TESTING = 'test' in sys.argv
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 LOCAL_APPS = None

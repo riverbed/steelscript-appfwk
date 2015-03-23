@@ -12,7 +12,7 @@ from django.test.utils import override_settings
 
 from steelscript.appfwk.apps.datasource.models import Job
 from steelscript.appfwk.apps.report.models import Report, Widget
-from steelscript.appfwk.apps.preferences.models import PortalUser
+from steelscript.appfwk.apps.preferences.models import AppfwkUser
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +32,9 @@ class ReportRunnerTestCase(TestCase):
             cls.load_report(report)
 
         try:
-            PortalUser.objects.get(username='admin')
+            AppfwkUser.objects.get(username='admin')
         except ObjectDoesNotExist:
-            PortalUser.objects.create_superuser(
+            AppfwkUser.objects.create_superuser(
                 'admin', 'admin@admin.com', 'admin')
 
     @classmethod

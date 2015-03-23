@@ -31,9 +31,6 @@ urlpatterns = patterns('',
         'steelscript.appfwk.apps.preferences.urls')),
     url(r'^plugins/', include('steelscript.appfwk.apps.plugins.urls')),
 
-    # third party packages
-    url(r'^announcements/', include('announcements.urls')),
-
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 

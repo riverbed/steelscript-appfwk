@@ -16,6 +16,8 @@ from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 class DeviceForm(forms.ModelForm):
     class Meta:
         model = Device
+        fields = ('name', 'module', 'host', 'port',
+                  'username', 'password')
 
     def __init__(self, *args, **kwargs):
         super(DeviceForm, self).__init__(*args, **kwargs)

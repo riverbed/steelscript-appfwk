@@ -18,7 +18,7 @@ from django import db
 from django.db import transaction, DatabaseError
 
 from steelscript.appfwk.apps.preferences.models import SystemSettings, \
-    PortalUser
+    AppfwkUser
 
 # list of files/directories to ignore
 IGNORE_FILES = ['helpers']
@@ -39,7 +39,7 @@ class Command(BaseCommand):
     # introduced buffer_names list to keep order of loading sequeces of
     # different buffers
     buffer_names = ['users', 'tokens']
-    buffers = {'users': {'model': 'preferences.PortalUser',
+    buffers = {'users': {'model': 'preferences.AppfwkUser',
                          'buffer': None},
                'tokens': {'model': 'report.WidgetAuthToken',
                           'buffer': None},
@@ -161,7 +161,7 @@ class Command(BaseCommand):
 
         if (not options['drop_users'] and
             (self.buffers['users']['buffer'] is None or
-             len(PortalUser.objects.all()) == 0)):
+             len(AppfwkUser.objects.all()) == 0)):
             self.stdout.write('WARNING: No users added to database.  '
                               'If you would like to include the default '
                               'admin user, rerun this command with the '

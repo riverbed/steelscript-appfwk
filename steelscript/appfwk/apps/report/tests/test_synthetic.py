@@ -11,7 +11,7 @@ from django.conf import settings
 import pytz
 
 from steelscript.appfwk.apps.datasource.models import Job
-from steelscript.appfwk.apps.preferences.models import PortalUser
+from steelscript.appfwk.apps.preferences.models import AppfwkUser
 from steelscript.appfwk.apps.report.tests import reportrunner
 
 logger = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ class NoResample(SyntheticTest):
                                [self.make_data(1385894700, 1385895600, 60)])
 
     def test_eastern_timezone(self):
-        user = PortalUser.objects.get(username='admin')
+        user = AppfwkUser.objects.get(username='admin')
         tz = user.timezone
         user.timezone = pytz.timezone('US/Eastern')
         user.save()
@@ -85,7 +85,7 @@ class NoResample(SyntheticTest):
         user.save()
 
     def test_pacific_timezone(self):
-        user = PortalUser.objects.get(username='admin')
+        user = AppfwkUser.objects.get(username='admin')
         tz = user.timezone
         user.timezone = pytz.timezone('US/Pacific')
         user.save()
@@ -128,7 +128,7 @@ class Resample(SyntheticTest):
                                [self.make_data(1385894700, 1385895660, 120)])
 
     def test_eastern_timezone(self):
-        user = PortalUser.objects.get(username='admin')
+        user = AppfwkUser.objects.get(username='admin')
         tz = user.timezone
         user.timezone = pytz.timezone('US/Eastern')
         user.save()
@@ -141,7 +141,7 @@ class Resample(SyntheticTest):
         user.save()
 
     def test_pacific_timezone(self):
-        user = PortalUser.objects.get(username='admin')
+        user = AppfwkUser.objects.get(username='admin')
         tz = user.timezone
         user.timezone = pytz.timezone('US/Pacific')
         user.save()

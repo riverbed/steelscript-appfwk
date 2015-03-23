@@ -24,7 +24,7 @@ from steelscript.appfwk.project.utils import (get_module, get_module_name,
 from steelscript.appfwk.apps.datasource.models import Table, Job, TableField
 from steelscript.appfwk.libs.fields import \
     PickledObjectField, SeparatedValuesField
-from steelscript.appfwk.apps.preferences.models import PortalUser
+from steelscript.appfwk.apps.preferences.models import AppfwkUser
 logger = logging.getLogger(__name__)
 
 
@@ -44,7 +44,7 @@ class Report(models.Model):
     slug = models.SlugField(unique=True)
     namespace = models.CharField(max_length=100)
     sourcefile = models.CharField(max_length=200)
-    filepath = models.FilePathField(path=settings.REPORTS_DIR)
+    filepath = models.FilePathField(max_length=200, path=settings.REPORTS_DIR)
 
     fields = models.ManyToManyField(TableField, null=True, blank=True)
     field_order = SeparatedValuesField(null=True,
@@ -487,7 +487,7 @@ class WidgetAuthToken(models.Model):
     """ Authentication token for each user per widget per report """
 
     token = models.CharField(max_length=200)
-    user = models.ForeignKey(PortalUser)
+    user = models.ForeignKey(AppfwkUser)
     pre_url = models.CharField(max_length=200, verbose_name='URL')
     criteria = PickledObjectField()
     touched = models.DateTimeField(auto_now=True,
