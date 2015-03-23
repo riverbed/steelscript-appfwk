@@ -5,7 +5,6 @@
 # as set forth in the License.
 
 
-
 import os
 import logging
 import optparse
@@ -34,7 +33,7 @@ class Command(BaseCommand):
         """
         parser = super(Command, self).create_parser(prog_name, subcommand)
         group = optparse.OptionGroup(parser, "Job Help",
-                                     "Helper commands to manange jobs")
+                                     "Helper commands to manage jobs")
         group.add_option('--job-list',
                          action='store_true',
                          dest='job_list',

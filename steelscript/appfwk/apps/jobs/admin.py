@@ -4,10 +4,13 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-from rest_framework.exceptions import APIException
+
+from django.contrib import admin
+
+from steelscript.appfwk.apps.jobs.models import Job
 
 
-class JobCreationError(APIException):
-    """ Error creating new Job. """
-    status_code = 500
-    default_detail = 'Error creating new Job.'
+class JobAdmin(admin.ModelAdmin):
+    list_display = ('table', 'status', 'progress', 'message')
+
+admin.site.register(Job, JobAdmin)

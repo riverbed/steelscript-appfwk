@@ -8,7 +8,6 @@
 from django.contrib import admin
 
 from steelscript.appfwk.apps.datasource.models import Table, Column, TableField
-from steelscript.appfwk.apps.jobs.models import Job
 
 
 class TableAdmin(admin.ModelAdmin):
@@ -25,12 +24,6 @@ class ColumnAdmin(admin.ModelAdmin):
 admin.site.register(Column, ColumnAdmin)
 
 
-class JobAdmin(admin.ModelAdmin):
-    list_display = ('table', 'status', 'progress', 'message')
-
-#admin.site.register(Job, JobAdmin)
-
-
 class TableFieldAdmin(admin.ModelAdmin):
     list_display = (
         'label', 'help_text', 'initial', 'required',
@@ -39,5 +32,3 @@ class TableFieldAdmin(admin.ModelAdmin):
     )
 
 admin.site.register(TableField, TableFieldAdmin)
-
-

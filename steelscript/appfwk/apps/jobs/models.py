@@ -20,7 +20,7 @@ from django.dispatch import receiver
 from django.conf import settings
 from steelscript.appfwk.apps.datasource.models import Table
 
-from steelscript.appfwk.apps.datasource.exceptions import *
+from steelscript.appfwk.apps.datasource.exceptions import DataError
 from steelscript.appfwk.apps.alerting.models import (post_data_save,
                                                      error_signal)
 from steelscript.appfwk.libs.fields import PickledObjectField
@@ -311,7 +311,6 @@ class Job(models.Model):
     def combine_filterexprs(self, joinstr="and", exprs=None):
         self.refresh()
 
-        criteria = self.criteria
         if exprs is None:
             exprs = []
         elif type(exprs) is not list:
@@ -606,9 +605,11 @@ class Worker(base_worker_class):
 
                     # Sort according to the defined sort columns
                     if job.table.sortcols:
-                        sorted = df.sort(job.table.sortcols,
-                                         ascending=[b == Table.SORT_ASC
-                                                    for b in job.table.sortdir])
+                        sorted = df.sort(
+                            job.table.sortcols,
+                            ascending=[b == Table.SORT_ASC
+                                       for b in job.table.sortdir]
+                        )
                         # Move NaN rows of the first sortcol to the end
                         n = job.table.sortcols[0]
                         df = (sorted[sorted[n].notnull()]
@@ -627,8 +628,8 @@ class Worker(base_worker_class):
                                         data=df,
                                         context={'job': job})
 
-                    logger.debug("%s data saved to file: %s" % (str(self),
-                                                                job.datafile()))
+                    logger.debug("%s data saved to file: %s" %
+                                 (str(self), job.datafile()))
                 else:
                     logger.debug("%s no data saved, data is empty" %
                                  (str(self)))
@@ -799,7 +800,8 @@ class BatchJobRunner(object):
                 else:
                     batch_progress += float(job.progress)
 
-            total_progress = (float(done_count * 100) + batch_progress) / joblist.count
+            total_progress = ((float(done_count * 100) + batch_progress)
+                              / joblist.count)
             job_progress = (float(self.min_progress) +
                             ((total_progress / 100.0) *
                              (self.max_progress - self.min_progress)))
