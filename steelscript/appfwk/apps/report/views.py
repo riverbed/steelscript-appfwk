@@ -38,10 +38,10 @@ from rest_framework.parsers import JSONParser
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.authentication import (SessionAuthentication,
                                            BasicAuthentication)
+from steelscript.appfwk.apps.jobs.models import Job
 
 from steelscript.common.timeutils import round_time
 from steelscript.commands.steel import shell, ShellFailed
-from steelscript.appfwk.apps.datasource.models import Job, Table
 from steelscript.appfwk.apps.datasource.serializers import TableSerializer
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
 from steelscript.appfwk.apps.devices.models import Device
@@ -188,18 +188,20 @@ class GenericReportView(views.APIView):
 
         template, criteria, expand_tables = self.get_media_params(request)
 
-        return render_to_response(template,
-                                  {'report': report,
-                                   'developer': system_settings.developer,
-                                   'maps_version': system_settings.maps_version,
-                                   'maps_api_key': system_settings.maps_api_key,
-                                   'endtime': 'endtime' in form.fields,
-                                   'form': form,
-                                   'section_map': section_map,
-                                   'show_sections': (len(section_map) > 1),
-                                   'criteria': criteria,
-                                   'expand_tables': expand_tables},
-                                  context_instance=RequestContext(request))
+        return render_to_response(
+            template,
+            {'report': report,
+             'developer': system_settings.developer,
+             'maps_version': system_settings.maps_version,
+             'maps_api_key': system_settings.maps_api_key,
+             'endtime': 'endtime' in form.fields,
+             'form': form,
+             'section_map': section_map,
+             'show_sections': (len(section_map) > 1),
+             'criteria': criteria,
+             'expand_tables': expand_tables},
+            context_instance=RequestContext(request)
+        )
 
 
 class ReportView(GenericReportView):

@@ -10,11 +10,12 @@ import logging
 from datetime import timedelta
 
 import pandas
+from steelscript.appfwk.apps.jobs.models import Job, BatchJobRunner
 
 from steelscript.common.timeutils import \
     parse_timedelta, timedelta_total_seconds
 from steelscript.appfwk.apps.datasource.models import \
-    DatasourceTable, Column, Job, Table, TableQueryBase, BatchJobRunner
+    DatasourceTable, Column, Table, TableQueryBase
 from steelscript.appfwk.libs.fields import Function
 
 

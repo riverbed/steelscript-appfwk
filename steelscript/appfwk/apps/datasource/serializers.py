@@ -6,8 +6,9 @@
 
 
 from rest_framework import serializers
+
 from steelscript.appfwk.apps.datasource.models import \
-    Table, TableField, Column, Job
+    Table, TableField, Column
 
 
 #
@@ -33,17 +34,6 @@ class PickledObjectField(serializers.Field):
                     # XXX do we want repr or str?
                     field = str(field)
         return field
-
-
-class JobDataField(serializers.Field):
-    def field_to_native(self, obj, fieldname):
-        # calls values() on the Job object to get list of lists
-        try:
-            return obj.values()
-        except AttributeError:
-            # requesting data before its ready
-            # XXX what is the best choice to do here?
-            return {}
 
 
 #
@@ -85,36 +75,3 @@ class ColumnSerializer(serializers.ModelSerializer):
         model = Column
         fields = ('id', 'name', 'label', 'position', 'options', 'iskey',
                   'synthetic', 'datatype', 'units')
-
-
-class JobListSerializer(serializers.HyperlinkedModelSerializer):
-    criteria = PickledObjectField()
-    actual_criteria = PickledObjectField()
-
-    class Meta:
-        model = Job
-        fields = ('url', 'table', 'criteria', 'actual_criteria', 'status',
-                  'message', 'progress', 'remaining')
-        read_only_fields = ('status', 'message', 'progress', 'remaining')
-
-
-class JobSerializer(serializers.HyperlinkedModelSerializer):
-    criteria = PickledObjectField()
-    actual_criteria = PickledObjectField()
-
-    class Meta:
-        model = Job
-        fields = ('url', 'table', 'criteria', 'actual_criteria', 'status',
-                  'message', 'progress', 'remaining')
-        read_only_fields = ('status', 'message', 'progress', 'remaining')
-
-    def save(self, **kwargs):
-        return super(JobSerializer, self).save(**kwargs)
-
-
-class JobDataSerializer(serializers.ModelSerializer):
-    data = JobDataField()
-
-    class Meta:
-        model = Job
-        fields = ('data',)

@@ -10,11 +10,12 @@ from django.http import HttpResponseRedirect
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
+from steelscript.appfwk.apps.jobs.models import Job
+
 admin.autodiscover()
 
 from django.conf import settings
 
-from steelscript.appfwk.apps.datasource.models import Job
 Job.flush_incomplete()
 
 urlpatterns = patterns('',

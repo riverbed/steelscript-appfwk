@@ -8,6 +8,7 @@
 import logging
 import optparse
 from cStringIO import StringIO
+
 logger = logging.getLogger(__name__)
 
 from django.core.management.base import BaseCommand
@@ -15,9 +16,8 @@ from django.core.management.base import BaseCommand
 from steelscript.common.datautils import Formatter
 from steelscript.appfwk.project.utils import Importer
 
-from steelscript.appfwk.apps.datasource.models import Table, Job, DatasourceTable
-from steelscript.appfwk.apps.datasource.forms import TableFieldForm
-from steelscript.appfwk.apps.report.models import Report, Widget
+from steelscript.appfwk.apps.datasource.models import DatasourceTable
+from steelscript.appfwk.apps.report.models import Widget
 
 from steelscript.appfwk.apps.plugins import plugins
 

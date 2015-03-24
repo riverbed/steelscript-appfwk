@@ -13,12 +13,6 @@ class TableComputeSyntheticError(APIException):
     default_detail = 'Error occurred when calculating synthetic columns.'
 
 
-class JobCreationError(APIException):
-    """ Error creating new Job. """
-    status_code = 500
-    default_detail = 'Error creating new Job.'
-
-
 class DataError(APIException):
     """ Error processing or retrieving Job data. """
     status_code = 500

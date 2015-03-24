@@ -16,9 +16,10 @@ from django.db.models import get_app, get_models, Count
 from django.core.exceptions import ObjectDoesNotExist
 
 from django.conf import settings
+from steelscript.appfwk.apps.jobs.models import Job
 from steelscript.appfwk.apps.report.models import Report, WidgetJob
 from steelscript.appfwk.apps.datasource.models import (Table, TableField,
-                                                       Column, Job)
+                                                       Column)
 from steelscript.appfwk.apps.alerting.models import (Destination, TriggerCache,
                                                      ErrorHandlerCache)
 

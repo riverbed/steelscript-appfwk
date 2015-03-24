@@ -5,16 +5,14 @@
 # as set forth in the License.
 
 
-
 import os
 import logging
 import optparse
 
 from django.core.management.base import BaseCommand
+from steelscript.appfwk.apps.jobs.models import Job
 
 from steelscript.common.datautils import Formatter
-
-from steelscript.appfwk.apps.datasource.models import Job
 
 # not pretty, but pandas insists on warning about
 # some deprecated behavior we really don't care about
@@ -35,7 +33,7 @@ class Command(BaseCommand):
         """
         parser = super(Command, self).create_parser(prog_name, subcommand)
         group = optparse.OptionGroup(parser, "Job Help",
-                                     "Helper commands to manange jobs")
+                                     "Helper commands to manage jobs")
         group.add_option('--job-list',
                          action='store_true',
                          dest='job_list',

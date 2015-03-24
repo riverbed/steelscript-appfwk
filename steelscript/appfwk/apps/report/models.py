@@ -17,11 +17,12 @@ from django.dispatch import receiver
 from django.utils.datastructures import SortedDict
 from django.core.exceptions import ObjectDoesNotExist
 from model_utils.managers import InheritanceManager
+from steelscript.appfwk.apps.jobs.models import Job
 
 from steelscript.common.datastructures import JsonDict
 from steelscript.appfwk.project.utils import (get_module, get_module_name,
                                               get_sourcefile, get_namespace)
-from steelscript.appfwk.apps.datasource.models import Table, Job, TableField
+from steelscript.appfwk.apps.datasource.models import Table, TableField
 from steelscript.appfwk.libs.fields import \
     PickledObjectField, SeparatedValuesField
 from steelscript.appfwk.apps.preferences.models import AppfwkUser
