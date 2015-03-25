@@ -39,6 +39,14 @@
         <script type="text/javascript" src="{{ STATIC_URL }}js/rvbd-google-maps.js"></script>
     {% endif %}
 
+    {% for js in js_extensions %}
+        <script type="text/javascript" src="{{ js }}"></script>
+    {% endfor %}
+
+    {% for css in css_extensions %}
+        <link href="{{ css }}" rel="stylesheet"/>
+    {% endfor %}
+
     <script type="text/javascript">
     {% block header_script %}
       rvbd.report.isEmbedded = false;

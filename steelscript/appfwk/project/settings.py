@@ -190,6 +190,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'steelscript.appfwk.project.context_processors.offline_js',
     'steelscript.appfwk.project.context_processors.versions',
     'steelscript.appfwk.project.context_processors.developer',
+    'steelscript.appfwk.project.context_processors.static_extensions',
     'steelscript.appfwk.apps.report.context_processors.report_list_processor',
 )
 

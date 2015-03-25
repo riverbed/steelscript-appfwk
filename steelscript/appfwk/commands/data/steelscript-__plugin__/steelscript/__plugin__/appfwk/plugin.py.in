@@ -21,3 +21,16 @@ class Plugin(AppsPlugin):
     devices = ['devices']
     datasources = ['datasources']
     reports = ['reports']
+
+    # List javascript/css files required by this plugin to work.
+    # If a file is local to this plugin, it should be in /static/<path>.
+    # Remote content can also be listed by fully qualified URL
+    #
+    # Example:
+    #    js = ['/static/js/__plugin__.js',
+    #          'http://some.website.com/cool.js']
+    #    css = ['/static/css/__plugin__.css',
+    #          'http://some.website.com/cool.css']
+    #
+    js = []
+    cs = []
