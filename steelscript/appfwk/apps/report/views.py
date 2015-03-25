@@ -880,4 +880,8 @@ geolocation documentation</a> for more information.'''
 
         resp['message'] = cgi.escape(resp['message'])
 
-        return HttpResponse(json.dumps(resp))
+        try:
+            return HttpResponse(json.dumps(resp))
+        except:
+            logger.error('Failed to generate HttpResponse:\n%s' % str(resp))
+            raise

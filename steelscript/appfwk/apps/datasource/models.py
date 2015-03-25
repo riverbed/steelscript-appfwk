@@ -230,9 +230,15 @@ class Table(models.Model):
 
     @classmethod
     def from_ref(cls, ref):
-        return Table.objects.get(sourcefile=ref['sourcefile'],
-                                 namespace=ref['namespace'],
-                                 name=ref['name'])
+        try:
+            return Table.objects.get(sourcefile=ref['sourcefile'],
+                                     namespace=ref['namespace'],
+                                     name=ref['name'])
+        except ObjectDoesNotExist:
+            logger.exception('Failed to resolve table ref: %s/%s/%s' %
+                             (ref['sourcefile'], ref['namespace'],
+                              ref['name']))
+            raise
 
     def __unicode__(self):
         return "<Table %s (%s)>" % (str(self.id), self.name)
@@ -523,8 +529,10 @@ class DatasourceTable(Table):
         if inspect.isclass(queryclass):
             queryclass = queryclass.__name__
 
-        sourcefile = get_sourcefile(get_module_name())
-        namespace = get_namespace(sourcefile)
+        sourcefile = table_kwargs.get('sourcefile',
+                                      get_sourcefile(get_module_name()))
+        namespace = table_kwargs.get('namespace',
+                                     get_namespace(sourcefile))
 
         if len(Table.objects.filter(name=name,
                                     namespace=namespace,
@@ -532,10 +540,12 @@ class DatasourceTable(Table):
             raise ValueError(("Table '%s' already exists in namespace '%s' "
                              "(sourcefile '%s')") % (name, namespace, sourcefile))
 
+        table_kwargs['namespace'] = namespace
+        table_kwargs['sourcefile'] = sourcefile
+
         logger.debug('Creating table %s' % name)
         t = cls(name=name, module=cls.__module__, queryclass=queryclass,
-                datasource=cls.__name__, options=options,
-                sourcefile=sourcefile, namespace=namespace, **table_kwargs)
+                datasource=cls.__name__, options=options, **table_kwargs)
         try:
             t.save()
         except DatabaseError as e:
