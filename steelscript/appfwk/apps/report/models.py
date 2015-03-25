@@ -42,7 +42,7 @@ class Report(models.Model):
     position = models.DecimalField(max_digits=7, decimal_places=3, default=10)
     enabled = models.BooleanField(default=True)
 
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, max_length=100)
     namespace = models.CharField(max_length=100)
     sourcefile = models.CharField(max_length=200)
     filepath = models.FilePathField(max_length=200, path=settings.REPORTS_DIR)
@@ -404,7 +404,7 @@ class Widget(models.Model):
     uioptions = PickledObjectField()
 
     # not globally unique, but should be sufficiently unique within a report
-    slug = models.SlugField()
+    slug = models.SlugField(max_length=100)
 
     objects = InheritanceManager()
 
