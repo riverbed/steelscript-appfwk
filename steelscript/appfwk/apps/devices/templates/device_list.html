@@ -25,6 +25,11 @@
             <h4 class="text-error">Ensure all enabled devices have valid credentials</h4>
         </div>
         {% endif %}
+        {% if missing_device %}
+        <div class="block-centered" style="text-align: center">
+            <h4 class="text-error">Need to configure device {{ missing_device }}</h4>
+        </div>
+        {% endif %}
         <form action="" method="POST">
                 <input type="hidden" name="_method" value="PUT">
                 {% csrf_token %}

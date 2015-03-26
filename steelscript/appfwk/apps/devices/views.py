@@ -74,6 +74,7 @@ class DeviceList(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         queryset = Device.objects.order_by('id')
         invalid = request.QUERY_PARAMS.get('invalid', None)
+        missing_device = request.QUERY_PARAMS.get('missing_device', None)
 
         if request.accepted_renderer.format == 'html':
             DeviceFormSet = modelformset_factory(Device,
@@ -82,7 +83,9 @@ class DeviceList(generics.ListAPIView):
             formset = DeviceFormSet(queryset=queryset)
             tabledata = zip(formset.forms, queryset)
             data = {'formset': formset, 'tabledata': tabledata,
-                    'invalid': invalid}
+                    'invalid': invalid,
+                    'missing_device': missing_device,
+                    }
             return Response(data, template_name='device_list.html')
 
         serializer = DeviceSerializer(instance=queryset)
