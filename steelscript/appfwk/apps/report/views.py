@@ -114,9 +114,6 @@ def rm_file(filepath):
 
 class GenericReportView(views.APIView):
 
-    devices = Device.objects.all()
-    device_modules = [obj.module for obj in devices]
-
     def get_media_params(self, request):
         """ Implement this method in subclasses to compute the values of
             the template, criteria and expand_tables template params.
@@ -134,6 +131,9 @@ class GenericReportView(views.APIView):
             # only redirect if first login
             return HttpResponseRedirect(reverse('preferences')+'?next=/report')
 
+        devices = Device.objects.all()
+        device_modules = [obj.module for obj in devices]
+
         # iterate through all sections of the report, for each section,
         # iterate through the fields, and if any field's
         # pre_process_func function is device_selection_preprocess
@@ -147,7 +147,7 @@ class GenericReportView(views.APIView):
                     # This field is a device field,
                     # check if the device is configured
                     module = func.params['module']
-                    if module not in self.device_modules:
+                    if module not in device_modules:
                         missing_modules.add(module)
 
         if missing_modules:
@@ -156,7 +156,7 @@ class GenericReportView(views.APIView):
                                          ','.join(list(missing_modules))))
 
         # search across all enabled devices
-        for device in self.devices:
+        for device in devices:
             if (device.enabled and ('host.or.ip' in device.host or
                                     device.username == '<username>' or
                                     device.password == '<password>' or
