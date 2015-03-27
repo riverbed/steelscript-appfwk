@@ -4,7 +4,6 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-
 import logging
 
 from django.core.urlresolvers import reverse
@@ -74,7 +73,13 @@ class DeviceList(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         queryset = Device.objects.order_by('id')
         invalid = request.QUERY_PARAMS.get('invalid', None)
-        missing_device = request.QUERY_PARAMS.get('missing_device', None)
+        missing_config = request.QUERY_PARAMS.get('missing_config', None)
+        missing_devices = None
+        report_slug = None
+        if missing_config:
+            missing_config = missing_config.split()
+            report_slug = missing_config[0]
+            missing_devices = ' '.join(missing_config[1:])
 
         if request.accepted_renderer.format == 'html':
             DeviceFormSet = modelformset_factory(Device,
@@ -84,7 +89,8 @@ class DeviceList(generics.ListAPIView):
             tabledata = zip(formset.forms, queryset)
             data = {'formset': formset, 'tabledata': tabledata,
                     'invalid': invalid,
-                    'missing_device': missing_device,
+                    'missing_devices': missing_devices,
+                    'report_slug': report_slug
                     }
             return Response(data, template_name='device_list.html')
 

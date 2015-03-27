@@ -131,7 +131,7 @@ class GenericReportView(views.APIView):
             # only redirect if first login
             return HttpResponseRedirect(reverse('preferences')+'?next=/report')
 
-        devices = Device.objects.all()
+        devices = Device.objects.filter(enabled=True)
         device_modules = [obj.module for obj in devices]
 
         # iterate through all sections of the report, for each section,
@@ -139,7 +139,7 @@ class GenericReportView(views.APIView):
         # pre_process_func function is device_selection_preprocess
         # then the field is a device field, then fetch the module and check
         # the module is included in Device objects in database
-        missing_modules = set()
+        missing_devices = set()
         for _id, fields in report.collect_fields_by_section().iteritems():
             for _name, field_obj in fields.iteritems():
                 func = field_obj.pre_process_func
@@ -148,19 +148,20 @@ class GenericReportView(views.APIView):
                     # check if the device is configured
                     module = func.params['module']
                     if module not in device_modules:
-                        missing_modules.add(module)
-
-        if missing_modules:
-            return HttpResponseRedirect('%s?missing_device=%s' %
+                        missing_devices.add(module)
+        if missing_devices:
+            missing_config = '%s+%s' % (report.slug,
+                                        ', '.join(list(missing_devices)))
+            return HttpResponseRedirect('%s?missing_config=%s' %
                                         (reverse('device-list'),
-                                         ','.join(list(missing_modules))))
+                                         missing_config))
 
         # search across all enabled devices
         for device in devices:
-            if (device.enabled and ('host.or.ip' in device.host or
-                                    device.username == '<username>' or
-                                    device.password == '<password>' or
-                                    device.password == '')):
+            if ('host.or.ip' in device.host or
+                    device.username == '<username>' or
+                    device.password == '<password>' or
+                    device.password == ''):
                 return HttpResponseRedirect('%s?invalid=true' %
                                             reverse('device-list'))
 
