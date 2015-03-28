@@ -98,4 +98,6 @@ class Command(BaseCommand):
             logger.debug('Flushing all jobs.')
             while Job.objects.count():
                 ids = Job.objects.values_list('pk', flat=True)[:100]
-                Job.objects.filter(pk__in=ids).delete()
+                # Using list(ids) forces a DB hit, otherwise we may hit
+                # a MySQL limitation
+                Job.objects.filter(pk__in=list(ids)).delete()
