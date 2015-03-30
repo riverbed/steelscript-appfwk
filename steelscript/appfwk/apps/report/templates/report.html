@@ -67,17 +67,17 @@
     </div>
     {% endif %}
         {% if missing_devices %}
-        <div class="block-centered" style="text-align: center">
-            <h4 class="text-error">
-                {% if is_superuser %}
-                    This report requires the following devices to be added or enabled: '{{ missing_devices }}'.
-                    Please visit <a href="{%  url 'device-list' %}">Devices</a>.
-                {% else %}
-                    This report requires the following devices: '{{ missing_devices  }}'.
-                    Please contact a system administrator.
-                {% endif %}
+            <div class="block-centered" style="text-align: center">
+                <h4 class="text-error">
+                    {% if is_superuser %}
+                        This report requires the following devices to be added or enabled: '{{ missing_devices }}'.
+                        Please visit <a href="{%  url 'device-list' %}">Devices</a>.
+                    {% else %}
+                        This report requires the following devices: '{{ missing_devices  }}'.
+                        Please contact a system administrator.
+                    {% endif %}
                 </h4>
-        </div>
+            </div>
         {% endif %}
     {% if not report.hide_criteria %}
     <div class="container-fluid">
