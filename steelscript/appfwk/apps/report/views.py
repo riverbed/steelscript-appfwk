@@ -150,11 +150,7 @@ class GenericReportView(views.APIView):
                     if module not in device_modules:
                         missing_devices.add(module)
         if missing_devices:
-            missing_config = '%s+%s' % (report.slug,
-                                        ', '.join(list(missing_devices)))
-            return HttpResponseRedirect('%s?missing_config=%s' %
-                                        (reverse('device-list'),
-                                         missing_config))
+            missing_devices = ', '.join(list(missing_devices))
 
         # search across all enabled devices
         for device in devices:
@@ -219,7 +215,9 @@ class GenericReportView(views.APIView):
              'section_map': section_map,
              'show_sections': (len(section_map) > 1),
              'criteria': criteria,
-             'expand_tables': expand_tables},
+             'expand_tables': expand_tables,
+             'missing_devices': missing_devices,
+             'is_superuser': request.user.is_superuser},
             context_instance=RequestContext(request)
         )
 
