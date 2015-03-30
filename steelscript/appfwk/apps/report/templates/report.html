@@ -138,21 +138,21 @@
               </form>
               <p></p>
               {% if not missing_devices %}
-	              <div class="btn-group dropup">
-	                  <button id="button-run" class="btn btn-primary">Run</button>
-	                  <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-	                    <span class="caret"></span>
-	                  </button>
-	                  <ul class="dropdown-menu">
-	                      {% if developer %}
-	                          <li><a href="#" id="menu-debug">Debug This Report</a></li>
-	                      {% endif %}
-	                      <li><a href="#" id="menu-update-time-run">Update Time & Run</a></li>
-	                      <li class="divider"></li>
-	                      <li><a href="#" id="menu-run">Run Report</a></li>
-	                  </ul>
-	              </div>
-	          {% endif  %}
+                  <div class="btn-group dropup">
+                      <button id="button-run" class="btn btn-primary">Run</button>
+                      <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                        <span class="caret"></span>
+                      </button>
+                      <ul class="dropdown-menu">
+                          {% if developer %}
+                              <li><a href="#" id="menu-debug">Debug This Report</a></li>
+                          {% endif %}
+                          <li><a href="#" id="menu-update-time-run">Update Time & Run</a></li>
+                          <li class="divider"></li>
+                          <li><a href="#" id="menu-run">Run Report</a></li>
+                      </ul>
+                  </div>
+              {% endif  %}
             </div>
           </div>
         </div>
