@@ -79,6 +79,19 @@
                 </h4>
             </div>
         {% endif %}
+        {% if missing_password %}
+            <div class="block-centered" style="text-align: center">
+                <h4 class="text-error">
+                    {% if is_superuser %}
+                        The '{{ missing_password }}' devices miss passwords.
+                        Please visit <a href="{%  url 'device-list' %}">Devices</a>.
+                    {% else %}
+                        This '{{ missing_password  }}' devices miss passwords.
+                        Please contact a system administrator.
+                    {% endif %}
+                </h4>
+            </div>
+        {% endif %}
     {% if not report.hide_criteria %}
     <div class="container-fluid">
       <div id="criteria-row" class="row-fluid">
@@ -137,7 +150,7 @@
                     </fieldset>
               </form>
               <p></p>
-              {% if not missing_devices %}
+              {% if not missing_devices and not missing_password %}
                   <div class="btn-group dropup">
                       <button id="button-run" class="btn btn-primary">Run</button>
                       <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
