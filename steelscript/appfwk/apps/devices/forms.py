@@ -17,7 +17,7 @@ class DeviceForm(forms.ModelForm):
     class Meta:
         model = Device
         fields = ('name', 'module', 'host', 'port',
-                  'username', 'password')
+                  'username', 'password', 'enabled')
 
     def __init__(self, *args, **kwargs):
         super(DeviceForm, self).__init__(*args, **kwargs)
