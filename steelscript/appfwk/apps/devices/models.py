@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 def create_device_fixture(strip_passwords=True):
     """ Dump devices to JSON file, optionally stripping passwords.
+
+    If password is stripped, the device is disabled.
     """
     buf = StringIO()
     management.call_command('dumpdata', 'devices', stdout=buf)
@@ -28,6 +30,7 @@ def create_device_fixture(strip_passwords=True):
     for d in json.load(buf):
         if strip_passwords:
             del d['fields']['password']
+            d['fields']['enabled'] = False
         devices.append(d)
 
     buf.close()

@@ -140,7 +140,6 @@ class GenericReportView(views.APIView):
         # then the field is a device field, then fetch the module and check
         # the module is included in Device objects in database
         missing_devices = set()
-        missing_password = set()
         for _id, fields in report.collect_fields_by_section().iteritems():
             for _name, field_obj in fields.iteritems():
                 func = field_obj.pre_process_func
@@ -150,15 +149,8 @@ class GenericReportView(views.APIView):
                     module = func.params['module']
                     if module not in device_modules:
                         missing_devices.add(module)
-                    else:
-                        device = devices[device_modules.index(module)]
-                        if device.password == '':
-                            missing_password.add(device.module)
         if missing_devices:
             missing_devices = ', '.join(list(missing_devices))
-
-        if missing_password:
-            missing_password = ', '.join(list(missing_password))
 
         if not request.user.profile_seen:
             # only redirect if first login
@@ -216,7 +208,6 @@ class GenericReportView(views.APIView):
              'criteria': criteria,
              'expand_tables': expand_tables,
              'missing_devices': missing_devices,
-             'missing_password': missing_password,
              'is_superuser': request.user.is_superuser},
             context_instance=RequestContext(request)
         )
