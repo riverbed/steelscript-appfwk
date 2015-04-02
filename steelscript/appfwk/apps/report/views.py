@@ -113,6 +113,7 @@ def rm_file(filepath):
 
 
 class GenericReportView(views.APIView):
+
     def get_media_params(self, request):
         """ Implement this method in subclasses to compute the values of
             the template, criteria and expand_tables template params.
@@ -124,26 +125,32 @@ class GenericReportView(views.APIView):
     def render_html(self, report, request, namespace, report_slug, isprint):
         """ Render HTML response
         """
-
         logging.debug('Received request for report page: %s' % report_slug)
 
         if not request.user.profile_seen:
             # only redirect if first login
             return HttpResponseRedirect(reverse('preferences')+'?next=/report')
 
-        devices = Device.objects.all()
-        if len(devices) == 0:
-            # redirect if no devices defined
-            return HttpResponseRedirect(reverse('device-list'))
+        devices = Device.objects.filter(enabled=True)
+        device_modules = [obj.module for obj in devices]
 
-        # search across all enabled devices
-        for device in devices:
-            if (device.enabled and ('host.or.ip' in device.host or
-                                    device.username == '<username>' or
-                                    device.password == '<password>' or
-                                    device.password == '')):
-                return HttpResponseRedirect('%s?invalid=true' %
-                                            reverse('device-list'))
+        # iterate through all sections of the report, for each section,
+        # iterate through the fields, and if any field's
+        # pre_process_func function is device_selection_preprocess
+        # then the field is a device field, then fetch the module and check
+        # the module is included in Device objects in database
+        missing_devices = set()
+        for _id, fields in report.collect_fields_by_section().iteritems():
+            for _name, field_obj in fields.iteritems():
+                func = field_obj.pre_process_func
+                if (func and func.function == 'device_selection_preprocess'):
+                    # This field is a device field,
+                    # check if the device is configured
+                    module = func.params['module']
+                    if module not in device_modules:
+                        missing_devices.add(module)
+        if missing_devices:
+            missing_devices = ', '.join(list(missing_devices))
 
         if not request.user.profile_seen:
             # only redirect if first login
@@ -199,7 +206,9 @@ class GenericReportView(views.APIView):
              'section_map': section_map,
              'show_sections': (len(section_map) > 1),
              'criteria': criteria,
-             'expand_tables': expand_tables},
+             'expand_tables': expand_tables,
+             'missing_devices': missing_devices,
+             'is_superuser': request.user.is_superuser},
             context_instance=RequestContext(request)
         )
 

@@ -47,13 +47,16 @@
                         {% endif %}
                         {% for form, device in tabledata %}
                             <tr {% if not device.enabled %}class="row-disabled"{% endif %}>
-                                {% for field in form.visible_fields %}
-                                    <td>{{ field }}</td>
-                                {% endfor %}
+                                {% if not device.password %}
+                                    <td ><input type="checkbox" disabled="disabled"></td>
+                                {% else %}
+                                    {% for field in form.visible_fields %}
+                                        <td >{{ field }}</td>
+                                    {% endfor %}
+                                {% endif %}
                                 {% for hidden in form.hidden_fields %}
                                     {{ hidden }}
                                 {% endfor %}
-
                                 <td>
                                     <a href="{% url 'device-detail' device.id %}">{{ device.name }}</a>
                                     {% if not device.password %}

@@ -66,6 +66,19 @@
       {{ report.description | safe }}
     </div>
     {% endif %}
+        {% if missing_devices %}
+            <div class="block-centered" style="text-align: center">
+                <h4 class="text-error">
+                    {% if is_superuser %}
+                        This report requires the following devices to be added or enabled: '{{ missing_devices }}'.
+                        Please visit <a href="{%  url 'device-list' %}">Devices</a>.
+                    {% else %}
+                        This report requires the following devices to be added or enabled: '{{ missing_devices  }}'.
+                        Please contact a system administrator.
+                    {% endif %}
+                </h4>
+            </div>
+        {% endif %}
     {% if not report.hide_criteria %}
     <div class="container-fluid">
       <div id="criteria-row" class="row-fluid">
@@ -75,6 +88,7 @@
               Criteria
             </a>
           </div>
+
           <div id="criteria" class="collapse in">
             <div class="widget-content">
                 <form class="form-horizontal" action="{% url 'report-view' report.namespace report.slug %}" method="post" id="criteria-form"
@@ -123,20 +137,22 @@
                     </fieldset>
               </form>
               <p></p>
-              <div class="btn-group dropup">
-                  <button id="button-run" class="btn btn-primary">Run</button>
-                  <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-                    <span class="caret"></span>
-                  </button>
-                  <ul class="dropdown-menu">
-                      {% if developer %}
-                          <li><a href="#" id="menu-debug">Debug This Report</a></li>
-                      {% endif %}
-                      <li><a href="#" id="menu-update-time-run">Update Time & Run</a></li>
-                      <li class="divider"></li>
-                      <li><a href="#" id="menu-run">Run Report</a></li>
-                  </ul>
-              </div>
+              {% if not missing_devices %}
+                  <div class="btn-group dropup">
+                      <button id="button-run" class="btn btn-primary">Run</button>
+                      <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                        <span class="caret"></span>
+                      </button>
+                      <ul class="dropdown-menu">
+                          {% if developer %}
+                              <li><a href="#" id="menu-debug">Debug This Report</a></li>
+                          {% endif %}
+                          <li><a href="#" id="menu-update-time-run">Update Time & Run</a></li>
+                          <li class="divider"></li>
+                          <li><a href="#" id="menu-run">Run Report</a></li>
+                      </ul>
+                  </div>
+              {% endif  %}
             </div>
           </div>
         </div>
