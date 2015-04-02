@@ -95,6 +95,10 @@ http://pythonhosted.org/steelscript/
         'ansi2html>=1.0.6',
         'django-ace==1.0.1',
         'apscheduler>=3.0',
+
+        'celery>=3.1',
+        'django-celery==3.1.16',
+        'redis=2.10.3',
     ),
 
     'extras_require': {

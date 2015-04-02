@@ -10,6 +10,9 @@ import logging
 from datetime import timedelta
 
 import pandas
+
+from django.db import transaction
+
 from steelscript.appfwk.apps.jobs.models import Job, BatchJobRunner
 
 from steelscript.common.timeutils import \
@@ -139,8 +142,9 @@ class AnalysisQuery(TableQueryBase):
 
         for (name, ref) in deptables.items():
             deptable = Table.from_ref(ref)
-            job = Job.create(deptable, self.job.criteria,
-                             update_progress=self.job.update_progress)
+            with transaction.atomic():
+                job = Job.create(deptable, self.job.criteria,
+                                 update_progress=self.job.update_progress)
 
             batch.add_job(job)
             logger.debug("%s: starting dependent job %s" % (self, job))

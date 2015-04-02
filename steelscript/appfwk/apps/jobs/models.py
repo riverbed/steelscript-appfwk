@@ -8,6 +8,7 @@ import datetime
 import importlib
 import traceback
 import threading
+from celery.contrib.methods import task
 
 import pytz
 import pandas
@@ -127,7 +128,6 @@ class Job(models.Model):
                   'actual_criteria', 'touched', 'refcount']:
             setattr(self, k, getattr(job, k))
 
-    @transaction.commit_on_success
     def safe_update(self, **kwargs):
         """ Update the job with the passed dictionary in a database safe way.
 
@@ -142,29 +142,30 @@ class Job(models.Model):
             return
 
         with LocalLock():
-            # logger.debug("%s safe_update %s" % (self, kwargs))
-            Job.objects.filter(pk=self.pk).update(**kwargs)
-
             # Force a reload of the job to get latest data
             self.refresh()
 
-            if not self.ischild:
-                # Push changes to children of this job
-                child_kwargs = {}
-                for k, v in kwargs.iteritems():
-                    if k in ['status', 'message', 'exception', 'progress',
-                             'remaining', 'actual_criteria']:
-                        child_kwargs[k] = v
-                # There should be no recursion, so a direct update to the
-                # database is possible.  (If recursion, would need to call
-                # self_update() on each child.)
-                Job.objects.filter(parent=self).update(**child_kwargs)
+            with transaction.atomic():
+                # logger.debug("%s safe_update %s" % (self, kwargs))
+                Job.objects.filter(pk=self.pk).update(**kwargs)
+
+                if not self.ischild:
+                    # Push changes to children of this job
+                    child_kwargs = {}
+                    for k, v in kwargs.iteritems():
+                        if k in ['status', 'message', 'exception', 'progress',
+                                 'remaining', 'actual_criteria']:
+                            child_kwargs[k] = v
+                    # There should be no recursion, so a direct update to the
+                    # database is possible.  (If recursion, would need to call
+                    # self_update() on each child.)
+                    Job.objects.filter(parent=self).update(**child_kwargs)
 
     @classmethod
     def create(cls, table, criteria, update_progress=True):
 
         with LocalLock():
-            with transaction.commit_on_success():
+            with transaction.atomic():
                 # Grab a lock on the row associated with the table
                 table = Table.objects.select_for_update().get(id=table.id)
 
@@ -339,7 +340,7 @@ class Job(models.Model):
             logger.debug("%s: Shadowing parent job %s" % (self, self.parent))
             return
 
-        with transaction.commit_on_success():
+        with transaction.atomic():
             logger.debug("%s: Starting job" % str(self))
             self.mark_progress(0)
 
@@ -367,6 +368,7 @@ class Job(models.Model):
 
     def mark_progress(self, progress, remaining=None):
         # logger.debug("%s progress %s" % (self, progress))
+        return
         if self.update_progress:
             self.safe_update(status=Job.RUNNING,
                              progress=progress,
@@ -379,7 +381,7 @@ class Job(models.Model):
     def data(self):
         """ Returns a pandas.DataFrame of data, or None if not available. """
 
-        with transaction.commit_on_success():
+        with transaction.atomic():
             self.refresh()
             if not self.status == Job.COMPLETE:
                 raise DataError("Job not complete, no data available")
@@ -463,7 +465,7 @@ class Job(models.Model):
         elif type(ancient) in [int, float]:
             ancient = datetime.timedelta(seconds=ancient)
 
-        with transaction.commit_on_success():
+        with transaction.atomic():
             # Ancient jobs are deleted regardless of refcount
             now = datetime.datetime.now(tz=pytz.utc)
             try:
@@ -562,10 +564,34 @@ class SyncWorker(object):
         self.do_run()
 
 
+class CeleryWorker(object):
+    def __init__(self, job, queryclass):
+        self.job = job
+        self.queryclass = queryclass
+
+    def __unicode__(self):
+        return "<CeleryWorker %s>" % (self.job)
+
+    def __str__(self):
+        return "<CeleryWorker %s>" % (self.job)
+
+    def __repr__(self):
+        return unicode(self)
+
+    def start(self):
+        self.task_start.delay()
+
+    @task()
+    def task_start(self):
+        self.do_run()
+
+
 if settings.APPS_DATASOURCE['threading'] and not settings.TESTING:
     base_worker_class = AsyncWorker
 else:
     base_worker_class = SyncWorker
+
+base_worker_class = CeleryWorker
 
 
 class Worker(base_worker_class):
