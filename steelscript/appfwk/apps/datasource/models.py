@@ -1148,6 +1148,7 @@ class Job(models.Model):
                               criteria=criteria,
                               actual_criteria=parent.actual_criteria,
                               status=parent.status,
+                              pid=os.getpid(),
                               handle=handle,
                               parent=parent,
                               ischild=True,
@@ -1168,6 +1169,7 @@ class Job(models.Model):
                     job = Job(table=table,
                               criteria=criteria,
                               status=Job.NEW,
+                              pid=os.getpid(),
                               handle=handle,
                               parent=None,
                               ischild=False,
@@ -1488,7 +1490,8 @@ class AsyncWorker(threading.Thread):
         return unicode(self)
 
     def run(self):
-        self.job.safe_update(pid=os.getpid())
+        self.job.safe_update(status=Job.RUNNING,
+                             pid=os.getpid())
         self.do_run()
         sys.exit(0)
 
@@ -1508,7 +1511,8 @@ class SyncWorker(object):
         return unicode(self)
 
     def start(self):
-        self.job.safe_update(pid=os.getpid())
+        self.job.safe_update(status=Job.RUNNING,
+                             pid=os.getpid())
         self.do_run()
 
 if settings.APPS_DATASOURCE['threading'] and not settings.TESTING:
