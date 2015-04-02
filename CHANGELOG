@@ -1,8 +1,10 @@
 CHANGELOG
 =========
 
+[0.9.8.3]
+ * Enhance job handling with interrupted jobs
+
 [0.9.8.2]
-[0.9.8.2rc1]
  * Add update_progress option to Job model
 
 [0.9.8.1]
