@@ -94,6 +94,9 @@ class Job(models.Model):
                  (COMPLETE, "Complete"),
                  (ERROR, "Error")))
 
+    # Process ID for original Worker thread
+    pid = models.IntegerField(default=None, null=True)
+
     # Message if job complete or error
     message = models.TextField(default="")
 
@@ -182,19 +185,40 @@ class Job(models.Model):
 
                 # Look for another job by the same handle in any state
                 # except ERROR
-                if not criteria.ignore_cache:
-                    parents = (Job.objects
-                               .select_for_update()
-                               .filter(status__in=[Job.NEW,
-                                                   Job.COMPLETE,
-                                                   Job.RUNNING],
-                                       handle=handle,
-                                       ischild=False)
-                               .order_by('created'))
-                else:
-                    parents = None
+                parents = []
 
-                if parents is not None and len(parents) > 0:
+                if not criteria.ignore_cache:
+                    parent_jobs = (Job.objects
+                                   .select_for_update()
+                                   .filter(status__in=[Job.NEW,
+                                                       Job.COMPLETE,
+                                                       Job.RUNNING],
+                                           handle=handle,
+                                           ischild=False)
+                                   .order_by('created'))
+
+                    # check if incomplete jobs are still running by sending
+                    # a harmless signal 0 to that PID
+                    # or if jobs were never started and even given a PID
+                    def pid_active(pid):
+                        try:
+                            os.kill(pid, 0)
+                            return True
+                        except OSError:
+                            return False
+
+                    for p in parent_jobs:
+                        if p.status in (Job.NEW, Job.RUNNING):
+                            if p.pid is None or not pid_active(p.pid):
+                                logging.debug('*** Deleting stale job %s, '
+                                              'with PID %s' % (p, p.pid))
+                                p.delete()
+                                continue
+
+                        parents.append(p)
+
+                if len(parents) > 0:
+                    # since all parents are valid, pick the first one
                     parent = parents[0]
 
                     job = Job(table=table,
@@ -540,6 +564,7 @@ class AsyncWorker(threading.Thread):
         return unicode(self)
 
     def run(self):
+        self.job.safe_update(pid=os.getpid())
         self.do_run()
         sys.exit(0)
 
@@ -559,6 +584,7 @@ class SyncWorker(object):
         return unicode(self)
 
     def start(self):
+        self.job.safe_update(pid=os.getpid())
         self.do_run()
 
 

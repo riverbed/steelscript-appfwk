@@ -33,23 +33,23 @@ class Command(BaseCommand):
         """
         parser = super(Command, self).create_parser(prog_name, subcommand)
         group = optparse.OptionGroup(parser, "Job Help",
-                                     "Helper commands to manage jobs")
-        group.add_option('--job-list',
+                                     "Helper commands to manange jobs")
+        group.add_option('--list',
                          action='store_true',
                          dest='job_list',
                          default=False,
                          help='List all jobs')
-        group.add_option('--job-age',
+        group.add_option('--age',
                          action='store_true',
                          dest='job_age',
                          default=False,
                          help='Delete old/ancient jobs')
-        group.add_option('--job-flush',
+        group.add_option('--flush',
                          action='store_true',
                          dest='job_flush',
                          default=False,
                          help='Delete all jobs without question')
-        group.add_option('--job-data',
+        group.add_option('--data',
                          action='store',
                          dest='job_data',
                          default=False,
@@ -68,16 +68,21 @@ class Command(BaseCommand):
 
         if options['job_list']:
             # print out the id's instead of processing anything
-            columns = ['ID', 'PID', 'Table', 'Created', 'Touched', 'Sts',
-                       'Refs', 'Progress', 'Data file']
+            columns = ['ID', 'Parent', 'PID', 'Table', 'Created', 'Touched',
+                       'Status', 'Refs', 'Progress', 'Data file']
             data = []
             for j in Job.objects.all().order_by('id'):
-                datafile = j.datafile()
-                if not os.path.exists(datafile):
+
+                datafile = os.path.basename(j.datafile())
+                if not os.path.exists(j.datafile()):
                     datafile += " (missing)"
+
+                status = (s for s in ('NEW', 'RUNNING', 'COMPLETE', 'ERROR')
+                          if getattr(Job, s) == j.status).next()
                 parent_id = j.parent.id if j.parent else '--'
-                data.append([j.id, parent_id, j.table.name, j.created,
-                             j.touched, j.status, j.refcount, j.progress,
+
+                data.append([j.id, parent_id, j.pid, j.table.name, j.created,
+                             j.touched, status, j.refcount, j.progress,
                              datafile])
 
             Formatter.print_table(data, columns)
