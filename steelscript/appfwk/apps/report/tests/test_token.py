@@ -71,7 +71,6 @@ class SimpleWidgetTokenTest(WidgetTokenTest):
 class EditFieldsWidgetTokenTest(WidgetTokenTest):
 
     def test_normal_render(self):
-        """Test """
         self.post_url = self.base_url + '/%s/editfields/' % self.token
         edit_fields = json.dumps(['endtime_0', 'duration'])
         self.client.post(self.post_url, data={'edit_fields': edit_fields})
