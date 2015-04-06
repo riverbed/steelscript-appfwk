@@ -274,7 +274,7 @@ rvbd.report = {
             });
 
             // Replace the default criteria with the criteria from the widget request URL.
-            $.extend(targetWidget.criteria, rvbd.report.embedWidgetInfo);
+            $.extend(targetWidget.criteria, $.parseJSON(rvbd.report.embedWidgetInfo.criteria));
 
             widgetsToRender = [targetWidget];
         }

@@ -378,17 +378,16 @@ rvbd.widgets.Widget.prototype = {
         delete urlCriteria.starttime;
         delete urlCriteria.endtime;
 
-        var baseUrl = window.location.href.split('#')[0] + 'widgets/'; // Current URL minus anchor
-        var url = baseUrl + self.slug + '/render/?';
+        var widgetUrl = window.location.href.split('#')[0] + 'widgets/' + self.slug; 
 
         //call server for auth token
         $.ajax({
             dataType: 'json',
             type: 'POST',
-            url: baseUrl + self.slug + '/authtoken/',
+            url: widgetUrl + '/authtoken/',
             data: { criteria: JSON.stringify(urlCriteria) },
             success: function(data, textStatus) {
-                   self.genEmbedWindow(url, data.auth);
+                   self.genEmbedWindow(widgetUrl, data.auth, urlCriteria);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 var alertBody = ("The server returned the following HTTP error: <pre>" +
@@ -396,14 +395,12 @@ rvbd.widgets.Widget.prototype = {
                 rvbd.modal.alert("Auth Token Generation Error", alertBody, "OK", function() { })
             }
         });
-
-
     },
 
-    genEmbedWindow: function(url, token) {
+    genEmbedWindow: function(widgetUrl, token, criteria) {
 
         var self = this;
-        var authUrl = url + 'auth=' + token;
+        var authUrl = widgetUrl + '/render/?auth=' + token;
 
         /* Generates the source code for the embed iframe */
         function genEmbedCode(url, width, height) {
@@ -411,23 +408,84 @@ rvbd.widgets.Widget.prototype = {
                    '" src="' + url + '" frameborder="0"></iframe>';
         };
 
+        var div = '<div id="embed-modal" class="modal-content">' +
+        '  Choose dimensions for the embedded widget:<br>' +
+        '  <table>' +
+        '  <tr>' +
+        '     <th>Width:</th>' +
+        '     <td><input value="500" type="text" id="embed-widget-width"></td>' +
+        '  </tr>' +
+        '  <tr>' +
+        '      <th>Height:</th>' +
+        '      <td><input value="312" type="text" id="embed-widget-height"></td>' +
+        '  </tr>' +
+        '  </table><br>' +
+        ' Choose criteria fields that can be overridden in the URL string:<br>' +
+        ' <table id="criteriaTbl">';
+
+        for (var field in criteria){
+            if (criteria.hasOwnProperty(field)){
+                div += '<tr>'+
+                       '<th>' + field + '</th>'+
+                       '     <td><input type="checkbox" id="criteria-' + field + '"></td>' +
+                       ' </tr>';
+            }
+        }
+        div += ' </table><br>' +
+               '  Copy the following HTML to embed the widget:' +
+               '  <input id="embed-widget-code" type="text">' +
+               '</div>';
+
+        $('body').append(div);
+
+
         var embedCode = genEmbedCode(authUrl, 500, self.options.height + 12);
-        $('body').append('<div id="embed-modal" class="modal-content">' +
-            '  Choose dimensions for the embedded widget:<br>' +
-            '  <table>' +
-            '  <tr>' +
-            '     <th>Width:</th>' +
-            '     <td><input value="500" type="text" id="embed-widget-width"></td>' +
-            '  </tr>' +
-            '  <tr>' +
-            '      <th>Height:</th>' +
-            '      <td><input value="312" type="text" id="embed-widget-height"></td>' +
-            '  </tr>' +
-            '  </table><br>' +
-            '  Copy the following HTML to embed the widget:' +
-            '  <input id="embed-widget-code" type="text">' +
-            '</div>');
+
         $('#embed-modal #embed-widget-code').attr('value', embedCode);
+
+        function getEditFields() {
+            var editFields = [];
+            for (var field in criteria)
+                if (criteria.hasOwnProperty(field)) 
+                    if ($('#criteria-' + field).prop('checked'))
+                        editFields.push(field);
+            return editFields
+        }
+
+        function toggleEditField() {
+             var editFieldsUrl = widgetUrl +'/' + token + '/editfields/';
+
+             var dict = {edit_fields: getEditFields()};
+            //call server for auth token
+            $.ajax({
+                dataType: 'json',
+                type: 'POST',
+                url: editFieldsUrl,
+                //data: {dict: JSON.stringify(dict)},
+                data: {edit_fields: JSON.stringify(getEditFields())},
+                success: function(data, textStatus) {
+                    updateIframe();
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    var alertBody = ("The server returned the following HTTP error: <pre>" +
+                                     + errorThrown + '</pre>');
+                    rvbd.modal.alert("Add Edit Field Error", alertBody, "OK", function() { })
+                }
+            });
+        }
+
+        function updateIframe() {
+            var tempUrl = authUrl;
+            var fields = getEditFields();
+            var fieldsObj = {}
+            for (var index in fields)
+                fieldsObj[fields[index]] = criteria[fields[index]]
+
+            tempUrl += '&' + $.param(fieldsObj)
+            $('#embed-modal #embed-widget-code').attr('value',
+                genEmbedCode(tempUrl, $('#embed-widget-width').val(),
+                                      $('#embed-widget-height').val()));
+        };
 
         rvbd.modal.alert("Embed Widget HTML", $('#embed-modal')[0], "OK", function() {
             // automatically focus and select the embed code
@@ -436,11 +494,9 @@ rvbd.widgets.Widget.prototype = {
                 .focus();
 
             // update the embed code to reflect the width and height fields
-            $('#embed-widget-width, #embed-widget-height').keyup(function() {
-                $('#embed-modal #embed-widget-code').attr('value',
-                    genEmbedCode(authUrl, $('#embed-widget-width').val(),
-                                          $('#embed-widget-height').val()));
-            });
+            $('#embed-widget-width, #embed-widget-height').keyup(updateIframe);
+            // update the embed code to reflect the checked criteria fields
+            $('#criteriaTbl').click(toggleEditField);
         });
     }
 };

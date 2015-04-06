@@ -491,6 +491,7 @@ class WidgetAuthToken(models.Model):
     user = models.ForeignKey(AppfwkUser)
     pre_url = models.CharField(max_length=200, verbose_name='URL')
     criteria = PickledObjectField()
+    edit_fields = SeparatedValuesField(null=True)
     touched = models.DateTimeField(auto_now=True,
                                    verbose_name='Last Time used')
 

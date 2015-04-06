@@ -72,6 +72,10 @@ urlpatterns = patterns(
         views.WidgetTokenView.as_view(),
         name='widget-auth-token'),
 
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/(?P<auth_token>[0-9_a-z]+)/editfields/$',
+        views.EditFieldsView.as_view(),
+        name='edit-fields'),
+
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/jobs/$',
         views.WidgetJobsList.as_view(),
         name='widget-job-list'),
