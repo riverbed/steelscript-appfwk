@@ -8,6 +8,7 @@ import json
 
 from . import reportrunner
 
+
 class WidgetTokenTest(reportrunner.ReportRunnerTestCase):
 
     report = 'token_report'
@@ -45,7 +46,6 @@ class SimpleWidgetTokenTest(WidgetTokenTest):
         # log out so that only token is used for authentication
         self.client.logout()
 
-
     def test_get_user(self):
         """Test normal GET URL would fail to authenticate due to logged out"""
         self.run_get_url(url='/preferences/user/', code=403)
@@ -74,8 +74,8 @@ class EditFieldsWidgetTokenTest(WidgetTokenTest):
         """Test """
         self.post_url = self.base_url + '/%s/editfields/' % self.token
         edit_fields = json.dumps(['endtime_0', 'duration'])
-        response = self.client.post(self.post_url,
-                                    data={'edit_fields': edit_fields})
+        self.client.post(self.post_url, data={'edit_fields': edit_fields})
+
         get_url = (self.base_url +
                    '/render/?auth=%s&endtime_0=1&duration=2d' % self.token)
         self.run_get_url(get_url, 200)
@@ -83,7 +83,3 @@ class EditFieldsWidgetTokenTest(WidgetTokenTest):
         get_url = (self.base_url +
                    '/render/?auth=%s&endtime_1=1&resolution=2d' % self.token)
         self.run_get_url(get_url, 400)
-         
-        
-        
-        
