@@ -5,94 +5,68 @@
 # as set forth in the License.
 
 
-from django.conf.urls import patterns, url
+from django.conf.urls import patterns, url, include
 import steelscript.appfwk.apps.report.views as views
 
-urlpatterns = patterns(
-    'steelscript.appfwk.apps.report.views',
-    url(r'^$', views.ReportView.as_view(),
-        name='report-view-root'),
+PRE_FIX = 'steelscript.appfwk.apps.report.views'
 
-    url(r'^reload$', 'reload_config',
-        name='reload-all'),
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/$',
-        views.ReportView.as_view(),
-        name='report-view'),
+def prefix_patterns(*args):
+    return patterns(PRE_FIX,  *args)
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/$',
-        views.ReportView.as_view(),
-        name='report-view'),
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/print/$',
-        views.ReportPrintView.as_view(),
-        name='report-print-view'),
+def job_url(suffix):
+    return url(suffix, views.WidgetJobDetail.as_view(),
+               name='report-job-detail')
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/criteria/$',
-        views.ReportCriteria.as_view(),
-        name='report-criteria'),
+job_patterns = prefix_patterns(
+    job_url(r'^$'), job_url(r'^(?P<status>status)/$'))
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/tables/$',
-        views.ReportTableList.as_view(),
-        name='report-table-list'),
+jobs_patterns = prefix_patterns(
+    url(r'^$', views.WidgetJobsList.as_view(), name='widget-job-list'),
+    url(r'^(?P<job_id>[0-9]+)/', include(job_patterns)))
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/edit/$',
-        views.ReportEditor.as_view(),
-        name='report-editor'),
-
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/edit/diff/$',
-        views.ReportEditorDiff.as_view(),
-        name='report-editor-diff'),
-
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/edit/copy/$',
-        views.ReportCopy.as_view(),
-        name='report-editor-copy'),
-
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/reload$',
-        'reload_config',
-        name='reload-report'),
-
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/reload$',
-        'reload_config',
-        name='reload-report'),
-
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/$',
-        views.ReportWidgets.as_view(),
-        name='report-widgets'),
-
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/$',
-        views.WidgetDetailView.as_view(),
-        name='widget-slug'),
-
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/render/$',
-        views.WidgetView.as_view(),
-        name='widget-stand-alone'),
-
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/authtoken/$',
-        views.WidgetTokenView.as_view(),
+widget_patterns = prefix_patterns(
+    url(r'^$', views.WidgetDetailView.as_view(), name='widget-slug'),
+    url(r'^render/$', views.WidgetView.as_view(), name='widget-stand-alone'),
+    url(r'^authtoken/$', views.WidgetTokenView.as_view(),
         name='widget-auth-token'),
+    url(r'^(?P<auth_token>[0-9_a-z]+)/editfields/$',
+        views.EditFieldsView.as_view(), name='edit-fields'),
+    url(r'^jobs/', include(jobs_patterns)),
+    url(r'^criteria/$', views.ReportCriteria.as_view(),
+        name='widget-criteria'))
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/(?P<auth_token>[0-9_a-z]+)/editfields/$',
-        views.EditFieldsView.as_view(),
-        name='edit-fields'),
+widgets_patterns = prefix_patterns(
+    url(r'^$', views.ReportWidgets.as_view(),
+        name='report-widgets'),
+    url(r'^(?P<widget_slug>[0-9_a-zA-Z-]+)/', include(widget_patterns)))
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/jobs/$',
-        views.WidgetJobsList.as_view(),
-        name='widget-job-list'),
+report_edit_patterns = prefix_patterns(
+    url(r'^$', views.ReportEditor.as_view(), name='report-editor'),
+    url(r'^diff/$', views.ReportEditorDiff.as_view(),
+        name='report-editor-diff'),
+    url(r'^copy/$', views.ReportCopy.as_view(), name='report-editor-copy'))
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/jobs/(?P<job_id>[0-9]+)/$',
-        views.WidgetJobDetail.as_view(),
-        name='report-job-detail'),
+report_patterns = prefix_patterns(
+    url(r'^$', views.ReportView.as_view(), name='report-view'),
+    url(r'^print/$', views.ReportPrintView.as_view(),
+        name='report-print-view'),
+    url(r'^criteria/$', views.ReportCriteria.as_view(),
+        name='report-criteria'),
+    url(r'^tables/$', views.ReportTableList.as_view(),
+        name='report-table-list'),
+    url(r'^edit/', include(report_edit_patterns)),
+    url(r'^reload/$', 'reload_config',  name='reload-report'),
+    url(r'^widgets/', include(widgets_patterns)))
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/jobs/(?P<job_id>[0-9]+)/(?P<status>status)/$',
-        views.WidgetJobDetail.as_view(),
-        name='report-job-detail'),
+namespace_patterns = prefix_patterns(
+    url(r'^$', views.ReportView.as_view(), name='report-view'),
+    url(r'^(?P<report_slug>[0-9_a-zA-Z]+)/', include(report_patterns)),
+    url(r'^reload/$', 'reload_config', name='reload-report'))
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/criteria/$',
-        views.ReportCriteria.as_view(),
-        name='widget-criteria'),
-
-    # this makes more sense at the project level, but since its implemented
-    # under `report`, lets have the url here for now
-    url(r'^download_debug$', 'download_debug'),
-)
+urlpatterns = prefix_patterns(
+    url(r'^$', views.ReportView.as_view(), name='report-view-root'),
+    url(r'^reload$', 'reload_config', name='reload-all'),
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/', include(namespace_patterns)),
+    url(r'^download_debug$', 'download_debug'))

@@ -680,11 +680,20 @@ class WidgetView(views.APIView):
         token_obj = WidgetAuthToken.objects.get(token=token)
         criteria_dict = token_obj.criteria
 
+        # request_data carries fields to override the criteria of the widget,
+        # each token maps to a list fields that are allowed to be modified,
+        # check to ensure each field in request_data:
+        # 1. is a valid field included in criteria
+        # 2. is included in the editable fields mapping the token in the url
         for field in request_data:
-            if not token_obj.edit_fields or field not in token_obj.edit_fields:
-                msg = "Field '%s' is invalid or not allowed to change" % field
+            if field not in criteria_dict:
+                msg = "Field '%s' is invalid" % field
                 logger.error(msg)
-                return HttpResponse(msg, status=400)
+                return HttpResponse(msg, status=403)
+            if not token_obj.edit_fields or field not in token_obj.edit_fields:
+                msg = "Field '%s' is not allowed to change" % field
+                logger.error(msg)
+                return HttpResponse(msg, status=403)
             criteria_dict[field] = request_data[field]
         criteria_str = json.dumps(criteria_dict)
 
@@ -742,7 +751,18 @@ class WidgetTokenView(views.APIView):
                                       pre_url=pre_url,
                                       criteria=criteria)
         widget_auth.save()
-        return Response({'auth': token})
+
+        # Construct label map to facilitate overridden fields display
+        report = Report.objects.get(slug=report_slug)
+        label_map = {}
+        all_fields = {}
+        fields_by_section = report.collect_fields_by_section()
+        [all_fields.update(fields) for fields in fields_by_section.values()]
+
+        for k in all_fields:
+            label_map[k] = all_fields[k].label
+
+        return Response({'auth': token, 'label_map': label_map})
 
 
 class EditFieldsView(views.APIView):

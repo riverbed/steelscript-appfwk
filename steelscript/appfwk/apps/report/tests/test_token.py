@@ -80,5 +80,9 @@ class EditFieldsWidgetTokenTest(WidgetTokenTest):
         self.run_get_url(get_url, 200)
 
         get_url = (self.base_url +
+                   '/render/?auth=%s&endtime=1' % self.token)
+        self.run_get_url(get_url, 403)
+
+        get_url = (self.base_url +
                    '/render/?auth=%s&endtime_1=1&resolution=2d' % self.token)
-        self.run_get_url(get_url, 400)
+        self.run_get_url(get_url, 403)

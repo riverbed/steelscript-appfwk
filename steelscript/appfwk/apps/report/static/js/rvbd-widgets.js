@@ -387,7 +387,7 @@ rvbd.widgets.Widget.prototype = {
             url: widgetUrl + '/authtoken/',
             data: { criteria: JSON.stringify(urlCriteria) },
             success: function(data, textStatus) {
-                   self.genEmbedWindow(widgetUrl, data.auth, urlCriteria);
+                   self.genEmbedWindow(widgetUrl, data.auth, urlCriteria, data.label_map);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 var alertBody = ("The server returned the following HTTP error: <pre>" +
@@ -397,7 +397,7 @@ rvbd.widgets.Widget.prototype = {
         });
     },
 
-    genEmbedWindow: function(widgetUrl, token, criteria) {
+    genEmbedWindow: function(widgetUrl, token, criteria, label_map) {
 
         var self = this;
         var authUrl = widgetUrl + '/render/?auth=' + token;
@@ -420,20 +420,20 @@ rvbd.widgets.Widget.prototype = {
         '      <td><input value="312" type="text" id="embed-widget-height"></td>' +
         '  </tr>' +
         '  </table><br>' +
+        '  Copy the following HTML to embed the widget:' +
+        '  <input id="embed-widget-code" type="text">' +
         ' Choose criteria fields that can be overridden in the URL string:<br>' +
         ' <table id="criteriaTbl">';
 
         for (var field in criteria){
-            if (criteria.hasOwnProperty(field)){
+            if (criteria.hasOwnProperty(field) && label_map.hasOwnProperty(field)){
                 div += '<tr>'+
-                       '<th>' + field + '</th>'+
+                       '<th align="left">' + label_map[field] + '    ('+field + ')'+'</th>'+
                        '     <td><input type="checkbox" id="criteria-' + field + '"></td>' +
                        ' </tr>';
             }
         }
         div += ' </table><br>' +
-               '  Copy the following HTML to embed the widget:' +
-               '  <input id="embed-widget-code" type="text">' +
                '</div>';
 
         $('body').append(div);
