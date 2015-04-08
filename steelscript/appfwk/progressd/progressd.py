@@ -11,7 +11,7 @@ import logging
 from collections import OrderedDict
 
 from flask import Flask, request
-from flask_restful import Resource, Api, fields, marshal_with
+from flask_restful import Resource, Api, abort, fields, marshal_with
 
 
 import reschema
@@ -29,26 +29,32 @@ service.load('progressd.yaml')
 job_schema = service.find_resource('job')
 jobs_schema = service.find_resource('jobs')
 
-# Valid Job states
-VALID_STATES = ('NEW', 'RUNNING', 'COMPLETE', 'ERROR')
+# Valid Job status
+VALID_STATUS = (0, 1, 3, 4)
 
 # Map of Job IDs to Job objects
 JOBS = {}
 
 
+def get_job_or_404(job_id):
+    if job_id not in JOBS:
+        abort(404, message="Job {} not found".format(job_id))
+    return JOBS[job_id]
+
+
 class Job(object):
-    """Basic datastructure for Job state"""
+    """Basic datastructure for Job status"""
 
     resource_fields = OrderedDict(
-        id=fields.Integer,
-        state=fields.String,
+        job_id=fields.Integer,
+        status=fields.String,
         progress=fields.Integer,
         parent_id=fields.Integer
     )
 
-    def __init__(self, id, state, progress, parent_id=None):
-        self.id = id
-        self.state = state
+    def __init__(self, job_id, status, progress, parent_id=None):
+        self.job_id = job_id
+        self.status = status
         self.progress = progress
         self.parent_id = parent_id
 
@@ -56,10 +62,10 @@ class Job(object):
         self._children = set()
 
         if self.parent_id:
-            JOBS[self.parent_id]._children.add(self.id)
+            get_job_or_404(self.parent_id)._children.add(self.job_id)
 
     def __cmp__(self, other):
-        return cmp(self.id, other.id)
+        return cmp(self.job_id, other.job_id)
 
     def values(self):
         return ', '.join('%s: %s' % (k, getattr(self, k))
@@ -71,9 +77,9 @@ class Job(object):
     def unicode(self):
         return self.values()
 
-    def update(self, state=None, progress=None):
-        if state is not None and state in VALID_STATES:
-            self.state = state
+    def update(self, status=None, progress=None):
+        if status is not None and status in VALID_STATUS:
+            self.status = status
         if progress is not None and progress > self.progress:
             self.progress = progress
 
@@ -81,44 +87,38 @@ class Job(object):
 
     @property
     def children(self):
-        return [JOBS[c] for c in self._children]
+        return [get_job_or_404(c) for c in self._children]
 
     def calculate_progress(self):
-        children = self.children
-
-        if children:
-            if len(children) == 1:
-                # convert to list since can't iterate list
-                child = children[0]
-                self.progress = JOBS[child.id].progress
-            else:
-                done_count = sum(c.state == 'COMPLETE' for c in children)
-                self.progress = (float(done_count) / len(children)) * 100
+        for child in self.children:
+            # shadow jobs - push status and progress down
+            child.status, child.progress = self.status, self.progress
 
         if self.parent_id:
-            JOBS[self.parent_id].calculate_progress()
+            get_job_or_404(self.parent_id).calculate_progress()
 
 
 class JobAPI(Resource):
     @marshal_with(Job.resource_fields)
-    def get(self, id):
-        print 'Received GET request for Job ID: %s' % id
-        return JOBS[id]
+    def get(self, job_id):
+        print 'Received GET request for Job ID: %s' % job_id
+        return get_job_or_404(job_id)
 
     @marshal_with(Job.resource_fields)
-    def put(self, id):
-        s = JOBS[id]
+    def put(self, job_id):
+        s = get_job_or_404(job_id)
         data = request.get_json()
-        print 'Received PUT data for Job ID %d: %s' % (id, data)
+        print 'Received PUT data for Job ID %d: %s' % (job_id, data)
 
         # id and parent fields are read-only, remove if present
-        data.pop('id', None)
+        data.pop('job_id', None)
         data.pop('parent_id', None)
         s.update(**data)
         return s, 201
 
-    def delete(self, id):
-        del JOBS[id]
+    def delete(self, job_id):
+        get_job_or_404(job_id)
+        del JOBS[job_id]
         return '', 204
 
 
@@ -135,13 +135,12 @@ class JobListAPI(Resource):
         job_schema.validate(data)
 
         j = Job(**data)
-        print 'Job object created: %s' % j
-        JOBS[j.id] = j
-        return JOBS[j.id], 201
+        JOBS[j.job_id] = j
+        return JOBS[j.job_id], 201
 
 
 api.add_resource(JobListAPI, '/jobs/')
-api.add_resource(JobAPI, '/jobs/<int:id>/')
+api.add_resource(JobAPI, '/jobs/<int:job_id>/')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

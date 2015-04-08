@@ -36,11 +36,11 @@ resources:
         additionalProperties: false
 
         properties:
-            id: { type: integer }
-            state:
-                type: string
-                enum: ['NEW', 'RUNNING', 'COMPLETE', 'ERROR']
-                description: "Job execution state"
+            job_id: { type: integer }
+            status:
+                type: integer
+                enum: [0, 1, 3, 4]
+                description: "Job execution status"
             progress:
                 type: integer
                 minimum: 0
@@ -52,7 +52,7 @@ resources:
                 default: 0
 
         links:
-            self: { path: "$/jobs/{id}" }
+            self: { path: "$/jobs/{job_id}" }
 
             get:
                 method: GET
@@ -65,5 +65,5 @@ resources:
                 vars: { id: '0/parent_id' }
             children:
                 resource: '#/resources/jobs'
-                vars: { parent_id: '0/id' }
+                vars: { parent_id: '0/job_id' }
 
