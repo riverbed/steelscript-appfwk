@@ -24,6 +24,8 @@ from steelscript.appfwk.apps.datasource.exceptions import DataError
 from steelscript.appfwk.apps.alerting.models import (post_data_save,
                                                      error_signal)
 from steelscript.appfwk.libs.fields import PickledObjectField
+from steelscript.common.connection import Connection
+from steelscript.common.exceptions import RvbdHTTPException
 
 
 logger = logging.getLogger(__name__)
@@ -50,6 +52,11 @@ class LocalLock(object):
         if lock is not None:
             lock.release()
         return False
+
+
+# progressd connection
+progressd = Connection(settings.PROGRESSD_HOST,
+                       port=settings.PROGRESSD_PORT)
 
 
 class Job(models.Model):
@@ -87,7 +94,7 @@ class Job(models.Model):
     COMPLETE = 3
     ERROR = 4
 
-    status = models.IntegerField(
+    _status = models.IntegerField(
         default=NEW,
         choices=((NEW, "New"),
                  (RUNNING, "Running"),
@@ -108,7 +115,7 @@ class Job(models.Model):
     update_progress = models.BooleanField(default=True)
 
     # While RUNNING, this provides an indicator of progress 0-100
-    progress = models.IntegerField(default=-1)
+    _progress = models.IntegerField(default=-1)
 
     # While RUNNING, time remaining
     remaining = models.IntegerField(default=None, null=True)
@@ -119,6 +126,27 @@ class Job(models.Model):
     def __repr__(self):
         return unicode(self)
 
+    def _get_progress(self, attr):
+        # Query progressd, but fall back on db value if failed
+        try:
+            r = progressd.json_request('GET', '/jobs/%d/' % self.id)
+            return r[attr]
+        except RvbdHTTPException:
+            logger.error('progressd lookup failed, using db status values.')
+            return getattr(self, '_' + attr)
+
+    @property
+    def status(self):
+        status = self._get_progress('status')
+        logger.debug('***STATUS: %s: %s' % (self.id, status))
+        return int(status)
+
+    @property
+    def progress(self):
+        progress = self._get_progress('progress')
+        logger.debug('***PROGRESS: %s: %s' % (self.id, progress))
+        return int(progress)
+
     def refresh(self):
         """ Refresh dynamic job parameters from the database. """
         # fix bug 227119, by avoiding mysql caching problems
@@ -126,7 +154,7 @@ class Job(models.Model):
         # should be fixed in Django 1.6
         Job.objects.update()
         job = Job.objects.get(pk=self.pk)
-        for k in ['status', 'message', 'exception', 'progress', 'remaining',
+        for k in ['_status', 'message', 'exception', '_progress', 'remaining',
                   'actual_criteria', 'touched', 'refcount']:
             setattr(self, k, getattr(job, k))
 
@@ -155,7 +183,7 @@ class Job(models.Model):
                 # Push changes to children of this job
                 child_kwargs = {}
                 for k, v in kwargs.iteritems():
-                    if k in ['status', 'message', 'exception', 'progress',
+                    if k in ['_status', 'message', 'exception', '_progress',
                              'remaining', 'actual_criteria']:
                         child_kwargs[k] = v
                 # There should be no recursion, so a direct update to the
@@ -190,9 +218,9 @@ class Job(models.Model):
                 if not criteria.ignore_cache:
                     parent_jobs = (Job.objects
                                    .select_for_update()
-                                   .filter(status__in=[Job.NEW,
-                                                       Job.COMPLETE,
-                                                       Job.RUNNING],
+                                   .filter(_status__in=[Job.NEW,
+                                                        Job.COMPLETE,
+                                                        Job.RUNNING],
                                            handle=handle,
                                            ischild=False)
                                    .order_by('created'))
@@ -224,13 +252,13 @@ class Job(models.Model):
                     job = Job(table=table,
                               criteria=criteria,
                               actual_criteria=parent.actual_criteria,
-                              status=parent.status,
+                              _status=parent._status,
                               pid=os.getpid(),
                               handle=handle,
                               parent=parent,
                               ischild=True,
                               update_progress=parent.update_progress,
-                              progress=parent.progress,
+                              _progress=parent._progress,
                               remaining=parent.remaining,
                               message='',
                               exception='')
@@ -245,18 +273,27 @@ class Job(models.Model):
                 else:
                     job = Job(table=table,
                               criteria=criteria,
-                              status=Job.NEW,
+                              _status=Job.NEW,
                               pid=os.getpid(),
                               handle=handle,
                               parent=None,
                               ischild=False,
                               update_progress=update_progress,
-                              progress=0,
+                              _progress=0,
                               remaining=-1,
                               message='',
                               exception='')
                     job.save()
                     logger.info("%s: New job for table %s" % (job, table.name))
+
+                # Create new instance in progressd
+                p = {'job_id': job.id,
+                     'status': job._status,
+                     'progress': job._progress,
+                     'parent_id': job.parent.id if job.parent else 0}
+                logger.debug('***Saving Job progress to progressd: %s' % p)
+                r = progressd.json_request('POST', '/jobs/', body=p)
+                logger.debug('***Result of save: %s' % r)
 
                 logger.debug("%s: criteria = %s" % (job, criteria))
 
@@ -329,7 +366,7 @@ class Job(models.Model):
                 'handle': self.handle,
                 'progress': self.progress,
                 'remaining': self.remaining,
-                'status': self.status,
+                'status': self._status,
                 'message': self.message,
                 'exception': self.exception,
                 'data': data}
@@ -378,24 +415,41 @@ class Job(models.Model):
             worker = Worker(self, queryclass)
             worker.start()
 
+    def mark_progressd(self, **kwargs):
+        logger.debug('***SAVING STATUS: %s: %s' % (self.id, kwargs))
+        r = progressd.json_request('PUT', '/jobs/%d/' % self.id, body=kwargs)
+        if not r.ok:
+            logger.debug('***ERROR SAVING STATUS for %s: %s' % (self.id,
+                                                                r.text))
+
     def mark_error(self, message, exception=''):
         logger.warning("%s failed: %s" % (self, message))
-        self.safe_update(status=Job.ERROR,
-                         progress=100,
+        self.mark_progressd(status=Job.ERROR,
+                            progress=100)
+        self.safe_update(_status=Job.ERROR,
+                         _progress=100,
                          message=message,
                          exception=exception)
 
     def mark_complete(self):
         logger.info("%s complete" % self)
-        self.safe_update(status=Job.COMPLETE,
-                         progress=100,
+        self.mark_progressd(status=Job.COMPLETE,
+                            progress=100)
+
+        self.safe_update(_status=Job.COMPLETE,
+                         _progress=100,
                          message='')
 
     def mark_progress(self, progress, remaining=None):
-        # logger.debug("%s progress %s" % (self, progress))
+        progress = int(float(progress))
+
+        self.mark_progressd(status=Job.RUNNING,
+                            progress=progress)
+
+        # still needed?
         if self.update_progress:
-            self.safe_update(status=Job.RUNNING,
-                             progress=progress,
+            self.safe_update(_status=Job.RUNNING,
+                             _progress=progress,
                              remaining=remaining)
 
     def datafile(self):
@@ -513,7 +567,7 @@ class Job(models.Model):
 
     @classmethod
     def flush_incomplete(cls):
-        jobs = Job.objects.filter(progress__lt=100)
+        jobs = Job.objects.filter(_progress__lt=100)
         logger.info("Flushing %d incomplete jobs: %s" %
                     (len(jobs), [j.id for j in jobs]))
         jobs.delete()
@@ -566,8 +620,6 @@ class AsyncWorker(threading.Thread):
         return unicode(self)
 
     def run(self):
-        self.job.safe_update(status=Job.RUNNING,
-                             pid=os.getpid())
         self.do_run()
         sys.exit(0)
 
@@ -587,8 +639,6 @@ class SyncWorker(object):
         return unicode(self)
 
     def start(self):
-        self.job.safe_update(status=Job.RUNNING,
-                             pid=os.getpid())
         self.do_run()
 
 
@@ -687,8 +737,8 @@ class Worker(base_worker_class):
         except:
             logger.exception("%s raised an exception" % self)
             job.safe_update(
-                status=job.ERROR,
-                progress=100,
+                _status=job.ERROR,
+                _progress=100,
                 message="".join(
                     traceback.format_exception_only(*sys.exc_info()[0:2])),
                 exception="".join(

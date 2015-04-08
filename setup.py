@@ -95,6 +95,10 @@ http://pythonhosted.org/steelscript/
         'ansi2html>=1.0.6',
         'django-ace==1.0.1',
         'apscheduler>=3.0',
+
+        # progressd
+        'flask==0.10.1',
+        'flask_restful==0.3.2',
     ),
 
     'extras_require': {

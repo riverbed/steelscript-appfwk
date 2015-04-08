@@ -51,6 +51,10 @@ DATABASES = {
     }
 }
 
+# Location of progressd daemon, default for locally running
+PROGRESSD_HOST = 'http://127.0.0.1'
+PROGRESSD_PORT = '5000'
+
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
