@@ -43,9 +43,9 @@ class AceReportWidget(AceWidget):
         # for now just remove toolbar to avoid this issue
 
         # add style="display:none" to <a> tag
-        p = html.split('></a>')
-        p[0] += ' style="display: none"'
-        return mark_safe('></a>'.join(p))
+        class_str = 'class="django-ace-max_min"'
+        return mark_safe(html.replace(class_str,
+                                      class_str + ' style="display:none"'))
 
 
 class ReportEditorForm(forms.Form):
