@@ -21,8 +21,8 @@ def prefix_patterns(*args):
 # Therefore, start from the bottom and work up to see how URLs are built.
 
 job_patterns = prefix_patterns(
-    url('^$', views.WidgetJobDetail.as_view(), name='report-job-detail'),
-    url('^(?P<status>status)/$', views.WidgetJobDetail.as_view(),
+    url(r'^$', views.WidgetJobDetail.as_view(), name='report-job-detail'),
+    url(r'^(?P<status>status)/$', views.WidgetJobDetail.as_view(),
         name='report-job-status'))
 
 jobs_patterns = prefix_patterns(
