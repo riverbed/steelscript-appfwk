@@ -8,19 +8,22 @@
 from django.conf.urls import patterns, url, include
 import steelscript.appfwk.apps.report.views as views
 
-PRE_FIX = 'steelscript.appfwk.apps.report.views'
+PREFIX = 'steelscript.appfwk.apps.report.views'
 
 
 def prefix_patterns(*args):
-    return patterns(PRE_FIX,  *args)
+    return patterns(PREFIX,  *args)
 
-
-def job_url(suffix):
-    return url(suffix, views.WidgetJobDetail.as_view(),
-               name='report-job-detail')
+# <name>_patterns below represents patterns of the url's suffix after <name>
+# as /../../../<name>/<suffix>
+# All report urls are built in reverse order (Otherwise it is not feasible
+# as suffix patterns will need to be used before they even exists).
+# Therefore, start from the bottom and work up to see how URLs are built.
 
 job_patterns = prefix_patterns(
-    job_url(r'^$'), job_url(r'^(?P<status>status)/$'))
+    url('^$', views.WidgetJobDetail.as_view(), name='report-job-detail'),
+    url('^(?P<status>status)/$', views.WidgetJobDetail.as_view(),
+        name='report-job-status'))
 
 jobs_patterns = prefix_patterns(
     url(r'^$', views.WidgetJobsList.as_view(), name='widget-job-list'),
