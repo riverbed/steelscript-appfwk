@@ -26,7 +26,6 @@ DURATIONS = ('Default', '15 min', '1 hour',
 class ReportDetailForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ReportDetailForm, self).__init__(*args, **kwargs)
-        html = the 
 
     class Meta:
         model = Report
@@ -41,9 +40,8 @@ class AceReportWidget(AceWidget):
         # <a href="./" class="django-ace-max_min"></a></div><html></div>'
         # need to remove the fullscreen button as it causes scrolling to fail
         # after maximizing the editor and then resizing it to normal
-        # for now just remove fullscreen button to avoid this issue
-        # remove the django-ace-toolbar div
-        
+        # for now just remove toolbar to avoid this issue
+
         # add style="display:none" to <a> tag
         p = html.split('></a>')
         p[0] += ' style="display: none"'
