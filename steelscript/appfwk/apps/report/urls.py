@@ -17,7 +17,7 @@ def prefix_patterns(*args):
 # <name>_patterns below represents patterns of the url's suffix after <name>
 # as /../../../<name>/<suffix>
 # All report urls are built in reverse order (Otherwise it is not feasible
-# as suffix patterns will need to be used before they even exists).
+# as suffix patterns will need to be used before they even exist).
 # Therefore, start from the bottom and work up to see how URLs are built.
 
 job_patterns = prefix_patterns(
