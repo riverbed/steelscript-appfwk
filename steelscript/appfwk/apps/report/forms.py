@@ -11,6 +11,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django_ace import AceWidget
+from django.utils.safestring import mark_safe
 
 from steelscript.appfwk.apps.report.models import Report, Widget
 
@@ -25,6 +26,7 @@ DURATIONS = ('Default', '15 min', '1 hour',
 class ReportDetailForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ReportDetailForm, self).__init__(*args, **kwargs)
+        html = the 
 
     class Meta:
         model = Report
@@ -33,7 +35,19 @@ class ReportDetailForm(forms.ModelForm):
 
 class AceReportWidget(AceWidget):
     def render(self, name, value, attrs=None):
-        return super(AceReportWidget, self).render(name, value, attrs)
+        html = super(AceReportWidget, self).render(name, value, attrs)
+        # html = '<div class="django-ace-editor">
+        # <div style="width: <width>" class="django-ace-toolbar">
+        # <a href="./" class="django-ace-max_min"></a></div><html></div>'
+        # need to remove the fullscreen button as it causes scrolling to fail
+        # after maximizing the editor and then resizing it to normal
+        # for now just remove fullscreen button to avoid this issue
+        # remove the django-ace-toolbar div
+        
+        # add style="display:none" to <a> tag
+        p = html.split('></a>')
+        p[0] += ' style="display: none"'
+        return mark_safe('></a>'.join(p))
 
 
 class ReportEditorForm(forms.Form):

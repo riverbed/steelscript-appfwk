@@ -93,7 +93,7 @@ http://pythonhosted.org/steelscript/
         'django-admin-tools==0.5.2',
 
         'ansi2html>=1.0.6',
-        'django-ace==1.0.1',
+        'django-ace==1.0.2',
         'apscheduler>=3.0',
     ),
 
