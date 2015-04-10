@@ -9,7 +9,6 @@ import importlib
 import traceback
 import threading
 import celery
-#from celery.contrib.methods import task
 
 import pytz
 import pandas
@@ -25,8 +24,8 @@ from steelscript.appfwk.libs.fields import \
     Callable, CallableField
 
 from steelscript.appfwk.apps.datasource.models import Table
-
 from steelscript.appfwk.apps.datasource.exceptions import DataError
+
 from steelscript.appfwk.apps.alerting.models import (post_data_save,
                                                      error_signal)
 from steelscript.appfwk.libs.fields import PickledObjectField
@@ -912,7 +911,7 @@ class Worker(base_worker_class):
             )
 
         finally:
-            job.dereference("Worker exiting")
+            self.job.dereference("Worker exiting")
 
 
 class BatchJobRunner(object):
