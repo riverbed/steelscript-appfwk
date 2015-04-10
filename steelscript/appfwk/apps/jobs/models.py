@@ -417,10 +417,10 @@ class Job(models.Model):
 
     def mark_progressd(self, **kwargs):
         logger.debug('***SAVING STATUS: %s: %s' % (self.id, kwargs))
-        r = progressd.json_request('PUT', '/jobs/%d/' % self.id, body=kwargs)
-        if not r.ok:
-            logger.debug('***ERROR SAVING STATUS for %s: %s' % (self.id,
-                                                                r.text))
+        try:
+            progressd.json_request('PUT', '/jobs/%d/' % self.id, body=kwargs)
+        except RvbdHTTPException as e:
+            logger.debug('***Error saving progress for %s: %s' % (self.id, e))
 
     def mark_error(self, message, exception=''):
         logger.warning("%s failed: %s" % (self, message))

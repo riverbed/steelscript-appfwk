@@ -21,7 +21,7 @@ resources:
             self:
                 path: "$/jobs"
                 params:
-                    parent_id: { type: integer }
+                    master_id: { type: integer }
             get:
                 method: GET
                 response: { $ref: '#/resources/jobs' }
@@ -46,8 +46,8 @@ resources:
                 minimum: 0
                 maximum: 100
                 description: "Job progress indicator"
-            parent_id:
-                description: "ID for parent job, defaults to 0 for no parent"
+            master_id:
+                description: "ID for master job, defaults to 0 for no master"
                 type: integer
                 default: 0
 
@@ -60,10 +60,10 @@ resources:
 
         relations:
             instances: { resource: '#/resources/jobs' }
-            parent:
+            master:
                 resource: '#/resources/job'
-                vars: { id: '0/parent_id' }
-            children:
+                vars: { id: '0/master_id' }
+            followers:
                 resource: '#/resources/jobs'
-                vars: { parent_id: '0/job_id' }
+                vars: { master_id: '0/job_id' }
 
