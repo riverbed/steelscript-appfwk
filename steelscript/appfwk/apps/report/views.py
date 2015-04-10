@@ -673,12 +673,29 @@ class WidgetView(views.APIView):
     authentication_classes = (URLTokenAuthentication,)
 
     def get(self, request, namespace=None, report_slug=None, widget_slug=None):
-        token = request.GET.dict()['auth']
+        request_data = request.GET.dict()
+        token = request_data['auth']
+        del request_data['auth']
 
         token_obj = WidgetAuthToken.objects.get(token=token)
-        criteria = json.dumps(token_obj.criteria)
+        criteria_dict = token_obj.criteria
 
-        token_obj.save()
+        # request_data carries fields to override the criteria of the widget,
+        # each token maps to a list fields that are allowed to be modified,
+        # check to ensure each field in request_data:
+        # 1. is a valid field included in criteria
+        # 2. is included in the editable fields mapping the token in the url
+        for field in request_data:
+            if field not in criteria_dict:
+                msg = "Field '%s' is invalid" % field
+                logger.error(msg)
+                return HttpResponse(msg, status=403)
+            if not token_obj.edit_fields or field not in token_obj.edit_fields:
+                msg = "Field '%s' is not allowed to change" % field
+                logger.error(msg)
+                return HttpResponse(msg, status=403)
+            criteria_dict[field] = request_data[field]
+        criteria_str = json.dumps(criteria_dict)
 
         report = get_object_or_404(Report, namespace=namespace,
                                    slug=report_slug)
@@ -699,7 +716,7 @@ class WidgetView(views.APIView):
             "widgettype": [widget_type[0], widget_type[1]],
             "widgetid": w.id,
             "widgetslug": w.slug,
-            "criteria": mark_safe(criteria),
+            "criteria": mark_safe(criteria_str),
             "authtoken": token
         }
 
@@ -728,18 +745,40 @@ class WidgetTokenView(views.APIView):
 
         criteria = json.loads(request.POST.dict()['criteria'])
 
-        tokens = WidgetAuthToken.objects.filter(user=user, pre_url=pre_url,
-                                                criteria=criteria)
-        if tokens:
-            token = tokens[0].token
-        else:
-            token = uuid.uuid4().hex
-            widget_auth = WidgetAuthToken(token=token,
-                                          user=user,
-                                          pre_url=pre_url,
-                                          criteria=criteria)
-            widget_auth.save()
-        return Response({'auth': token})
+        token = uuid.uuid4().hex
+        widget_auth = WidgetAuthToken(token=token,
+                                      user=user,
+                                      pre_url=pre_url,
+                                      criteria=criteria)
+        widget_auth.save()
+
+        # Construct label map to facilitate overridden fields display
+        report = Report.objects.get(slug=report_slug)
+        label_map = {}
+        all_fields = {}
+        fields_by_section = report.collect_fields_by_section()
+        [all_fields.update(fields) for fields in fields_by_section.values()]
+
+        for k in all_fields:
+            label_map[k] = all_fields[k].label
+
+        return Response({'auth': token, 'label_map': label_map})
+
+
+class EditFieldsView(views.APIView):
+    parser_classes = (JSONParser,)
+
+    def post(self, request, namespace=None,
+             report_slug=None, widget_slug=None, auth_token=None):
+
+        logger.debug("Received POST for adding editable fields, widget %s, "
+                     "auth_token %s, request data %s" %
+                     (widget_slug, auth_token, request.POST))
+        request_data = json.loads(request.POST.dict()['edit_fields'])
+        token_obj = WidgetAuthToken.objects.filter(token=auth_token)[0]
+        token_obj.edit_fields = request_data
+        token_obj.save()
+        return Response({})
 
 
 class WidgetJobsList(views.APIView):
@@ -765,7 +804,6 @@ class WidgetJobsList(views.APIView):
         req_json = json.loads(request.POST['criteria'])
 
         fields = widget.collect_fields()
-
         form = TableFieldForm(fields, use_widgets=False,
                               hidden_fields=report.hidden_fields,
                               include_hidden=True,

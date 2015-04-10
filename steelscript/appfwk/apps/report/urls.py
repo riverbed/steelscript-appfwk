@@ -72,6 +72,10 @@ urlpatterns = patterns(
         views.WidgetTokenView.as_view(),
         name='widget-auth-token'),
 
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/(?P<auth_token>[0-9_a-zA-Z-]+)/editfields/$',
+        views.EditFieldsView.as_view(),
+        name='edit-fields'),
+
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/jobs/$',
         views.WidgetJobsList.as_view(),
         name='widget-job-list'),
@@ -82,7 +86,7 @@ urlpatterns = patterns(
 
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/jobs/(?P<job_id>[0-9]+)/(?P<status>status)/$',
         views.WidgetJobDetail.as_view(),
-        name='report-job-detail'),
+        name='report-job-status'),
 
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/criteria/$',
         views.ReportCriteria.as_view(),
