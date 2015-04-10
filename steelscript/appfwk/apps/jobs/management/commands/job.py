@@ -75,8 +75,8 @@ class Command(BaseCommand):
                 datafile = j.datafile()
                 if not os.path.exists(datafile):
                     datafile += " (missing)"
-                parent_id = j.parent.id if j.parent else '--'
-                data.append([j.id, parent_id, j.table.name, j.created,
+                master_id = j.master.id if j.master else '--'
+                data.append([j.id, master_id, j.table.name, j.created,
                              j.touched, j.status, j.refcount, j.progress,
                              datafile])
 

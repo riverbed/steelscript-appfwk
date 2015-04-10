@@ -13,7 +13,8 @@ import pandas
 
 from django.db import transaction
 
-from steelscript.appfwk.apps.jobs.models import Job, BatchJobRunner
+from steelscript.appfwk.apps.jobs.models import \
+    Job, BatchJobRunner, QueryContinue, QueryComplete, QueryError
 
 from steelscript.common.timeutils import \
     parse_timedelta, timedelta_total_seconds
@@ -127,56 +128,50 @@ class AnalysisQuery(TableQueryBase):
 
     def run(self):
         # Collect all dependent tables
-        deptables = self.table.options.tables
-        if not deptables:
-            self.tables = {}
-            return True
+        tables = self.table.options.tables
+        if not tables:
+            return QueryContinue(self._analyze, {})
 
-        # Create dataframes for all dependent tables
-        tables = {}
+        logger.debug("%s: dependent tables: %s" % (self, tables))
+        jobs = {}
 
-        logger.debug("%s: dependent tables: %s" % (self, deptables))
-        depjobids = {}
-        max_progress = (len(deptables)*100.0/float(len(deptables)+1))
-        batch = BatchJobRunner(self.job, max_progress=max_progress)
-
-        for (name, ref) in deptables.items():
-            deptable = Table.from_ref(ref)
+        for (name, ref) in tables.items():
+            table = Table.from_ref(ref)
             with transaction.atomic():
-                job = Job.create(deptable, self.job.criteria,
-                                 update_progress=self.job.update_progress)
+                job = Job.create(table, self.job.criteria,
+                                 update_progress=self.job.update_progress,
+                                 parent=self.job)
 
-            batch.add_job(job)
-            logger.debug("%s: starting dependent job %s" % (self, job))
-            depjobids[name] = job.id
+            logger.debug("%s: dependent job %s" % (self, job))
+            jobs[name] = job
 
-        batch.run()
+        return QueryContinue(self._analyze, jobs)
 
-        logger.debug("%s: all dependent jobs complete, collecting data"
-                     % str(self))
+    def _analyze(self, jobs=None):
+        logger.debug("%s: all dependent jobs complete" % str(self))
 
-        failed = False
-        for (name, id) in depjobids.items():
-            job = Job.objects.get(id=id)
+        if jobs:
+            for (name, job) in jobs.items():
+                if job.status == job.ERROR:
+                    return QueryError("Dependent Job '%s' failed: %s" %
+                                      (name, job.message))
 
-            if job.status == job.ERROR:
-                self.job.mark_error("Dependent Job failed: %s" % job.message,
-                                    exception=job.exception)
-                failed = True
-                break
+        if hasattr(self, 'post_run'):
+            # Compatibility mode - old code uses def post_run() and expects
+            # self.tables to be set
+            tables = {}
+            if jobs:
+                for (name, job) in jobs.items():
+                    f = job.data()
+                    tables[name] = f
+                logger.debug("%s: Table[%s] - %d rows" %
+                             (self, name, len(f) if f is not None else 0))
 
-            f = job.data()
-            tables[name] = f
-            logger.debug("%s: Table[%s] - %d rows" %
-                         (self, name, len(f) if f is not None else 0))
+            self.tables = tables
+            return self.post_run()
 
-        if failed:
-            return False
-
-        self.tables = tables
-
-        logger.debug("%s: deptables completed successfully" % self)
-        return True
+        else:
+            return self.analyze(jobs)
 
     def post_run(self):
         """Execute any Functions saved to Table.
@@ -204,10 +199,9 @@ class AnalysisQuery(TableQueryBase):
                              (self, options.function))
             return False
 
-        self.data = df
-
         logger.debug("%s: completed successfully" % self)
-        return True
+
+        return QueryComplete(df)
 
 
 class FocusedAnalysisTable(AnalysisTable):
@@ -321,8 +315,8 @@ class CriteriaQuery(AnalysisQuery):
 
     def post_run(self):
         criteria = self.job.criteria
-        values = [[str(k),str(v)]
-                  for k,v in criteria.iteritems()]
+        values = [[str(k), str(v)]
+                  for k, v in criteria.iteritems()]
         values.append(['criteria.starttime', str(criteria.starttime)])
         df = pandas.DataFrame(values,
                               columns=['key', 'value']).sort('key')

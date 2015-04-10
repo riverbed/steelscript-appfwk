@@ -8,7 +8,8 @@ import datetime
 import importlib
 import traceback
 import threading
-from celery.contrib.methods import task
+import celery
+#from celery.contrib.methods import task
 
 import pytz
 import pandas
@@ -19,6 +20,10 @@ from django.db.models import F
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.conf import settings
+
+from steelscript.appfwk.libs.fields import \
+    Callable, CallableField
+
 from steelscript.appfwk.apps.datasource.models import Table
 
 from steelscript.appfwk.apps.datasource.exceptions import DataError
@@ -53,6 +58,43 @@ class LocalLock(object):
         return False
 
 
+class QueryResponse(object):
+
+    QUERY_COMPLETE = 1
+    QUERY_CONTINUE = 2
+    QUERY_ERROR = 3
+
+    def __init__(self, status):
+        self.status = status
+
+    def is_complete(self):
+        return self.status == QueryResponse.QUERY_COMPLETE
+
+    def is_error(self):
+        return self.status == QueryResponse.QUERY_ERROR
+
+
+class QueryComplete(QueryResponse):
+
+    def __init__(self, data):
+        super(QueryComplete, self).__init__(QueryResponse.QUERY_COMPLETE)
+        self.data = data
+
+
+class QueryContinue(QueryResponse):
+
+    def __init__(self, callback, jobs=None):
+        super(QueryContinue, self).__init__(QueryResponse.QUERY_CONTINUE)
+        self.callback = callback
+        self.jobs = jobs
+
+
+class QueryError(QueryResponse):
+    def __init__(self, message=None):
+        super(QueryError, self).__init__(QueryResponse.QUERY_ERROR)
+        self.message = message
+
+
 class Job(models.Model):
 
     # Timestamp when the job was created
@@ -64,11 +106,13 @@ class Job(models.Model):
     # Number of references to this job
     refcount = models.IntegerField(default=0)
 
-    # Whether this job is a child of another job
-    ischild = models.BooleanField(default=False)
+    # Parent job that spawned this job (and thus waiting for
+    # this jobs results)
+    parent = models.ForeignKey('self', null=True, related_name='children')
 
-    # If ischild, this points to the parent job
-    parent = models.ForeignKey('self', null=True)
+    # Master job that has run (or is running) that has the same
+    # criteria.  If master, this job is a "follower"
+    master = models.ForeignKey('self', null=True, related_name='followers')
 
     # Table associated with this job
     table = models.ForeignKey(Table)
@@ -111,6 +155,9 @@ class Job(models.Model):
     # While RUNNING, time remaining
     remaining = models.IntegerField(default=None, null=True)
 
+    #
+    callback = CallableField()
+
     def __unicode__(self):
         return "<Job %s (%8.8s) - t%s>" % (self.id, self.handle, self.table.id)
 
@@ -125,8 +172,16 @@ class Job(models.Model):
         Job.objects.update()
         job = Job.objects.get(pk=self.pk)
         for k in ['status', 'message', 'exception', 'progress', 'remaining',
-                  'actual_criteria', 'touched', 'refcount']:
+                  'actual_criteria', 'touched', 'refcount', 'callback', 'parent']:
             setattr(self, k, getattr(job, k))
+
+    @property
+    def is_child(self):
+        return self.parent is not None
+
+    @property
+    def is_follower(self):
+        return self.master is not None
 
     def safe_update(self, **kwargs):
         """ Update the job with the passed dictionary in a database safe way.
@@ -141,28 +196,24 @@ class Job(models.Model):
         if kwargs is None:
             return
 
-        with LocalLock():
-            # Force a reload of the job to get latest data
-            self.refresh()
+        logger.debug("%s safe_update %s" % (self, kwargs))
+        Job.objects.filter(pk=self.pk).update(**kwargs)
+        self.refresh()
 
-            with transaction.atomic():
-                # logger.debug("%s safe_update %s" % (self, kwargs))
-                Job.objects.filter(pk=self.pk).update(**kwargs)
-
-                if not self.ischild:
-                    # Push changes to children of this job
-                    child_kwargs = {}
-                    for k, v in kwargs.iteritems():
-                        if k in ['status', 'message', 'exception', 'progress',
-                                 'remaining', 'actual_criteria']:
-                            child_kwargs[k] = v
-                    # There should be no recursion, so a direct update to the
-                    # database is possible.  (If recursion, would need to call
-                    # self_update() on each child.)
-                    Job.objects.filter(parent=self).update(**child_kwargs)
+        if not self.is_follower:
+            # Push changes to children of this job
+            child_kwargs = {}
+            for k, v in kwargs.iteritems():
+                if k in ['status', 'message', 'exception', 'progress',
+                         'remaining', 'actual_criteria']:
+                    child_kwargs[k] = v
+            # There should be no recursion, so a direct update to the
+            # database is possible.  (If recursion, would need to call
+            # self_update() on each child.)
+            Job.objects.filter(master=self).update(**child_kwargs)
 
     @classmethod
-    def create(cls, table, criteria, update_progress=True):
+    def create(cls, table, criteria, update_progress=True, parent=None):
 
         with LocalLock():
             with transaction.atomic():
@@ -184,47 +235,47 @@ class Job(models.Model):
                 # Look for another job by the same handle in any state
                 # except ERROR
                 if not criteria.ignore_cache:
-                    parents = (Job.objects
+                    masters = (Job.objects
                                .select_for_update()
                                .filter(status__in=[Job.NEW,
                                                    Job.COMPLETE,
                                                    Job.RUNNING],
                                        handle=handle,
-                                       ischild=False)
+                                       master=None)
                                .order_by('created'))
                 else:
-                    parents = None
+                    masters = None
 
-                if parents is not None and len(parents) > 0:
-                    parent = parents[0]
+                if masters is not None and len(masters) > 0:
+                    master = masters[0]
 
                     job = Job(table=table,
                               criteria=criteria,
-                              actual_criteria=parent.actual_criteria,
-                              status=parent.status,
+                              actual_criteria=master.actual_criteria,
+                              status=master.status,
                               handle=handle,
+                              master=master,
                               parent=parent,
-                              ischild=True,
-                              update_progress=parent.update_progress,
-                              progress=parent.progress,
-                              remaining=parent.remaining,
+                              update_progress=master.update_progress,
+                              progress=master.progress,
+                              remaining=master.remaining,
                               message='',
                               exception='')
                     job.save()
 
-                    parent.reference("Link from job %s" % job)
+                    master.reference("Master link from job %s" % job)
                     now = datetime.datetime.now(tz=pytz.utc)
-                    parent.safe_update(touched=now)
+                    master.safe_update(touched=now)
 
-                    logger.info("%s: New job for table %s, linked to parent %s"
-                                % (job, table.name, parent))
+                    logger.info("%s: New job for table %s, linked to master %s"
+                                % (job, table.name, master))
                 else:
                     job = Job(table=table,
                               criteria=criteria,
                               status=Job.NEW,
                               handle=handle,
-                              parent=None,
-                              ischild=False,
+                              parent=parent,
+                              master=None,
                               update_progress=update_progress,
                               progress=0,
                               remaining=-1,
@@ -239,6 +290,26 @@ class Job(models.Model):
             Job.age_jobs()
 
         return job
+
+    def delayed_progress(self, p):
+        print "%s: status %s (on enter)" % (p, self.get_status_display())
+        with transaction.atomic():
+            Job.objects.select_for_update().get(id=self.id)
+            print "%s: status %s (after select)" % (p, self.get_status_display())
+            self.refresh()
+            #print "%s: status %s (refreshed)" % (p, self.get_status_display())
+            if self.status != self.COMPLETE:
+                self.status = self.COMPLETE
+                self.progress = p
+                self.save()
+                print "%s: updated to COMPLETE" % (p)
+            else:
+                print "%s: skipping, status already DONE" % (p)
+
+            time.sleep(5)
+
+        self.refresh()
+        print "%s: status %s, progress %s" % (p, self.get_status_display(), self.progress)
 
     @classmethod
     def _compute_handle(cls, table, criteria):
@@ -295,7 +366,7 @@ class Job(models.Model):
 
         """
         if ephemeral is None:
-            kwargs['ephemeral'] = self.parent or self
+            kwargs['ephemeral'] = self.master or self
         return self.table.get_columns(**kwargs)
 
     def json(self, data=None):
@@ -331,27 +402,67 @@ class Job(models.Model):
         else:
             return ""
 
-    def start(self):
+    def start(self, method=None, method_args=None):
         """ Start this job. """
 
+        logger.info("%s: Job starting" % self)
         self.refresh()
 
-        if self.ischild:
-            logger.debug("%s: Shadowing parent job %s" % (self, self.parent))
+        if self.is_follower:
+            logger.debug("%s: Shadowing master job %s" % (self, self.master))
+            return
+
+        # Create an worker to do the work
+        worker = Worker(self, method, method_args)
+        logger.debug("%s: Created worker %s" % (self, worker))
+        worker.start()
+
+    def check_children(self):
+        running_children = Job.objects.filter(
+            parent=self, status__in=[Job.NEW, Job.RUNNING])
+
+        logger.debug("%s: %d running children" % (self, len(running_children)))
+
+        if len(running_children) > 0:
+            # Not done yet, do nothing
             return
 
         with transaction.atomic():
-            logger.debug("%s: Starting job" % str(self))
-            self.mark_progress(0)
+            # Grab a lock on this job to make sure only one caller
+            # gets the callback
+            Job.objects.select_for_update().get(id=self.id)
 
-            logger.debug("%s: Worker to run report" % str(self))
-            # Lookup the query class for this table
-            i = importlib.import_module(self.table.module)
-            queryclass = i.__dict__[self.table.queryclass]
+            # Now that we have the lock, make sure we have latest Job
+            # details
+            self.refresh()
 
-            # Create an worker to do the work
-            worker = Worker(self, queryclass)
-            worker.start()
+            logger.debug("%s: checking callback %s" % (self, self.callback))
+            if self.callback is None:
+                # Some other child got to it first
+                return
+
+            # Save off the callback, we'll call it outside the transaction
+            callback = self.callback
+
+            # Clear the callback while still in lockdown
+            self.callback = None
+            self.save()
+
+        w = Worker(self, callback=callback)
+        logger.debug("%s: Created callback worker %s" % (self, w))
+        w.start()
+
+    def schedule(self, jobs, callback):
+        jobid_map = {}
+        for name, job in jobs.iteritems():
+            jobid_map[name] = job.id
+
+        logger.debug("%s: Setting callback %s" % (self, callback))
+        self.safe_update(callback=Callable(callback))
+        logger.debug("%s: Done setting callback %s" % (self, self.callback))
+
+        for name, job in jobs.iteritems():
+            job.start()
 
     def mark_error(self, message, exception=''):
         logger.warning("%s failed: %s" % (self, message))
@@ -359,12 +470,82 @@ class Job(models.Model):
                          progress=100,
                          message=message,
                          exception=exception)
+        #
+        # Send signal for possible Triggers
+        #
+        error_signal.send(sender=self,
+                          context={'job': self})
 
-    def mark_complete(self):
+    def mark_complete(self, data=None):
         logger.info("%s complete" % self)
-        self.safe_update(status=Job.COMPLETE,
-                         progress=100,
-                         message='')
+
+        if isinstance(data, list) and len(data) > 0:
+            # Convert the result to a dataframe
+            columns = [col.name for col in
+                       self.get_columns(synthetic=False)]
+            df = pandas.DataFrame(data, columns=columns)
+        elif ((data is None) or
+              (isinstance(data, list) and len(data) == 0)):
+            df = None
+        elif isinstance(data, pandas.DataFrame):
+            df = data
+        else:
+            raise ValueError("Unrecognized query result type: %s" %
+                             type(data))
+
+        if df is not None:
+            self.check_columns(df)
+            df = self.normalize_types(df)
+            df = self.table.compute_synthetic(self, df)
+
+            # Sort according to the defined sort columns
+            if self.table.sortcols:
+                sorted = df.sort(
+                    self.table.sortcols,
+                    ascending=[b == Table.SORT_ASC
+                               for b in self.table.sortdir]
+                )
+                # Move NaN rows of the first sortcol to the end
+                n = self.table.sortcols[0]
+                df = (sorted[sorted[n].notnull()]
+                      .append(sorted[sorted[n].isnull()]))
+
+            if self.table.rows > 0:
+                df = df[:self.table.rows]
+
+        if df is not None:
+            df.to_pickle(self.datafile())
+
+            #
+            # Send signal for possible Triggers
+            #
+            post_data_save.send(sender=self,
+                                data=df,
+                                context={'job': self})
+
+            logger.debug("%s data saved to file: %s" %
+                         (str(self), self.datafile()))
+        else:
+            logger.debug("%s no data saved, data is empty" %
+                         (str(self)))
+
+        logger.info("%s finished as COMPLETE" % self)
+
+        kwargs = dict(status=Job.COMPLETE,
+                      progress=100,
+                      message='')
+        self.refresh()
+        if self.actual_criteria is None:
+            kwargs['actual_criteria'] = self.criteria
+
+        self.safe_update(**kwargs)
+        if self.parent:
+            self.parent.check_children()
+
+            followers = Job.objects.filter(master=self)
+            for follower in followers:
+                if follower.parent:
+                    follower.parent.check_children()
 
     def mark_progress(self, progress, remaining=None):
         # logger.debug("%s progress %s" % (self, progress))
@@ -501,214 +682,14 @@ class Job(models.Model):
         #                                       self.progress))
         return self.status == Job.COMPLETE or self.status == Job.ERROR
 
-
-@receiver(pre_delete, sender=Job)
-def _my_job_delete(sender, instance, **kwargs):
-    """ Clean up jobs when deleting. """
-    # if a job has a parent, just deref, don't delete the datafile since
-    # that will remove it from the parent as well
-    if instance.parent is not None:
-        instance.parent.dereference(str(instance))
-    elif instance.datafile() and os.path.exists(instance.datafile()):
-        try:
-            os.unlink(instance.datafile())
-        except OSError:
-            # permissions issues, perhaps
-            logger.error('OSError occurred when attempting to delete '
-                         'job datafile: %s' % instance.datafile())
-
-
-class AsyncWorker(threading.Thread):
-    def __init__(self, job, queryclass):
-        threading.Thread.__init__(self)
-        self.daemon = True
-        self.job = job
-        self.queryclass = queryclass
-
-        logger.info("%s created" % self)
-        job.reference("AsyncWorker created")
-
-    def __delete__(self):
-        if self.job:
-            self.job.dereference("AsyncWorker deleted")
-
-    def __unicode__(self):
-        return "<AsyncWorker %s>" % (self.job)
-
-    def __str__(self):
-        return "<AsyncWorker %s>" % (self.job)
-
-    def __repr__(self):
-        return unicode(self)
-
-    def run(self):
-        self.do_run()
-        sys.exit(0)
-
-
-class SyncWorker(object):
-    def __init__(self, job, queryclass):
-        self.job = job
-        self.queryclass = queryclass
-
-    def __unicode__(self):
-        return "<SyncWorker %s>" % (self.job)
-
-    def __str__(self):
-        return "<SyncWorker %s>" % (self.job)
-
-    def __repr__(self):
-        return unicode(self)
-
-    def start(self):
-        self.do_run()
-
-
-class CeleryWorker(object):
-    def __init__(self, job, queryclass):
-        self.job = job
-        self.queryclass = queryclass
-
-    def __unicode__(self):
-        return "<CeleryWorker %s>" % (self.job)
-
-    def __str__(self):
-        return "<CeleryWorker %s>" % (self.job)
-
-    def __repr__(self):
-        return unicode(self)
-
-    def start(self):
-        self.task_start.delay()
-
-    @task()
-    def task_start(self):
-        self.do_run()
-
-
-if settings.APPS_DATASOURCE['threading'] and not settings.TESTING:
-    base_worker_class = AsyncWorker
-else:
-    base_worker_class = SyncWorker
-
-base_worker_class = CeleryWorker
-
-
-class Worker(base_worker_class):
-
-    def __init__(self, job, queryclass):
-        super(Worker, self).__init__(job, queryclass)
-
-    def do_run(self):
-        job = self.job
-        try:
-            logger.info("%s running queryclass %s" % (self, self.queryclass))
-            query = self.queryclass(job.table, job)
-
-            if (query.pre_run() and
-                    query.run() and
-                    query.post_run()):
-
-                logger.info("%s query finished" % self)
-                if isinstance(query.data, list) and len(query.data) > 0:
-                    # Convert the result to a dataframe
-                    columns = [col.name for col in
-                               job.get_columns(synthetic=False)]
-                    df = pandas.DataFrame(query.data, columns=columns)
-                elif ((query.data is None) or
-                      (isinstance(query.data, list) and len(query.data) == 0)):
-                    df = None
-                elif isinstance(query.data, pandas.DataFrame):
-                    df = query.data
-                else:
-                    raise ValueError("Unrecognized query result type: %s" %
-                                     type(query.data))
-
-                if df is not None:
-                    self.check_columns(df)
-                    df = self.normalize_types(df)
-                    df = job.table.compute_synthetic(job, df)
-
-                    # Sort according to the defined sort columns
-                    if job.table.sortcols:
-                        sorted = df.sort(
-                            job.table.sortcols,
-                            ascending=[b == Table.SORT_ASC
-                                       for b in job.table.sortdir]
-                        )
-                        # Move NaN rows of the first sortcol to the end
-                        n = job.table.sortcols[0]
-                        df = (sorted[sorted[n].notnull()]
-                              .append(sorted[sorted[n].isnull()]))
-
-                    if job.table.rows > 0:
-                        df = df[:job.table.rows]
-
-                if df is not None:
-                    df.to_pickle(job.datafile())
-
-                    #
-                    # Send signal for possible Triggers
-                    #
-                    post_data_save.send(sender=self,
-                                        data=df,
-                                        context={'job': job})
-
-                    logger.debug("%s data saved to file: %s" %
-                                 (str(self), job.datafile()))
-                else:
-                    logger.debug("%s no data saved, data is empty" %
-                                 (str(self)))
-
-                logger.info("%s finished as COMPLETE" % self)
-                job.refresh()
-                if job.actual_criteria is None:
-                    job.safe_update(actual_criteria=job.criteria)
-
-                job.mark_complete()
-            else:
-                # If the query.run() function returns false, the run() may
-                # have set the job.status, check and update if not
-                vals = {}
-                job.refresh()
-                if not job.done():
-                    vals['status'] = job.ERROR
-                if job.message == "":
-                    vals['message'] = "Query returned an unknown error"
-                vals['progress'] = 100
-                job.safe_update(**vals)
-                logger.error("%s finished with an error: %s" % (self,
-                                                                job.message))
-
-        except:
-            logger.exception("%s raised an exception" % self)
-            job.safe_update(
-                status=job.ERROR,
-                progress=100,
-                message="".join(
-                    traceback.format_exception_only(*sys.exc_info()[0:2])),
-                exception="".join(
-                    traceback.format_exception(*sys.exc_info()))
-            )
-            #
-            # Send signal for possible Triggers
-            #
-            error_signal.send(sender=self,
-                              context={'job': job})
-
-        finally:
-            job.dereference("Worker exiting")
-
     def check_columns(self, df):
-        job = self.job
-        for col in job.get_columns(synthetic=False):
+        for col in self.get_columns(synthetic=False):
             if col.name not in df:
                 raise ValueError(
                     'Returned table missing expected column: %s' % col.name)
 
     def normalize_types(self, df):
-        job = self.job
-        for col in job.get_columns(synthetic=False):
+        for col in self.get_columns(synthetic=False):
             s = df[col.name]
             if col.istime():
                 # The column is supposed to be time,
@@ -757,6 +738,181 @@ class Worker(base_worker_class):
                     pass
 
         return df
+
+
+@receiver(pre_delete, sender=Job)
+def _my_job_delete(sender, instance, **kwargs):
+    """ Clean up jobs when deleting. """
+    # if a job has a master, just deref, don't delete the datafile since
+    # that will remove it from the master as well
+    if instance.master is not None:
+        instance.master.dereference(str(instance))
+    elif instance.datafile() and os.path.exists(instance.datafile()):
+        try:
+            os.unlink(instance.datafile())
+        except OSError:
+            # permissions issues, perhaps
+            logger.error('OSError occurred when attempting to delete '
+                         'job datafile: %s' % instance.datafile())
+
+
+class AsyncWorker(threading.Thread):
+    def __init__(self, job, queryclass):
+        threading.Thread.__init__(self)
+        self.daemon = True
+        self.job = job
+        self.queryclass = queryclass
+
+        logger.info("%s created" % self)
+
+    def __delete__(self):
+        if self.job:
+            self.job.dereference("AsyncWorker deleted")
+
+    def __unicode__(self):
+        return "<AsyncWorker %s>" % (self.job)
+
+    def __str__(self):
+        return "<AsyncWorker %s>" % (self.job)
+
+    def __repr__(self):
+        return unicode(self)
+
+    def run(self):
+        self.do_run()
+        sys.exit(0)
+
+
+class SyncWorker(object):
+    def __init__(self, job, queryclass):
+        self.job = job
+        self.queryclass = queryclass
+
+    def __unicode__(self):
+        return "<SyncWorker %s>" % (self.job)
+
+    def __str__(self):
+        return "<SyncWorker %s>" % (self.job)
+
+    def __repr__(self):
+        return unicode(self)
+
+    def start(self):
+        self.do_run()
+
+
+class CeleryWorker(object):
+
+    def __unicode__(self):
+        return "<CeleryWorker %s>" % (self.job)
+
+    def __str__(self):
+        return "<CeleryWorker %s>" % (self.job)
+
+    def __repr__(self):
+        return unicode(self)
+
+    def start(self):
+        worker_start.delay(self)
+
+
+@celery.task()
+def worker_start(worker):
+    worker.call_method()
+
+
+@celery.task()
+def worker_results_callback(results, worker):
+    worker.call_method()
+
+
+if settings.APPS_DATASOURCE['threading'] and not settings.TESTING:
+    base_worker_class = AsyncWorker
+else:
+    base_worker_class = SyncWorker
+
+base_worker_class = CeleryWorker
+
+
+class Worker(base_worker_class):
+
+    def __init__(self, job, method=None, method_args=None, callback=None):
+        job.reference("Worker created")
+        # Change to job id?
+        self.job = job
+        if callback:
+            self.callback = callback
+        elif method:
+            self.callback = Callable(method, method_args)
+        else:
+            self.callback = Callable(self.queryclass().run)
+        self.method_args = method_args
+        super(Worker, self).__init__()
+
+    def queryclass(self):
+        # Lookup the query class for the table associated with this worker
+        i = importlib.import_module(self.job.table.module)
+        queryclass = i.__dict__[self.job.table.queryclass]
+        return queryclass
+
+    def call_method(self):
+        callback = self.callback
+        method_args = self.method_args or []
+        query = self.queryclass()(self.job)
+
+        try:
+            logger.info("%s: running %s(%s)" %
+                        (self, callback,
+                         ', '.join([str(x) for x in method_args])))
+            result = callback(query, *method_args)
+
+            # Backward compatibility mode - run() method returned
+            # True or False and set query.data
+            if result is True:
+                result = QueryComplete(query.data)
+            elif result is False:
+                result = QueryError(self.job.message or
+                                    ("Unknown failure running %s" % callback))
+
+            if result.is_complete():
+                # Result is of type QueryComplete
+                self.job.mark_complete(result.data)
+
+            elif result.is_error():
+                self.job.mark_error(result.message)
+
+            elif result.jobs:
+                jobids = {}
+                for name, job in result.jobs.iteritems():
+                    if job.parent is None:
+                        job.safe_update(parent=self.job)
+                    jobids[name] = job.id
+
+                callback = Callable(query._post_query_continue,
+                                    called_args=(jobids,
+                                                 Callable(result.callback)))
+
+                logger.debug("%s: Setting callback %s" % (self.job, callback))
+                self.job.safe_update(callback=callback)
+
+                for name, job in result.jobs.iteritems():
+                    job.start()
+
+            else:
+                # QueryContinue, but no sub-jobs, just reschedule the callback
+                self.job.start(result.callback)
+
+        except:
+            logger.exception("%s raised an exception" % self)
+            self.job.mark_error(
+                message="".join(
+                    traceback.format_exception_only(*sys.exc_info()[0:2])),
+                exception="".join(
+                    traceback.format_exception(*sys.exc_info()))
+            )
+
+        finally:
+            job.dereference("Worker exiting")
 
 
 class BatchJobRunner(object):

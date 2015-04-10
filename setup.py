@@ -21,7 +21,7 @@ except ImportError:
 
 from gitpy_versioning import get_version
 
-test = ('selenium', 'mock')
+test = ('selenium', 'mock', 'celerytest')
 doc = []
 
 setup_args = {
