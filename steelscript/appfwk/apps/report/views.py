@@ -404,7 +404,7 @@ class ReportEditor(views.APIView):
         else:
             msg = 'Problem saving report ... review content.'
 
-        messages.add_message(request, messages.INFO, msg)
+        messages.add_message(request._request, messages.INFO, msg)
         copyform = CopyReportForm(report)
         return render_to_response('edit.html',
                                   {'report': report,
