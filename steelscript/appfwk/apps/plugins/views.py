@@ -59,13 +59,13 @@ class PluginsDetailView(APIView):
 
     def post(self, request, slug, *args, **kwargs):
         """ Enable or disable plugin - rest of details are read-only """
+
         try:
             plugin = plugins.get(slug)
         except KeyError:
             return Http404
 
         enabled = request.DATA.get('enabled', False)
-
         msgs = []
         # since we don't have helpful form cleaning, check for json 'false' too
         if (enabled == 'false' or enabled is False) and plugin.can_disable:
@@ -82,7 +82,7 @@ class PluginsDetailView(APIView):
                 msgs.append('Report %s enabled' % r)
 
         for msg in msgs:
-            messages.add_message(request, messages.INFO, msg)
+            messages.add_message(request._request, messages.INFO, msg)
 
         return HttpResponse(json.dumps({'plugin': plugin.__dict__}))
 
@@ -108,24 +108,24 @@ class PluginsCollectView(APIView):
                                         overwrite=overwrite)
                 msg = ('Collected Reports for Plugin %s successfully.' %
                        plugin.title)
-                messages.add_message(request, messages.INFO, msg)
+                messages.add_message(request._request, messages.INFO, msg)
             except CommandError as e:
                 msg = ('Error collecting reports for %s - see log for details.'
                        % plugin.title)
                 logger.debug(msg)
                 logger.debug(e)
-                messages.add_message(request, messages.ERROR, msg)
+                messages.add_message(request._request, messages.ERROR, msg)
         else:
             try:
                 management.call_command('collectreports', plugin=None,
                                         overwrite=overwrite)
                 msg = 'Collected Reports for all plugins successfully.'
-                messages.add_message(request, messages.INFO, msg)
+                messages.add_message(request._request, messages.INFO, msg)
             except CommandError as e:
                 msg = ('Error collecting reports for one or more of the '
                        'plugins - see log for details.')
                 logger.debug(msg)
                 logger.debug(e)
-                messages.add_message(request, messages.ERROR, msg)
+                messages.add_message(request._request, messages.ERROR, msg)
 
         return HttpResponse(json.dumps(msg))

@@ -86,3 +86,18 @@ class EditFieldsWidgetTokenTest(WidgetTokenTest):
         get_url = (self.base_url +
                    '/render/?auth=%s&endtime_1=1&resolution=2d' % self.token)
         self.run_get_url(get_url, 403)
+
+
+class ReportEditorTest(WidgetTokenTest):
+
+    def setUp(self):
+        super(ReportEditorTest, self).setUp()
+        # base_url = /report/appfwk/token_report
+        self.base_url = self.base_url.rsplit('/', 2)[0]
+        with open('reports/token_report.py', 'r') as f:
+            self.text = f.readlines()
+
+    def test_report_save(self):
+        url = self.base_url + '/edit/'
+        response = self.client.post(url, data={'text': self.text})
+        self.assertEqual(response.status_code, 200)
