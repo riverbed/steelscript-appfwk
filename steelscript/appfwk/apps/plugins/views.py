@@ -59,7 +59,7 @@ class PluginsDetailView(APIView):
 
     def post(self, request, slug, *args, **kwargs):
         """ Enable or disable plugin - rest of details are read-only """
-        
+
         try:
             plugin = plugins.get(slug)
         except KeyError:
@@ -83,7 +83,7 @@ class PluginsDetailView(APIView):
 
         for msg in msgs:
             messages.add_message(request._request, messages.INFO, msg)
-        
+
         return HttpResponse(json.dumps({'plugin': plugin.__dict__}))
 
 

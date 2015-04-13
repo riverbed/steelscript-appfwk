@@ -101,4 +101,3 @@ class ReportEditorTest(WidgetTokenTest):
         url = self.base_url + '/edit/'
         response = self.client.post(url, data={'text': self.text})
         self.assertEqual(response.status_code, 200)
-
