@@ -72,7 +72,7 @@ class TableField(models.Model):
     :param field_kwargs: Dictionary of additional field specific
         kwargs to pass to the field_cls constructor.
 
-    :param parants: List of parent keywords that this field depends on
+    :param parents: List of parent keywords that this field depends on
         for a final value.  Used in conjunction with either
         post_process_func or post_process_template.
 
@@ -807,6 +807,8 @@ class Criteria(DictObject):
     def __init__(self, **kwargs):
         """ Initialize a criteria object based on key/value pairs. """
 
+        self.ignore_cache = False
+
         self.starttime = None
         self.endtime = None
         self.duration = None
@@ -920,9 +922,9 @@ class Criteria(DictObject):
 
 
 class TableQueryBase(object):
-    def __init__(self, table, job):
-        self.table = table
+    def __init__(self, job):
         self.job = job
+        self.table = self.job.table
 
     def __unicode__(self):
         return "<%s %s>" % (self.__class__.__name__, self.job)
@@ -939,11 +941,17 @@ class TableQueryBase(object):
             n = 1
         self.job.mark_progress(((n - 1) * 100 + progress) / n)
 
-    def pre_run(self):
-        return True
-
     def run(self):
         return True
 
     def post_run(self):
         return True
+
+    def _post_query_continue(self, jobids, callback):
+        jobs = {}
+        # Hack to avoid circular import problem
+        Job = self.job.__class__
+        for name, jobid in jobids.iteritems():
+            jobs[name] = Job.objects.get(id=jobid)
+
+        return callback(self, jobs)

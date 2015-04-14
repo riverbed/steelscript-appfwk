@@ -21,7 +21,7 @@ except ImportError:
 
 from gitpy_versioning import get_version
 
-test = ('selenium', 'mock')
+test = ('selenium', 'mock', 'celerytest')
 doc = []
 
 setup_args = {
@@ -95,6 +95,10 @@ http://pythonhosted.org/steelscript/
         'ansi2html>=1.0.6',
         'django-ace==1.0.2',
         'apscheduler>=3.0',
+
+        'celery>=3.1',
+        'django-celery==3.1.16',
+        'redis==2.10.3',
 
         # progressd
         'flask==0.10.1',
