@@ -58,6 +58,10 @@ resources:
                 method: GET
                 response: { $ref: '#/resources/job' }
 
+            done:
+                path: "$/jobs/{job_id}/done"
+                method: POST
+
         relations:
             instances: { resource: '#/resources/jobs' }
             master:

@@ -123,6 +123,37 @@ class JobAPI(Resource):
         return '', 204
 
 
+class JobRelationsAPI(Resource):
+    def _get_followers(self, job_id):
+        job = get_job_or_404(job_id)
+        return {'followers': job.followers()}
+
+    def _get_master(self, job_id):
+        job = get_job_or_404(job_id)
+        return {JOBS[job.master_id]}
+
+
+class JobMasterAPI(JobRelationsAPI):
+    @marshal_with(job_resource_fields)
+    def get(self, job_id):
+        print 'Received GET for master of Job ID: %s' % job_id
+        return self._get_master(job_id)
+
+
+class JobFollowersAPI(JobRelationsAPI):
+    @marshal_with(job_resource_fields)
+    def get(self, job_id):
+        print 'Received GET for followers of Job ID: %s' % job_id
+        return self._get_followers(job_id)
+
+
+class JobDoneAPI(JobRelationsAPI):
+    @marshal_with(job_resource_fields)
+    def post(self, job_id):
+        print 'Received POST for completed Job ID: %s' % job_id
+        return self._get_followers(job_id)
+
+
 class JobListAPI(Resource):
     @marshal_with(jobs_resource_fields)
     def get(self):
@@ -148,6 +179,9 @@ class JobListAPI(Resource):
 
 api.add_resource(JobListAPI, '/jobs/')
 api.add_resource(JobAPI, '/jobs/<int:job_id>/')
+api.add_resource(JobMasterAPI, '/jobs/<int:job_id>/master/')
+api.add_resource(JobFollowersAPI, '/jobs/<int:job_id>/followers/')
+api.add_resource(JobDoneAPI, '/jobs/<int:job_id>/done/')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
