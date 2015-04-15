@@ -14,8 +14,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
 
 from steelscript.appfwk.apps.jobs.models import Job
-from steelscript.appfwk.apps.jobs.serializers import JobListSerializer, \
-    JobSerializer, JobDataSerializer
+from steelscript.appfwk.apps.jobs import serializers
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ class JobList(generics.ListAPIView):
     Creation of Jobs must be done via a TableJobList endpoint.
     """
     model = Job
-    serializer_class = JobListSerializer
+    serializer_class = serializers.JobListSerializer
     paginate_by = 10
 
     def post_save(self, obj, created=False):
@@ -36,12 +35,12 @@ class JobList(generics.ListAPIView):
 
 class JobDetail(generics.RetrieveAPIView):
     model = Job
-    serializer_class = JobSerializer
+    serializer_class = serializers.JobDetailSerializer
 
 
 class JobDetailData(generics.RetrieveAPIView):
     model = Job
-    serializer_class = JobDataSerializer
+    serializer_class = serializers.JobDataSerializer
     renderer_classes = (JSONRenderer, CSVRenderer, )
 
     def get(self, request, *args, **kwargs):
