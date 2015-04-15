@@ -4,12 +4,14 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+import sys
+import json
 import logging
+import subprocess
 from collections import OrderedDict
 
 from flask import Flask, request
 from flask_restful import Resource, Api, abort, fields, marshal_with
-
 
 import reschema
 from reschema.exceptions import ValidationError
@@ -184,4 +186,32 @@ api.add_resource(JobFollowersAPI, '/jobs/<int:job_id>/followers/')
 api.add_resource(JobDoneAPI, '/jobs/<int:job_id>/done/')
 
 if __name__ == '__main__':
+    try:
+        project_path = sys.argv[1]
+    except IndexError:
+        print 'Path to appfwk_project required'
+        sys.exit(1)
+
+    # Extract existing job model data and load
+    cmd = 'cd %s && %s manage.py dumpdata jobs.job' % (project_path,
+                                                       sys.executable)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                         shell=True)
+    stdout, stderr = p.communicate()
+
+    if stderr:
+        print 'Error while processing existing jobs:'
+        print stderr
+        sys.exit(1)
+
+    jobs = json.loads(stdout)
+
+    for j in jobs:
+        job = Job(job_id=j['pk'],
+                  status=j['fields']['_status'],
+                  progress=j['fields']['_progress'],
+                  master_id=j['fields']['master'])
+        print 'Adding existing job %s' % job
+        JOBS[j['pk']] = job
+
     app.run(host='0.0.0.0', debug=True)
