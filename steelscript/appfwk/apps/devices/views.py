@@ -55,6 +55,7 @@ class DeviceDetail(views.APIView):
 
         if form.is_valid():
             form.save()
+            DeviceManager.clear()
             return HttpResponseRedirect(reverse('device-list'))
         else:
             return Response({'form': form}, template_name='device_detail.html')
