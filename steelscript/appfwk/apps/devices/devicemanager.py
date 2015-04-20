@@ -28,8 +28,10 @@ class DeviceManager(object):
     @classmethod
     def clear(cls, device_id=None):
         if device_id and device_id in cls.devices:
+            logger.debug("Removing device with id %s" % device_id)
             del cls.devices[device_id]
         else:
+            logger.debug("Clearing all devices.")
             cls.devices = {}
 
     @classmethod
