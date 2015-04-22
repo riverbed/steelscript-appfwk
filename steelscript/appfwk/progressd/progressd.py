@@ -28,9 +28,6 @@ service.load('progressd.yaml')
 job_schema = service.find_resource('job')
 jobs_schema = service.find_resource('jobs')
 
-# Valid Job status
-VALID_STATUS = (0, 1, 3, 4)
-
 # Map of Job IDs to Job objects
 JOBS = {}
 
@@ -70,7 +67,7 @@ class Job(object):
         return self.values()
 
     def update(self, status=None, progress=None):
-        if status is not None and status in VALID_STATUS:
+        if status is not None:
             self.status = status
         if progress is not None and progress > self.progress:
             self.progress = progress
@@ -208,10 +205,10 @@ if __name__ == '__main__':
 
     for j in jobs:
         job = Job(job_id=j['pk'],
-                  status=j['fields']['_status'],
-                  progress=j['fields']['_progress'],
+                  status=j['fields']['status'],
+                  progress=0,
                   master_id=j['fields']['master'])
         print 'Adding existing job %s' % job
         JOBS[j['pk']] = job
 
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='127.0.0.1', debug=True)

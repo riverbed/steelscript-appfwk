@@ -26,14 +26,13 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
 
     # explicitly add these properties as fields
     status = serializers.Field()
-    progress = serializers.Field()
 
     class Meta:
         model = Job
         fields = ('url', 'table', 'master', 'parent',
                   'criteria', 'actual_criteria', 'status',
-                  'message', 'progress', 'remaining')
-        read_only_fields = ('message', 'remaining')
+                  'message',)
+        read_only_fields = ('message')
 
 
 class JobListSerializer(JobSerializer):

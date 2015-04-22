@@ -263,7 +263,7 @@ LOGGING = {
     },
     'formatters': {
         'verbose': {
-            'format': '%(asctime)s [%(levelname)-5s] %(thread)d %(name)s:%(lineno)s - %(message)s'
+            'format': '%(asctime)s [%(levelname)-5s] %(process)d/%(thread)d %(name)s:%(lineno)s - %(message)s'
         },
         'standard': {
             'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
@@ -300,7 +300,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'maxBytes': 1024 * 1024 * 5,            # 5 MB
             'backupCount': 1,
-            'formatter': 'standard',
+            'formatter': 'verbose',
             'filename': os.path.join(PROJECT_ROOT, 'log-db.txt')
         },
     },
