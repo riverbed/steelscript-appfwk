@@ -664,6 +664,45 @@ class DatasourceTable(Table):
         return c
 
 
+class DatasourceQuery(object):
+    def __init__(self, job):
+        self.job = job
+        self.table = self.job.table
+
+    def __unicode__(self):
+        return "<%s %s>" % (self.__class__.__name__, self.job)
+
+    def __str__(self):
+        return "<%s %s>" % (self.__class__.__name__, self.job)
+
+    def mark_progress(self, progress):
+        # Called by the analysis function
+        tables = getattr(self.table.options, 'tables', None)
+        if tables:
+            n = len(tables) + 1
+        else:
+            n = 1
+        self.job.mark_progress(((n - 1) * 100 + progress) / n)
+
+    def run(self):
+        return True
+
+    def post_run(self):
+        return True
+
+    def _post_query_continue(self, jobids, callback):
+        jobs = {}
+        # Hack to avoid circular import problem
+        Job = self.job.__class__
+        for name, jobid in jobids.iteritems():
+            jobs[name] = Job.objects.get(id=jobid)
+
+        return callback(self, jobs)
+
+# Backward compatibility
+TableQueryBase = DatasourceQuery
+
+
 class Column(models.Model):
 
     table = models.ForeignKey(Table)
@@ -919,39 +958,3 @@ class Criteria(DictObject):
         self.duration = duration
         self.starttime = starttime
         self.endtime = endtime
-
-
-class TableQueryBase(object):
-    def __init__(self, job):
-        self.job = job
-        self.table = self.job.table
-
-    def __unicode__(self):
-        return "<%s %s>" % (self.__class__.__name__, self.job)
-
-    def __str__(self):
-        return "<%s %s>" % (self.__class__.__name__, self.job)
-
-    def mark_progress(self, progress):
-        # Called by the analysis function
-        tables = getattr(self.table.options, 'tables', None)
-        if tables:
-            n = len(tables) + 1
-        else:
-            n = 1
-        self.job.mark_progress(((n - 1) * 100 + progress) / n)
-
-    def run(self):
-        return True
-
-    def post_run(self):
-        return True
-
-    def _post_query_continue(self, jobids, callback):
-        jobs = {}
-        # Hack to avoid circular import problem
-        Job = self.job.__class__
-        for name, jobid in jobids.iteritems():
-            jobs[name] = Job.objects.get(id=jobid)
-
-        return callback(self, jobs)

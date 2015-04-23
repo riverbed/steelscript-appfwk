@@ -5,7 +5,6 @@
 # as set forth in the License.
 
 
-import time
 import logging
 from datetime import timedelta
 
@@ -19,7 +18,7 @@ from steelscript.appfwk.apps.jobs.models import \
 from steelscript.common.timeutils import \
     parse_timedelta, timedelta_total_seconds
 from steelscript.appfwk.apps.datasource.models import \
-    DatasourceTable, Column, Table, TableQueryBase
+    DatasourceTable, DatasourceQuery, Column, Table
 from steelscript.appfwk.libs.fields import Function
 
 
@@ -124,7 +123,7 @@ class AnalysisTable(DatasourceTable):
                             keywords.add(f.keyword)
 
 
-class AnalysisQuery(TableQueryBase):
+class AnalysisQuery(DatasourceQuery):
 
     def run(self):
         # Collect all dependent tables
@@ -192,9 +191,7 @@ class AnalysisQuery(TableQueryBase):
             return QueryError(
                 "Analysis function %s failed" % options.function, e)
 
-
         logger.debug("%s: completed successfully" % self)
-
         return QueryComplete(df)
 
 
@@ -240,7 +237,8 @@ class FocusedAnalysisTable(AnalysisTable):
 
 
 class FocusedAnalysisQuery(AnalysisQuery):
-    def post_run(self):
+
+    def analyze(self, jobs):
         basetable = Table.from_ref(
             self.table.options['related_tables']['template']
         )
@@ -275,22 +273,13 @@ class FocusedAnalysisQuery(AnalysisQuery):
                       % criteria)
 
         job = Job.create(basetable, criteria, self.job.update_progress)
-        job.start()
+        return QueryContinue(self.finish, {'job': job})
 
-        while job.status == Job.RUNNING:
-            time.sleep(1)
-
-        if job.status == job.ERROR:
-            self.job.mark_error("Dependent Job failed: %s" % job.message,
-                                exception=job.exception)
-            return False
-
-        self.data = job.data()
-
-        return True
+    def finish(self, jobs):
+        return QueryComplete(jobs['job'].data())
 
 
-class CriteriaTable(AnalysisTable):
+class CriteriaTable(DatasourceTable):
     class Meta:
         proxy = True
 
@@ -305,9 +294,9 @@ class CriteriaTable(AnalysisTable):
                         datatype=Column.DATATYPE_STRING)
 
 
-class CriteriaQuery(AnalysisQuery):
+class CriteriaQuery(DatasourceQuery):
 
-    def post_run(self):
+    def run(self):
         criteria = self.job.criteria
         values = [[str(k), str(v)]
                   for k, v in criteria.iteritems()]
@@ -315,8 +304,7 @@ class CriteriaQuery(AnalysisQuery):
         df = pandas.DataFrame(values,
                               columns=['key', 'value']).sort('key')
 
-        self.data = df
-        return True
+        return QueryComplete(df)
 
 
 def resample(df, timecol, interval, how):

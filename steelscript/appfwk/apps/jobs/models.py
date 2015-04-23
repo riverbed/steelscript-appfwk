@@ -764,11 +764,10 @@ class Job(models.Model):
                     (len(jobs), [j.id for j in jobs]))
         jobs.delete()
 
-    def done(self, use_db=False):
-        if use_db:
+    def done(self):
+        self.status = int(self._get_progressd('status'))
+        if self.status in (Job.COMPLETE, Job.ERROR):
             self.refresh()
-        else:
-            self.status = int(self._get_progressd('status'))
 
         return self.status in (Job.COMPLETE, Job.ERROR)
 

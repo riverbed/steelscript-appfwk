@@ -819,15 +819,16 @@ class WidgetJobDetail(views.APIView):
 
     def get(self, request, namespace, report_slug, widget_slug, job_id,
             format=None, status=None):
+        logger.debug("WidgetJobDetail GET %s/%s/%s/%s" %
+                     (namespace, report_slug, widget_slug, job_id))
+
         wjob = WidgetJob.objects.get(id=job_id)
 
         job = wjob.job
         widget = wjob.widget
 
         if not job.done():
-            # job not yet done, return an empty data structure
-            #logger.debug("%s: Not done yet, %d%% complete" % (str(wjob),
-            #                                                  job.progress))
+            # job not yet done
             resp = job.json()
         elif job.status == Job.ERROR:
             resp = job.json()
@@ -877,8 +878,9 @@ geolocation documentation</a> for more information.'''
                     logger.debug("%s complete" % str(wjob))
 
             except:
-                logger.exception("Widget %s (%s) Job %s processing failed" %
-                                 (widget.slug, widget.id, job.id))
+                logger.exception(("Widget %s (%s) WidgetJob %s, Job %s "
+                                 "processing failed") %
+                                 (widget.slug, widget.id, wjob.id, job.id))
                 resp = job.json()
                 resp['status'] = Job.ERROR
                 ei = sys.exc_info()
