@@ -7,6 +7,7 @@
 #    - uses of transaction.atomic()
 #  - celery error handler for when a job dies outside a try block?
 #  - query celery for stale jobs instead of pid
+#  - rename TableQueryBase to DatasourceQuery, move here?
 #
 # Peformanace questions:
 #  - Worker.job or job_id?
@@ -127,9 +128,10 @@ class QueryContinue(QueryResponse):
 
 
 class QueryError(QueryResponse):
-    def __init__(self, message=None):
+    def __init__(self, message=None, exception=None):
         super(QueryError, self).__init__(QueryResponse.QUERY_ERROR)
         self.message = message
+        self.exception = exception
 
 
 class Job(models.Model):
@@ -290,8 +292,13 @@ class Job(models.Model):
         # Grab a lock on the row associated with the table
         with TransactionLock(table, "Job.create"):
 
-            # Find jobs with the same handle but with no master
+            # Find jobs with the same handle but with no master,
+            # these are candidate master jobs.  Lock these rows
+            # so we can ensure they don't get deleted until
+            # we have a chance to touch it and refcount the selected
+            # master below
             master_jobs = (Job.objects
+                           .select_for_update()
                            .filter(status__in=[Job.NEW,
                                                Job.QUEUED,
                                                Job.RUNNING,
@@ -322,8 +329,6 @@ class Job(models.Model):
             job.save()
 
             if master:
-                # XXXCJ - potential deadlock?
-                # XXXCJ - combine reerence/safe_update into one to minimize database hit
                 master.reference("Master link from job %s" % job)
                 now = datetime.datetime.now(tz=pytz.utc)
                 master.safe_update(touched=now)
@@ -336,6 +341,7 @@ class Job(models.Model):
             # End of TransactionLock
 
         # Create new instance in progressd
+        # XXXCJ - replace with sleepwalker or some API imported from progressd
         p = {'job_id': job.id,
              'status': job.status,
              'progress': 0,
@@ -595,7 +601,7 @@ class Job(models.Model):
                     follower.mark_complete(**kwargs)
 
                 elif self.status == Job.ERROR:
-                    follower.mark_done(**kwargs)
+                    follower.mark_done(status=status, **kwargs)
 
         if self.parent:
             logger.debug("%s: Asking parent %s to check children" %
@@ -963,7 +969,7 @@ class Worker(base_worker_class):
                 self.job.mark_complete(result.data)
 
             elif result.is_error():
-                self.job.mark_error(result.message)
+                self.job.mark_error(result.message, result.exception)
 
             elif result.jobs:
                 # QueryContinue with dependent jobs
@@ -1006,85 +1012,13 @@ class Worker(base_worker_class):
 class BatchJobRunner(object):
 
     def __init__(self, basejob, batchsize=4, min_progress=0, max_progress=100):
-        self.basejob = basejob
-        self.jobs = []
-        self.batchsize = batchsize
-        self.min_progress = min_progress
-        self.max_progress = max_progress
+        raise Exception("BatchJobRunner is obsolete, please update your code")
 
     def __str__(self):
         return "BatchJobRunner (%s)" % self.basejob
 
     def add_job(self, job):
-        self.jobs.append(job)
+        pass
 
     def run(self):
-        class JobList:
-            def __init__(self, jobs):
-                self.jobs = jobs
-                self.index = 0
-                self.count = len(jobs)
-
-            def __nonzero__(self):
-                return self.index < self.count
-
-            def next(self):
-                if self.index < self.count:
-                    job = self.jobs[self.index]
-                    self.index += 1
-                    return job
-                return None
-
-        joblist = JobList(self.jobs)
-        done_count = 0
-        batch = []
-
-        logger.info("%s: %d total jobs" % (self, joblist.count))
-
-        while joblist and len(batch) < self.batchsize:
-            job = joblist.next()
-            batch.append(job)
-            job.start()
-            logger.debug("%s: starting batch job #%d (%s)"
-                         % (self, joblist.index, job))
-
-        # iterate until both jobs and batch are empty
-        while joblist or batch:
-            # check jobs in the batch
-            rebuild_batch = False
-            batch_progress = 0.0
-            something_done = False
-            for i, job in enumerate(batch):
-                job.refresh()
-                if job.done():
-                    something_done = True
-                    done_count += 1
-                    if joblist:
-                        batch[i] = joblist.next()
-                        batch[i].start()
-                        logger.debug("%s: starting batch job #%d (%s)"
-                                     % (self, joblist.index, batch[i]))
-                    else:
-                        batch[i] = None
-                        rebuild_batch = True
-                else:
-                    batch_progress += float(job.progress)
-
-            total_progress = ((float(done_count * 100) + batch_progress)
-                              / joblist.count)
-            job_progress = (float(self.min_progress) +
-                            ((total_progress / 100.0) *
-                             (self.max_progress - self.min_progress)))
-            # logger.debug(
-            #    "%s: progress %d%% (basejob %d%%) (%d/%d done, %d in batch)" %
-            #    (self, int(total_progress), int(job_progress),
-            #    done_count, joblist.count, len(batch)))
-            self.basejob.mark_progress(job_progress)
-
-            if not something_done:
-                time.sleep(0.2)
-
-            elif rebuild_batch:
-                batch = [j for j in batch if j is not None]
-
-        return
+        pass

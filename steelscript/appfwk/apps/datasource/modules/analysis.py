@@ -14,7 +14,7 @@ import pandas
 from django.db import transaction
 
 from steelscript.appfwk.apps.jobs.models import \
-    Job, BatchJobRunner, QueryContinue, QueryComplete, QueryError
+    Job, QueryContinue, QueryComplete, QueryError
 
 from steelscript.common.timeutils import \
     parse_timedelta, timedelta_total_seconds
@@ -156,7 +156,9 @@ class AnalysisQuery(TableQueryBase):
                     return QueryError("Dependent Job '%s' failed: %s" %
                                       (name, job.message))
 
-        if hasattr(self, 'post_run'):
+        if hasattr(self, 'analyze'):
+            return self.analyze(jobs)
+        else:
             # Compatibility mode - old code uses def post_run() and expects
             # self.tables to be set
             tables = {}
@@ -170,9 +172,6 @@ class AnalysisQuery(TableQueryBase):
             self.tables = tables
             return self.post_run()
 
-        else:
-            return self.analyze(jobs)
-
     def post_run(self):
         """Execute any Functions saved to Table.
 
@@ -182,22 +181,17 @@ class AnalysisQuery(TableQueryBase):
         directly to the create method.
         """
         options = self.table.options
+        if options.function is None:
+            return QueryError(
+                "Table %s has no analysis function defined" % self.table)
 
         try:
             df = options.function(self, options.tables, self.job.criteria)
 
-        except AnalysisException as e:
-            self.job.mark_error("Analysis function %s failed: %s" %
-                                (options.function, e.message))
-            logger.exception("%s raised an exception" % self)
-            return False
-
         except Exception as e:
-            self.job.mark_error("Analysis function %s failed: %s" %
-                                (options.function, str(e)))
-            logger.exception("%s: Analysis function %s raised an exception" %
-                             (self, options.function))
-            return False
+            return QueryError(
+                "Analysis function %s failed" % options.function, e)
+
 
         logger.debug("%s: completed successfully" % self)
 
