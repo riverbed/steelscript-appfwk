@@ -10,20 +10,15 @@
 #  - rename TableQueryBase to DatasourceQuery, move here?
 #
 # Peformanace questions:
-#  - Worker.job or job_id?
+#  - Task.job or job_id?
 #  - compute tree pushing up from children or on demand from parent
 #
 import os
-import sys
 import time
 import random
 import hashlib
 import logging
 import datetime
-import importlib
-import traceback
-import threading
-import celery
 
 import pytz
 import pandas
@@ -47,6 +42,7 @@ from steelscript.appfwk.libs.fields import PickledObjectField
 from steelscript.common.connection import Connection
 from steelscript.common.exceptions import RvbdHTTPException
 
+from steelscript.appfwk.apps.jobs.task import Task
 
 logger = logging.getLogger(__name__)
 
@@ -96,44 +92,6 @@ progressd = Connection(settings.PROGRESSD_HOST,
                        port=settings.PROGRESSD_PORT)
 
 
-class QueryResponse(object):
-
-    QUERY_COMPLETE = 1
-    QUERY_CONTINUE = 2
-    QUERY_ERROR = 3
-
-    def __init__(self, status):
-        self.status = status
-
-    def is_complete(self):
-        return self.status == QueryResponse.QUERY_COMPLETE
-
-    def is_error(self):
-        return self.status == QueryResponse.QUERY_ERROR
-
-
-class QueryComplete(QueryResponse):
-
-    def __init__(self, data):
-        super(QueryComplete, self).__init__(QueryResponse.QUERY_COMPLETE)
-        self.data = data
-
-
-class QueryContinue(QueryResponse):
-
-    def __init__(self, callback, jobs=None):
-        super(QueryContinue, self).__init__(QueryResponse.QUERY_CONTINUE)
-        self.callback = callback
-        self.jobs = jobs
-
-
-class QueryError(QueryResponse):
-    def __init__(self, message=None, exception=None):
-        super(QueryError, self).__init__(QueryResponse.QUERY_ERROR)
-        self.message = message
-        self.exception = exception
-
-
 class Job(models.Model):
 
     # Timestamp when the job was created
@@ -180,7 +138,7 @@ class Job(models.Model):
                  (COMPLETE, "Complete"),
                  (ERROR, "Error")))
 
-    # Process ID for original Worker thread
+    # Process ID for original Task thread
     pid = models.IntegerField(default=None, null=True)
 
     # Message if job complete or error
@@ -467,10 +425,10 @@ class Job(models.Model):
 
                 return
 
-        # Create an worker to do the work
-        worker = Worker(self, method, method_args)
-        logger.debug("%s: Created worker %s" % (self, worker))
-        worker.start()
+        # Create an task to do the work
+        task = Task(self, method, method_args)
+        logger.debug("%s: Created task %s" % (self, task))
+        task.start()
 
     def check_children(self):
         running_children = Job.objects.filter(
@@ -501,9 +459,9 @@ class Job(models.Model):
             self.callback = None
             self.save()
 
-        w = Worker(self, callback=callback)
-        logger.debug("%s: Created callback worker %s" % (self, w))
-        w.start()
+        t = Task(self, callback=callback)
+        logger.debug("%s: Created callback task %s" % (self, t))
+        t.start()
 
     def schedule(self, jobs, callback):
         jobid_map = {}
@@ -843,169 +801,6 @@ def _my_job_delete(sender, instance, **kwargs):
             # permissions issues, perhaps
             logger.error('OSError occurred when attempting to delete '
                          'job datafile: %s' % instance.datafile())
-
-
-class AsyncWorker(threading.Thread):
-    def __init__(self, job, queryclass):
-        threading.Thread.__init__(self)
-        self.daemon = True
-        self.job = job
-        self.queryclass = queryclass
-
-        logger.info("%s created" % self)
-
-    def __delete__(self):
-        if self.job:
-            self.job.dereference("AsyncWorker deleted")
-
-    def __unicode__(self):
-        return "<AsyncWorker %s>" % (self.job)
-
-    def __str__(self):
-        return "<AsyncWorker %s>" % (self.job)
-
-    def __repr__(self):
-        return unicode(self)
-
-    def run(self):
-        self.do_run()
-        sys.exit(0)
-
-
-class SyncWorker(object):
-    def __init__(self, job, queryclass):
-        self.job = job
-        self.queryclass = queryclass
-
-    def __unicode__(self):
-        return "<SyncWorker %s>" % (self.job)
-
-    def __str__(self):
-        return "<SyncWorker %s>" % (self.job)
-
-    def __repr__(self):
-        return unicode(self)
-
-    def start(self):
-        self.do_run()
-
-
-class CeleryWorker(object):
-
-    def __unicode__(self):
-        return "<CeleryWorker %s>" % (self.job)
-
-    def __str__(self):
-        return "<CeleryWorker %s>" % (self.job)
-
-    def __repr__(self):
-        return unicode(self)
-
-    def start(self):
-        worker_start.delay(self)
-
-
-@celery.task()
-def worker_start(worker):
-    worker.call_method()
-
-
-@celery.task()
-def worker_results_callback(results, worker):
-    worker.call_method()
-
-
-if settings.APPS_DATASOURCE['threading'] and not settings.TESTING:
-    base_worker_class = AsyncWorker
-else:
-    base_worker_class = SyncWorker
-
-base_worker_class = CeleryWorker
-
-
-class Worker(base_worker_class):
-
-    def __init__(self, job, method=None, method_args=None, callback=None):
-        job.reference("Worker created")
-        # Change to job id?
-        self.job = job
-        if callback:
-            self.callback = callback
-        elif method:
-            self.callback = Callable(method, method_args)
-        else:
-            self.callback = Callable(self.queryclass().run)
-        self.method_args = method_args
-        super(Worker, self).__init__()
-
-    def queryclass(self):
-        # Lookup the query class for the table associated with this worker
-        i = importlib.import_module(self.job.table.module)
-        queryclass = i.__dict__[self.job.table.queryclass]
-        return queryclass
-
-    def call_method(self):
-        callback = self.callback
-        method_args = self.method_args or []
-        query = self.queryclass()(self.job)
-
-        try:
-            logger.info("%s: running %s(%s)" %
-                        (self, callback,
-                         ', '.join([str(x) for x in method_args])))
-            result = callback(query, *method_args)
-
-            # Backward compatibility mode - run() method returned
-            # True or False and set query.data
-            if result is True:
-                result = QueryComplete(query.data)
-            elif result is False:
-                result = QueryError(self.job.message or
-                                    ("Unknown failure running %s" % callback))
-
-            if result.is_complete():
-                # Result is of type QueryComplete
-                self.job.mark_complete(result.data)
-
-            elif result.is_error():
-                self.job.mark_error(result.message, result.exception)
-
-            elif result.jobs:
-                # QueryContinue with dependent jobs
-                jobids = {}
-                for name, job in result.jobs.iteritems():
-                    if job.parent is None:
-                        # Just in case caller forgot to set the
-                        # parent...
-                        job.safe_update(parent=self.job)
-                    jobids[name] = job.id
-
-                callback = Callable(query._post_query_continue,
-                                    called_args=(jobids,
-                                                 Callable(result.callback)))
-
-                logger.debug("%s: Setting callback %s" % (self.job, callback))
-                self.job.safe_update(callback=callback)
-
-                for name, job in result.jobs.iteritems():
-                    job.start()
-
-            else:
-                # QueryContinue, but no dependent jobs, just
-                # reschedule the callback
-                self.job.start(result.callback)
-
-        except:
-            logger.exception("%s raised an exception" % self)
-            self.job.mark_error(
-                message="".join(
-                    traceback.format_exception_only(*sys.exc_info()[0:2])),
-                exception="".join(
-                    traceback.format_exception(*sys.exc_info()))
-            )
-
-        finally:
-            self.job.dereference("Worker exiting")
 
 
 class BatchJobRunner(object):

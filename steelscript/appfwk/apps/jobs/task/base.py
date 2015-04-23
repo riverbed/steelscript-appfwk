@@ -1,0 +1,130 @@
+import sys
+import importlib
+import logging
+import traceback
+
+from steelscript.appfwk.libs.fields import Callable
+
+logger = logging.getLogger(__name__)
+
+
+class QueryResponse(object):
+
+    QUERY_COMPLETE = 1
+    QUERY_CONTINUE = 2
+    QUERY_ERROR = 3
+
+    def __init__(self, status):
+        self.status = status
+
+    def is_complete(self):
+        return self.status == QueryResponse.QUERY_COMPLETE
+
+    def is_error(self):
+        return self.status == QueryResponse.QUERY_ERROR
+
+
+class QueryComplete(QueryResponse):
+
+    def __init__(self, data):
+        super(QueryComplete, self).__init__(QueryResponse.QUERY_COMPLETE)
+        self.data = data
+
+
+class QueryContinue(QueryResponse):
+
+    def __init__(self, callback, jobs=None):
+        super(QueryContinue, self).__init__(QueryResponse.QUERY_CONTINUE)
+        self.callback = callback
+        self.jobs = jobs
+
+
+class QueryError(QueryResponse):
+    def __init__(self, message=None, exception=None):
+        super(QueryError, self).__init__(QueryResponse.QUERY_ERROR)
+        self.message = message
+        self.exception = exception
+
+
+class BaseTask(object):
+
+    def __init__(self, job, method=None, method_args=None, callback=None):
+        job.reference("Task created")
+        # Change to job id?
+        self.job = job
+        if callback:
+            self.callback = callback
+        elif method:
+            self.callback = Callable(method, method_args)
+        else:
+            self.callback = Callable(self.queryclass().run)
+        self.method_args = method_args
+
+    def queryclass(self):
+        # Lookup the query class for the table associated with this task
+        i = importlib.import_module(self.job.table.module)
+        queryclass = i.__dict__[self.job.table.queryclass]
+        return queryclass
+
+    def call_method(self):
+        callback = self.callback
+        method_args = self.method_args or []
+        query = self.queryclass()(self.job)
+
+        try:
+            logger.info("%s: running %s(%s)" %
+                        (self, callback,
+                         ', '.join([str(x) for x in method_args])))
+            result = callback(query, *method_args)
+
+            # Backward compatibility mode - run() method returned
+            # True or False and set query.data
+            if result is True:
+                result = QueryComplete(query.data)
+            elif result is False:
+                result = QueryError(self.job.message or
+                                    ("Unknown failure running %s" % callback))
+
+            if result.is_complete():
+                # Result is of type QueryComplete
+                self.job.mark_complete(result.data)
+
+            elif result.is_error():
+                self.job.mark_error(result.message, result.exception)
+
+            elif result.jobs:
+                # QueryContinue with dependent jobs
+                jobids = {}
+                for name, job in result.jobs.iteritems():
+                    if job.parent is None:
+                        # Just in case caller forgot to set the
+                        # parent...
+                        job.safe_update(parent=self.job)
+                    jobids[name] = job.id
+
+                callback = Callable(query._post_query_continue,
+                                    called_args=(jobids,
+                                                 Callable(result.callback)))
+
+                logger.debug("%s: Setting callback %s" % (self.job, callback))
+                self.job.safe_update(callback=callback)
+
+                for name, job in result.jobs.iteritems():
+                    job.start()
+
+            else:
+                # QueryContinue, but no dependent jobs, just
+                # reschedule the callback
+                self.job.start(result.callback)
+
+        except:
+            logger.exception("%s raised an exception" % self)
+            self.job.mark_error(
+                message="".join(
+                    traceback.format_exception_only(*sys.exc_info()[0:2])),
+                exception="".join(
+                    traceback.format_exception(*sys.exc_info()))
+            )
+
+        finally:
+            self.job.dereference("Task exiting")
