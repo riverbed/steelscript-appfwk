@@ -22,11 +22,13 @@ class Command(BaseCommand):
 
     def create_parser(self, prog_name, subcommand):
         parser = super(Command, self).create_parser(prog_name, subcommand)
-        parser.add_option('--list',
+        parser.add_option('--show',
                           action='store_true',
-                          dest='device_list',
+                          dest='show_device',
                           default=False,
-                          help='List of all available devices')
+                          help=('Show one or more matching device(s). '
+                                'For example:\n'
+                                './manage.py device --show --enabled'))
 
         parser.add_option('--add',
                           action='store_true',
@@ -47,11 +49,15 @@ class Command(BaseCommand):
                                 './manage.py device --edit -I 1 '
                                 '-N new_name'))
 
+        parser.add_option('--enabled', action='store_true', dest='enabled',
+                          help='Set the device as enabled')
+        parser.add_option('--no-enabled', action='store_false', dest='enabled',
+                          help='Set the device as disabled')
+
         parser.add_option('-H', '--host', help='Hostname or IP address')
         parser.add_option('-M', '--module', help='Module name for the device')
         parser.add_option('-N', '--name', help='Name of the device')
         parser.add_option('-p', '--port', help='Port of the device to connect')
-        parser.add_option('-E', '--enabled', help='If the device is enabled')
         parser.add_option('-U', '--username', help='Username for the device')
         parser.add_option('-P', '--password', help='Password for the device')
         parser.add_option('-I', '--id', help='ID of a device to be edited')
@@ -60,13 +66,20 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """ Main command handler. """
-        if options['device_list']:
+        if options['show_device']:
+            dev = {}
+            for opt in DEVICE_ATTRS + ['id']:
+                if options[opt] is not None:
+                    dev[opt] = options[opt]
+
             output = []
-            for d in Device.objects.all():
+            for d in Device.objects.filter(**dev):
                 output.append([d.id, d.name, d.module, d.host, d.port,
                                d.username, d.enabled])
             Formatter.print_table(output, ['ID', 'Name', 'Module', 'Host',
                                            'Port', 'User Name', 'Enabled'])
+            if not output:
+                self.stdout.write("No device found")
 
         elif options['add_device']:
             dev = {}
@@ -85,11 +98,9 @@ class Command(BaseCommand):
                                       "integer" % options['port'])
                     sys.exit(1)
 
-            if options['enabled']:
-                if options['enabled'].lower() == 'false':
-                    dev['enabled'] = False
-                else:
-                    dev['enabled'] = True
+            if options['enabled'] is not None:
+                # --enabled or --no-enabled is set
+                dev['enabled'] = options['enabled']
 
             dev_obj = Device(**dev)
             dev_obj.save()
@@ -119,12 +130,6 @@ class Command(BaseCommand):
                     self.stdout.write("Option port '%s' is not a positive "
                                       "integer" % options['port'])
                     sys.exit(1)
-
-            if options['enabled']:
-                if options['enabled'].lower() == 'false':
-                    options['enabled'] = False
-                else:
-                    options['enabled'] = True
 
             dev_obj = dev_list[0]
             change = False
