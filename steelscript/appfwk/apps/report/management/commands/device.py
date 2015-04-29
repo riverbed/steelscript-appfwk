@@ -5,15 +5,12 @@
 # as set forth in the License.
 
 import sys
-import logging
 
 from django.core.management.base import BaseCommand
 
 from steelscript.common.datautils import Formatter
 
 from steelscript.appfwk.apps.devices.models import Device
-
-logger = logging.getLogger(__name__)
 
 REQUIRED_DEVICE_ATTRS = ['host', 'module', 'name', 'username', 'password']
 DEVICE_ATTRS = REQUIRED_DEVICE_ATTRS + ['enabled', 'port']
