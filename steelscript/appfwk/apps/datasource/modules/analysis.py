@@ -13,7 +13,7 @@ import pandas
 from django.db import transaction
 
 from steelscript.appfwk.apps.jobs import \
-    Job, QueryContinue, QueryError
+    Job, QueryComplete, QueryContinue, QueryError
 
 from steelscript.common.timeutils import \
     parse_timedelta, timedelta_total_seconds

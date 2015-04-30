@@ -8,13 +8,10 @@ logger = logging.getLogger(__name__)
 
 
 class AsyncTask(threading.Thread, BaseTask):
-    def __init__(self, job, queryclass):
+    def __init__(self, *args, **kwargs):
         threading.Thread.__init__(self)
+        BaseTask.__init__(self, *args, **kwargs)
         self.daemon = True
-        self.job = job
-        self.queryclass = queryclass
-
-        logger.info("%s created" % self)
 
     def __delete__(self):
         if self.job:
@@ -30,5 +27,5 @@ class AsyncTask(threading.Thread, BaseTask):
         return unicode(self)
 
     def run(self):
-        self.do_run()
+        self.call_method()
         sys.exit(0)

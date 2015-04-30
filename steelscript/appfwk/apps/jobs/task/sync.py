@@ -1,16 +1,10 @@
-class SyncTask(object):
-    def __init__(self, job, queryclass):
-        self.job = job
-        self.queryclass = queryclass
+import logging
 
-    def __unicode__(self):
-        return "<SyncTask %s>" % (self.job)
+from steelscript.appfwk.apps.jobs.task.base import BaseTask
 
-    def __str__(self):
-        return "<SyncTask %s>" % (self.job)
+logger = logging.getLogger(__name__)
 
-    def __repr__(self):
-        return unicode(self)
 
+class SyncTask(BaseTask):
     def start(self):
-        self.do_run()
+        self.call_method()

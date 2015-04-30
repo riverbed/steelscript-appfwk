@@ -19,11 +19,11 @@ import random
 import hashlib
 import logging
 import datetime
-import threading
-
 import pytz
 import pandas
 import numpy
+import threading
+
 from django.db import models
 from django.db import transaction
 from django.db.models import F
@@ -56,15 +56,18 @@ if settings.DATABASES['default']['ENGINE'].endswith('sqlite3'):
     lock = threading.RLock()
 
     class TransactionLock(object):
-        def __init__(self, obj, context):
+        def __init__(self, obj, context=""):
             self.context = context
 
         def __enter__(self):
+            logger.debug("TransactionLock.enter: %s - %s" %
+                         (self.context, self.obj))
             lock.acquire()
 
         def __exit__(self, type_, value, traceback_):
-            if lock is not None:
-                lock.release()
+            lock.release()
+            logger.debug("TransactionLock.exit: %s - %s" % (
+                self.context, self.obj))
 
 else:
     class TransactionLock(transaction.Atomic):
@@ -426,8 +429,11 @@ class Job(models.Model):
 
                 return
 
+        if method is None:
+            method = self.table.queryclass.run
+
         # Create an task to do the work
-        task = Task(self, method, method_args)
+        task = Task(self, Callable(method, method_args))
         logger.debug("%s: Created task %s" % (self, task))
         task.start()
 
@@ -443,7 +449,7 @@ class Job(models.Model):
 
         # Grab a lock on this job to make sure only one caller
         # gets the callback
-        with TransactionLock(self):
+        with TransactionLock(self, '%s.check_children' % self):
             # Now that we have the lock, make sure we have latest Job
             # details
             self.refresh()

@@ -159,9 +159,12 @@ class TableField(models.Model):
 
 class Table(models.Model):
     name = models.CharField(max_length=200)
-    module = models.CharField(max_length=200)      # source module name
-    queryclass = models.CharField(max_length=200)  # name of query class
-    datasource = models.CharField(max_length=200)  # class name of datasource
+
+    # Table data is produced by a queryclassname defined within the
+    # named module
+    module = models.CharField(max_length=200)
+    queryclassname = models.CharField(max_length=200)
+
     namespace = models.CharField(max_length=100)
     sourcefile = models.CharField(max_length=200)
 
@@ -245,6 +248,19 @@ class Table(models.Model):
 
     def __repr__(self):
         return unicode(self)
+
+    @property
+    def queryclass(self):
+        # Lookup the query class for the table associated with this task
+        try:
+            i = importlib.import_module(self.module)
+            queryclass = i.__dict__[self.queryclassname]
+        except:
+            raise SteelScriptDatasourceException(
+                "Could not lookup queryclass %s in module %s" %
+                (self.queryclassname, self.module))
+
+        return queryclass
 
     def get_columns(self, synthetic=None, ephemeral=None, iskey=None):
         """
@@ -525,9 +541,11 @@ class DatasourceTable(Table):
         if kwargs:
             raise AttributeError('Invalid keyword arguments: %s' % str(kwargs))
 
-        queryclass = cls._query_class
-        if inspect.isclass(queryclass):
-            queryclass = queryclass.__name__
+        # Table property '_query_class' may be either a string name
+        # or an actual class reference.  Convert to string name for storage
+        queryclassname = cls._query_class
+        if inspect.isclass(queryclassname):
+            queryclassname = queryclass.__name__
 
         sourcefile = table_kwargs.get('sourcefile',
                                       get_sourcefile(get_module_name()))
@@ -544,8 +562,8 @@ class DatasourceTable(Table):
         table_kwargs['sourcefile'] = sourcefile
 
         logger.debug('Creating table %s' % name)
-        t = cls(name=name, module=cls.__module__, queryclass=queryclass,
-                datasource=cls.__name__, options=options, **table_kwargs)
+        t = cls(name=name, module=cls.__module__, queryclassname=queryclassname,
+                options=options, **table_kwargs)
         try:
             t.save()
         except DatabaseError as e:

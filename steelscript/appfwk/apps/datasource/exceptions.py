@@ -7,6 +7,10 @@
 from rest_framework.exceptions import APIException
 
 
+class SteelScriptDatasourceException(Exception):
+    pass
+
+
 class TableComputeSyntheticError(APIException):
     """ Exception when something goes wrong with Table.compute_synthetic. """
     status_code = 500

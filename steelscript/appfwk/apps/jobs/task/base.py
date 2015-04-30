@@ -48,34 +48,36 @@ class QueryError(QueryResponse):
 
 class BaseTask(object):
 
-    def __init__(self, job, method=None, method_args=None, callback=None):
+    def __init__(self, job, callback):
         job.reference("Task created")
         # Change to job id?
         self.job = job
-        if callback:
-            self.callback = callback
-        elif method:
-            self.callback = Callable(method, method_args)
-        else:
-            self.callback = Callable(self.queryclass().run)
-        self.method_args = method_args
+        self.callback = callback
 
-    def queryclass(self):
-        # Lookup the query class for the table associated with this task
-        i = importlib.import_module(self.job.table.module)
-        queryclass = i.__dict__[self.job.table.queryclass]
-        return queryclass
+    def __unicode__(self):
+        return "<%s %s %s>" % (self.__class__, self.job, self.callback)
+
+    def __str__(self):
+        return "<%s %s %s>" % (self.__class__, self.job, self.callback)
+
+    def __repr__(self):
+        return unicode(self)
 
     def call_method(self):
         callback = self.callback
-        method_args = self.method_args or []
-        query = self.queryclass()(self.job)
+        # method_args = self.method_args or []
+
+        # Instantiate the query class
+        query = self.job.table.queryclass(self.job)
 
         try:
-            logger.info("%s: running %s(%s)" %
-                        (self, callback,
-                         ', '.join([str(x) for x in method_args])))
-            result = callback(query, *method_args)
+            #logger.info("%s: running %s(%s)" %
+            #            (self, callback,
+            #             ', '.join([str(x) for x in method_args])))
+            #result = callback(query, *method_args)
+
+            logger.info("%s: running %s()" % (self, callback))
+            result = callback(query)
 
             # Backward compatibility mode - run() method returned
             # True or False and set query.data

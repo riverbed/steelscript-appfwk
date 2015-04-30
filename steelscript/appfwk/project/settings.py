@@ -51,6 +51,12 @@ DATABASES = {
     }
 }
 
+# Task model, sync is the slowest but the only one guaranteed to
+# work with sqlite3.  The other models require a database
+APPFWK_TASK_MODEL = 'sync'
+#APPFWK_TASK_MODEL = 'async'
+#APPFWK_TASK_MODEL = 'celery'
+
 # Location of progressd daemon, default for locally running
 PROGRESSD_HOST = 'http://127.0.0.1'
 PROGRESSD_PORT = '5000'
@@ -112,7 +118,7 @@ JS_VERSIONS = {
 OFFLINE_JS_FILES = [
     ("http://ajax.googleapis.com/ajax/libs/jquery/{0}/jquery.min.js".format(JS_VERSIONS['jquery']), None),
     ("http://ajax.googleapis.com/ajax/libs/jquery/{0}/jquery.min.map".format(JS_VERSIONS['jquery']), None),
-    ("http://jqueryui.com/resources/download/jquery-ui-{0}.zip".format(JS_VERSIONS['jqueryui']), "jquery-ui"),
+    ("https://jqueryui.com/resources/download/jquery-ui-{0}.zip".format(JS_VERSIONS['jqueryui']), "jquery-ui"),
     ("http://cdnjs.cloudflare.com/ajax/libs/jquery.form/{0}/jquery.form.js".format(JS_VERSIONS['jqueryform']), None),
     ("http://yui.zenfs.com/releases/yui3/yui_{0}.zip".format(JS_VERSIONS['yui']), "yui"),
 ]
