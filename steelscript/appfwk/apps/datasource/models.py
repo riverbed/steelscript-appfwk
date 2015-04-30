@@ -18,6 +18,7 @@ import pytz
 
 from django.db import models
 from django.db import DatabaseError
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.text import slugify
 
@@ -35,6 +36,12 @@ from steelscript.appfwk.libs.fields import (PickledObjectField, FunctionField,
 
 logger = logging.getLogger(__name__)
 
+
+# Load Synthetic modules - they may be referenced by
+# string name in synthetic columns
+for module in settings.APPFWK_SYNTHETIC_MODULES:
+    logger.info("Importing synthetic module: %s" % module)
+    globals()[module] = importlib.import_module(module)
 
 class TableField(models.Model):
     """
@@ -377,7 +384,14 @@ class Table(models.Model):
                     else:
                         newexpr += tvalue
 
-                df[syncol.name] = eval(newexpr)
+                try:
+                    df[syncol.name] = eval(newexpr)
+                except NameError as e:
+                    m = (('%s: expression failed: %s, check '
+                          'APPFWK_SYNTHETIC_MODULES: %s') %
+                         (self, newexpr, str(e)))
+                    logger.exception(m)
+                    raise TableComputeSyntheticError(m)
 
         # 1. Compute synthetic columns where post_resample is False
         compute(df, [col for col in all_columns if (col.synthetic and
@@ -394,13 +408,13 @@ class Table(models.Model):
         if self.resample:
             if timecol is None:
                 raise (TableComputeSyntheticError
-                       ("Table %s 'resample' is set but no 'time' column'" %
+                       ("%s: 'resample' is set but no 'time' column'" %
                         self))
 
             if (('resolution' not in job.criteria) and
                   ('resample_resolution' not in job.criteria)):
                 raise (TableComputeSyntheticError
-                       (("Table %s 'resample' is set but criteria missing " +
+                       (("%s: 'resample' is set but criteria missing " +
                          "'resolution' or 'resample_resolution'") % self))
 
             how = {}

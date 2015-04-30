@@ -357,3 +357,10 @@ TESTING = 'test' in sys.argv
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 LOCAL_APPS = None
+
+# List of modules that should be available for synthetic
+# column computations.  These are imported into by
+# datasource.models at run time
+APPFWK_SYNTHETIC_MODULES = (
+    'pandas',
+    )
