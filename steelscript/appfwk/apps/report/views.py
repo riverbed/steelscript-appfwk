@@ -804,7 +804,14 @@ class WidgetJobsList(views.APIView):
                                                          wjob.id])})
             except Exception as e:
                 logger.exception("Failed to start job, an exception occurred")
-                return HttpResponse(str(e), status=400)
+                ei = sys.exc_info()
+                resp = {}
+                resp['message'] = "".join(
+                    traceback.format_exception_only(*sys.exc_info()[0:2])),
+                resp['exception'] = "".join(
+                    traceback.format_exception(*sys.exc_info()))
+
+                return HttpResponse(json.dumps(resp), status=400)
 
         else:
             logger.error("form is invalid, entering debugger")
