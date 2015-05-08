@@ -239,10 +239,12 @@ class FocusedAnalysisTable(AnalysisTable):
 class FocusedAnalysisQuery(AnalysisQuery):
 
     def analyze(self, jobs):
+        logger.debug('%s analyze - received jobs: %s' % (self, jobs))
+
         basetable = Table.from_ref(
             self.table.options['related_tables']['template']
         )
-        data = self.tables['source']
+        data = jobs['source'].data()
 
         # find column whose min/max is largest deviation from mean
         # then take row from that column where min/max occurs

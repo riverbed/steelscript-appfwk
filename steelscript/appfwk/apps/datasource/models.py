@@ -263,7 +263,7 @@ class Table(models.Model):
             i = importlib.import_module(self.module)
             queryclass = i.__dict__[self.queryclassname]
         except:
-            raise SteelScriptDatasourceException(
+            raise DatasourceException(
                 "Could not lookup queryclass %s in module %s" %
                 (self.queryclassname, self.module))
 
@@ -559,7 +559,7 @@ class DatasourceTable(Table):
         # or an actual class reference.  Convert to string name for storage
         queryclassname = cls._query_class
         if inspect.isclass(queryclassname):
-            queryclassname = queryclass.__name__
+            queryclassname = queryclassname.__name__
 
         sourcefile = table_kwargs.get('sourcefile',
                                       get_sourcefile(get_module_name()))
