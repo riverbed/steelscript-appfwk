@@ -87,21 +87,21 @@ class Job(object):
             get_job_or_404(self.master_id).calculate_progress()
 
 
-job_resource_fields = OrderedDict(
-    job_id=fields.Integer,
-    status=fields.String,
-    progress=fields.Integer,
-    master_id=fields.Integer
-)
-jobs_resource_fields = OrderedDict(
-    items=fields.Nested(job_resource_fields, allow_null=True)
-)
+job_resource_fields = OrderedDict([
+    ('job_id', fields.Integer),
+    ('status', fields.String),
+    ('progress', fields.Integer),
+    ('master_id', fields.Integer)
+])
+jobs_resource_fields = OrderedDict([
+    ('items', fields.Nested(job_resource_fields, allow_null=True))
+])
 
 
 class JobAPI(Resource):
     @marshal_with(job_resource_fields)
     def get(self, job_id):
-        print 'Received GET request for Job ID: %s' % job_id
+        print 'Received GET request for Job: %s' % JOBS[job_id]
         return get_job_or_404(job_id)
 
     @marshal_with(job_resource_fields)
@@ -211,4 +211,4 @@ if __name__ == '__main__':
         print 'Adding existing job %s' % job
         JOBS[j['pk']] = job
 
-    app.run(host='127.0.0.1', debug=True)
+    app.run(host='127.0.0.1', debug=False)
