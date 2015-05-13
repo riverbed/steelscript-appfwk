@@ -98,7 +98,7 @@ class Command(BaseCommand):
 
         elif options['job_age']:
             logger.debug('Aging all jobs.')
-            Job.age_jobs(force=True)
+            Job.objects.age_jobs(force=True)
 
         elif options['job_flush']:
             logger.debug('Flushing all jobs.')

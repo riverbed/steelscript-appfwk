@@ -1,5 +1,4 @@
 import sys
-import importlib
 import logging
 import traceback
 
@@ -40,6 +39,7 @@ class QueryContinue(QueryResponse):
 
 
 class QueryError(QueryResponse):
+
     def __init__(self, message=None, exception=None):
         super(QueryError, self).__init__(QueryResponse.QUERY_ERROR)
         self.message = message
@@ -67,7 +67,8 @@ class BaseTask(object):
         callback = self.callback
         # method_args = self.method_args or []
 
-        # Instantiate the query class
+        # Instantiate the query class - this gets used as 'self' object
+        # for 'callback', which is a reference to an unbound instance method
         query = self.job.table.queryclass(self.job)
 
         try:
@@ -130,3 +131,15 @@ class BaseTask(object):
 
         finally:
             self.job.dereference("Task exiting")
+
+    @classmethod
+    def validate_jobs(cls, jobs, delete=False):
+        """Validate the given list of jobs and optionally delete invalid ones.
+
+        :param jobs list: List of Job objects to validate
+        :param delete bool: If true, all invalid Jobs will be deleted
+
+        :returns: list of valid Job objects
+        """
+        # default will ignore any validation
+        return jobs

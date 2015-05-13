@@ -16,7 +16,7 @@ admin.autodiscover()
 
 from django.conf import settings
 
-Job.flush_incomplete()
+Job.objects.flush_incomplete()
 
 urlpatterns = patterns('',
     (r'^favicon\.ico$', lambda x: HttpResponseRedirect('/static/images/favicon.ico')),
