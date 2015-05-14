@@ -359,17 +359,17 @@ class Job(models.Model):
             else:
                 logger.info("%s: New job for table %s" % (job, table.name))
 
-            # End of TransactionLock
+            # Create new instance in progressd as part of same Transaction
+            # XXXCJ - replace with sleepwalker or some API imported from progressd
+            p = {'job_id': job.id,
+                 'status': job.status,
+                 'progress': 0,
+                 'master_id': job.master.id if job.master else 0}
+            logger.debug('***Saving Job progress to progressd: %s' % p)
+            r = progressd.json_request('POST', '/jobs/', body=p)
+            logger.debug('***Result of save: %s' % r)
 
-        # Create new instance in progressd
-        # XXXCJ - replace with sleepwalker or some API imported from progressd
-        p = {'job_id': job.id,
-             'status': job.status,
-             'progress': 0,
-             'master_id': job.master.id if job.master else 0}
-        logger.debug('***Saving Job progress to progressd: %s' % p)
-        r = progressd.json_request('POST', '/jobs/', body=p)
-        logger.debug('***Result of save: %s' % r)
+            # End of TransactionLock
 
         logger.debug("%s: criteria = %s" % (job, criteria))
 

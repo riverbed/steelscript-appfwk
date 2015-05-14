@@ -101,8 +101,9 @@ jobs_resource_fields = OrderedDict([
 class JobAPI(Resource):
     @marshal_with(job_resource_fields)
     def get(self, job_id):
-        print 'Received GET request for Job: %s' % JOBS[job_id]
-        return get_job_or_404(job_id)
+        job = get_job_or_404(job_id)
+        print 'Received GET request for Job: %s' % job
+        return job
 
     @marshal_with(job_resource_fields)
     def put(self, job_id):
