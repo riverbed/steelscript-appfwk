@@ -5,8 +5,11 @@
 # as set forth in the License.
 
 
+from django.conf import settings
 from django.conf.urls import patterns, include, url
+from django.conf.urls.static import static
 from django.http import HttpResponseRedirect
+
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
@@ -48,4 +51,4 @@ urlpatterns = patterns('',
     url(r'^accounts/password_change/$', 'django.contrib.auth.views.password_change',
         {'post_change_redirect': '/preferences/user',
          'template_name': 'password_change_form.html'}),
-)
+) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

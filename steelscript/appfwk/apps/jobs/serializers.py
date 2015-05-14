@@ -32,7 +32,7 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'table', 'master', 'parent',
                   'criteria', 'actual_criteria', 'status',
                   'message',)
-        read_only_fields = ('message')
+        read_only_fields = ('message',)
 
 
 class JobListSerializer(JobSerializer):

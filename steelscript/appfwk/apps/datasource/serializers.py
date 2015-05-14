@@ -49,7 +49,7 @@ class TableSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Table
-        fields = ('url', 'name', 'module', 'queryclass', 'datasource',
+        fields = ('url', 'name', 'module', 'queryclassname',
                   'namespace', 'sourcefile', 'filterexpr', 'options',
                   'criteria', 'fields')
 

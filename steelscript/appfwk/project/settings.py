@@ -53,8 +53,8 @@ DATABASES = {
 
 # Task model, sync is the slowest but the only one guaranteed to
 # work with sqlite3.  The other models require a database
-APPFWK_TASK_MODEL = 'sync'
-#APPFWK_TASK_MODEL = 'async'
+#APPFWK_TASK_MODEL = 'sync'
+APPFWK_TASK_MODEL = 'async'
 #APPFWK_TASK_MODEL = 'celery'
 
 # Location of progressd daemon, default for locally running
@@ -89,7 +89,7 @@ MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'datacache')
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
 # Examples: "http://media.lawrence.com/media/", "http://example.com/media/"
-MEDIA_URL = ''
+MEDIA_URL = '/media/'
 
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
@@ -188,6 +188,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
     'steelscript.appfwk.project.context_processors.offline_js',
     'steelscript.appfwk.project.context_processors.versions',
+    'steelscript.appfwk.project.context_processors.developer',
     'steelscript.appfwk.apps.report.context_processors.report_list_processor',
 )
 

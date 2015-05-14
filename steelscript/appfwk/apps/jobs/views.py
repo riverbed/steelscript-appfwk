@@ -5,12 +5,19 @@
 # as set forth in the License.
 
 
+import os
 import logging
 
 from django.http import Http404
-from rest_framework import generics
+from django.core import management
+from django.conf import settings
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+
+from rest_framework import generics, views
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
-from rest_framework.renderers import JSONRenderer
+from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework_csv.renderers import CSVRenderer
 
 from steelscript.appfwk.apps.jobs.models import Job
@@ -27,10 +34,35 @@ class JobList(generics.ListAPIView):
     model = Job
     serializer_class = serializers.JobListSerializer
     paginate_by = 10
+    permission_classes = (IsAdminUser,)
 
     def post_save(self, obj, created=False):
         if created:
             obj.start()
+
+
+class JobVisualize(views.APIView):
+    """Visualize jobs graphically."""
+    renderer_classes = (TemplateHTMLRenderer,)
+    permission_classes = (IsAdminUser,)
+
+    def get(self, request):
+        vizfile = 'job-graph.svg'
+        vizpath = os.path.join(settings.MEDIA_ROOT, vizfile)
+
+        if os.path.exists(vizpath):
+            os.unlink(vizpath)
+
+        logger.debug('Generating job visualization ...')
+        management.call_command('jobtree',
+                                outfile=vizpath)
+        logger.debug('Visualization complete, file: %s' % vizpath)
+
+        return render_to_response(
+            'jobtree.html',
+            {'svg_image': vizfile},
+            context_instance=RequestContext(request)
+        )
 
 
 class JobDetail(generics.RetrieveAPIView):
