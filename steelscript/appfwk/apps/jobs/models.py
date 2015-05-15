@@ -57,6 +57,7 @@ if settings.DATABASES['default']['ENGINE'].endswith('sqlite3'):
 
     class TransactionLock(object):
         def __init__(self, obj, context=""):
+            self.obj = obj
             self.context = context
 
         def __enter__(self):
