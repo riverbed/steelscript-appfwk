@@ -12,6 +12,6 @@ SteelScript Application Framework
    reports
    tables
    plugins
-   stock
+   tutorial
    analysis
    geolocation

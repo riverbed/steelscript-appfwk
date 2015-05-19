@@ -1,3 +1,4 @@
+.. _plugin tutorial:
 Writing a Plugin
 ================
 
@@ -80,6 +81,8 @@ be used independently without appfwk. Below shows how a stock data API might loo
 .. code-block:: python
 
     import urllib
+    from steelscript.common.timeutils import TimeParser
+    from steelscript.common.connection import Connection
 
     # Mapping from price measure to the relative position
     # in the response string
@@ -88,50 +91,65 @@ be used independently without appfwk. Below shows how a stock data API might loo
                'low': 3,
                'close': 4,
                'volume': 5}
-    
+
+    tp = TimeParser()
+
+    def parse_date(date):
+        return tp.parse(date + " 00:00")
+
     class StockApiException(Exception):
         pass
     
     def get_historical_prices(begin, end, symbol, measures,
-                              resolution='1 day'):
+                              resolution='day', date_obj=False):
         """Get historical prices for the given ticker symbol.
         Returns a list of dicts keyed by 'date' and measures
     
         :param string begin: begin date of the inquire interval
+          in the format of YYYY-MM-DD
         :param string end: end date of the inquire interval
+          in the format of YYYY-MM-DD
         :param string symbol: symbol of one stock to query
         :param list measures: a list of prices that needs to be queried,
-        should be a subset of ["open", "high", "low", "close", "volume"]
-        :param string resolution: '1 day' or '5 days'
+          should be a subset of ["open", "high", "low", "close", "volume"]
+        :param string resolution: 'day' or 'week'
         :param boolean date_obj: dates are converted to datetime objects
-        from date strings if True. Otherwise, dates are stored as strings
+          from date strings if True. Otherwise, dates are stored as strings
         """
-        try:
-            reso = 'w' if str(resolution)[0:6] == '5 days' else 'd'
-            url = ('http://ichart.finance.yahoo.com/table.csv?s=%s&' % symbol +
-                   'a=%s&' % str(int(begin[5:7]) - 1) +
-                   'b=%s&' % str(int(begin[8:10])) +
-                   'c=%s&' % str(int(begin[0:4])) +
-                   'd=%s&' % str(int(end[5:7]) - 1) +
-                   'e=%s&' % str(int(end[8:10])) +
-                   'f=%s&' % str(int(end[0:4])) +
-                   'g=%s&' % reso +
-                   'ignore=.csv')
-            ret = []
-            days = urllib.urlopen(url).readlines()
-            for day in reversed(days[1:]):
-                day = day[:-2].split(',')
-                date = day[0]
-                daily_prices = {'date': date}
-                for m in measures:
-                    if m in mapping:
-                        daily_prices[m] = float(day[mapping[m]])
-                ret.append(daily_prices)
-        except:
-            raise StockApiException("Symbol '%s' is invalid or Stock '%s' was"
-                                    " not on market on %s" % (symbol, symbol,
-                                                              end))
+        conn = Connection('http://ichart.finance.yahoo.com')
+        start_month = int(begin[5:7]) -1
+        start_day = int(begin[8:10])
+        start_year = int(begin[0:4])
+        end_month = int(end[5:7]) -1
+        end_day = int(end[8:10])
+        end_year = int(end[0:4])
+    
+        ret = []
+        params = {'s': symbol,
+                  'a': start_month,
+                  'b': start_day,
+                  'c': start_year,
+                  'd': end_month,
+                  'e': end_day,
+                  'f': end_year,
+                  'g': resolution[0],
+                  'ignore':'.csv'}
+    
+        resp = conn.request(method='POST', path='/table.csv', params=params)
+    
+        for day in reversed(list(resp.iter_lines())[1:]):
+            # day is a string with date, prices, volume separated by commas,
+            # '<date>,<open>,<high>,<low>,<close>,<volume>,<adj_close>'
+            # as '2014-02-19,20.22,20.55,20.11,20.50,1599600,20.50'
+            day = day.split(',')
+            date = parse_date(day[0]) if date_obj else day[0]
+            daily_prices = {'date': date}
+            for m in measures:
+                if m in mapping:
+                    daily_prices[m] = float(day[mapping[m]])
+            ret.append(daily_prices)
         return ret
+
 
 The above function get_historical_prices leverages the yahoo stock api to get the
 daily transaction volumes as well as daily prices (including high, low, open and close)
@@ -162,6 +180,7 @@ each dict represent the data of the stock for one day.
       'open': 20.92,
       'volume': 0.0}]
 
+
 Creating appfwk reports
 -----------------------
 From the above API, we can see that in order to generate stock data, we need to pass in
@@ -169,10 +188,10 @@ parameters, including stock symbol, start date, end date, the price names, resol
 The returned data can have information such as dates, daily (include open, close
 high, low) prices, and daily transaction volumes. Understanding the data format, one
 can set out to define the report to be created. In order to render the desired reports,
-we need to define the data source first, which defines criteria required for the report to run.
-More importantly, the ``stock_source.py`` also defines ``StockQuery`` class to use
+we need to define the data source first, including criteria required for the report to run.
+More importantly, ``stock_source.py`` also defines ``StockQuery`` class to use
 criteria values to derive the stock data by leveraging the :ref:`data fetch API<Data fetch API>`.
-At the end we need write the report using defined data sources
+At the end we need to write the report using defined data sources
 to render the data. For illustrative purpose, let us build a simple report that can
 show the close price of a stock given a range of dates.
 
@@ -186,19 +205,31 @@ to the data fetch API. Details are shown below.
 
 .. code-block:: python
 
-    from steelscript.stock.core.app import get_historical_prices
     from steelscript.appfwk.apps.datasource.models import TableField
     from steelscript.appfwk.apps.datasource.forms import DateTimeField, ReportSplitDateWidget
-    from steelscript.appfwk.apps.datasource.models import TableField, TableQueryBase, DatasourceTable, Column
+    from steelscript.appfwk.apps.datasource.models import TableField, DatasourceTable, Column
+
     class StockTable(DatasourceTable):
+    
         class Meta:
             proxy = True
     
+        # When a custom column is used, it must be linked
         _column_class = 'StockColumn'
+    
+        # TABLE_OPTIONS is a dictionary of options that are specific to
+        # TableQuery objects in this file.  These by be overriden by
+        # keyword arguments to the StockTable.create() call in a report
+        # file
+        TABLE_OPTIONS = { }
+
+        # FIELD_OPTIONS is a dictionary of default values for field
+        # options.  These by be overriden by keyword arguments to the
+        # StockTable.create() call in a report file
         FIELD_OPTIONS = {'duration': '4w',
                          'durations': ('4w', '12w', '24w', '52w', '260w', '520w'),
-                         'resolution': '1d',
-                         'resolutions': ('1d', '5d')
+                         'resolution': 'day',
+                         'resolutions': ('day', 'week')
                          }
     
         def post_process_table(self, field_options):
@@ -213,23 +244,24 @@ to the data fetch API. Details are shown below.
                                   resolutions=field_options['resolutions'])
     
             # Add end date field
-            self.fields_add_end_date('end_date', 'now-0')
-            
-            # Add stock symbol field
+            self.fields_add_end_date()
             self.fields_add_stock_symbol()
     
-        def fields_add_stock_symbol(self, help_text, keyword='stock_symbol',
+        def fields_add_stock_symbol(self, keyword='stock_symbol',
                                     initial=None):
             field = TableField(keyword=keyword,
                                label='Stock Symbol',
-                               help_text=(help_text),
                                initial=initial,
                                required=True)
             field.save()
             self.fields.add(field)
-    
-        def fields_add_end_date(self, keyword, initial_end_date):
-            field = TableField(keyword=keyword,
+
+        def fields_add_end_date(self, initial_end_date='now-0'):
+            # Add a date field
+            # the front javascript code will determine the default date
+            # according to initial_end_date, so if initial_end_date is
+            # 'now-0', today will be the default end date
+            field = TableField(keyword='end_date',
                                label='End Date',
                                field_cls=DateTimeField,
                                field_kwargs={'widget': ReportSplitDateWidget,
@@ -238,7 +270,6 @@ to the data fetch API. Details are shown below.
                                required=False)
             field.save()
             self.fields.add(field)
-
 
 From the above, it can be seen that the function ``post_process_table`` in the ``StockTable`` class
 defines the criteria fields. There are four fields added, including duration, end date, stock symbol
@@ -250,6 +281,9 @@ which is about using the values from the criteria fields in the ``StockTable`` c
 the data by leveraging the :ref:`data fetch API <Data fetch API>`. Details as below.
 
 .. code-block:: python
+
+    from steelscript.stock.core.app import get_historical_prices
+    from steelscript.appfwk.apps.datasource.models import TableField, TableQueryBase
 
     class TableQuery(TableQueryBase):
     
@@ -266,15 +300,15 @@ the data by leveraging the :ref:`data fetch API <Data fetch API>`. Details as be
             self.t1 = str(criteria.end_date)[:10]
         
             # Time resolution is a timedelta object
-            self.resolution = criteria.resolution
-        
-            # stock symbol string (can have multiple symbol)
+            self.resolution = 'day' if str(criteria.resolution).startswith('1 day') else 'week'
+
+            # stock symbol string
             self.symbol = criteria.stock_symbol
-        
+    
             # Dict storing stock prices/volumes according to specific report
-            self.data = get_historical_prices(begin=self.t0, end=self.t1, symbol=self.symbol,
-                                              measures=['close'], resolution=self.resolution)
-                                
+            self.data = get_historical_prices(self.t0, self.t1, self.symbol, ['close'],
+                                              self.resolution, date_obj=True)
+        
             return True
 
 
@@ -286,7 +320,7 @@ In reports/stock_report.py, we first need to define a report and create a sectio
 .. code-block:: python
 
     from steelscript.appfwk.apps.report.models import Report
-    report = Report.create("Stock Report-Multiple Stocks")
+    report = Report.create("Stock Report")
     report.add_section()
 
 Next step is to instantiate the ``StockTable`` class and adding columns to the table object after.
@@ -295,8 +329,7 @@ Next step is to instantiate the ``StockTable`` class and adding columns to the t
 
     import steelscript.stock.appfwk.datasources.stock_source as stock
     table = stock.StockTable.create(name='stock-close-price',
-                                    duration='52w', resolution='1d')
-    # Add columns for time and 3 stock columns
+                                    duration='52w', resolution='day')
     table.add_column('date', 'Date', datatype='time', iskey=True)
     table.add_column('close', 'Close Price')
 
@@ -322,6 +355,66 @@ Last step is to add a widget to the report and bind the table to the widget at t
     has 12 'columns'. The lables of the obtained plot on the horizontal axis would be in dates if ``daily=True``,
     otherwise the labels would include minutes and seconds.
 
+
+Rendering reports
+-----------------
+Let us start running the appfwk site in the browser.
+Since the plugin has already been installed in development mode, the stock report should be supported.
+After clicking 'Stock Report' in the dropdown menu of the 'Reports' tab in the top tool bar, the criteria
+fields are shown as below.
+
+.. image:: stock-criteria.png
+
+After click 'Run' button, the 'close' price per day for the stock 'rvbd' for the last year is shown as below.
+
+.. image:: stock-widget.png
+
+
+Leveraging appfwk device
+------------------------
+For this stock plugin, there is no physical 'stock' device to configure. But often times,
+we need to interact with a device to fetch data and generate reports. Although it is possible
+just to put necessary device-related fields in the criteria and run the :ref:`data fetch API<Data fetch API>`,
+the operation suffers from two flaws: firstly, the criteria fields would be cluttered with
+hostname, port, username, password and module fields, all of which would not change between running
+reports against the same device; Secondly, it would be very costly to reconnect to the device
+everytime the report is run. Configuring a device separately from running reports can reduce
+the amount information to deal with when filling criteria. It can also cache the device connection
+and thus reduce network latency for future reporting runs.
+
+In order to be able to use 'Device' functionality in appfwk plugin, the first step is to write
+a corresponding deivce class which can be used as the main interface to interact with the appliance,
+handling initialization, setup, and communication. One example is the
+`NetProfiler <https://support.riverbed.com/apis/steelscript/netprofiler/netprofiler.html#netprofiler-objects>`_
+class. The second step involves modifying appfwk/devices/<plugin>_device.py to
+instantiate the defined appliance class. In the case of NetProfiler,
+the code is shown as below.
+
+.. code-block:: python
+
+    from steelscript.netprofiler.core.netprofiler import NetProfiler
+    
+    def new_device_instance(*args, **kwargs):
+        # Used by DeviceManager to create a NetProfiler instance
+        return NetProfiler(*args, **kwargs)
+
+Lastly, when writing data source, a device field needs to be added to the criteria. Take NetProfiler
+for example, the code is shown as below.
+
+.. code-block:: python
+    
+    from steelscript.appfwk.apps.devices.forms import fields_add_device_selection
+
+
+    class NetProfilerTable(DatasourceTable):
+
+        def post_process_table(self, field_options):
+            fields_add_device_selection(self, keyword='netprofiler_device',
+                                        label='NetProfiler', module='netprofiler',
+                                        enabled=True)
+
+Now admin user can configure a device for the plugin, and normal users can select corresponding
+device before running associated reports against it. More info can be found :ref:`here <devices>`.
 
 
 
