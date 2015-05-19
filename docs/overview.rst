@@ -75,6 +75,7 @@ Documentation
    reports
    tables
    plugins
+   stock
    analysis
    geolocation
 
@@ -85,3 +86,4 @@ Documentation
   * Creating a Report
   * Writing an AnalysisTable
   * Wave Plugin Tutorial
+  * Stock Plugin Tutorial

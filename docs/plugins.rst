@@ -142,6 +142,8 @@ steelscript/wave/commands/              Sub-commands for ``steel``
 steelscript/wave/core/                  Low-level functions and classes
 ======================================= ===========================================================
 
+.. _installing a plugin:
+
 Installing from source
 ----------------------
 
