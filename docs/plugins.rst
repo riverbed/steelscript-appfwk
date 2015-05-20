@@ -183,6 +183,8 @@ Once your package is installed, it should show up in the output of
 This means that in any of your scripts you can now import your code
 via the module path ``steelscript.wave``.
 
+.. _plugin reports:
+
 Plugin Reports
 --------------
 

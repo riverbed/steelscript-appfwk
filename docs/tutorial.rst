@@ -3,11 +3,11 @@ Writing a Plugin
 ================
 
 This tutorial presents a step-by-step description of how to develop a
-steelscript appfwk plugin. No tutorial can be as useful as an example.
+SteelScript App Framework  plugin. No tutorial can be as useful as an example.
 Therefore, in this tutorial, a steelscript-stock plugin is used to explain
-the process of how to construct steelscript appfwk plugin. Note that
+the process of how to construct SteelScript App Framework plugin. Note that
 the stock data is fetched from yahoo finance API as a thrid party resource.
-By changing the data source as well as modify the reports, appfwk plugin
+By changing the data source as well as modify the reports, App Framework plugin
 can be used to display data from almost any where, such as a csv file, a
 rest API or a device with reporting capability, etc.
 
@@ -22,7 +22,7 @@ First we need to run the command ``steel appfwk mkplugin`` in a shell:
    $ steel appfwk mkplugin
    Give a simple name for your plugin (a-z, 0-9, _): stock
    Give your plugin a title []: Steelscript Stock
-   Briefly describe your plugin []: Steelscript Stock Appfwk plugin
+   Briefly describe your plugin []: Steelscript Stock App Framework Plugin
    Author's name []: author
    Author's email []: email
    Writing:  /private/tmp/steelscript-stock/LICENSE
@@ -70,13 +70,13 @@ Details about installing steelscript plugin can be found
 
 Developing data fetch API
 --------------------------------
-You need to develop an API to fetch data to feed the appfwk engine. This step is recommended
+You need to develop an API to fetch data to feed the App Framework engine. This step is recommended
 to be done early as we can understand better the data format, which would help define the
-structure of the appfwk reports later.
+structure of the App Framework reports later.
 
 First we need to create a python module app.py in steelscript/stock/core directory. The reason
-the module app.py resides in core directory instead of appfwk directory is that the API can
-be used independently without appfwk. Below shows how a stock data API might look like.
+the module ``app.py`` resides in ``core`` directory instead of ``appfwk`` directory is that the API can
+be used independently without App Framework. Below shows how a stock data API might look like.
 
 .. code-block:: python
 
@@ -117,13 +117,13 @@ be used independently without appfwk. Below shows how a stock data API might loo
           from date strings if True. Otherwise, dates are stored as strings
         """
         conn = Connection('http://ichart.finance.yahoo.com')
-        start_month = int(begin[5:7]) -1
-        start_day = int(begin[8:10])
-        start_year = int(begin[0:4])
-        end_month = int(end[5:7]) -1
-        end_day = int(end[8:10])
-        end_year = int(end[0:4])
-    
+        start_month = parse_date(begin).month - 1
+        start_day = parse_date(begin).day
+        start_year = parse_date(begin).year
+        end_month = parse_date(end).month - 1
+        end_day = parse_date(end).day
+        end_year = parse_date(end).year
+
         ret = []
         params = {'s': symbol,
                   'a': start_month,
@@ -134,10 +134,15 @@ be used independently without appfwk. Below shows how a stock data API might loo
                   'f': end_year,
                   'g': resolution[0],
                   'ignore':'.csv'}
-    
+
         resp = conn.request(method='POST', path='/table.csv', params=params)
-    
-        for day in reversed(list(resp.iter_lines())[1:]):
+
+        # extract data and skip first row with column titles
+        data = list(resp.iter_lines())[1:]
+
+        # iterate over the data backwards as the daily prices are sorted
+        # backwards by the dates
+        for day in reversed(data):
             # day is a string with date, prices, volume separated by commas,
             # '<date>,<open>,<high>,<low>,<close>,<volume>,<adj_close>'
             # as '2014-02-19,20.22,20.55,20.11,20.50,1599600,20.50'
@@ -181,24 +186,25 @@ each dict represent the data of the stock for one day.
       'volume': 0.0}]
 
 
-Creating appfwk reports
------------------------
+Creating App Framework reports
+------------------------------
 From the above API, we can see that in order to generate stock data, we need to pass in
 parameters, including stock symbol, start date, end date, the price names, resolution.
 The returned data can have information such as dates, daily (include open, close
-high, low) prices, and daily transaction volumes. Understanding the data format, one
-can set out to define the report to be created. In order to render the desired reports,
-we need to define the data source first, including criteria required for the report to run.
-More importantly, ``stock_source.py`` also defines ``StockQuery`` class to use
-criteria values to derive the stock data by leveraging the :ref:`data fetch API<Data fetch API>`.
-At the end we need to write the report using defined data sources
-to render the data. For illustrative purpose, let us build a simple report that can
-show the close price of a stock given a range of dates.
+high, low) prices, and daily transaction volumes. 
+
+
+Now that the data format has been understood, one can set out to create the Application
+Framework components for reports. The first step will be defining a data source, which
+sets up the required criteria fields for users to input, and then extract data using the
+:ref:`API<Data fetch API>` based on the input criteria values. Then we need to write the
+report using the defined data source to render the data. For illustrative purpose, let us
+build a simple report that can show the close price of a stock given a range of dates.
 
 Writing data source
 ^^^^^^^^^^^^^^^^^^^
-As obvious, the generated stock_source.py has included some skeleton code, including
-the declaration of the ``StockColumn`` class, the ``StockTable`` class and the ``TableQuery`` class.
+The generated stock_source.py has included some skeleton code, including
+the declaration of the ``StockColumn`` class, the ``StockTable`` class and the ``StockQuery`` class.
 For normal reports, there is no need to modify the ``StockColumn`` class. We need to
 modify the ``StockTable`` class in order to add criteria, which maps to the parameters passed
 to the data fetch API. Details are shown below.
@@ -216,9 +222,12 @@ to the data fetch API. Details are shown below.
     
         # When a custom column is used, it must be linked
         _column_class = 'StockColumn'
-    
+        
+        # Using StockQuery class to extract data
+        _query_class = 'StockQuery'
+
         # TABLE_OPTIONS is a dictionary of options that are specific to
-        # TableQuery objects in this file.  These by be overriden by
+        # StockQuery objects in this file.  These will be overriden by
         # keyword arguments to the StockTable.create() call in a report
         # file
         TABLE_OPTIONS = { }
@@ -276,16 +285,17 @@ defines the criteria fields. There are four fields added, including duration, en
 and resolution (the start date can be figured out using end date and duration). The values of
 duration and resolution are limited to a few.
 
-After the ``StockTable`` class, we need to define the ``run`` method in ``StockQuery`` class,
-which is about using the values from the criteria fields in the ``StockTable`` class to derive
-the data by leveraging the :ref:`data fetch API <Data fetch API>`. Details as below.
+After the ``StockTable`` class in the same module, we need to define the ``run`` method in
+``StockQuery`` class, which is about using the values from the criteria fields in the
+``StockTable`` class to derive the data by leveraging the
+:ref:`data fetch API <Data fetch API>`. See below for details:
 
 .. code-block:: python
 
     from steelscript.stock.core.app import get_historical_prices
     from steelscript.appfwk.apps.datasource.models import TableField, TableQueryBase
 
-    class TableQuery(TableQueryBase):
+    class StockQuery(TableQueryBase):
     
         def __init__(self, table, job):
             self.table = table
@@ -294,12 +304,11 @@ the data by leveraging the :ref:`data fetch API <Data fetch API>`. Details as be
         def run(self):
             criteria = self.job.criteria
         
-            # Time selection is available via criterai.starttime and endtime.
             # These are date time strings in the format of YYYY-MM-DD
-            self.t0 = str(criteria.end_date - criteria.duration)[:10]
-            self.t1 = str(criteria.end_date)[:10]
+            self.t0 = str((criteria.end_date - criteria.duration).date())
+            self.t1 = str((criteria.end_date).date())
         
-            # Time resolution is a timedelta object
+            # resolutions is either 'day' or 'week'
             self.resolution = 'day' if str(criteria.resolution).startswith('1 day') else 'week'
 
             # stock symbol string
@@ -311,11 +320,19 @@ the data by leveraging the :ref:`data fetch API <Data fetch API>`. Details as be
         
             return True
 
+.. note::
+    This method only returns 'True' after it is successful. The data gets saved to an
+    instance variable 'self.data', and follow-on methods will extract and save this data
+    for future use.
+
+    If the function returns with any value other than True, it will be presumed to be an
+    error, and an error message will be presented in App Framework widget.
 
 Writing Reports
 ^^^^^^^^^^^^^^^
 After finishing off writing data sources, finally it is time to collect results.
-In reports/stock_report.py, we first need to define a report and create a section asscociated with it. 
+In <plugin>/appfwk/reports/stock_report.py, we first need to define a report and
+create a section asscociated with it. 
 
 .. code-block:: python
 
@@ -323,7 +340,7 @@ In reports/stock_report.py, we first need to define a report and create a sectio
     report = Report.create("Stock Report")
     report.add_section()
 
-Next step is to instantiate the ``StockTable`` class and adding columns to the table object after.
+Next step is to instantiate the ``StockTable`` class and add columns to the table object.
 
 .. code-block:: python
 
@@ -338,7 +355,7 @@ Next step is to instantiate the ``StockTable`` class and adding columns to the t
     one of the few options listed in ``FIELD_OPTIONS`` in ``StockTable`` class. When adding columns to the
     table, the first parameter, representing the name of the column, needs to be one the keys in the dict
     returned by the :ref:`Data fetch API<Data fetch API>`. For time columns, the ``datatype`` parameter
-    needs to be 'time'. Since we plan to plot the data against the dates, thus the ``date`` column needs to
+    needs to be 'time'. Since we plan to plot the data against the dates, the ``date`` column needs to
     be specified as the key column, as done by setting ``iskey=True``.
 
 Last step is to add a widget to the report and bind the table to the widget at the same time.
@@ -350,16 +367,27 @@ Last step is to add a widget to the report and bind the table to the widget at t
     report.add_widget(yui3.TimeSeriesWidget, table, 'Close Price', width=12, daily=True)
 
 .. note::
-    since the report is a plot based on time, we use yui3.TimeSeriesWidget as the
-    widget class. Setting ``width=12`` would span the widget across the whole browser, as the whole browser
-    has 12 'columns'. The lables of the obtained plot on the horizontal axis would be in dates if ``daily=True``,
+    Since the report is a plot based on time, we use yui3.TimeSeriesWidget as the
+    widget class. Setting ``width=12`` will span the widget across the whole browser, as the whole browser
+    has 12 'columns'. The labels of the obtained plot on the horizontal axis would be in dates if ``daily=True``,
     otherwise the labels would include minutes and seconds.
 
 
 Rendering reports
 -----------------
-Let us start running the appfwk site in the browser.
-Since the plugin has already been installed in development mode, the stock report should be supported.
+Before running the report, we need to ask the App Framework site to load it. If the report was
+added to the ``<appfwk_project>/reports`` directory, one needs to click 'Reload All Reports'
+option from the dropdown menu of the admin button at the top right corner. If the report was added to
+the plugin directory, one needs to first click 'Edit Plugins' option from the dropdown menu
+of the admin button, then click the 'Update All Report' button at the bottom, then check the boxes
+for 'Collect Reports', 'and Overwirte Reports' and 'Reload Reports' at the popup window, and finally
+click the 'Go!' button, shown as the image below. More information about picking up plugin reports are
+described :ref:`here <plugin reports>`.
+
+
+.. image:: update-all-reports-popup.png
+
+Now, Let us start running the App Framework site in the browser.
 After clicking 'Stock Report' in the dropdown menu of the 'Reports' tab in the top tool bar, the criteria
 fields are shown as below.
 
@@ -370,8 +398,8 @@ After click 'Run' button, the 'close' price per day for the stock 'rvbd' for the
 .. image:: stock-widget.png
 
 
-Leveraging appfwk device
-------------------------
+Leveraging App Framework device
+-------------------------------
 For this stock plugin, there is no physical 'stock' device to configure. But often times,
 we need to interact with a device to fetch data and generate reports. Although it is possible
 just to put necessary device-related fields in the criteria and run the :ref:`data fetch API<Data fetch API>`,
@@ -382,18 +410,18 @@ everytime the report is run. Configuring a device separately from running report
 the amount information to deal with when filling criteria. It can also cache the device connection
 and thus reduce network latency for future reporting runs.
 
-In order to be able to use 'Device' functionality in appfwk plugin, the first step is to write
-a corresponding deivce class which can be used as the main interface to interact with the appliance,
+In order to be able to use 'Device' functionality in the App Framework plugin, the first step is to write
+a corresponding device class which can be used as the main interface to interact with the appliance,
 handling initialization, setup, and communication. One example is the
 `NetProfiler <https://support.riverbed.com/apis/steelscript/netprofiler/netprofiler.html#netprofiler-objects>`_
-class. The second step involves modifying appfwk/devices/<plugin>_device.py to
+class. The second step involves modifying ``appfwk/devices/<plugin>_device.py`` to
 instantiate the defined appliance class. In the case of NetProfiler,
 the code is shown as below.
 
 .. code-block:: python
 
     from steelscript.netprofiler.core.netprofiler import NetProfiler
-    
+
     def new_device_instance(*args, **kwargs):
         # Used by DeviceManager to create a NetProfiler instance
         return NetProfiler(*args, **kwargs)
