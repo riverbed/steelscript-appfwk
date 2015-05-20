@@ -24,7 +24,6 @@ warnings.filterwarnings("ignore")
 logger = logging.getLogger(__name__)
 
 
-
 class Command(BaseCommand):
     args = None
     help = 'Work with already run jobs'
@@ -48,7 +47,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """ Main command handler. """
 
-        dot = Digraph(comment='Job Graph', format='svg',
+        dot = Digraph(name='Job Graph', comment='Job Graph', format='svg',
                       engine='twopi')
 
         #print "WidgetJob"
@@ -76,7 +75,6 @@ class Command(BaseCommand):
 
             if job.master:
                 dot.edge('J-%d' % job.id, 'J-%d' % job.master.id,
-
                          style='dashed')
 
         outfile = options['outfile']
