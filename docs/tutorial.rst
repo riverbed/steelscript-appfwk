@@ -308,7 +308,7 @@ After the ``StockTable`` class in the same module, we need to define the ``run``
             self.t0 = str((criteria.end_date - criteria.duration).date())
             self.t1 = str((criteria.end_date).date())
         
-            # resolutions is either 'day' or 'week'
+            # resolution is either 'day' or 'week'
             self.resolution = 'day' if str(criteria.resolution).startswith('1 day') else 'week'
 
             # stock symbol string
