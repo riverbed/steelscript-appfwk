@@ -75,13 +75,6 @@ Documentation
    reports
    tables
    plugins
+   tutorial
    analysis
    geolocation
-
-* Python Pandas
-
-* Tutorials
-
-  * Creating a Report
-  * Writing an AnalysisTable
-  * Wave Plugin Tutorial
