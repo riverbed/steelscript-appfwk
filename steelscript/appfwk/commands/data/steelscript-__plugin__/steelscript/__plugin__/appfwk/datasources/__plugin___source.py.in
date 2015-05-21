@@ -11,12 +11,11 @@ There are three parts to defining a data source:
 
 * Defining column options via a Column class
 * Defining table options via a DatasourceTable
-* Defining the query mechanism via TableQuery
+* Defining the query mechanism via a Query class
 
 Note that you can define multiple Column and Table classes
-in the same file, but only one TableQuery.  If you need
-to define multiple types of queries, create multiple
-files in this directory named accordingly.
+in the same file. Each Table class needs to associate with a
+Query class by specifying the _query_class attribute.
 
 """
 
@@ -36,6 +35,7 @@ from steelscript.appfwk.apps.devices.forms import fields_add_device_selection
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 from steelscript.appfwk.apps.datasource.forms import (fields_add_time_selection,
                                                       fields_add_resolution)
+from steelscript.appfwk.apps.datasource.models import TableQueryBase
 
 from steelscript.{{name}}.core.{{name}} import {{Name}}
 
@@ -75,8 +75,11 @@ class {{Name}}Table(DatasourceTable):
     # When a custom column is used, it must be linked
     _column_class = '{{Name}}Column'
 
-    # TABLE_OPTIONS is a dictionary of options that are specific to
-    # TableQuery objects in this file.  These by be overriden by
+    # Name of the query class to extract data
+    _query_class = '{{Name}}Query'
+
+    # TABLE_OPTIONS is a dictionary of options that are
+    # specific to {{Name}}Query objects.  These will be overriden by
     # keyword arguments to the {{Name}}Table.create() call in a report
     # file
     TABLE_OPTIONS = { }
@@ -95,10 +98,10 @@ class {{Name}}Table(DatasourceTable):
 
 
 #
-# The TableQuery class must be defined with the __init__ and run
+# The {{Name}}Query class must be defined with the __init__ and run
 # method taking the defined arguments
 #
-class TableQuery(object):
+class {{Name}}Query(TableQueryBase):
 
     def __init__(self, table, job):
         self.table = table
