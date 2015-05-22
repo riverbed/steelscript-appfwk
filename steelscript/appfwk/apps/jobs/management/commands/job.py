@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Work with already run jobs'
 
     def create_parser(self, prog_name, subcommand):

@@ -17,7 +17,7 @@ from steelscript.appfwk.apps.plugins import plugins
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Collects reports into App Framework project.'
 
     option_list = BaseCommand.option_list + (

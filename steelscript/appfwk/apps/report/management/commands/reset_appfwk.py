@@ -25,7 +25,7 @@ IGNORE_FILES = ['helpers']
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = ('Reset the database. Prompts for confirmation unless '
             '`--force` is included as an argument.')
 

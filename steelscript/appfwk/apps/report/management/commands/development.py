@@ -23,7 +23,7 @@ from steelscript.appfwk.apps.plugins import plugins
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Run a defined table and return results in nice tabular format'
 
     def create_parser(self, prog_name, subcommand):

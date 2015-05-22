@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'View and manage system Alerts and Events'
 
     def create_parser(self, prog_name, subcommand):

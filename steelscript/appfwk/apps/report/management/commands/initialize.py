@@ -13,7 +13,7 @@ from django import db
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = ('Initializes new database project.')
 
     def handle(self, *args, **options):

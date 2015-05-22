@@ -20,7 +20,7 @@ from steelscript.appfwk.project.utils import Importer
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Reloads the configuration defined in the config directory'
 
     option_list = BaseCommand.option_list + (

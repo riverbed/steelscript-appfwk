@@ -25,7 +25,7 @@ from steelscript.appfwk.apps.alerting.models import (Destination, TriggerCache,
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Clears existing data caches, logs, and application settings.'
 
     option_list = BaseCommand.option_list + (

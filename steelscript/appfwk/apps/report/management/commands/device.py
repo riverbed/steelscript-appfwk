@@ -17,7 +17,7 @@ DEVICE_ATTRS = REQUIRED_DEVICE_ATTRS + ['enabled', 'port']
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Add, modify, delete and display device objects'
 
     def create_parser(self, prog_name, subcommand):

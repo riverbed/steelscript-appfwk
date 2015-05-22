@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Manage locations'
 
     def create_parser(self, prog_name, subcommand):

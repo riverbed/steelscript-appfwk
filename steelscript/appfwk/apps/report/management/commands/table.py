@@ -31,7 +31,7 @@ warnings.filterwarnings("ignore")
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Run a defined table and return results in nice tabular format'
 
     def create_parser(self, prog_name, subcommand):
@@ -156,7 +156,7 @@ class Command(BaseCommand):
         elif options['criteria_list']:
             if 'table_id' in options and options['table_id'] is not None:
                 table = Table.objects.get(id=options['table_id'])
-            elif 'table_name' in options:
+            elif 'table_name' in options and options['table_name'] is not None:
                 table = Table.objects.get(name=options['table_name'])
             else:
                 raise ValueError("Must specify either --table-id or "
@@ -174,7 +174,7 @@ class Command(BaseCommand):
         else:
             if 'table_id' in options and options['table_id'] is not None:
                 table = Table.objects.get(id=options['table_id'])
-            elif 'table_name' in options:
+            elif 'table_name' in options and options['table_name'] is not None:
                 table = Table.objects.get(name=options['table_name'])
             else:
                 raise ValueError("Must specify either --table-id or "
