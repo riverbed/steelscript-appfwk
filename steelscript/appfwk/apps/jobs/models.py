@@ -747,7 +747,14 @@ class Worker(base_worker_class):
                                                           x.tz_convert(utc))
                     else:
                         raise
-
+            elif col.isdate():
+                if str(s.dtype).startswith(str(pandas.np.dtype('datetime64'))):
+                    # Already a datetime
+                    pass
+                else:
+                    # Possibly datetime object or a datetime string,
+                    # hopefully astype() can figure it out
+                    df[col.name] = s.astype('datetime64[ms]')
             elif (col.isnumeric() and
                   s.dtype == pandas.np.dtype('object')):
                 # The column is supposed to be numeric but must have

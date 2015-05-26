@@ -688,6 +688,7 @@ class Column(models.Model):
     DATATYPE_TIME = 2
     DATATYPE_STRING = 3
     DATATYPE_HTML = 4
+    DATATYPE_DATE = 5
 
     datatype = models.IntegerField(
         default=DATATYPE_FLOAT,
@@ -695,7 +696,8 @@ class Column(models.Model):
                  (DATATYPE_INTEGER, "integer"),
                  (DATATYPE_TIME, "time"),
                  (DATATYPE_STRING, "string"),
-                 (DATATYPE_HTML, "html"))
+                 (DATATYPE_HTML, "html"),
+                 (DATATYPE_DATE, "date"))
     )
 
     UNITS_NONE = 0
@@ -795,6 +797,9 @@ class Column(models.Model):
 
     def istime(self):
         return self.datatype == self.DATATYPE_TIME
+
+    def isdate(self):
+        return self.datatype == self.DATATYPE_DATE
 
     def units_str(self):
         if self.units == self.UNITS_NONE:

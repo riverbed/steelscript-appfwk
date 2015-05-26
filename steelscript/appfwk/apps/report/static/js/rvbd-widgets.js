@@ -38,6 +38,16 @@ rvbd.formatters = {
         return (new Date(t)).toString();
     },
 
+    formatDate: function(t, precision) {
+        //t is epoch seconds in UTC time zone
+        //Convert t to the date in UTC time zone
+        var time = new Date(t);
+        var year = time.getUTCFullYear();
+        var month = time.getUTCMonth();
+        var day = time.getUTCDate();
+        return (new Date(year, month, day)).toDateString();
+    },
+
     formatTimeMs: function(t, precision) {
         var d = new Date(t);
         return d.getHours() +

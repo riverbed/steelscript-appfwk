@@ -221,7 +221,7 @@ class TimeSeriesWidget(object):
                    module=__name__, uiwidget=cls.__name__)
         w.compute_row_col()
         timecols = [col.name for col in table.get_columns()
-                    if col.istime()]
+                    if col.istime() or col.isdate()]
         if len(timecols) == 0:
             raise ValueError("Table %s must have a datatype 'time' column for "
                              "a timeseries widget" % str(table))
@@ -237,13 +237,14 @@ class TimeSeriesWidget(object):
     @classmethod
     def process(cls, widget, job, data):
         class ColInfo:
-            def __init__(self, col, dataindex, axis, istime=False):
+            def __init__(self, col, dataindex, axis,
+                         istime=False, isdate=False):
                 self.col = col
                 self.key = cleankey(col.name)
                 self.dataindex = dataindex
                 self.axis = axis
                 self.istime = istime
-
+                self.isdate = isdate
         t_cols = job.get_columns()
         colinfo = {}  # map by widget key
 
@@ -251,7 +252,7 @@ class TimeSeriesWidget(object):
         # defined columns other than time
         if widget.options.columns is None:
             valuecolnames = [col.name for col in t_cols
-                             if not col.istime()]
+                             if not col.istime() and not col.isdate()]
         else:
             valuecolnames = widget.options.columns
 
@@ -265,6 +266,9 @@ class TimeSeriesWidget(object):
         for i, c in enumerate(t_cols):
             if c.istime():
                 ci = ColInfo(c, i, -1, istime=True)
+                time_colinfo = ci
+            elif c.isdate():
+                ci = ColInfo(c, i, -1, isdate=True)
                 time_colinfo = ci
             elif c.name in valuecolnames:
                 if c.isnumeric():
@@ -314,8 +318,8 @@ class TimeSeriesWidget(object):
             w_axes['time']['labelFormat'] = '%k:%M:%S'
         elif total_seconds < (24 * 60 * 60):
             w_axes['time']['labelFormat'] = '%k:%M'
-        elif widget.options.daily:
-            w_axes['time']['labelFormat'] = '%D'
+        elif time_colinfo.isdate:
+            w_axes['time']['formatter'] = 'formatDate'
         else:
             w_axes['time']['labelFormat'] = '%D %k:%M'
 
@@ -362,7 +366,7 @@ class TimeSeriesWidget(object):
             rowmin = {}
             rowmax = {}
             for ci in colinfo.values():
-                if ci.istime:
+                if ci.istime or ci.isdate:
                     continue
                 a = ci.axis
                 val = rawrow[ci.dataindex]
@@ -387,7 +391,7 @@ class TimeSeriesWidget(object):
 
         # Setup the scale values for the axes
         for ci in colinfo.values():
-            if ci.istime:
+            if ci.istime or ci.isdate:
                 continue
 
             axis_name = 'axis' + str(ci.axis)
