@@ -270,7 +270,7 @@ class TimeSeriesWidget(object):
                 time_colinfo = ci
             elif c.name in valuecolnames:
                 if c.isnumeric():
-                    ci = ColInfo(c, i, -1, istime=False)
+                    ci = ColInfo(c, i, -1, istime=False, isdate=False)
                 else:
                     raise KeyError(
                         "Cannot graph non-numeric data in timeseries widget: "
