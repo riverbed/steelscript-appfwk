@@ -191,7 +191,7 @@ class PieWidget(object):
 class TimeSeriesWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, height=300,
-               stacked=False, cols=None, altaxis=None, daily=False, bar=False):
+               stacked=False, cols=None, altaxis=None, bar=False):
         """Create a widget displaying time-series data in a line or bar chart
 
         :param int width: Width of the widget in columns (1-12, default 6)
@@ -201,7 +201,6 @@ class TimeSeriesWidget(object):
             the default, graph all data columns.
         :param list altaxis: List of columns to graph using the
             alternate Y-axis
-        :param bool daily: If True, only show dates as labels on time axe.
         :param bool bar: If True, show time series in a bar chart.
 
         As an example, the following will graph four columns of data::
@@ -229,7 +228,6 @@ class TimeSeriesWidget(object):
         w.options = JsonDict(columns=cols,
                              altaxis=altaxis,
                              stacked=stacked,
-                             daily=daily,
                              bar=bar)
         w.save()
         w.tables.add(table)
