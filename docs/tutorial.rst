@@ -347,15 +347,15 @@ Next step is to instantiate the ``StockTable`` class and add columns to the tabl
     import steelscript.stock.appfwk.datasources.stock_source as stock
     table = stock.StockTable.create(name='stock-close-price',
                                     duration='52w', resolution='day')
-    table.add_column('date', 'Date', datatype='time', iskey=True)
+    table.add_column('date', 'Date', datatype='date', iskey=True)
     table.add_column('close', 'Close Price')
 
 .. note::
     When creating the stock table object, the passed-in duration and resolution values need to be
     one of the few options listed in ``FIELD_OPTIONS`` in ``StockTable`` class. When adding columns to the
-    table, the first parameter, representing the name of the column, needs to be one the keys in the dict
-    returned by the :ref:`Data fetch API<Data fetch API>`. For time columns, the ``datatype`` parameter
-    needs to be 'time'. Since we plan to plot the data against the dates, the ``date`` column needs to
+    table, the first parameter, representing the name of the column, needs to be one of the keys in the dict
+    returned by the :ref:`Data fetch API<Data fetch API>`. For ``date`` column, the ``datatype`` parameter
+    needs to be 'date'. Since we plan to plot the data against the dates, the ``date`` column needs to
     be specified as the key column, as done by setting ``iskey=True``.
 
 Last step is to add a widget to the report and bind the table to the widget at the same time.
@@ -364,13 +364,12 @@ Last step is to add a widget to the report and bind the table to the widget at t
 
     # Bind the table to a widget for display
     import steelscript.appfwk.apps.report.modules.yui3 as yui3
-    report.add_widget(yui3.TimeSeriesWidget, table, 'Close Price', width=12, daily=True)
+    report.add_widget(yui3.TimeSeriesWidget, table, 'Close Price', width=12)
 
 .. note::
     Since the report is a plot based on time, we use yui3.TimeSeriesWidget as the
     widget class. Setting ``width=12`` will span the widget across the whole browser, as the whole browser
-    has 12 'columns'. The labels of the obtained plot on the horizontal axis would be in dates if ``daily=True``,
-    otherwise the labels would include minutes and seconds.
+    has 12 'columns'.
 
 
 Rendering reports
@@ -400,7 +399,7 @@ After click 'Run' button, the 'close' price per day for the stock 'rvbd' for the
 
 Leveraging App Framework device
 -------------------------------
-For this stock plugin, there is no physical 'stock' device to configure. But often times,
+For this stock plugin, there is no physical stock device to configure. But often times,
 we need to interact with a device to fetch data and generate reports. Although it is possible
 just to put necessary device-related fields in the criteria and run the :ref:`data fetch API<Data fetch API>`,
 the operation suffers from two flaws: firstly, the criteria fields would be cluttered with
