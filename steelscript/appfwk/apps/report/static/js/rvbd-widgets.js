@@ -45,7 +45,7 @@ rvbd.formatters = {
         var year = time.getUTCFullYear();
         var month = time.getUTCMonth();
         var day = time.getUTCDate();
-        return (new Date(year, month, day)).toDateString();
+        return String(month+1) + "/" + String(day) + "/" + String(year);
     },
 
     formatTimeMs: function(t, precision) {
