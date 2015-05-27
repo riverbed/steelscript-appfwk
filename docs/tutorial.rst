@@ -80,7 +80,6 @@ be used independently without App Framework. Below shows how a stock data API mi
 
 .. code-block:: python
 
-    import urllib
     from steelscript.common.timeutils import TimeParser
     from steelscript.common.connection import Connection
 
@@ -212,8 +211,15 @@ to the data fetch API. Details are shown below.
 .. code-block:: python
 
     from steelscript.appfwk.apps.datasource.models import TableField
-    from steelscript.appfwk.apps.datasource.forms import DateTimeField, ReportSplitDateWidget
+    from steelscript.appfwk.apps.datasource.forms import (DateTimeField, ReportSplitDateWidget,
+                                                          fields_add_time_selection, fields_add_resolution)
     from steelscript.appfwk.apps.datasource.models import TableField, DatasourceTable, Column
+
+    class StockColumn(Column):
+        class Meta:
+            proxy = True
+
+        COLUMN_OPTIONS = {}
 
     class StockTable(DatasourceTable):
     
