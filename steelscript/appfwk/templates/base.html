@@ -35,7 +35,7 @@
                       <li><a href="https://support.riverbed.com/apis/steelscript/appfwk/overview.html">Docs: SteelScript App Framework</a></li>
                   </ul>
               </li>
-              {% if developer %}
+              {% if developer and user.is_superuser %}
               <li class="dropdown active">
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown"> Developer <b class="caret"></b></a>
                   <ul class="dropdown-menu">

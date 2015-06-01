@@ -10,6 +10,7 @@ from django.conf import settings
 
 from steelscript.appfwk.apps.preferences.models import SystemSettings
 
+
 def django_version(request):
     return {'django_version': django.VERSION}
 
@@ -25,4 +26,3 @@ def versions(request):
 
 def developer(request):
     return {'developer': SystemSettings.get_system_settings().developer}
-
