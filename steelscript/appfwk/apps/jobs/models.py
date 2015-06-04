@@ -152,7 +152,8 @@ class JobManager(models.Manager):
             now = datetime.datetime.now(tz=pytz.utc)
             try:
                 qs = (Job.objects.select_for_update().
-                      filter(touched__lte=now - ancient))
+                      filter(touched__lte=now - ancient).
+                      order_by('id'))
                 if len(qs) > 0:
                     logger.info('Deleting %d ancient jobs ...' % len(qs))
                     qs.delete()
@@ -162,7 +163,8 @@ class JobManager(models.Manager):
             # Old jobs are deleted only if they have a refcount of 0
             try:
                 qs = (Job.objects.select_for_update().
-                      filter(touched__lte=now - old, refcount=0))
+                      filter(touched__lte=now - old, refcount=0).
+                      order_by('id'))
                 if len(qs) > 0:
                     logger.info('Deleting %d old jobs ...' % len(qs))
                     qs.delete()
@@ -373,9 +375,6 @@ class Job(models.Model):
             # End of TransactionLock
 
         logger.debug("%s: criteria = %s" % (job, criteria))
-
-        # Flush old jobs
-        Job.objects.age_jobs()
 
         return job
 

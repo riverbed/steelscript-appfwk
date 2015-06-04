@@ -136,10 +136,9 @@ class AnalysisQuery(DatasourceQuery):
 
         for (name, ref) in tables.items():
             table = Table.from_ref(ref)
-            with transaction.atomic():
-                job = Job.create(table, self.job.criteria,
-                                 update_progress=self.job.update_progress,
-                                 parent=self.job)
+            job = Job.create(table, self.job.criteria,
+                             update_progress=self.job.update_progress,
+                             parent=self.job)
 
             logger.debug("%s: dependent job %s" % (self, job))
             jobs[name] = job
