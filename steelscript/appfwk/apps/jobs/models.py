@@ -40,10 +40,10 @@ from steelscript.appfwk.apps.datasource.exceptions import DataError
 from steelscript.appfwk.apps.alerting.models import (post_data_save,
                                                      error_signal)
 from steelscript.appfwk.libs.fields import PickledObjectField
-from steelscript.common.connection import Connection
 from steelscript.common.exceptions import RvbdHTTPException
 
 from steelscript.appfwk.apps.jobs.task import Task
+from steelscript.appfwk.apps.jobs.progress import progressd
 
 logger = logging.getLogger(__name__)
 
@@ -90,11 +90,6 @@ else:
             return r
 
 age_jobs_last_run = 0
-
-
-# progressd connection
-progressd = Connection(settings.PROGRESSD_HOST,
-                       port=settings.PROGRESSD_PORT)
 
 
 class JobManager(models.Manager):
@@ -259,13 +254,9 @@ class Job(models.Model):
                 'exception': self.exception,
                 'data': data}
 
-    def _get_progressd(self, attr):
-        r = progressd.json_request('GET', '/jobs/%d/' % self.id)
-        return r[attr]
-
     @property
     def progress(self):
-        progress = self._get_progressd('progress')
+        progress = progressd.get(self.id, 'progress')
         logger.debug('***PROGRESS: %s: %s' % (self.id, progress))
         return int(progress)
 
@@ -363,14 +354,14 @@ class Job(models.Model):
                 logger.info("%s: New job for table %s" % (job, table.name))
 
             # Create new instance in progressd as part of same Transaction
-            # XXXCJ - replace with sleepwalker or some API imported from progressd
             p = {'job_id': job.id,
                  'status': job.status,
                  'progress': 0,
-                 'master_id': job.master.id if job.master else 0}
-            logger.debug('***Saving Job progress to progressd: %s' % p)
-            r = progressd.json_request('POST', '/jobs/', body=p)
-            logger.debug('***Result of save: %s' % r)
+                 'master_id': job.master.id if job.master else 0,
+                 'parent_id': job.parent.id if job.parent else 0
+                 }
+            logger.debug('***Creating Job to progressd: %s' % p)
+            progressd.post(**p)
 
             # End of TransactionLock
 
@@ -450,7 +441,7 @@ class Job(models.Model):
         t.start()
 
     def done(self):
-        self.status = int(self._get_progressd('status'))
+        self.status = int(progressd.get(self.id, 'status'))
         if self.status in (Job.COMPLETE, Job.ERROR):
             self.refresh()
 
@@ -459,12 +450,11 @@ class Job(models.Model):
     def mark_progress(self, progress, status=None):
         if status is None:
             status = Job.RUNNING
-        logger.debug('***SAVING STATUS: %s: %s' % (self.id, progress))
+        logger.debug('***SAVING PROGRESS for %s: %s/%s' % (self.id, status,
+                                                           progress))
         progress = int(float(progress))
         try:
-            progressd.json_request('PUT', '/jobs/%d/' % self.id,
-                                   body={'status': status,
-                                         'progress': progress})
+            progressd.put(self.id, status=status, progress=progress)
         except RvbdHTTPException as e:
             logger.debug('***Error saving progress for %s: %s' % (self.id, e))
 
@@ -790,6 +780,11 @@ def _my_job_delete(sender, instance, **kwargs):
             # permissions issues, perhaps
             logger.error('OSError occurred when attempting to delete '
                          'job datafile: %s' % instance.datafile())
+
+    try:
+        progressd.delete(instance.pk)
+    except BaseException as e:
+        logger.error('Error deleting %s from progressd: %s' % (instance, e))
 
 
 class BatchJobRunner(object):

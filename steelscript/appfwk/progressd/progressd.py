@@ -41,17 +41,15 @@ def get_job_or_404(job_id):
 class Job(object):
     """Basic datastructure for Job status"""
 
-    def __init__(self, job_id, status, progress, master_id=None):
+    def __init__(self, job_id, status, progress,
+                 master_id=None, parent_id=None):
         self.job_id = job_id
         self.status = status
         self.progress = progress
         self.master_id = master_id
+        self.parent_id = parent_id
 
-        # calculated field
-        self._followers = set()
-
-        if self.master_id:
-            get_job_or_404(self.master_id)._followers.add(self.job_id)
+        self.update_links()
 
     def __cmp__(self, other):
         return cmp(self.job_id, other.job_id)
@@ -66,6 +64,29 @@ class Job(object):
     def unicode(self):
         return self.values()
 
+    def update_links(self):
+        """Update internal references to master/parent links"""
+        self._followers = set()
+        self._children = set()
+
+        if self.master_id:
+            get_job_or_404(self.master_id)._followers.add(self.job_id)
+
+        if self.parent_id:
+            get_job_or_404(self.parent_id)._children.add(self.job_id)
+
+    def clean_links(self):
+        """Clean job references in master/parent links"""
+        for f in self.followers:
+            f.master_id = None
+        if self.master_id:
+            get_job_or_404(self.master_id)._followers.remove(self.job_id)
+
+        for c in self.children:
+            c.parent_id = None
+        if self.parent_id:
+            get_job_or_404(self.parent_id)._children.remove(self.job_id)
+
     def update(self, status=None, progress=None):
         if status is not None:
             self.status = status
@@ -78,7 +99,34 @@ class Job(object):
     def followers(self):
         return [get_job_or_404(c) for c in self._followers]
 
+    @property
+    def children(self):
+        return [get_job_or_404(c) for c in self._children]
+
     def calculate_progress(self):
+        """Roll up progress from children and push progress to followers."""
+
+        # when calculating progress for a parent job, assumptions are made
+        # since not all jobs are necessarily created immediately; initial
+        # progress when seeing a single child job complete gets tagged at
+        # 33%, and overall progress gets capped at 90% to avoid the issue
+        # of sitting at 100% for a long period.
+
+        # XXXMFG make the params configurable
+
+        children = self.children
+        if children:
+            if len(children) == 1 and children[0].status == 3:
+                # one child and it's complete
+                self.progress = 33
+            else:
+                num_done = sum(1 for c in children if c.status == 3)
+                progress = int((num_done / float(len(children))) * 100)
+                if progress > self.progress:
+                    if progress > 90:
+                        progress = 90
+                    self.progress = progress
+
         for f in self.followers:
             # shadow jobs - push status and progress down
             f.status, f.progress = self.status, self.progress
@@ -86,12 +134,16 @@ class Job(object):
         if self.master_id:
             get_job_or_404(self.master_id).calculate_progress()
 
+        if self.parent_id:
+            get_job_or_404(self.parent_id).calculate_progress()
+
 
 job_resource_fields = OrderedDict([
     ('job_id', fields.Integer),
     ('status', fields.String),
     ('progress', fields.Integer),
-    ('master_id', fields.Integer)
+    ('master_id', fields.Integer),
+    ('parent_id', fields.Integer)
 ])
 jobs_resource_fields = OrderedDict([
     ('items', fields.Nested(job_resource_fields, allow_null=True))
@@ -118,7 +170,8 @@ class JobAPI(Resource):
         return s, 200
 
     def delete(self, job_id):
-        get_job_or_404(job_id)
+        j = get_job_or_404(job_id)
+        j.clean_links()
         del JOBS[job_id]
         return '', 204
 
@@ -126,11 +179,19 @@ class JobAPI(Resource):
 class JobRelationsAPI(Resource):
     def _get_followers(self, job_id):
         job = get_job_or_404(job_id)
-        return {'followers': job.followers()}
+        return {'followers': job.followers}
+
+    def _get_children(self, job_id):
+        job = get_job_or_404(job_id)
+        return {'children': job.children}
 
     def _get_master(self, job_id):
         job = get_job_or_404(job_id)
         return {JOBS[job.master_id]}
+
+    def _get_parent(self, job_id):
+        job = get_job_or_404(job_id)
+        return {JOBS[job.parent_id]}
 
 
 class JobMasterAPI(JobRelationsAPI):
@@ -145,6 +206,13 @@ class JobFollowersAPI(JobRelationsAPI):
     def get(self, job_id):
         print 'Received GET for followers of Job ID: %s' % job_id
         return self._get_followers(job_id)
+
+
+class JobChildrenAPI(JobRelationsAPI):
+    @marshal_with(job_resource_fields)
+    def get(self, job_id):
+        print 'Received GET for children of Job ID: %s' % job_id
+        return self._get_children(job_id)
 
 
 class JobDoneAPI(JobRelationsAPI):
@@ -181,15 +249,11 @@ api.add_resource(JobListAPI, '/jobs/')
 api.add_resource(JobAPI, '/jobs/<int:job_id>/')
 api.add_resource(JobMasterAPI, '/jobs/<int:job_id>/master/')
 api.add_resource(JobFollowersAPI, '/jobs/<int:job_id>/followers/')
+api.add_resource(JobChildrenAPI, '/jobs/<int:job_id>/children/')
 api.add_resource(JobDoneAPI, '/jobs/<int:job_id>/done/')
 
-if __name__ == '__main__':
-    try:
-        project_path = sys.argv[1]
-    except IndexError:
-        print 'Path to appfwk_project required'
-        sys.exit(1)
 
+def load_existing_jobs():
     # Extract existing job model data and load
     cmd = 'cd %s && %s manage.py dumpdata jobs.job' % (project_path,
                                                        sys.executable)
@@ -211,5 +275,19 @@ if __name__ == '__main__':
                   master_id=j['fields']['master'])
         print 'Adding existing job %s' % job
         JOBS[j['pk']] = job
+
+    # update references since jobs may have been added out of order
+    for j in JOBS.itervalues():
+        j.update_links()
+
+
+if __name__ == '__main__':
+    try:
+        project_path = sys.argv[1]
+    except IndexError:
+        print 'Path to appfwk_project required'
+        sys.exit(1)
+
+    load_existing_jobs()
 
     app.run(host='127.0.0.1', debug=False)

@@ -50,6 +50,10 @@ resources:
                 description: "ID for master job, defaults to 0 for no master"
                 type: integer
                 default: 0
+            parent_id:
+                description: "ID for parent job, defaults to 0 for no parent"
+                type: integer
+                default: 0
 
         links:
             self: { path: "$/jobs/{job_id}" }
@@ -71,3 +75,9 @@ resources:
                 resource: '#/resources/jobs'
                 vars: { master_id: '0/job_id' }
 
+            parent:
+                resource: '#/resources/job'
+                vars: { id: '0/parent_id' }
+            children:
+                resource: '#/resources/jobs'
+                vars: { parent_id: '0/job_id' }
