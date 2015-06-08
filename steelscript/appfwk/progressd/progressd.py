@@ -28,8 +28,11 @@ service.load('progressd.yaml')
 job_schema = service.find_resource('job')
 jobs_schema = service.find_resource('jobs')
 
-# Map of Job IDs to Job objects
-JOBS = {}
+
+JOBS = {}              # Map of Job IDs to Job objects
+
+PARENT_MIN_PROGRESS = 33    # progress when single child complete
+PARENT_MAX_PROGRESS = 90    # max progress until job is complete
 
 
 def get_job_or_404(job_id):
@@ -39,7 +42,7 @@ def get_job_or_404(job_id):
 
 
 class Job(object):
-    """Basic datastructure for Job status"""
+    """Basic data structure for Job status"""
 
     def __init__(self, job_id, status, progress,
                  master_id=None, parent_id=None):
@@ -117,14 +120,14 @@ class Job(object):
         children = self.children
         if children:
             if len(children) == 1 and children[0].status == 3:
-                # one child and it's complete
-                self.progress = 33
+                # one child so far, and it's complete
+                self.progress = PARENT_MIN_PROGRESS
             else:
                 num_done = sum(1 for c in children if c.status == 3)
                 progress = int((num_done / float(len(children))) * 100)
                 if progress > self.progress:
-                    if progress > 90:
-                        progress = 90
+                    if progress > PARENT_MAX_PROGRESS:
+                        progress = PARENT_MAX_PROGRESS
                     self.progress = progress
 
         for f in self.followers:
