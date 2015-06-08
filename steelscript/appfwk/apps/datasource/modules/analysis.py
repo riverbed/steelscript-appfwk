@@ -244,6 +244,8 @@ class FocusedAnalysisQuery(AnalysisQuery):
             self.table.options['related_tables']['template']
         )
         data = jobs['source'].data()
+        if data is None:
+            return QueryError('No data available to analyze')
 
         # find column whose min/max is largest deviation from mean
         # then take row from that column where min/max occurs

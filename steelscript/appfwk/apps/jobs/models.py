@@ -513,7 +513,10 @@ class Job(models.Model):
         #                    data=self.data,
         #                    context={'job': self})
 
-    def mark_error(self, message, exception=''):
+    def mark_error(self, message, exception=None):
+        if exception is None:
+            exception = ''
+
         logger.warning("%s failed: %s" % (self, message))
 
         self.mark_done(status=Job.ERROR,
