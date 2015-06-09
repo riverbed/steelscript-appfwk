@@ -45,12 +45,12 @@ class TableWidget(object):
     @classmethod
     def process(cls, widget, job, data):
         class ColInfo:
-            def __init__(self, col, dataindex, istime=False):
+            def __init__(self, col, dataindex, istime=False, isdate=False):
                 self.col = col
                 self.key = cleankey(col.name)
                 self.dataindex = dataindex
                 self.istime = istime
-
+                self.isdate = isdate
         w_keys = []     # Widget column keys in order that matches data
         colinfo = {}    # Map of ColInfo by key
         w_columns = []  # Widget column definitions
@@ -60,7 +60,7 @@ class TableWidget(object):
                     wc.name not in widget.options.columns):
                 continue
 
-            ci = ColInfo(wc, i, wc.istime())
+            ci = ColInfo(wc, i, wc.istime(), wc.isdate())
             colinfo[ci.key] = ci
             w_keys.append(ci.key)
 
@@ -81,6 +81,8 @@ class TableWidget(object):
                         w_column['formatter'] = 'formatIntegerMetric'
             elif ci.col.istime():
                 w_column['formatter'] = 'formatTime'
+            elif ci.col.isdate():
+                w_column['formatter'] = 'formatDate'
             elif ci.col.datatype == ci.col.DATATYPE_HTML:
                 w_column['allowHTML'] = True
 
@@ -93,7 +95,7 @@ class TableWidget(object):
 
             for key in w_keys:
                 ci = colinfo[key]
-                if colinfo[key].istime:
+                if colinfo[key].istime or colinfo[key].isdate:
                     t = rawrow[ci.dataindex]
                     try:
                         val = timeutils.datetime_to_microseconds(t) / 1000

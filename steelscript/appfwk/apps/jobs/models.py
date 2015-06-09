@@ -751,6 +751,20 @@ class Worker(base_worker_class):
                 if str(s.dtype).startswith(str(pandas.np.dtype('datetime64'))):
                     # Already a datetime
                     pass
+                elif str(s.dtype).startswith('int'):
+                    # Assume this is a numeric epoch, convert to datetime
+                    df[col.name] = s.astype('datetime64[s]')
+                elif str(s.dtype).startswith('float'):
+                    # This is a numeric epoch as a float, possibly
+                    # has subsecond resolution, convert to
+                    # datetime but preserve up to millisecond
+                    df[col.name] = (1000 * s).astype('datetime64[ms]')
+                elif str(s.dtype).startswith('object'):
+                    # This is a datetime.date object, convert it to
+                    # datetime64[ns], tried to obtain datetime64[s]
+                    # by setting unit='s' but failed
+                    # It seems datetime64[ns] is accepted.
+                    df[col.name] = pandas.to_datetime(s)
                 else:
                     # Possibly datetime object or a datetime string,
                     # hopefully astype() can figure it out
