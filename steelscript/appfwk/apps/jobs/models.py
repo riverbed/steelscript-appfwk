@@ -507,11 +507,10 @@ class Job(models.Model):
         self.mark_done(**kwargs)
         logger.info("%s: saved as COMPLETE" % self)
 
-        # XXXCJ - need to debug alert threading issues
         # Send signal for possible Triggers
-        #post_data_save.send(sender=self,
-        #                    data=self.data,
-        #                    context={'job': self})
+        post_data_save.send(sender=self,
+                            data=self.data,
+                            context={'job': self})
 
     def mark_error(self, message, exception=None):
         if exception is None:
@@ -524,10 +523,9 @@ class Job(models.Model):
                        exception=exception)
         logger.info("%s: saved as ERROR" % self)
 
-        # XXXCJ - need to debug alert threading issues
         # Send signal for possible Triggers
-        # error_signal.send(sender=self,
-        #                  context={'job': self})
+        error_signal.send(sender=self,
+                          context={'job': self})
 
     @classmethod
     def _compute_handle(cls, table, criteria):
