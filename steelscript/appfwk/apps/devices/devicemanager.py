@@ -64,6 +64,10 @@ class DeviceManager(object):
                     cls.devices[ds.id] = create_func(
                         host=ds.host, auth=OAuth(ds.access_code))
 
+                else:  # no authentication is required
+                    cls.devices[ds.id] = create_func(
+                        host=ds.host, auth=None)
+
         return cls.devices[ds.id]
 
     @classmethod
