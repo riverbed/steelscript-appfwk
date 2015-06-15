@@ -11,7 +11,7 @@ import threading
 
 from steelscript.appfwk.apps.plugins import plugins
 
-from steelscript.common import UserAuth
+from steelscript.common import UserAuth, OAuth
 from steelscript.appfwk.apps.devices.models import Device
 from steelscript.appfwk.apps.devices.exceptions import DeviceModuleNotFound
 
@@ -54,9 +54,16 @@ class DeviceManager(object):
                 logger.debug("Creating new Device: %s(%s:%s)" % (ds.module,
                                                                  ds.host,
                                                                  ds.port))
-                cls.devices[ds.id] = create_func(host=ds.host, port=ds.port,
-                                                 auth=UserAuth(ds.username,
-                                                               ds.password))
+                if ds.auth.lower() == 'basic':
+                    cls.devices[ds.id] = create_func(host=ds.host,
+                                                     port=ds.port,
+                                                     auth=UserAuth(
+                                                         ds.username,
+                                                         ds.password))
+                elif ds.auth.lower() == 'oauth2':
+                    cls.devices[ds.id] = create_func(
+                        host=ds.host, auth=OAuth(ds.access_code))
+
         return cls.devices[ds.id]
 
     @classmethod

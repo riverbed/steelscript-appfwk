@@ -17,6 +17,12 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+AUTH_METHODS = ('N/A',
+                'BASIC',
+                'OAUTH2')
+
+AUTH_CHOICES = zip(AUTH_METHODS, map(str.title, AUTH_METHODS))
+
 
 def create_device_fixture(strip_passwords=True):
     """ Dump devices to JSON file, optionally stripping passwords.
@@ -30,6 +36,7 @@ def create_device_fixture(strip_passwords=True):
     for d in json.load(buf):
         if strip_passwords:
             del d['fields']['password']
+            del d['fields']['access_code']
             d['fields']['enabled'] = False
         devices.append(d)
 
@@ -52,8 +59,12 @@ class Device(models.Model):
     module = models.CharField(max_length=200)
     host = models.CharField(max_length=200)
     port = models.IntegerField(default=443)
-    username = models.CharField(max_length=100)
-    password = models.CharField(max_length=100)
+    username = models.CharField(max_length=100, blank=True)
+    password = models.CharField(max_length=100, blank=True)
+    auth = models.CharField(max_length=50,
+                            choices=AUTH_CHOICES,
+                            default='N/A')
+    access_code = models.TextField(blank=True)
 
     # only enabled devices will require field validation
     enabled = models.BooleanField(default=True)
