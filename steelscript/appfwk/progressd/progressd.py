@@ -4,9 +4,11 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+import os
 import sys
 import json
 import logging
+import argparse
 import subprocess
 from collections import OrderedDict
 
@@ -16,7 +18,6 @@ from flask_restful import Resource, Api, abort, fields, marshal_with
 import reschema
 from reschema.exceptions import ValidationError
 
-#logging.basicConfig(filename='progressd.log',level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
@@ -24,7 +25,8 @@ api = Api(app)
 
 # API Service Definitions
 service = reschema.ServiceDef()
-service.load('progressd.yaml')
+yamlfile = os.path.join(os.path.dirname(__file__), 'progressd.yaml')
+service.load(yamlfile)
 job_schema = service.find_resource('job')
 jobs_schema = service.find_resource('jobs')
 
@@ -256,7 +258,7 @@ api.add_resource(JobChildrenAPI, '/jobs/<int:job_id>/children/')
 api.add_resource(JobDoneAPI, '/jobs/<int:job_id>/done/')
 
 
-def load_existing_jobs():
+def load_existing_jobs(project_path):
     # Extract existing job model data and load
     cmd = 'cd %s && %s manage.py dumpdata jobs.job' % (project_path,
                                                        sys.executable)
@@ -285,12 +287,19 @@ def load_existing_jobs():
 
 
 if __name__ == '__main__':
-    try:
-        project_path = sys.argv[1]
-    except IndexError:
-        print 'Path to appfwk_project required'
-        sys.exit(1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--path',
+                        help='Absolute path to appfwk_project directory')
+    parser.add_argument('--no-sync-jobs', action='store_true', default=False,
+                        help='If true, will sync jobs with database on start')
+    parser.add_argument('--port', type=int, default=5000,
+                        help='Port number to run server on')
 
-    load_existing_jobs()
+    args = parser.parse_args()
 
-    app.run(host='127.0.0.1', debug=False)
+    if args.no_sync_jobs:
+        print 'Skipping job sync ...'
+    else:
+        load_existing_jobs(args.path)
+
+    app.run(host='127.0.0.1', port=args.port, debug=False)

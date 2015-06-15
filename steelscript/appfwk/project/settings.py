@@ -355,7 +355,10 @@ APPS_DATASOURCE = {
 }
 
 TESTING = 'test' in sys.argv
-TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+TEST_RUNNER = 'steelscript.appfwk.project.testing.AppfwkTestRunner'
+
+if TESTING:
+    PROGRESSD_PORT = '5555'
 
 LOCAL_APPS = None
 
