@@ -11,14 +11,6 @@ from graphviz import Digraph
 
 from django.core.management.base import BaseCommand
 from steelscript.appfwk.apps.jobs.models import Job
-from steelscript.appfwk.apps.report.models import WidgetJob
-
-
-# not pretty, but pandas insists on warning about
-# some deprecated behavior we really don't care about
-# for this script, so ignore them all
-import warnings
-warnings.filterwarnings("ignore")
 
 
 logger = logging.getLogger(__name__)
@@ -49,11 +41,6 @@ class Command(BaseCommand):
 
         dot = Digraph(name='Job Graph', comment='Job Graph', format='svg',
                       engine='twopi')
-
-        #print "WidgetJob"
-        #wj = WidgetJob.objects.get(id=171)
-        #dot.node('wj%d' % wj.id)
-        #dot.edge('wj%d' % wj.id, 'j%d' % wj.job.id, color='red')
 
         def status_to_color(status):
             return {Job.NEW: 'lightgray',

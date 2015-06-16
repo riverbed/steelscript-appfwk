@@ -65,18 +65,12 @@ class BaseTask(object):
 
     def call_method(self):
         callback = self.callback
-        # method_args = self.method_args or []
 
         # Instantiate the query class - this gets used as 'self' object
         # for 'callback', which is a reference to an unbound instance method
         query = self.job.table.queryclass(self.job)
 
         try:
-            #logger.info("%s: running %s(%s)" %
-            #            (self, callback,
-            #             ', '.join([str(x) for x in method_args])))
-            #result = callback(query, *method_args)
-
             logger.info("%s: running %s()" % (self, callback))
             result = callback(query)
 

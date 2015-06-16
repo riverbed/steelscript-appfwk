@@ -53,9 +53,9 @@ DATABASES = {
 
 # Task model, sync is the slowest but the only one guaranteed to
 # work with sqlite3.  The other models require a database
-#APPFWK_TASK_MODEL = 'sync'
+# APPFWK_TASK_MODEL = 'sync'
 APPFWK_TASK_MODEL = 'async'
-#APPFWK_TASK_MODEL = 'celery'
+# APPFWK_TASK_MODEL = 'celery'
 
 # Location of progressd daemon, default for locally running
 PROGRESSD_HOST = 'http://127.0.0.1'

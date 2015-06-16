@@ -10,11 +10,8 @@ from datetime import timedelta
 
 import pandas
 
-from django.db import transaction
-
 from steelscript.appfwk.apps.jobs import \
     Job, QueryContinue, QueryComplete, QueryError
-
 from steelscript.common.timeutils import \
     parse_timedelta, timedelta_total_seconds
 from steelscript.appfwk.apps.datasource.models import \

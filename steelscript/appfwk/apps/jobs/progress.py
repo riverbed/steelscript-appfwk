@@ -2,7 +2,6 @@ import logging
 from django.conf import settings
 
 from steelscript.common.connection import Connection
-from steelscript.common.exceptions import RvbdHTTPException
 
 
 logger = logging.getLogger(__name__)
