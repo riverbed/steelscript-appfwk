@@ -25,6 +25,7 @@ DATAHOME = os.getenv('DATAHOME', PROJECT_ROOT)
 DATA_CACHE = os.path.join(DATAHOME, 'data', 'datacache')
 INITIAL_DATA = os.path.join(DATAHOME, 'data', 'initial_data')
 REPORTS_DIR = os.path.join(PROJECT_ROOT, 'reports')
+LOG_DIR = os.path.join(DATAHOME, 'logs')
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -223,6 +224,7 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.plugins',
     'steelscript.appfwk.apps.alerting',
     'steelscript.appfwk.apps.jobs',
+    'steelscript.appfwk.apps.logviewer',
 
     # 'standard' plugins
     'steelscript.appfwk.apps.plugins.builtin.whois',
@@ -300,7 +302,7 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 5,            # 5 MB
             'backupCount': 1,
             'formatter': 'verbose',
-            'filename': os.path.join(PROJECT_ROOT, 'log.txt')
+            'filename': os.path.join(LOG_DIR, 'log.txt')
         },
         'backend-log': {
             'level': 'DEBUG',
@@ -308,7 +310,7 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 5,            # 5 MB
             'backupCount': 1,
             'formatter': 'verbose',
-            'filename': os.path.join(PROJECT_ROOT, 'log-db.txt')
+            'filename': os.path.join(LOG_DIR, 'log-db.txt')
         },
     },
     'loggers': {

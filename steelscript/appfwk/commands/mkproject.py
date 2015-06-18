@@ -24,12 +24,32 @@ DATAHOME = os.getenv('DATAHOME', PROJECT_ROOT)
 DATA_CACHE = os.path.join(DATAHOME, 'data', 'datacache')
 INITIAL_DATA = os.path.join(DATAHOME, 'data', 'initial_data')
 REPORTS_DIR = os.path.join(PROJECT_ROOT, 'reports')
+LOG_DIR = os.path.join(DATAHOME, 'logs')
 
 STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
 MEDIA_ROOT = DATA_CACHE
 
-# Optionally add additional applications specific to this project instance
+# Task model specific configs
+APPFWK_TASK_MODEL = 'async'
+#APPFWK_TASK_MODEL = 'celery'
 
+if APPFWK_TASK_MODEL == 'celery':
+    LOCAL_APPS = (
+        'djcelery',
+    )
+    INSTALLED_APPS += LOCAL_APPS
+
+    # redis for broker and backend
+    BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+    import djcelery
+    djcelery.setup_loader()
+
+    #CELERY_ALWAYS_EAGER = True
+    TEST_RUNNER = 'djcelery.contrib.test_runner.CeleryTestSuiteRunner'
+
+# Optionally add additional applications specific to this project instance
 LOCAL_APPS = (
     # additional apps can be listed here
 )
@@ -55,9 +75,8 @@ DATABASES = {
 }
 
 # Setup loggers to local directory
-LOGGING['handlers']['logfile']['filename'] = os.path.join(DATAHOME, 'logs',
-                                                          'log.txt')
-LOGGING['handlers']['backend-log']['filename'] = os.path.join(DATAHOME, 'logs',
+LOGGING['handlers']['logfile']['filename'] = os.path.join(LOG_DIR, 'log.txt')
+LOGGING['handlers']['backend-log']['filename'] = os.path.join(LOG_DIR,
                                                               'log-db.txt')
 
 # Optionally add additional global error handlers

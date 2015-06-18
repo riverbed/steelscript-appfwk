@@ -7,12 +7,11 @@
 
 from django.conf.urls import patterns, url
 
-import steelscript.appfwk.apps.help.views as views
+import steelscript.appfwk.apps.logviewer.views as views
 
 
 urlpatterns = patterns(
-    'steelscript.appfwk.apps.help.views',
+    'steelscript.appfwk.apps.logviewer.views',
 
-    url(r'^(?P<device_type>[a-z]+)/$',
-        views.ColumnHelper.as_view()),
+    url(r'^$', views.LogViewer.as_view(), name='logviewer'),
 )
