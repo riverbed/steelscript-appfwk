@@ -14,20 +14,9 @@ from django.db import models
 from django.core import management
 from django.conf import settings
 
+from steelscript.common import Auth
 
 logger = logging.getLogger(__name__)
-
-AUTH_NONE = 0
-AUTH_BASIC = 1
-AUTH_OAUTH2 = 2
-
-
-def is_basic(method):
-    return method == AUTH_BASIC
-
-
-def is_oauth2(method):
-    return method == AUTH_OAUTH2
 
 
 def create_device_fixture(strip_passwords=True):
@@ -69,10 +58,10 @@ class Device(models.Model):
     password = models.CharField(max_length=100, blank=True)
 
     auth = models.IntegerField(
-        default=AUTH_NONE,
-        choices=((AUTH_NONE, 'None'),
-                 (AUTH_BASIC, 'Basic'),
-                 (AUTH_OAUTH2, 'OAuth2'))
+        default=Auth.NONE,
+        choices=((Auth.NONE, 'None'),
+                 (Auth.BASIC, 'Basic'),
+                 (Auth.OAUTH, 'OAuth2'))
     )
 
     access_code = models.TextField(blank=True)

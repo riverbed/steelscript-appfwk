@@ -56,16 +56,17 @@
                 $('#username_div').hide();
                 $('#password_div').hide();
                 $('#access_code_div').hide();
-            } else if ( auth == 1 ) {
-                    $('#username_div').show();
-                    $('#password_div').show();
-                    $('#access_code_div').hide();
-                }
-              else {
-                  $('#username_div').hide();
-                  $('#password_div').hide();
-                  $('#access_code_div').show();
-                };
+           }
+           else if ( auth == 1 ) {
+               $('#username_div').show();
+               $('#password_div').show();
+               $('#access_code_div').hide();
+           }
+           else {
+               $('#username_div').hide();
+               $('#password_div').hide();
+               $('#access_code_div').show();
+           };
        };
 
    </script>
@@ -109,7 +110,7 @@
                              <select onchange="changeAuth(this)" id="auth_input">
                                  <option value=0>None</option>
                                  <option value=1>Basic</option>
-                                 <option value=2>OAuth2</option>
+                                 <option value=3>OAuth2</option>
                              </select>
 
                             </div>
