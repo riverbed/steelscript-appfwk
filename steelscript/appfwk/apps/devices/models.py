@@ -17,11 +17,17 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-AUTH_METHODS = ('N/A',
-                'BASIC',
-                'OAUTH2')
+AUTH_NONE = 0
+AUTH_BASIC = 1
+AUTH_OAUTH2 = 2
 
-AUTH_CHOICES = zip(AUTH_METHODS, map(str.title, AUTH_METHODS))
+
+def is_basic(method):
+    return method == AUTH_BASIC
+
+
+def is_oauth2(method):
+    return method == AUTH_OAUTH2
 
 
 def create_device_fixture(strip_passwords=True):
@@ -61,9 +67,14 @@ class Device(models.Model):
     port = models.IntegerField(default=443)
     username = models.CharField(max_length=100, blank=True)
     password = models.CharField(max_length=100, blank=True)
-    auth = models.CharField(max_length=50,
-                            choices=AUTH_CHOICES,
-                            default='N/A')
+
+    auth = models.IntegerField(
+        default=AUTH_NONE,
+        choices=((AUTH_NONE, 'None'),
+                 (AUTH_BASIC, 'Basic'),
+                 (AUTH_OAUTH2, 'OAuth2'))
+    )
+
     access_code = models.TextField(blank=True)
 
     # only enabled devices will require field validation

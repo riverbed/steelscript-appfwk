@@ -9,7 +9,7 @@ from django import forms
 
 from steelscript.appfwk.libs.fields import Function
 from steelscript.appfwk.apps.datasource.models import TableField
-from steelscript.appfwk.apps.devices.models import Device
+from steelscript.appfwk.apps.devices.models import Device, is_oauth2, is_basic
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 
 
@@ -33,13 +33,7 @@ class DeviceForm(forms.ModelForm):
         enabled = cleaned_data.get('enabled')
 
         if enabled:
-            if cleaned_data.get('host', '') == '':
-                msg = u'Please enter a valid hostname/ip address.'
-                self._errors['host'] = self.error_class([msg])
-                cleaned_data.pop('host', None)
-
-            if cleaned_data.get('auth', '').lower() == 'basic':
-
+            if is_basic(cleaned_data.get('auth', '')):
                 if cleaned_data.get('username', '') == '':
                     msg = u'Please enter a valid username.'
                     self._errors['username'] = self.error_class([msg])
@@ -50,7 +44,7 @@ class DeviceForm(forms.ModelForm):
                     self._errors['password'] = self.error_class([msg])
                     cleaned_data.pop('password', None)
 
-            elif cleaned_data.get('auth', '').lower() == 'oauth2':
+            elif is_oauth2(cleaned_data.get('auth', '')):
                 if cleaned_data.get('access_code', '') == '':
                     msg = u'Please enter a valid access code.'
                     self._errors['access_code'] = self.error_class([msg])

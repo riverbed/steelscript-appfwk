@@ -48,18 +48,15 @@
                         {% endif %}
                         {% for form, device in tabledata %}
                             <tr {% if not device.enabled %}class="row-disabled"{% endif %}>
-                                {% if device.auth|lower == 'basic' and not device.password %}
+                                {% if device.auth == 1 and not device.password %}
                                    <td ><input type="checkbox" disabled="disabled"></td>
-                                {% elif device.auth|lower == 'oauth2' and not device.access_code %}
+                                {% elif device.auth == 2 and not device.access_code %}
                                    <td ><input type="checkbox" disabled="disabled"></td>
                                 {% else %}
                                     {% for field in form.visible_fields %}
-                                        <td >{{ field }}</td>
+                                        <td>{{ field }}</td>
                                     {% endfor %}
                                 {% endif %}
-                                {% for hidden in form.hidden_fields %}
-                                    {{ hidden }}
-                                {% endfor %}
                                 <td>
                                     <a href="{% url 'device-detail' device.id %}">{{ device.name }}</a>
 
@@ -72,7 +69,14 @@
                                 <td>{{ device.module }}</td>
                                 <td>{{ device.host }}</td>
                                 <td>{{ device.port }}</td>
-                                <td>{{ device.auth }}</td>
+                                {% if device.auth == 0 %}
+                                   <td>None</td>
+                                {% elif device.auth == 1 %}
+                                   <td>Basic</td>
+                                {% elif device.auth == 2 %}
+                                   <td>OAuth2</td>
+                                {% endif %}
+
                             </tr>
                         {% endfor %}
                     </tbody>
