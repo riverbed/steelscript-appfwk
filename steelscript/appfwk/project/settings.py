@@ -332,6 +332,21 @@ LOGGING = {
     }
 }
 
+# Configure log viewer app options
+LOGVIEWER_ENABLE_SYSLOGS = True
+LOGVIEWER_SYSLOGS_DIR = '/var/log'
+LOGVIEWER_SYSLOGS_PATTERNS = (r'messages(-)?([0-9]+)?', r'cron(-)?([0-9]+)?',
+                              r'dmesg', r'boot.log')
+
+LOGVIEWER_ENABLE_HTTPD_LOGS = True
+LOGVIEWER_HTTPD_DIR = os.path.join(LOGVIEWER_SYSLOGS_DIR, 'httpd')  # debian
+LOGVIEWER_HTTPD_PATTERNS = (r'(ssl_)?access_log(-)?([0-9]+)?',
+                            r'(ssl_)?error_log(-)?([0-9]+)?')
+
+# default logs
+LOGVIEWER_LOG_PATTERNS = (r'log(-db)?.txt(.[1-9])?',
+                          r'celery.txt(.[1-9])?')
+
 GLOBAL_ERROR_HANDLERS = (
     {'sender': 'LoggingSender',
      'template': 'Error processing job: {message}'},

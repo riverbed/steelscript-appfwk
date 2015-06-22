@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -9,6 +9,7 @@ import os
 import re
 import logging
 from cStringIO import StringIO
+from collections import namedtuple
 
 from django.http import Http404
 
@@ -24,18 +25,56 @@ from steelscript.appfwk.apps.logviewer.forms import LogCriteriaForm
 
 logger = logging.getLogger(__name__)
 
+Log = namedtuple('Log', 'name, full_path, group, disabled')
 
-VALID_LOGS = ['log.txt', 'log.txt.1', 'celery.txt', 'celery.txt.1']
-LOG_MAP = {p: os.path.join(settings.DATAHOME, 'logs', p) for p in VALID_LOGS}
+
+class LogFinder(object):
+
+    def __init__(self):
+        self.logfiles = []
+        self.update_logfiles()
+
+    def match_files(self, log_dir, patterns):
+        """Return files in `log_dir` that match any of `patterns` regex."""
+        regexes = [re.compile(r) for r in patterns]
+        try:
+            return [os.path.join(log_dir, f)
+                    for f in os.listdir(log_dir)
+                    for r in regexes
+                    if r.match(f)]
+        except OSError:
+            return []
+
+    def append_logs(self, logs, group):
+        self.logfiles.extend(
+            Log(os.path.basename(log), log, group, not os.access(log, os.R_OK))
+            for log in logs
+        )
+
+    def update_logfiles(self):
+        """Find valid logfiles on system."""
+        logs = self.match_files(settings.LOG_DIR,
+                                settings.LOGVIEWER_LOG_PATTERNS)
+        self.append_logs(logs, 'Project Logs')
+
+        if settings.LOGVIEWER_ENABLE_SYSLOGS:
+            logs = self.match_files(settings.LOGVIEWER_SYSLOGS_DIR,
+                                    settings.LOGVIEWER_SYSLOGS_PATTERNS)
+            self.append_logs(logs, 'Syslogs')
+
+        if settings.LOGVIEWER_ENABLE_HTTPD_LOGS:
+            logs = self.match_files(settings.LOGVIEWER_HTTPD_DIR,
+                                    settings.LOGVIEWER_HTTPD_PATTERNS)
+            self.append_logs(logs, 'Apache Logs')
 
 
 def get_log(path, lines, page, filter_expr):
     if filter_expr is not None:
         buf = StringIO()
-        ptn = re.compile(filter_expr)
+        regex = re.compile(filter_expr)
         with open(path, 'r') as f:
             for line in f.readlines():
-                if ptn.search(line):
+                if regex.search(line):
                     buf.write(line)
 
         buf.seek(0)
@@ -82,6 +121,9 @@ def tail(f, lines=100):
     text = ''.join(data)
     return text.splitlines()[-lines:]
 
+LOG_TUPLES = LogFinder().logfiles
+LOG_MAP = {x.name: x.full_path for x in LOG_TUPLES}
+
 
 class LogViewer(views.APIView):
     """Process requested log file and display in template."""
@@ -89,7 +131,7 @@ class LogViewer(views.APIView):
     permission_classes = (IsAdminUser,)
 
     def get(self, request):
-        form = LogCriteriaForm(VALID_LOGS, data=request.GET)
+        form = LogCriteriaForm(LOG_TUPLES, data=request.GET)
 
         if form.is_valid():
             data = form.cleaned_data
@@ -99,9 +141,9 @@ class LogViewer(views.APIView):
 
             num_lines = data['num_lines']
             page = data['page']  # XXX page is unused for now
-            filter_expr = data['filter_expr']
+            regex = data['regex']
 
-            lines = get_log(path, num_lines, page, filter_expr)
+            lines = get_log(path, num_lines, page, regex)
 
             tagged_lines = []
             for line in lines:
@@ -114,12 +156,20 @@ class LogViewer(views.APIView):
 
                 tagged_lines.append((tag, line))
 
+            if not tagged_lines:
+                # empty logfile
+                tagged_lines = [
+                    ('logNormal', '\n'),
+                    ('logNormal', 'No data found'),
+                    ('logNormal', '\n')
+                ]
+
             return Response({'form': form, 'lines': tagged_lines},
                             template_name='logfile.html')
         else:
             if not request.GET:
                 # create a blank form
-                return Response({'form': LogCriteriaForm(VALID_LOGS),
+                return Response({'form': LogCriteriaForm(LOG_TUPLES),
                                  'lines': None},
                                 template_name='logfile.html')
             else:
