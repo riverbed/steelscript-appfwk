@@ -7,6 +7,7 @@
 
 from django import forms
 
+from steelscript.common import Auth
 from steelscript.appfwk.libs.fields import Function
 from steelscript.appfwk.apps.datasource.models import TableField
 from steelscript.appfwk.apps.devices.models import Device
@@ -16,13 +17,16 @@ from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 class DeviceForm(forms.ModelForm):
     class Meta:
         model = Device
-        fields = ('name', 'module', 'host', 'port',
-                  'username', 'password', 'enabled')
+        fields = ('name', 'module', 'host', 'port', 'auth',
+                  'username', 'password', 'access_code', 'enabled')
+
+        widgets = {'auth': forms.HiddenInput(),
+                   'username': forms.HiddenInput(),
+                   'password': forms.HiddenInput(),
+                   'access_code': forms.HiddenInput()}
 
     def __init__(self, *args, **kwargs):
         super(DeviceForm, self).__init__(*args, **kwargs)
-
-        self.fields['password'].widget.input_type = 'password'
 
     def clean(self):
         # field validation only really matters if the device was enabled
@@ -30,20 +34,22 @@ class DeviceForm(forms.ModelForm):
         enabled = cleaned_data.get('enabled')
 
         if enabled:
-            if cleaned_data.get('host', '').startswith('fill.in.'):
-                msg = u'Please update with a valid hostname/ip address.'
-                self._errors['host'] = self.error_class([msg])
-                del cleaned_data['host']
+            if cleaned_data.get('auth', '') == Auth.BASIC:
+                if cleaned_data.get('username', '') == '':
+                    msg = u'Please enter a valid username.'
+                    self._errors['username'] = self.error_class([msg])
+                    cleaned_data.pop('username', None)
 
-            if cleaned_data.get('username', '') == '<username>':
-                msg = u'Please enter a valid username.'
-                self._errors['username'] = self.error_class([msg])
-                del cleaned_data['username']
+                if cleaned_data.get('password', '') == '':
+                    msg = u'Please enter a valid password.'
+                    self._errors['password'] = self.error_class([msg])
+                    cleaned_data.pop('password', None)
 
-            if cleaned_data.get('password', '') == '<password>':
-                msg = u'Please enter a valid password.'
-                self._errors['password'] = self.error_class([msg])
-                del cleaned_data['password']
+            elif cleaned_data.get('auth', '') == Auth.OAUTH:
+                if cleaned_data.get('access_code', '') == '':
+                    msg = u'Please enter a valid access code.'
+                    self._errors['access_code'] = self.error_class([msg])
+                    cleaned_data.pop('access_code', None)
 
         return cleaned_data
 
