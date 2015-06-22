@@ -53,10 +53,10 @@ class DeviceManager(object):
                 logger.debug("Creating new Device: %s(%s:%s)" % (ds.module,
                                                                  ds.host,
                                                                  ds.port))
-                if Auth.is_basic(ds.auth):
+                if ds.auth == Auth.BASIC:
                     auth = UserAuth(ds.username, ds.password)
 
-                elif Auth.is_oauth2(ds.auth):
+                elif ds.auth == Auth.OAUTH:
                     auth = OAuth(ds.access_code)
 
                 else:  # no authentication is required

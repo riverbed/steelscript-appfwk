@@ -34,7 +34,7 @@ class DeviceForm(forms.ModelForm):
         enabled = cleaned_data.get('enabled')
 
         if enabled:
-            if Auth.is_basic(cleaned_data.get('auth', '')):
+            if cleaned_data.get('auth', '') == Auth.BASIC:
                 if cleaned_data.get('username', '') == '':
                     msg = u'Please enter a valid username.'
                     self._errors['username'] = self.error_class([msg])
@@ -45,7 +45,7 @@ class DeviceForm(forms.ModelForm):
                     self._errors['password'] = self.error_class([msg])
                     cleaned_data.pop('password', None)
 
-            elif Auth.is_oauth2(cleaned_data.get('auth', '')):
+            elif cleaned_data.get('auth', '') == Auth.OAUTH:
                 if cleaned_data.get('access_code', '') == '':
                     msg = u'Please enter a valid access code.'
                     self._errors['access_code'] = self.error_class([msg])

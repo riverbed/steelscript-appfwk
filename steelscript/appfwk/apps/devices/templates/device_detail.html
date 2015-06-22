@@ -50,14 +50,16 @@
        });
 
         function changeAuth(sel) {
-            auth = sel.value;
-            $('#id_auth').val(auth);
-           if ( auth == 0 ) {
+
+            var auth_method = sel.value;
+            $('#id_auth').val(auth_method);
+
+           if ( auth_method == {{ auth.NONE }} ) {
                 $('#username_div').hide();
                 $('#password_div').hide();
                 $('#access_code_div').hide();
            }
-           else if ( auth == 1 ) {
+           else if ( auth_method == {{ auth.BASIC }} ) {
                $('#username_div').show();
                $('#password_div').show();
                $('#access_code_div').hide();
@@ -108,9 +110,9 @@
                             </div>
                             <div class="controls">
                              <select onchange="changeAuth(this)" id="auth_input">
-                                 <option value=0>None</option>
-                                 <option value=1>Basic</option>
-                                 <option value=3>OAuth2</option>
+                                 <option value={{ auth.NONE }}>None</option>
+                                 <option value={{ auth.BASIC }}>Username/Password</option>
+                                 <option value={{ auth.OAUTH }}>OAuth2</option>
                              </select>
 
                             </div>
