@@ -1,18 +1,10 @@
-# XXXCJ
-#  - on startup or job run, check if all services are running
-#    - celery, broker (redis/rabbitmq), progressd
-#  - review:
-#    - uses of Job.refresh()
-#    - uses of Job.safe_update()
-#    - uses of transaction.atomic()
-#  - celery error handler for when a job dies outside a try block?
-#  - query celery for stale jobs instead of pid
-#  - rename TableQueryBase to DatasourceQuery, move here?
+# Copyright (c) 2014 Riverbed Technology, Inc.
 #
-# Peformanace questions:
-#  - Task.job or job_id?
-#  - compute tree pushing up from children or on demand from parent
-#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+
+
 import os
 import time
 import random

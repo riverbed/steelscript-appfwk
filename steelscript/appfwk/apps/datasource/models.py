@@ -714,15 +714,6 @@ class DatasourceQuery(object):
     def __str__(self):
         return "<%s %s>" % (self.__class__.__name__, self.job)
 
-    def mark_progress(self, progress):
-        # Called by the analysis function
-        tables = getattr(self.table.options, 'tables', None)
-        if tables:
-            n = len(tables) + 1
-        else:
-            n = 1
-        self.job.mark_progress(((n - 1) * 100 + progress) / n)
-
     def run(self):
         return True
 
