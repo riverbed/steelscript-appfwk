@@ -68,8 +68,8 @@ class Command(BaseCommand):
 
         if options['job_list']:
             # print out the id's instead of processing anything
-            columns = ['ID', 'Parent', 'PID', 'Table', 'Created', 'Touched',
-                       'Status', 'Refs', 'Progress', 'Data file']
+            columns = ['ID', 'Master', 'Parent', 'PID', 'Table', 'Created',
+                       'Touched', 'Status', 'Refs', 'Progress', 'Data file']
             data = []
             for j in Job.objects.all().order_by('id'):
 
@@ -80,10 +80,11 @@ class Command(BaseCommand):
                 status = (s for s in ('NEW', 'RUNNING', 'COMPLETE', 'ERROR')
                           if getattr(Job, s) == j.status).next()
                 parent_id = j.parent.id if j.parent else '--'
+                master_id = j.master.id if j.master else '--'
 
-                data.append([j.id, parent_id, j.pid, j.table.name, j.created,
-                             j.touched, status, j.refcount, j.progress,
-                             datafile])
+                data.append([j.id, master_id, parent_id, j.pid, j.table.name,
+                             j.created, j.touched, status, j.refcount,
+                             j.progress, datafile])
 
             Formatter.print_table(data, columns)
 
@@ -97,7 +98,7 @@ class Command(BaseCommand):
 
         elif options['job_age']:
             logger.debug('Aging all jobs.')
-            Job.age_jobs(force=True)
+            Job.objects.age_jobs(force=True)
 
         elif options['job_flush']:
             logger.debug('Flushing all jobs.')

@@ -18,6 +18,7 @@ import pytz
 
 from django.db import models
 from django.db import DatabaseError
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.text import slugify
 
@@ -26,14 +27,22 @@ from steelscript.common.datastructures import DictObject
 from steelscript.common.timeutils import timedelta_total_seconds
 from steelscript.appfwk.project.utils import (get_module_name, get_sourcefile,
                                               get_namespace)
-from steelscript.appfwk.apps.datasource.exceptions import *
 from steelscript.appfwk.libs.fields import (PickledObjectField, FunctionField,
                                             SeparatedValuesField,
                                             check_field_choice,
                                             field_choice_str)
+from steelscript.appfwk.apps.datasource.exceptions import \
+    TableComputeSyntheticError, DatasourceException
 
 
 logger = logging.getLogger(__name__)
+
+
+# Load Synthetic modules - they may be referenced by
+# string name in synthetic columns
+for module in settings.APPFWK_SYNTHETIC_MODULES:
+    logger.info("Importing synthetic module: %s" % module)
+    globals()[module] = importlib.import_module(module)
 
 
 class TableField(models.Model):
@@ -72,7 +81,7 @@ class TableField(models.Model):
     :param field_kwargs: Dictionary of additional field specific
         kwargs to pass to the field_cls constructor.
 
-    :param parants: List of parent keywords that this field depends on
+    :param parents: List of parent keywords that this field depends on
         for a final value.  Used in conjunction with either
         post_process_func or post_process_template.
 
@@ -159,9 +168,12 @@ class TableField(models.Model):
 
 class Table(models.Model):
     name = models.CharField(max_length=200)
-    module = models.CharField(max_length=200)      # source module name
-    queryclass = models.CharField(max_length=200)  # name of query class
-    datasource = models.CharField(max_length=200)  # class name of datasource
+
+    # Table data is produced by a queryclassname defined within the
+    # named module
+    module = models.CharField(max_length=200)
+    queryclassname = models.CharField(max_length=200)
+
     namespace = models.CharField(max_length=100)
     sourcefile = models.CharField(max_length=200)
 
@@ -212,7 +224,8 @@ class Table(models.Model):
 
         if isinstance(arg, dict):
             if 'namespace' not in arg or 'name' not in arg:
-                raise KeyError('Invalid table ref as dict, expected namespace/name')
+                msg = 'Invalid table ref as dict, expected namespace/name'
+                raise KeyError(msg)
             return arg
 
         if isinstance(arg, Table):
@@ -223,7 +236,8 @@ class Table(models.Model):
         elif isinstance(arg, int):
             table = Table.objects.get(id=arg)
         else:
-            raise ValueError('No way to handle Table arg of type %s' % type(arg))
+            raise ValueError('No way to handle Table arg of type %s'
+                             % type(arg))
         return {'sourcefile': table.sourcefile,
                 'namespace': table.namespace,
                 'name': table.name}
@@ -246,6 +260,19 @@ class Table(models.Model):
     def __repr__(self):
         return unicode(self)
 
+    @property
+    def queryclass(self):
+        # Lookup the query class for the table associated with this task
+        try:
+            i = importlib.import_module(self.module)
+            queryclass = i.__dict__[self.queryclassname]
+        except:
+            raise DatasourceException(
+                "Could not lookup queryclass %s in module %s" %
+                (self.queryclassname, self.module))
+
+        return queryclass
+
     def get_columns(self, synthetic=None, ephemeral=None, iskey=None):
         """
         Return the list of columns for this table.
@@ -264,7 +291,8 @@ class Table(models.Model):
         """
 
         filtered = []
-        for c in Column.objects.filter(table=self).order_by('position', 'name'):
+        for c in Column.objects.filter(table=self).order_by('position',
+                                                            'name'):
             if synthetic is not None and c.synthetic != synthetic:
                 continue
             if c.ephemeral is not None and c.ephemeral != ephemeral:
@@ -318,8 +346,8 @@ class Table(models.Model):
             1. Compute all synthetic columns where compute_post_resample
                is False
 
-            2. If the table is a time-based table with a defined resolution, the
-               result is resampled.
+            2. If the table is a time-based table with a defined resolution,
+               the result is resampled.
 
             3. Any remaining columns are computed.
         """
@@ -330,7 +358,6 @@ class Table(models.Model):
         all_col_names = [c.name for c in all_columns]
 
         def compute(df, syncols):
-            #logger.debug("Compute: syncol = %s" % ([c.name for c in syncols]))
             for syncol in syncols:
                 expr = syncol.compute_expression
                 g = tokenize.generate_tokens(StringIO(expr).readline)
@@ -361,11 +388,18 @@ class Table(models.Model):
                     else:
                         newexpr += tvalue
 
-                df[syncol.name] = eval(newexpr)
+                try:
+                    df[syncol.name] = eval(newexpr)
+                except NameError as e:
+                    m = (('%s: expression failed: %s, check '
+                          'APPFWK_SYNTHETIC_MODULES: %s') %
+                         (self, newexpr, str(e)))
+                    logger.exception(m)
+                    raise TableComputeSyntheticError(m)
 
         # 1. Compute synthetic columns where post_resample is False
-        compute(df, [col for col in all_columns if (col.synthetic and
-                                                    col.compute_post_resample is False)])
+        compute(df, [col for col in all_columns if
+                     (col.synthetic and col.compute_post_resample is False)])
 
         # 2. Resample
         colmap = {}
@@ -378,13 +412,13 @@ class Table(models.Model):
         if self.resample:
             if timecol is None:
                 raise (TableComputeSyntheticError
-                       ("Table %s 'resample' is set but no 'time' column'" %
+                       ("%s: 'resample' is set but no 'time' column'" %
                         self))
 
             if (('resolution' not in job.criteria) and
-                  ('resample_resolution' not in job.criteria)):
+                    ('resample_resolution' not in job.criteria)):
                 raise (TableComputeSyntheticError
-                       (("Table %s 'resample' is set but criteria missing " +
+                       (("%s: 'resample' is set but criteria missing " +
                          "'resolution' or 'resample_resolution'") % self))
 
             how = {}
@@ -525,9 +559,11 @@ class DatasourceTable(Table):
         if kwargs:
             raise AttributeError('Invalid keyword arguments: %s' % str(kwargs))
 
-        queryclass = cls._query_class
-        if inspect.isclass(queryclass):
-            queryclass = queryclass.__name__
+        # Table property '_query_class' may be either a string name
+        # or an actual class reference.  Convert to string name for storage
+        queryclassname = cls._query_class
+        if inspect.isclass(queryclassname):
+            queryclassname = queryclassname.__name__
 
         sourcefile = table_kwargs.get('sourcefile',
                                       get_sourcefile(get_module_name()))
@@ -537,20 +573,22 @@ class DatasourceTable(Table):
         if len(Table.objects.filter(name=name,
                                     namespace=namespace,
                                     sourcefile=sourcefile)) > 0:
-            raise ValueError(("Table '%s' already exists in namespace '%s' "
-                             "(sourcefile '%s')") % (name, namespace, sourcefile))
+            msg = ("Table '%s' already exists in namespace '%s' "
+                   "(sourcefile '%s')") % (name, namespace, sourcefile)
+            raise ValueError(msg)
 
         table_kwargs['namespace'] = namespace
         table_kwargs['sourcefile'] = sourcefile
 
         logger.debug('Creating table %s' % name)
-        t = cls(name=name, module=cls.__module__, queryclass=queryclass,
-                datasource=cls.__name__, options=options, **table_kwargs)
+        t = cls(name=name, module=cls.__module__,
+                queryclassname=queryclassname, options=options, **table_kwargs)
         try:
             t.save()
         except DatabaseError as e:
             if 'no such table' in str(e):
-                raise DatabaseError(str(e) + ' -- did you forget class Meta: proxy=True?')
+                msg = str(e) + ' -- did you forget class Meta: proxy=True?'
+                raise DatabaseError(msg)
             raise
 
         # post process table *instance* now that its been initialized
@@ -621,19 +659,20 @@ class DatasourceTable(Table):
             * b/s - bits per second
             * pct - percentage
 
-        :param float position: Display position relative to other columns, automatically
-            computed by default
+        :param float position: Display position relative to other columns,
+            automatically computed by default
 
         :param bool synthetic: Set True to compute this columns value
             according to ``compute_expression``
 
-        :param str compute_expression: Computation expression for syntetic columns
+        :param str compute_expression: Computation expression for syntetic
+            columns
 
-        :param bool compute_post_resample: If true, compute this synthetic column
-            after resampling (time series only)
+        :param bool compute_post_resample: If true, compute this synthetic
+            column after resampling (time series only)
 
-        :param str resample_operation: Operation to use on this column to aggregate
-            multiple rows during resampling, defaults to sum
+        :param str resample_operation: Operation to use on this column to
+            aggregate multiple rows during resampling, defaults to sum
 
 
         """
@@ -662,6 +701,36 @@ class DatasourceTable(Table):
             self.save()
 
         return c
+
+
+class DatasourceQuery(object):
+    def __init__(self, job):
+        self.job = job
+        self.table = self.job.table
+
+    def __unicode__(self):
+        return "<%s %s>" % (self.__class__.__name__, self.job)
+
+    def __str__(self):
+        return "<%s %s>" % (self.__class__.__name__, self.job)
+
+    def run(self):
+        return True
+
+    def post_run(self):
+        return True
+
+    def _post_query_continue(self, jobids, callback):
+        jobs = {}
+        # Hack to avoid circular import problem
+        Job = self.job.__class__
+        for name, jobid in jobids.iteritems():
+            jobs[name] = Job.objects.get(id=jobid)
+
+        return callback(self, jobs)
+
+# Backward compatibility
+TableQueryBase = DatasourceQuery
 
 
 class Column(models.Model):
@@ -787,7 +856,8 @@ class Column(models.Model):
             c.save()
         except DatabaseError as e:
             if 'no such table' in str(e):
-                raise DatabaseError(str(e) + ' -- did you forget class Meta: proxy=True?')
+                msg = str(e) + ' -- did you forget class Meta: proxy=True?'
+                raise DatabaseError(msg)
             raise
 
         return c
@@ -809,8 +879,11 @@ class Column(models.Model):
 
 class Criteria(DictObject):
     """ Manage a collection of criteria values. """
+
     def __init__(self, **kwargs):
         """ Initialize a criteria object based on key/value pairs. """
+
+        self.ignore_cache = False
 
         self.starttime = None
         self.endtime = None
@@ -922,33 +995,3 @@ class Criteria(DictObject):
         self.duration = duration
         self.starttime = starttime
         self.endtime = endtime
-
-
-class TableQueryBase(object):
-    def __init__(self, table, job):
-        self.table = table
-        self.job = job
-
-    def __unicode__(self):
-        return "<%s %s>" % (self.__class__.__name__, self.job)
-
-    def __str__(self):
-        return "<%s %s>" % (self.__class__.__name__, self.job)
-
-    def mark_progress(self, progress):
-        # Called by the analysis function
-        tables = getattr(self.table.options, 'tables', None)
-        if tables:
-            n = len(tables) + 1
-        else:
-            n = 1
-        self.job.mark_progress(((n - 1) * 100 + progress) / n)
-
-    def pre_run(self):
-        return True
-
-    def run(self):
-        return True
-
-    def post_run(self):
-        return True

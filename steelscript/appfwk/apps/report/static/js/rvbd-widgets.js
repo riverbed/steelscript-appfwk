@@ -130,9 +130,7 @@ rvbd.widgets.Widget = function(postUrl, isEmbedded, div, id, slug, options, crit
             setTimeout(function() { self.getData(criteria); }, 1000);
         },
         error: function(jqXHR, textStatus, errorThrown) {
-            var message = $("<div/>").html(textStatus + " : " + errorThrown).text()
-            $div.hideLoading()
-                .append("<p>Server error: <pre>" + message + "</pre></p>");
+            self.displayError(JSON.parse(jqXHR.responseText));
             self.status = 'error';
         }
     });

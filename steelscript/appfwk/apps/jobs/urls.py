@@ -16,6 +16,10 @@ urlpatterns = patterns(
         views.JobList.as_view(),
         name='job-list'),
 
+    url(r'^visualize/$',
+        views.JobVisualize.as_view(),
+        name='job-visualize'),
+
     url(r'^(?P<pk>[0-9]+)/$',
         views.JobDetail.as_view(),
         name='job-detail'),

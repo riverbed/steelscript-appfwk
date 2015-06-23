@@ -1,30 +1,41 @@
+# Copyright (c) 2014 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+
+
 import os
-import sys
 import time
 import random
 import hashlib
 import logging
 import datetime
-import importlib
-import traceback
-import threading
-
 import pytz
 import pandas
 import numpy
+import threading
+
 from django.db import models
 from django.db import transaction
 from django.db.models import F
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.conf import settings
-from steelscript.appfwk.apps.datasource.models import Table
 
+from steelscript.appfwk.libs.fields import \
+    Callable, CallableField
+
+from steelscript.appfwk.apps.datasource.models import Table
 from steelscript.appfwk.apps.datasource.exceptions import DataError
+
 from steelscript.appfwk.apps.alerting.models import (post_data_save,
                                                      error_signal)
 from steelscript.appfwk.libs.fields import PickledObjectField
+from steelscript.common.exceptions import RvbdHTTPException
 
+from steelscript.appfwk.apps.jobs.task import Task
+from steelscript.appfwk.apps.jobs.progress import progressd
 
 logger = logging.getLogger(__name__)
 
@@ -35,21 +46,123 @@ if settings.DATABASES['default']['ENGINE'].endswith('sqlite3'):
     # the dev server.  It will not work across multiple processes, only
     # between threads of a single process
     lock = threading.RLock()
+
+    class TransactionLock(object):
+        def __init__(self, obj, context=""):
+            self.obj = obj
+            self.context = context
+
+        def __enter__(self):
+            logger.debug("TransactionLock.enter: %s - %s" %
+                         (self.context, self.obj))
+            lock.acquire()
+
+        def __exit__(self, type_, value, traceback_):
+            lock.release()
+            logger.debug("TransactionLock.exit: %s - %s" % (
+                self.context, self.obj))
+
 else:
-    lock = None
+    class TransactionLock(transaction.Atomic):
+        def __init__(self, obj, context=""):
+            super(TransactionLock, self).__init__(using=None, savepoint=True)
+            self.obj = obj
+            self.context = context
+
+        def __enter__(self):
+            logger.debug("TransactionLock.enter: %s - %s" %
+                         (self.context, self.obj))
+            super(TransactionLock, self).__enter__()
+            self.obj.__class__.objects.select_for_update().get(id=self.obj.id)
+
+        def __exit__(self, type_, value, traceback_):
+            r = super(TransactionLock, self).__exit__(type_, value, traceback_)
+            logger.debug("TransactionLock.exit: %s - %s" % (
+                self.context, self.obj))
+            return r
 
 age_jobs_last_run = 0
 
 
-class LocalLock(object):
-    def __enter__(self):
-        if lock is not None:
-            lock.acquire()
+class JobManager(models.Manager):
 
-    def __exit__(self, type_, value, traceback_):
-        if lock is not None:
-            lock.release()
-        return False
+    def get_master(self, handle):
+        """Return Job object for master or None if no valid jobs found."""
+        master = None
+
+        # Find jobs with the same handle but with no master,
+        # these are candidate master jobs.  Lock these rows
+        # so we can ensure they don't get deleted until
+        # we have a chance to touch it and refcount the selected
+        # master below
+        candidates = (Job.objects
+                      .select_for_update()
+                      .filter(status__in=[Job.NEW,
+                                          Job.QUEUED,
+                                          Job.RUNNING,
+                                          Job.COMPLETE],
+                              handle=handle,
+                              master=None)
+                      .order_by('created'))
+
+        if candidates:
+            master_jobs = Task.validate_jobs(jobs=candidates, delete=True)
+            master = master_jobs[0] if master_jobs else None
+
+        return master
+
+    def age_jobs(self, old=None, ancient=None, force=False):
+        """ Delete old jobs that have no refcount and all ancient jobs. """
+        # Throttle - only run this at most once every 15 minutes
+        global age_jobs_last_run
+        if not force and time.time() - age_jobs_last_run < 60 * 15:
+            return
+
+        age_jobs_last_run = time.time()
+
+        if old is None:
+            old = datetime.timedelta(
+                seconds=settings.APPS_DATASOURCE['job_age_old_seconds']
+            )
+        elif type(old) in [int, float]:
+            old = datetime.timedelta(seconds=old)
+
+        if ancient is None:
+            ancient = datetime.timedelta(
+                seconds=settings.APPS_DATASOURCE['job_age_ancient_seconds']
+            )
+        elif type(ancient) in [int, float]:
+            ancient = datetime.timedelta(seconds=ancient)
+
+        with transaction.atomic():
+            # Ancient jobs are deleted regardless of refcount
+            now = datetime.datetime.now(tz=pytz.utc)
+            try:
+                qs = (Job.objects.select_for_update().
+                      filter(touched__lte=now - ancient).
+                      order_by('id'))
+                if len(qs) > 0:
+                    logger.info('Deleting %d ancient jobs ...' % len(qs))
+                    qs.delete()
+            except:
+                logger.exception("Failed to delete ancient jobs")
+
+            # Old jobs are deleted only if they have a refcount of 0
+            try:
+                qs = (Job.objects.select_for_update().
+                      filter(touched__lte=now - old, refcount=0).
+                      order_by('id'))
+                if len(qs) > 0:
+                    logger.info('Deleting %d old jobs ...' % len(qs))
+                    qs.delete()
+            except:
+                logger.exception("Failed to delete old jobs")
+
+    def flush_incomplete(self):
+        jobs = Job.objects.exclude(status__in=[Job.COMPLETE, Job.ERROR])
+        logger.info("Flushing %d incomplete jobs: %s" %
+                    (len(jobs), [j.id for j in jobs]))
+        jobs.delete()
 
 
 class Job(models.Model):
@@ -63,11 +176,13 @@ class Job(models.Model):
     # Number of references to this job
     refcount = models.IntegerField(default=0)
 
-    # Whether this job is a child of another job
-    ischild = models.BooleanField(default=False)
+    # Parent job that spawned this job (and thus waiting for
+    # this jobs results)
+    parent = models.ForeignKey('self', null=True, related_name='children')
 
-    # If ischild, this points to the parent job
-    parent = models.ForeignKey('self', null=True)
+    # Master job that has run (or is running) that has the same
+    # criteria.  If master, this job is a "follower"
+    master = models.ForeignKey('self', null=True, related_name='followers')
 
     # Table associated with this job
     table = models.ForeignKey(Table)
@@ -83,18 +198,20 @@ class Job(models.Model):
 
     # Job status
     NEW = 0
-    RUNNING = 1
+    QUEUED = 1
+    RUNNING = 2
     COMPLETE = 3
     ERROR = 4
 
     status = models.IntegerField(
         default=NEW,
         choices=((NEW, "New"),
+                 (QUEUED, "Queued"),
                  (RUNNING, "Running"),
                  (COMPLETE, "Complete"),
                  (ERROR, "Error")))
 
-    # Process ID for original Worker thread
+    # Process ID for original Task thread
     pid = models.IntegerField(default=None, null=True)
 
     # Message if job complete or error
@@ -107,11 +224,11 @@ class Job(models.Model):
     # Whether to update detailed progress
     update_progress = models.BooleanField(default=True)
 
-    # While RUNNING, this provides an indicator of progress 0-100
-    progress = models.IntegerField(default=-1)
+    # Callback function
+    callback = CallableField()
 
-    # While RUNNING, time remaining
-    remaining = models.IntegerField(default=None, null=True)
+    # Manager class for additional .objects methods
+    objects = JobManager()
 
     def __unicode__(self):
         return "<Job %s (%8.8s) - t%s>" % (self.id, self.handle, self.table.id)
@@ -119,18 +236,56 @@ class Job(models.Model):
     def __repr__(self):
         return unicode(self)
 
+    def json(self, data=None):
+        """ Return a JSON representation of this Job. """
+        return {'id': self.id,
+                'handle': self.handle,
+                'progress': self.progress,
+                'status': self.status,
+                'message': self.message,
+                'exception': self.exception,
+                'data': data}
+
+    @property
+    def progress(self):
+        progress = progressd.get(self.id, 'progress')
+        logger.debug('***PROGRESS: %s: %s' % (self.id, progress))
+        return int(progress)
+
+    @property
+    def is_child(self):
+        return self.parent is not None
+
+    @property
+    def is_follower(self):
+        return self.master is not None
+
+    def reference(self, message=""):
+        with TransactionLock(self, '%s.reference' % self):
+            pk = self.pk
+            Job.objects.filter(pk=pk).update(refcount=F('refcount') + 1)
+        # logger.debug("%s: reference(%s) @ %d" %
+        #             (self, message, Job.objects.get(pk=pk).refcount))
+
+    def dereference(self, message=""):
+        with TransactionLock(self, '%s.dereference' % self):
+            pk = self.pk
+            Job.objects.filter(pk=pk).update(refcount=F('refcount') - 1)
+        # logger.debug("%s: dereference(%s) @ %d" %
+        #             (self, message, Job.objects.get(pk=pk).refcount))
+
     def refresh(self):
         """ Refresh dynamic job parameters from the database. """
         # fix bug 227119, by avoiding mysql caching problems
         # http://stackoverflow.com/a/7028362
         # should be fixed in Django 1.6
+        # XXXCJ -- can we drop this now?
         Job.objects.update()
         job = Job.objects.get(pk=self.pk)
-        for k in ['status', 'message', 'exception', 'progress', 'remaining',
-                  'actual_criteria', 'touched', 'refcount']:
+        for k in ['status', 'message', 'exception', 'actual_criteria',
+                  'touched', 'refcount', 'callback', 'parent']:
             setattr(self, k, getattr(job, k))
 
-    @transaction.commit_on_success
     def safe_update(self, **kwargs):
         """ Update the job with the passed dictionary in a database safe way.
 
@@ -140,130 +295,229 @@ class Job(models.Model):
         clobbered by doing a blanket job.save().
 
         """
+        logger.debug("%s safe_update %s" % (self, kwargs))
 
-        if kwargs is None:
-            return
-
-        with LocalLock():
-            # logger.debug("%s safe_update %s" % (self, kwargs))
+        with TransactionLock(self, '%s.safe_update' % str(self)):
             Job.objects.filter(pk=self.pk).update(**kwargs)
-
-            # Force a reload of the job to get latest data
             self.refresh()
 
-            if not self.ischild:
-                # Push changes to children of this job
-                child_kwargs = {}
-                for k, v in kwargs.iteritems():
-                    if k in ['status', 'message', 'exception', 'progress',
-                             'remaining', 'actual_criteria']:
-                        child_kwargs[k] = v
-                # There should be no recursion, so a direct update to the
-                # database is possible.  (If recursion, would need to call
-                # self_update() on each child.)
-                Job.objects.filter(parent=self).update(**child_kwargs)
-
     @classmethod
-    def create(cls, table, criteria, update_progress=True):
+    def create(cls, table, criteria, update_progress=True, parent=None):
 
-        with LocalLock():
-            with transaction.commit_on_success():
-                # Grab a lock on the row associated with the table
-                table = Table.objects.select_for_update().get(id=table.id)
+        # Adjust the criteria for this specific table, locking
+        # down start/end times as needed
+        criteria = criteria.build_for_table(table)
+        try:
+            criteria.compute_times()
+        except ValueError:
+            # Ignore errors, this table may not have start/end times
+            pass
 
-                criteria = criteria.build_for_table(table)
-                # Lockdown start/endtimes
-                try:
-                    criteria.compute_times()
-                except ValueError:
-                    # Ignore errors, this table may not have start/end times
-                    pass
+        # Compute the handle -- this will take into account
+        # cacheability
+        handle = Job._compute_handle(table, criteria)
 
-                # Compute the handle -- this will take into account
-                # cacheability
-                handle = Job._compute_handle(table, criteria)
+        # Grab a lock on the row associated with the table
+        with TransactionLock(table, "Job.create"):
+            # Look for another job by the same handle in any state except ERROR
+            master = Job.objects.get_master(handle)
 
-                # Look for another job by the same handle in any state
-                # except ERROR
-                parents = []
+            job = Job(table=table,
+                      criteria=criteria,
+                      actual_criteria=None,
+                      status=Job.NEW,
+                      pid=os.getpid(),
+                      handle=handle,
+                      parent=parent,
+                      master=master,
+                      update_progress=update_progress,
+                      message='',
+                      exception='')
+            job.save()
 
-                if not criteria.ignore_cache:
-                    parent_jobs = (Job.objects
-                                   .select_for_update()
-                                   .filter(status__in=[Job.NEW,
-                                                       Job.COMPLETE,
-                                                       Job.RUNNING],
-                                           handle=handle,
-                                           ischild=False)
-                                   .order_by('created'))
+            if master:
+                master.reference("Master link from job %s" % job)
+                now = datetime.datetime.now(tz=pytz.utc)
+                master.safe_update(touched=now)
 
-                    # check if incomplete jobs are still running by sending
-                    # a harmless signal 0 to that PID
-                    # or if jobs were never started and even given a PID
-                    def pid_active(pid):
-                        try:
-                            os.kill(pid, 0)
-                            return True
-                        except OSError:
-                            return False
+                logger.info("%s: New job for table %s, linked to master %s"
+                            % (job, table.name, master))
+            else:
+                logger.info("%s: New job for table %s" % (job, table.name))
 
-                    for p in parent_jobs:
-                        if p.status in (Job.NEW, Job.RUNNING):
-                            if p.pid is None or not pid_active(p.pid):
-                                logging.debug('*** Deleting stale job %s, '
-                                              'with PID %s' % (p, p.pid))
-                                p.delete()
-                                continue
+            # Create new instance in progressd as part of same Transaction
+            p = {'job_id': job.id,
+                 'status': job.status,
+                 'progress': 0,
+                 'master_id': job.master.id if job.master else 0,
+                 'parent_id': job.parent.id if job.parent else 0
+                 }
+            logger.debug('***Creating Job to progressd: %s' % p)
+            progressd.post(**p)
 
-                        parents.append(p)
+            # End of TransactionLock
 
-                if len(parents) > 0:
-                    # since all parents are valid, pick the first one
-                    parent = parents[0]
-
-                    job = Job(table=table,
-                              criteria=criteria,
-                              actual_criteria=parent.actual_criteria,
-                              status=parent.status,
-                              pid=os.getpid(),
-                              handle=handle,
-                              parent=parent,
-                              ischild=True,
-                              update_progress=parent.update_progress,
-                              progress=parent.progress,
-                              remaining=parent.remaining,
-                              message='',
-                              exception='')
-                    job.save()
-
-                    parent.reference("Link from job %s" % job)
-                    now = datetime.datetime.now(tz=pytz.utc)
-                    parent.safe_update(touched=now)
-
-                    logger.info("%s: New job for table %s, linked to parent %s"
-                                % (job, table.name, parent))
-                else:
-                    job = Job(table=table,
-                              criteria=criteria,
-                              status=Job.NEW,
-                              pid=os.getpid(),
-                              handle=handle,
-                              parent=None,
-                              ischild=False,
-                              update_progress=update_progress,
-                              progress=0,
-                              remaining=-1,
-                              message='',
-                              exception='')
-                    job.save()
-                    logger.info("%s: New job for table %s" % (job, table.name))
-
-                logger.debug("%s: criteria = %s" % (job, criteria))
-
-            # Flush old jobs
-            Job.age_jobs()
+        logger.debug("%s: criteria = %s" % (job, criteria))
 
         return job
+
+    def start(self, method=None, method_args=None):
+        """ Start this job. """
+
+        with TransactionLock(self.table, '%s.start' % self):
+            logger.info("%s: Job starting" % self)
+            self.refresh()
+
+            if self.is_follower:
+                logger.debug("%s: Shadowing master job %s" %
+                             (self, self.master))
+                if self.master.status == Job.COMPLETE:
+                    self.mark_complete()
+                elif self.master.status == Job.ERROR:
+                    self.mark_error(self.master.message,
+                                    self.master.exception)
+
+                return
+
+        if method is None:
+            method = self.table.queryclass.run
+
+        # Create an task to do the work
+        task = Task(self, Callable(method, method_args))
+        logger.debug("%s: Created task %s" % (self, task))
+        task.start()
+
+    def schedule(self, jobs, callback):
+        jobid_map = {}
+        for name, job in jobs.iteritems():
+            jobid_map[name] = job.id
+
+        logger.debug("%s: Setting callback %s" % (self, callback))
+        self.safe_update(callback=Callable(callback))
+        logger.debug("%s: Done setting callback %s" % (self, self.callback))
+
+        for name, job in jobs.iteritems():
+            job.start()
+
+    def check_children(self):
+        running_children = Job.objects.filter(
+            parent=self, status__in=[Job.NEW, Job.RUNNING])
+
+        logger.debug("%s: %d running children" % (self, len(running_children)))
+
+        if len(running_children) > 0:
+            # Not done yet, do nothing
+            return
+
+        # Grab a lock on this job to make sure only one caller
+        # gets the callback
+        with TransactionLock(self, '%s.check_children' % self):
+            # Now that we have the lock, make sure we have latest Job
+            # details
+            self.refresh()
+
+            logger.debug("%s: checking callback %s" % (self, self.callback))
+            if self.callback is None:
+                # Some other child got to it first
+                return
+
+            # Save off the callback, we'll call it outside the transaction
+            callback = self.callback
+
+            # Clear the callback while still in lockdown
+            self.callback = None
+            self.save()
+
+        t = Task(self, callback=callback)
+        logger.debug("%s: Created callback task %s" % (self, t))
+        t.start()
+
+    def done(self):
+        self.status = int(progressd.get(self.id, 'status'))
+        if self.status in (Job.COMPLETE, Job.ERROR):
+            self.refresh()
+
+        return self.status in (Job.COMPLETE, Job.ERROR)
+
+    def mark_progress(self, progress, status=None):
+        if status is None:
+            status = Job.RUNNING
+        logger.debug('***SAVING PROGRESS for %s: %s/%s' % (self.id, status,
+                                                           progress))
+        progress = int(float(progress))
+        try:
+            progressd.put(self.id, status=status, progress=progress)
+        except RvbdHTTPException as e:
+            logger.debug('***Error saving progress for %s: %s' % (self.id, e))
+
+    def mark_done(self, status, **kwargs):
+        with TransactionLock(self, '%s.mark_done' % self):
+            self.refresh()
+            old_status = self.status
+            if old_status in (Job.COMPLETE, Job.ERROR):
+                # Status was already set to a done state, avoid
+                # double action and return now
+                return
+            self.status = status
+            for k, v in kwargs.iteritems():
+                setattr(self, k, v)
+            self.save()
+
+        # On status change, do more...
+        self.mark_progress(status=status,
+                           progress=100)
+
+        if not self.is_follower:
+            # Notify followers of this job
+            followers = Job.objects.filter(master=self)
+            for follower in followers:
+                if self.status == Job.COMPLETE:
+                    kwargs['actual_criteria'] = self.actual_criteria
+                    follower.mark_complete(status=status, **kwargs)
+
+                elif self.status == Job.ERROR:
+                    follower.mark_done(status=status, **kwargs)
+
+        if self.parent:
+            logger.debug("%s: Asking parent %s to check children" %
+                         (self, self.parent))
+            self.parent.check_children()
+
+        return True
+
+    def mark_complete(self, data=None, **kwargs):
+        logger.info("%s: complete" % self)
+        if data is not None:
+            self._save_data(data)
+
+        kwargs['status'] = Job.COMPLETE
+        kwargs['message'] = ''
+
+        if (self.actual_criteria is None and 'actual_criteria' not in kwargs):
+            kwargs['actual_criteria'] = self.criteria
+
+        self.mark_done(**kwargs)
+        logger.info("%s: saved as COMPLETE" % self)
+
+        # Send signal for possible Triggers
+        post_data_save.send(sender=self,
+                            data=self.data,
+                            context={'job': self})
+
+    def mark_error(self, message, exception=None):
+        if exception is None:
+            exception = ''
+
+        logger.warning("%s failed: %s" % (self, message))
+
+        self.mark_done(status=Job.ERROR,
+                       message=message,
+                       exception=exception)
+        logger.info("%s: saved as ERROR" % self)
+
+        # Send signal for possible Triggers
+        error_signal.send(sender=self,
+                          context={'job': self})
 
     @classmethod
     def _compute_handle(cls, table, criteria):
@@ -300,18 +554,6 @@ class Job(models.Model):
 
         return h.hexdigest()
 
-    def reference(self, message=""):
-        pk = self.pk
-        Job.objects.filter(pk=pk).update(refcount=F('refcount') + 1)
-        # logger.debug("%s: reference(%s) @ %d" %
-        #             (self, message, Job.objects.get(pk=pk).refcount))
-
-    def dereference(self, message=""):
-        pk = self.pk
-        Job.objects.filter(pk=pk).update(refcount=F('refcount') - 1)
-        # logger.debug("%s: dereference(%s) @ %d" %
-        #             (self, message, Job.objects.get(pk=pk).refcount))
-
     def get_columns(self, ephemeral=None, **kwargs):
         """ Return columns assocated with the table for the job.
 
@@ -320,83 +562,54 @@ class Job(models.Model):
 
         """
         if ephemeral is None:
-            kwargs['ephemeral'] = self.parent or self
+            kwargs['ephemeral'] = self.master or self
         return self.table.get_columns(**kwargs)
 
-    def json(self, data=None):
-        """ Return a JSON representation of this Job. """
-        return {'id': self.id,
-                'handle': self.handle,
-                'progress': self.progress,
-                'remaining': self.remaining,
-                'status': self.status,
-                'message': self.message,
-                'exception': self.exception,
-                'data': data}
-
-    def combine_filterexprs(self, joinstr="and", exprs=None):
-        self.refresh()
-
-        if exprs is None:
-            exprs = []
-        elif type(exprs) is not list:
-            exprs = [exprs]
-
-        exprs.append(self.table.filterexpr)
-
-        nonnull_exprs = []
-        for e in exprs:
-            if e != "" and e is not None:
-                nonnull_exprs.append(e)
-
-        if len(nonnull_exprs) > 1:
-            return "(" + (") " + joinstr + " (").join(nonnull_exprs) + ")"
-        elif len(nonnull_exprs) == 1:
-            return nonnull_exprs[0]
+    def _save_data(self, data):
+        if isinstance(data, list) and len(data) > 0:
+            # Convert the result to a dataframe
+            columns = [col.name for col in
+                       self.get_columns(synthetic=False)]
+            df = pandas.DataFrame(data, columns=columns)
+        elif ((data is None) or
+              (isinstance(data, list) and len(data) == 0)):
+            df = None
+        elif isinstance(data, pandas.DataFrame):
+            df = data
         else:
-            return ""
+            raise ValueError("Unrecognized query result type: %s" %
+                             type(data))
 
-    def start(self):
-        """ Start this job. """
+        if df is not None:
+            self.check_columns(df)
+            df = self.normalize_types(df)
+            df = self.table.compute_synthetic(self, df)
 
-        self.refresh()
+            # Sort according to the defined sort columns
+            if self.table.sortcols:
+                sorted = df.sort(
+                    self.table.sortcols,
+                    ascending=[b == Table.SORT_ASC
+                               for b in self.table.sortdir]
+                )
+                # Move NaN rows of the first sortcol to the end
+                n = self.table.sortcols[0]
+                df = (sorted[sorted[n].notnull()]
+                      .append(sorted[sorted[n].isnull()]))
 
-        if self.ischild:
-            logger.debug("%s: Shadowing parent job %s" % (self, self.parent))
-            return
+            if self.table.rows > 0:
+                df = df[:self.table.rows]
 
-        with transaction.commit_on_success():
-            logger.debug("%s: Starting job" % str(self))
-            self.mark_progress(0)
+        if df is not None:
+            df.to_pickle(self.datafile())
 
-            logger.debug("%s: Worker to run report" % str(self))
-            # Lookup the query class for this table
-            i = importlib.import_module(self.table.module)
-            queryclass = i.__dict__[self.table.queryclass]
+            logger.debug("%s data saved to file: %s" %
+                         (str(self), self.datafile()))
+        else:
+            logger.debug("%s no data saved, data is empty" %
+                         (str(self)))
 
-            # Create an worker to do the work
-            worker = Worker(self, queryclass)
-            worker.start()
-
-    def mark_error(self, message, exception=''):
-        logger.warning("%s failed: %s" % (self, message))
-        self.safe_update(status=Job.ERROR,
-                         progress=100,
-                         message=message,
-                         exception=exception)
-
-    def mark_complete(self):
-        logger.info("%s complete" % self)
-        self.safe_update(status=Job.COMPLETE,
-                         progress=100,
-                         message='')
-
-    def mark_progress(self, progress, remaining=None):
-        # logger.debug("%s progress %s" % (self, progress))
-        if self.update_progress:
-            self.safe_update(status=Job.RUNNING,
-                             progress=progress,
-                             remaining=remaining)
+        return df
 
     def datafile(self):
         """ Return the data file for this job. """
@@ -405,36 +618,37 @@ class Job(models.Model):
     def data(self):
         """ Returns a pandas.DataFrame of data, or None if not available. """
 
-        with transaction.commit_on_success():
-            self.refresh()
-            if not self.status == Job.COMPLETE:
-                raise DataError("Job not complete, no data available")
+        if not self.done():
+            logger.warning(
+                "%s: job not complete, no data available" % self)
+            raise DataError(
+                "Job not complete, no data available")
 
-            self.reference("data()")
+        self.reference("data()")
 
-            e = None
-            try:
-                logger.debug("%s looking for data file: %s" %
+        e = None
+        try:
+            logger.debug("%s looking for data file: %s" %
+                         (str(self), self.datafile()))
+            if os.path.exists(self.datafile()):
+                df = pandas.read_pickle(self.datafile())
+                logger.debug("%s data loaded %d rows from file: %s" %
+                             (str(self), len(df), self.datafile()))
+            else:
+                logger.debug("%s no data, missing data file: %s" %
                              (str(self), self.datafile()))
-                if os.path.exists(self.datafile()):
-                    df = pandas.read_pickle(self.datafile())
-                    logger.debug("%s data loaded %d rows from file: %s" %
-                                 (str(self), len(df), self.datafile()))
-                else:
-                    logger.debug("%s no data, missing data file: %s" %
-                                 (str(self), self.datafile()))
-                    df = None
-            except Exception as e:
-                logger.error("Error loading datafile %s for %s" %
-                             (self.datafile(), str(self)))
-                logger.error("Traceback:\n%s" % e)
-            finally:
-                self.dereference("data()")
+                df = None
+        except Exception as e:
+            logger.error("Error loading datafile %s for %s" %
+                         (self.datafile(), str(self)))
+            logger.error("Traceback:\n%s" % e)
+        finally:
+            self.dereference("data()")
 
-            if e:
-                raise e
+        if e:
+            raise e
 
-            return df
+        return df
 
     def values(self):
         """ Return data as a list of lists. """
@@ -465,254 +679,14 @@ class Job(models.Model):
             vals = []
         return vals
 
-    @classmethod
-    def age_jobs(cls, old=None, ancient=None, force=False):
-        """ Delete old jobs that have no refcount and all ancient jobs. """
-        # Throttle - only run this at most once every 15 minutes
-        global age_jobs_last_run
-        if not force and time.time() - age_jobs_last_run < 60 * 15:
-            return
-
-        age_jobs_last_run = time.time()
-
-        if old is None:
-            old = datetime.timedelta(
-                seconds=settings.APPS_DATASOURCE['job_age_old_seconds']
-            )
-        elif type(old) in [int, float]:
-            old = datetime.timedelta(seconds=old)
-
-        if ancient is None:
-            ancient = datetime.timedelta(
-                seconds=settings.APPS_DATASOURCE['job_age_ancient_seconds']
-            )
-        elif type(ancient) in [int, float]:
-            ancient = datetime.timedelta(seconds=ancient)
-
-        with transaction.commit_on_success():
-            # Ancient jobs are deleted regardless of refcount
-            now = datetime.datetime.now(tz=pytz.utc)
-            try:
-                qs = (Job.objects.select_for_update().
-                      filter(touched__lte=now - ancient))
-                if len(qs) > 0:
-                    logger.info('Deleting %d ancient jobs ...' % len(qs))
-                    qs.delete()
-            except:
-                logger.exception("Failed to delete ancient jobs")
-
-            # Old jobs are deleted only if they have a refcount of 0
-            try:
-                qs = (Job.objects.select_for_update().
-                      filter(touched__lte=now - old, refcount=0))
-                if len(qs) > 0:
-                    logger.info('Deleting %d old jobs ...' % len(qs))
-                    qs.delete()
-            except:
-                logger.exception("Failed to delete old jobs")
-
-    @classmethod
-    def flush_incomplete(cls):
-        jobs = Job.objects.filter(progress__lt=100)
-        logger.info("Flushing %d incomplete jobs: %s" %
-                    (len(jobs), [j.id for j in jobs]))
-        jobs.delete()
-
-    def done(self):
-        self.refresh()
-        # logger.debug("%s status: %s - %s%%" % (str(self),
-        #                                       self.status,
-        #                                       self.progress))
-        return self.status == Job.COMPLETE or self.status == Job.ERROR
-
-
-@receiver(pre_delete, sender=Job)
-def _my_job_delete(sender, instance, **kwargs):
-    """ Clean up jobs when deleting. """
-    # if a job has a parent, just deref, don't delete the datafile since
-    # that will remove it from the parent as well
-    if instance.parent is not None:
-        instance.parent.dereference(str(instance))
-    elif instance.datafile() and os.path.exists(instance.datafile()):
-        try:
-            os.unlink(instance.datafile())
-        except OSError:
-            # permissions issues, perhaps
-            logger.error('OSError occurred when attempting to delete '
-                         'job datafile: %s' % instance.datafile())
-
-
-class AsyncWorker(threading.Thread):
-    def __init__(self, job, queryclass):
-        threading.Thread.__init__(self)
-        self.daemon = True
-        self.job = job
-        self.queryclass = queryclass
-
-        logger.info("%s created" % self)
-        job.reference("AsyncWorker created")
-
-    def __delete__(self):
-        if self.job:
-            self.job.dereference("AsyncWorker deleted")
-
-    def __unicode__(self):
-        return "<AsyncWorker %s>" % (self.job)
-
-    def __str__(self):
-        return "<AsyncWorker %s>" % (self.job)
-
-    def __repr__(self):
-        return unicode(self)
-
-    def run(self):
-        self.job.safe_update(status=Job.RUNNING,
-                             pid=os.getpid())
-        self.do_run()
-        sys.exit(0)
-
-
-class SyncWorker(object):
-    def __init__(self, job, queryclass):
-        self.job = job
-        self.queryclass = queryclass
-
-    def __unicode__(self):
-        return "<SyncWorker %s>" % (self.job)
-
-    def __str__(self):
-        return "<SyncWorker %s>" % (self.job)
-
-    def __repr__(self):
-        return unicode(self)
-
-    def start(self):
-        self.job.safe_update(status=Job.RUNNING,
-                             pid=os.getpid())
-        self.do_run()
-
-
-if settings.APPS_DATASOURCE['threading'] and not settings.TESTING:
-    base_worker_class = AsyncWorker
-else:
-    base_worker_class = SyncWorker
-
-
-class Worker(base_worker_class):
-
-    def __init__(self, job, queryclass):
-        super(Worker, self).__init__(job, queryclass)
-
-    def do_run(self):
-        job = self.job
-        try:
-            logger.info("%s running queryclass %s" % (self, self.queryclass))
-            query = self.queryclass(job.table, job)
-
-            if (query.pre_run() and
-                    query.run() and
-                    query.post_run()):
-
-                logger.info("%s query finished" % self)
-                if isinstance(query.data, list) and len(query.data) > 0:
-                    # Convert the result to a dataframe
-                    columns = [col.name for col in
-                               job.get_columns(synthetic=False)]
-                    df = pandas.DataFrame(query.data, columns=columns)
-                elif ((query.data is None) or
-                      (isinstance(query.data, list) and len(query.data) == 0)):
-                    df = None
-                elif isinstance(query.data, pandas.DataFrame):
-                    df = query.data
-                else:
-                    raise ValueError("Unrecognized query result type: %s" %
-                                     type(query.data))
-
-                if df is not None:
-                    self.check_columns(df)
-                    df = self.normalize_types(df)
-                    df = job.table.compute_synthetic(job, df)
-
-                    # Sort according to the defined sort columns
-                    if job.table.sortcols:
-                        sorted = df.sort(
-                            job.table.sortcols,
-                            ascending=[b == Table.SORT_ASC
-                                       for b in job.table.sortdir]
-                        )
-                        # Move NaN rows of the first sortcol to the end
-                        n = job.table.sortcols[0]
-                        df = (sorted[sorted[n].notnull()]
-                              .append(sorted[sorted[n].isnull()]))
-
-                    if job.table.rows > 0:
-                        df = df[:job.table.rows]
-
-                if df is not None:
-                    df.to_pickle(job.datafile())
-
-                    #
-                    # Send signal for possible Triggers
-                    #
-                    post_data_save.send(sender=self,
-                                        data=df,
-                                        context={'job': job})
-
-                    logger.debug("%s data saved to file: %s" %
-                                 (str(self), job.datafile()))
-                else:
-                    logger.debug("%s no data saved, data is empty" %
-                                 (str(self)))
-
-                logger.info("%s finished as COMPLETE" % self)
-                job.refresh()
-                if job.actual_criteria is None:
-                    job.safe_update(actual_criteria=job.criteria)
-
-                job.mark_complete()
-            else:
-                # If the query.run() function returns false, the run() may
-                # have set the job.status, check and update if not
-                vals = {}
-                job.refresh()
-                if not job.done():
-                    vals['status'] = job.ERROR
-                if job.message == "":
-                    vals['message'] = "Query returned an unknown error"
-                vals['progress'] = 100
-                job.safe_update(**vals)
-                logger.error("%s finished with an error: %s" % (self,
-                                                                job.message))
-
-        except:
-            logger.exception("%s raised an exception" % self)
-            job.safe_update(
-                status=job.ERROR,
-                progress=100,
-                message="".join(
-                    traceback.format_exception_only(*sys.exc_info()[0:2])),
-                exception="".join(
-                    traceback.format_exception(*sys.exc_info()))
-            )
-            #
-            # Send signal for possible Triggers
-            #
-            error_signal.send(sender=self,
-                              context={'job': job})
-
-        finally:
-            job.dereference("Worker exiting")
-
     def check_columns(self, df):
-        job = self.job
-        for col in job.get_columns(synthetic=False):
+        for col in self.get_columns(synthetic=False):
             if col.name not in df:
                 raise ValueError(
                     'Returned table missing expected column: %s' % col.name)
 
     def normalize_types(self, df):
-        job = self.job
-        for col in job.get_columns(synthetic=False):
+        for col in self.get_columns(synthetic=False):
             s = df[col.name]
             if col.istime():
                 # The column is supposed to be time,
@@ -783,89 +757,60 @@ class Worker(base_worker_class):
 
         return df
 
+    def combine_filterexprs(self, joinstr="and", exprs=None):
+        self.refresh()
+
+        if exprs is None:
+            exprs = []
+        elif type(exprs) is not list:
+            exprs = [exprs]
+
+        exprs.append(self.table.filterexpr)
+
+        nonnull_exprs = []
+        for e in exprs:
+            if e != "" and e is not None:
+                nonnull_exprs.append(e)
+
+        if len(nonnull_exprs) > 1:
+            return "(" + (") " + joinstr + " (").join(nonnull_exprs) + ")"
+        elif len(nonnull_exprs) == 1:
+            return nonnull_exprs[0]
+        else:
+            return ""
+
+
+@receiver(pre_delete, sender=Job)
+def _my_job_delete(sender, instance, **kwargs):
+    """ Clean up jobs when deleting. """
+    # if a job has a master, just deref, don't delete the datafile since
+    # that will remove it from the master as well
+    if instance.master is not None:
+        instance.master.dereference(str(instance))
+    elif instance.datafile() and os.path.exists(instance.datafile()):
+        try:
+            os.unlink(instance.datafile())
+        except OSError:
+            # permissions issues, perhaps
+            logger.error('OSError occurred when attempting to delete '
+                         'job datafile: %s' % instance.datafile())
+
+    try:
+        progressd.delete(instance.pk)
+    except BaseException as e:
+        logger.error('Error deleting %s from progressd: %s' % (instance, e))
+
 
 class BatchJobRunner(object):
 
     def __init__(self, basejob, batchsize=4, min_progress=0, max_progress=100):
-        self.basejob = basejob
-        self.jobs = []
-        self.batchsize = batchsize
-        self.min_progress = min_progress
-        self.max_progress = max_progress
+        raise Exception("BatchJobRunner is obsolete, please update your code")
 
     def __str__(self):
         return "BatchJobRunner (%s)" % self.basejob
 
     def add_job(self, job):
-        self.jobs.append(job)
+        pass
 
     def run(self):
-        class JobList:
-            def __init__(self, jobs):
-                self.jobs = jobs
-                self.index = 0
-                self.count = len(jobs)
-
-            def __nonzero__(self):
-                return self.index < self.count
-
-            def next(self):
-                if self.index < self.count:
-                    job = self.jobs[self.index]
-                    self.index += 1
-                    return job
-                return None
-
-        joblist = JobList(self.jobs)
-        done_count = 0
-        batch = []
-
-        logger.info("%s: %d total jobs" % (self, joblist.count))
-
-        while joblist and len(batch) < self.batchsize:
-            job = joblist.next()
-            batch.append(job)
-            job.start()
-            logger.debug("%s: starting batch job #%d (%s)"
-                         % (self, joblist.index, job))
-
-        # iterate until both jobs and batch are empty
-        while joblist or batch:
-            # check jobs in the batch
-            rebuild_batch = False
-            batch_progress = 0.0
-            something_done = False
-            for i, job in enumerate(batch):
-                job.refresh()
-                if job.done():
-                    something_done = True
-                    done_count += 1
-                    if joblist:
-                        batch[i] = joblist.next()
-                        batch[i].start()
-                        logger.debug("%s: starting batch job #%d (%s)"
-                                     % (self, joblist.index, batch[i]))
-                    else:
-                        batch[i] = None
-                        rebuild_batch = True
-                else:
-                    batch_progress += float(job.progress)
-
-            total_progress = ((float(done_count * 100) + batch_progress)
-                              / joblist.count)
-            job_progress = (float(self.min_progress) +
-                            ((total_progress / 100.0) *
-                             (self.max_progress - self.min_progress)))
-            # logger.debug(
-            #    "%s: progress %d%% (basejob %d%%) (%d/%d done, %d in batch)" %
-            #    (self, int(total_progress), int(job_progress),
-            #    done_count, joblist.count, len(batch)))
-            self.basejob.mark_progress(job_progress)
-
-            if not something_done:
-                time.sleep(0.2)
-
-            elif rebuild_batch:
-                batch = [j for j in batch if j is not None]
-
-        return
+        pass

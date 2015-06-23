@@ -5,17 +5,17 @@
 # as set forth in the License.
 
 
-import time
 import logging
 from datetime import timedelta
 
 import pandas
-from steelscript.appfwk.apps.jobs.models import Job, BatchJobRunner
 
+from steelscript.appfwk.apps.jobs import \
+    Job, QueryContinue, QueryComplete, QueryError
 from steelscript.common.timeutils import \
     parse_timedelta, timedelta_total_seconds
 from steelscript.appfwk.apps.datasource.models import \
-    DatasourceTable, Column, Table, TableQueryBase
+    DatasourceTable, DatasourceQuery, Column, Table
 from steelscript.appfwk.libs.fields import Function
 
 
@@ -120,59 +120,52 @@ class AnalysisTable(DatasourceTable):
                             keywords.add(f.keyword)
 
 
-class AnalysisQuery(TableQueryBase):
+class AnalysisQuery(DatasourceQuery):
 
     def run(self):
         # Collect all dependent tables
-        deptables = self.table.options.tables
-        if not deptables:
-            self.tables = {}
-            return True
+        tables = self.table.options.tables
+        if not tables:
+            return QueryContinue(self._analyze, {})
 
-        # Create dataframes for all dependent tables
-        tables = {}
+        logger.debug("%s: dependent tables: %s" % (self, tables))
+        jobs = {}
 
-        logger.debug("%s: dependent tables: %s" % (self, deptables))
-        depjobids = {}
-        max_progress = (len(deptables)*100.0/float(len(deptables)+1))
-        batch = BatchJobRunner(self.job, max_progress=max_progress)
+        for (name, ref) in tables.items():
+            table = Table.from_ref(ref)
+            job = Job.create(table, self.job.criteria,
+                             update_progress=self.job.update_progress,
+                             parent=self.job)
 
-        for (name, ref) in deptables.items():
-            deptable = Table.from_ref(ref)
-            job = Job.create(deptable, self.job.criteria,
-                             update_progress=self.job.update_progress)
+            logger.debug("%s: dependent job %s" % (self, job))
+            jobs[name] = job
 
-            batch.add_job(job)
-            logger.debug("%s: starting dependent job %s" % (self, job))
-            depjobids[name] = job.id
+        return QueryContinue(self._analyze, jobs)
 
-        batch.run()
+    def _analyze(self, jobs=None):
+        logger.debug("%s: all dependent jobs complete" % str(self))
 
-        logger.debug("%s: all dependent jobs complete, collecting data"
-                     % str(self))
+        if jobs:
+            for (name, job) in jobs.items():
+                if job.status == job.ERROR:
+                    return QueryError("Dependent Job '%s' failed: %s" %
+                                      (name, job.message))
 
-        failed = False
-        for (name, id) in depjobids.items():
-            job = Job.objects.get(id=id)
+        if hasattr(self, 'analyze'):
+            return self.analyze(jobs)
+        else:
+            # Compatibility mode - old code uses def post_run() and expects
+            # self.tables to be set
+            tables = {}
+            if jobs:
+                for (name, job) in jobs.items():
+                    f = job.data()
+                    tables[name] = f
+                logger.debug("%s: Table[%s] - %d rows" %
+                             (self, name, len(f) if f is not None else 0))
 
-            if job.status == job.ERROR:
-                self.job.mark_error("Dependent Job failed: %s" % job.message,
-                                    exception=job.exception)
-                failed = True
-                break
-
-            f = job.data()
-            tables[name] = f
-            logger.debug("%s: Table[%s] - %d rows" %
-                         (self, name, len(f) if f is not None else 0))
-
-        if failed:
-            return False
-
-        self.tables = tables
-
-        logger.debug("%s: deptables completed successfully" % self)
-        return True
+            self.tables = tables
+            return self.post_run()
 
     def post_run(self):
         """Execute any Functions saved to Table.
@@ -183,27 +176,19 @@ class AnalysisQuery(TableQueryBase):
         directly to the create method.
         """
         options = self.table.options
+        if options.function is None:
+            return QueryError(
+                "Table %s has no analysis function defined" % self.table)
 
         try:
             df = options.function(self, options.tables, self.job.criteria)
 
-        except AnalysisException as e:
-            self.job.mark_error("Analysis function %s failed: %s" %
-                                (options.function, e.message))
-            logger.exception("%s raised an exception" % self)
-            return False
-
         except Exception as e:
-            self.job.mark_error("Analysis function %s failed: %s" %
-                                (options.function, str(e)))
-            logger.exception("%s: Analysis function %s raised an exception" %
-                             (self, options.function))
-            return False
-
-        self.data = df
+            return QueryError(
+                "Analysis function %s failed" % options.function, e)
 
         logger.debug("%s: completed successfully" % self)
-        return True
+        return QueryComplete(df)
 
 
 class FocusedAnalysisTable(AnalysisTable):
@@ -248,11 +233,16 @@ class FocusedAnalysisTable(AnalysisTable):
 
 
 class FocusedAnalysisQuery(AnalysisQuery):
-    def post_run(self):
+
+    def analyze(self, jobs):
+        logger.debug('%s analyze - received jobs: %s' % (self, jobs))
+
         basetable = Table.from_ref(
             self.table.options['related_tables']['template']
         )
-        data = self.tables['source']
+        data = jobs['source'].data()
+        if data is None:
+            return QueryError('No data available to analyze')
 
         # find column whose min/max is largest deviation from mean
         # then take row from that column where min/max occurs
@@ -283,22 +273,13 @@ class FocusedAnalysisQuery(AnalysisQuery):
                       % criteria)
 
         job = Job.create(basetable, criteria, self.job.update_progress)
-        job.start()
+        return QueryContinue(self.finish, {'job': job})
 
-        while job.status == Job.RUNNING:
-            time.sleep(1)
-
-        if job.status == job.ERROR:
-            self.job.mark_error("Dependent Job failed: %s" % job.message,
-                                exception=job.exception)
-            return False
-
-        self.data = job.data()
-
-        return True
+    def finish(self, jobs):
+        return QueryComplete(jobs['job'].data())
 
 
-class CriteriaTable(AnalysisTable):
+class CriteriaTable(DatasourceTable):
     class Meta:
         proxy = True
 
@@ -313,18 +294,17 @@ class CriteriaTable(AnalysisTable):
                         datatype=Column.DATATYPE_STRING)
 
 
-class CriteriaQuery(AnalysisQuery):
+class CriteriaQuery(DatasourceQuery):
 
-    def post_run(self):
+    def run(self):
         criteria = self.job.criteria
-        values = [[str(k),str(v)]
-                  for k,v in criteria.iteritems()]
+        values = [[str(k), str(v)]
+                  for k, v in criteria.iteritems()]
         values.append(['criteria.starttime', str(criteria.starttime)])
         df = pandas.DataFrame(values,
                               columns=['key', 'value']).sort('key')
 
-        self.data = df
-        return True
+        return QueryComplete(df)
 
 
 def resample(df, timecol, interval, how):

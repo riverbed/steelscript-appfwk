@@ -125,15 +125,16 @@ def process_data(sender, **kwargs):
     context = kwargs.pop('context')
     source = Source.get(context)
 
-    # xxx data may not be a dataframe
-    logger.debug('Received post_data_save signal from %s with df size %s '
-                 'and context %s' %
-                 (sender, data.shape, context))
+    logger.debug('Received post_data_save signal from %s context %s' %
+                 (sender, context))
 
     triggers = TriggerCache.filter(Source.encode(source))
-    logger.debug('Found %d triggers.' % len(triggers))
-    for t in triggers:
-        TriggerThread(t, data, context).start()
+    if triggers:
+        logger.debug('Found %d triggers.' % len(triggers))
+        if callable(data):
+            data = data()
+        for t in triggers:
+            TriggerThread(t, data, context).start()
 
 
 @receiver(error_signal, dispatch_uid='error_signal_receiver')

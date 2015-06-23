@@ -8,6 +8,8 @@
 import django
 from django.conf import settings
 
+from steelscript.appfwk.apps.preferences.models import SystemSettings
+
 
 def django_version(request):
     return {'django_version': django.VERSION}
@@ -20,3 +22,7 @@ def offline_js(request):
 def versions(request):
     return {'appfwk_version': settings.VERSION,
             'js_versions': settings.JS_VERSIONS}
+
+
+def developer(request):
+    return {'developer': SystemSettings.get_system_settings().developer}

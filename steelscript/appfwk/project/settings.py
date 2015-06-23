@@ -25,6 +25,7 @@ DATAHOME = os.getenv('DATAHOME', PROJECT_ROOT)
 DATA_CACHE = os.path.join(DATAHOME, 'data', 'datacache')
 INITIAL_DATA = os.path.join(DATAHOME, 'data', 'initial_data')
 REPORTS_DIR = os.path.join(PROJECT_ROOT, 'reports')
+LOG_DIR = os.path.join(DATAHOME, 'logs')
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -50,6 +51,16 @@ DATABASES = {
         'PORT': '',      # Set to empty string for default. Not used with sqlite3.
     }
 }
+
+# Task model, sync is the slowest but the only one guaranteed to
+# work with sqlite3.  The other models require a database
+# APPFWK_TASK_MODEL = 'sync'
+APPFWK_TASK_MODEL = 'async'
+# APPFWK_TASK_MODEL = 'celery'
+
+# Location of progressd daemon, default for locally running
+PROGRESSD_HOST = 'http://127.0.0.1'
+PROGRESSD_PORT = '5000'
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -79,7 +90,7 @@ MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'datacache')
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
 # Examples: "http://media.lawrence.com/media/", "http://example.com/media/"
-MEDIA_URL = ''
+MEDIA_URL = '/media/'
 
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
@@ -108,7 +119,7 @@ JS_VERSIONS = {
 OFFLINE_JS_FILES = [
     ("http://ajax.googleapis.com/ajax/libs/jquery/{0}/jquery.min.js".format(JS_VERSIONS['jquery']), None),
     ("http://ajax.googleapis.com/ajax/libs/jquery/{0}/jquery.min.map".format(JS_VERSIONS['jquery']), None),
-    ("http://jqueryui.com/resources/download/jquery-ui-{0}.zip".format(JS_VERSIONS['jqueryui']), "jquery-ui"),
+    ("https://jqueryui.com/resources/download/jquery-ui-{0}.zip".format(JS_VERSIONS['jqueryui']), "jquery-ui"),
     ("http://cdnjs.cloudflare.com/ajax/libs/jquery.form/{0}/jquery.form.js".format(JS_VERSIONS['jqueryform']), None),
     ("http://yui.zenfs.com/releases/yui3/yui_{0}.zip".format(JS_VERSIONS['yui']), "yui"),
 ]
@@ -178,6 +189,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
     'steelscript.appfwk.project.context_processors.offline_js',
     'steelscript.appfwk.project.context_processors.versions',
+    'steelscript.appfwk.project.context_processors.developer',
     'steelscript.appfwk.apps.report.context_processors.report_list_processor',
 )
 
@@ -212,6 +224,7 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.plugins',
     'steelscript.appfwk.apps.alerting',
     'steelscript.appfwk.apps.jobs',
+    'steelscript.appfwk.apps.logviewer',
 
     # 'standard' plugins
     'steelscript.appfwk.apps.plugins.builtin.whois',
@@ -259,7 +272,7 @@ LOGGING = {
     },
     'formatters': {
         'verbose': {
-            'format': '%(asctime)s [%(levelname)-5s] %(thread)d %(name)s:%(lineno)s - %(message)s'
+            'format': '%(asctime)s [%(levelname)-5s] %(process)d/%(thread)d %(name)s:%(lineno)s - %(message)s'
         },
         'standard': {
             'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
@@ -289,15 +302,15 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 5,            # 5 MB
             'backupCount': 1,
             'formatter': 'verbose',
-            'filename': os.path.join(PROJECT_ROOT, 'log.txt')
+            'filename': os.path.join(LOG_DIR, 'log.txt')
         },
         'backend-log': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
             'maxBytes': 1024 * 1024 * 5,            # 5 MB
             'backupCount': 1,
-            'formatter': 'standard',
-            'filename': os.path.join(PROJECT_ROOT, 'log-db.txt')
+            'formatter': 'verbose',
+            'filename': os.path.join(LOG_DIR, 'log-db.txt')
         },
     },
     'loggers': {
@@ -318,6 +331,21 @@ LOGGING = {
         },
     }
 }
+
+# Configure log viewer app options
+LOGVIEWER_ENABLE_SYSLOGS = True
+LOGVIEWER_SYSLOGS_DIR = '/var/log'
+LOGVIEWER_SYSLOGS_PATTERNS = (r'messages(-)?([0-9]+)?', r'cron(-)?([0-9]+)?',
+                              r'dmesg', r'boot.log')
+
+LOGVIEWER_ENABLE_HTTPD_LOGS = True
+LOGVIEWER_HTTPD_DIR = os.path.join(LOGVIEWER_SYSLOGS_DIR, 'httpd')  # debian
+LOGVIEWER_HTTPD_PATTERNS = (r'(ssl_)?access_log(-)?([0-9]+)?',
+                            r'(ssl_)?error_log(-)?([0-9]+)?')
+
+# default logs
+LOGVIEWER_LOG_PATTERNS = (r'log(-db)?.txt(.[1-9])?',
+                          r'celery.txt(.[1-9])?')
 
 GLOBAL_ERROR_HANDLERS = (
     {'sender': 'LoggingSender',
@@ -344,6 +372,16 @@ APPS_DATASOURCE = {
 }
 
 TESTING = 'test' in sys.argv
-TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+TEST_RUNNER = 'steelscript.appfwk.project.testing.AppfwkTestRunner'
+
+if TESTING:
+    PROGRESSD_PORT = '5555'
 
 LOCAL_APPS = None
+
+# List of modules that should be available for synthetic
+# column computations.  These are imported into by
+# datasource.models at run time
+APPFWK_SYNTHETIC_MODULES = (
+    'pandas',
+    )

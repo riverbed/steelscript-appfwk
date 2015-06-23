@@ -20,29 +20,27 @@ class JobDataField(serializers.Field):
             return {}
 
 
-class JobListSerializer(serializers.HyperlinkedModelSerializer):
-    criteria = PickledObjectField()
-    actual_criteria = PickledObjectField()
-
-    class Meta:
-        model = Job
-        fields = ('url', 'table', 'criteria', 'actual_criteria', 'status',
-                  'message', 'progress', 'remaining')
-        read_only_fields = ('status', 'message', 'progress', 'remaining')
-
-
 class JobSerializer(serializers.HyperlinkedModelSerializer):
     criteria = PickledObjectField()
     actual_criteria = PickledObjectField()
 
+    # explicitly add these properties as fields
+    status = serializers.Field()
+
     class Meta:
         model = Job
-        fields = ('url', 'table', 'criteria', 'actual_criteria', 'status',
-                  'message', 'progress', 'remaining')
-        read_only_fields = ('status', 'message', 'progress', 'remaining')
+        fields = ('url', 'table', 'master', 'parent',
+                  'criteria', 'actual_criteria', 'status',
+                  'message',)
+        read_only_fields = ('message',)
 
-    def save(self, **kwargs):
-        return super(JobSerializer, self).save(**kwargs)
+
+class JobListSerializer(JobSerializer):
+    pass
+
+
+class JobDetailSerializer(JobSerializer):
+    pass
 
 
 class JobDataSerializer(serializers.ModelSerializer):
