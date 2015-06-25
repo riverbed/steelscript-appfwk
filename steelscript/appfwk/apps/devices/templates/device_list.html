@@ -57,6 +57,10 @@
                                         <td>{{ field }}</td>
                                     {% endfor %}
                                 {% endif %}
+
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
                                 <td>
                                     <a href="{% url 'device-detail' device.id %}">{{ device.name }}</a>
 
