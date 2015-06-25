@@ -22,7 +22,9 @@ class DeviceRestTestCase(TestCase):
               "port": 443,
               "username": "admin",
               "password": "password",
-              "enabled": True
+              "enabled": True,
+              "auth": 1,
+              "access_code": ''
               }
 
     @classmethod

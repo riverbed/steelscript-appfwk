@@ -31,6 +31,8 @@ class DeviceManagerTestCase(unittest.TestCase):
            'port': 443,
            'username': 'user',
            'password': 'pass',
+           'auth': 1,
+           'access_code': ''
            }
 
     devices = [('dev_module', 'dev_pkg')]
