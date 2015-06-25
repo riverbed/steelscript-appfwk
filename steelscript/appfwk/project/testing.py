@@ -60,3 +60,12 @@ class CeleryAppfwkTestRunner(AppfwkTestRunner):
         from djcelery.contrib.test_runner import _set_eager
         _set_eager()
         super(CeleryAppfwkTestRunner, self).setup_test_environment(**kwargs)
+
+
+class JenkinsAppfwkTestRunner(AppfwkTestRunner):
+    """Add support for JUXD-style output for Jenkins builds."""
+
+    def run_suite(self, suite, **kwargs):
+        from juxd import JUXDTestRunner
+        return JUXDTestRunner(verbosity=self.verbosity,
+                              failfast=self.failfast).run(suite)
