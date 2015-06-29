@@ -31,7 +31,7 @@ job_schema = service.find_resource('job')
 jobs_schema = service.find_resource('jobs')
 
 
-JOBS = {}              # Map of Job IDs to Job objects
+JOBS = {}                   # Map of Job IDs to Job objects
 
 PARENT_MIN_PROGRESS = 33    # progress when single child complete
 PARENT_MAX_PROGRESS = 90    # max progress until job is complete
@@ -250,15 +250,32 @@ class JobListAPI(Resource):
         return j, 201, {'Location': api.url_for(JobAPI, job_id=j.job_id)}
 
 
+class JobFlushAPI(Resource):
+    """Flush existing jobs and re-read from database."""
+    def post(self):
+        print 'Resetting JOBS data ...'
+        load_existing_jobs()
+        return '', 204
+
+
 api.add_resource(JobListAPI, '/jobs/')
 api.add_resource(JobAPI, '/jobs/<int:job_id>/')
 api.add_resource(JobMasterAPI, '/jobs/<int:job_id>/master/')
 api.add_resource(JobFollowersAPI, '/jobs/<int:job_id>/followers/')
 api.add_resource(JobChildrenAPI, '/jobs/<int:job_id>/children/')
 api.add_resource(JobDoneAPI, '/jobs/<int:job_id>/done/')
+api.add_resource(JobFlushAPI, '/jobs/reset/')
 
 
-def load_existing_jobs(project_path):
+def load_existing_jobs():
+    global JOBS
+
+    if not app.config['SYNC_JOBS']:
+        print 'Skipping job sync ...'
+        return
+
+    project_path = app.config['PROJECT_PATH']
+
     # Extract existing job model data and load
     cmd = 'cd %s && %s manage.py dumpdata jobs.job' % (project_path,
                                                        sys.executable)
@@ -272,6 +289,9 @@ def load_existing_jobs(project_path):
         sys.exit(1)
 
     jobs = json.loads(stdout)
+
+    # clear currently tracked jobs
+    JOBS = {}
 
     for j in jobs:
         job = Job(job_id=j['pk'],
@@ -296,10 +316,9 @@ if __name__ == '__main__':
                         help='Port number to run server on')
 
     args = parser.parse_args()
+    app.config['PROJECT_PATH'] = args.path
+    app.config['SYNC_JOBS'] = not args.no_sync_jobs
 
-    if args.no_sync_jobs:
-        print 'Skipping job sync ...'
-    else:
-        load_existing_jobs(args.path)
+    load_existing_jobs()
 
     app.run(host='127.0.0.1', port=args.port, debug=False)

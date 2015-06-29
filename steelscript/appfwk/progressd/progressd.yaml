@@ -29,6 +29,10 @@ resources:
                 method: POST
                 request: { $ref: '#/resources/job' }
                 response: { $ref: '#/resources/job' }
+            reset:
+                description: "Reset all Jobs and re-read database"
+                path: "$/jobs/reset"
+                method: POST
 
     job:
         description: "Job instance object"

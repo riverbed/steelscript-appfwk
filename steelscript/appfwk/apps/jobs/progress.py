@@ -1,3 +1,9 @@
+# Copyright (c) 2014-2015 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+
 import logging
 from django.conf import settings
 
@@ -27,6 +33,9 @@ class ProgressDaemon(object):
 
     def delete(self, id_):
         self.conn.json_request('DELETE', '/jobs/%d/' % id_)
+
+    def reset(self):
+        self.conn.json_request('POST', '/jobs/reset/')
 
 
 progressd = ProgressDaemon()
