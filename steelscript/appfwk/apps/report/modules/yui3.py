@@ -372,11 +372,15 @@ class TimeSeriesWidget(object):
                 val = rawrow[ci.dataindex]
                 row[ci.key] = val if val != '' else None
 
+                # If stacked and there is only one value, use that
+                # value as the rowmin.  If stacked and there is more than
+                # one value for the axis, use a floor of 0 to give proper
+                # context.
                 if a not in rowmin:
                     rowmin[a] = val if val != '' else 0
                     rowmax[a] = val if val != '' else 0
                 else:
-                    rowmin[a] = ((rowmin[a] + val) if stacked
+                    rowmin[a] = (0 if stacked
                                  else min(rowmin[a], val))
                     rowmax[a] = ((rowmax[a] + val) if stacked
                                  else max(rowmax[a], val))
