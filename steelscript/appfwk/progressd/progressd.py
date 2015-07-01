@@ -259,11 +259,11 @@ class JobFlushAPI(Resource):
 
 
 api.add_resource(JobListAPI, '/jobs/')
-api.add_resource(JobAPI, '/jobs/<int:job_id>/')
-api.add_resource(JobMasterAPI, '/jobs/<int:job_id>/master/')
-api.add_resource(JobFollowersAPI, '/jobs/<int:job_id>/followers/')
-api.add_resource(JobChildrenAPI, '/jobs/<int:job_id>/children/')
-api.add_resource(JobDoneAPI, '/jobs/<int:job_id>/done/')
+api.add_resource(JobAPI, '/jobs/items/<int:job_id>/')
+api.add_resource(JobMasterAPI, '/jobs/items/<int:job_id>/master/')
+api.add_resource(JobFollowersAPI, '/jobs/items/<int:job_id>/followers/')
+api.add_resource(JobChildrenAPI, '/jobs/items/<int:job_id>/children/')
+api.add_resource(JobDoneAPI, '/jobs/items/<int:job_id>/done/')
 api.add_resource(JobFlushAPI, '/jobs/reset/')
 
 

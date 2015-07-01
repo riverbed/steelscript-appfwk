@@ -60,14 +60,14 @@ resources:
                 default: 0
 
         links:
-            self: { path: "$/jobs/{job_id}" }
+            self: { path: "$/jobs/items/{job_id}" }
 
             get:
                 method: GET
                 response: { $ref: '#/resources/job' }
 
             done:
-                path: "$/jobs/{job_id}/done"
+                path: "$/jobs/items/{job_id}/done"
                 method: POST
 
         relations:

@@ -19,7 +19,7 @@ class ProgressDaemon(object):
                                port=settings.PROGRESSD_PORT)
 
     def get(self, id_, attr=None):
-        r = self.conn.json_request('GET', '/jobs/%d/' % id_)
+        r = self.conn.json_request('GET', '/jobs/items/%d/' % id_)
         if attr:
             return r[attr]
         return r
@@ -29,10 +29,10 @@ class ProgressDaemon(object):
         pass
 
     def put(self, id_, **kwargs):
-        self.conn.json_request('PUT', '/jobs/%d/' % id_, body=kwargs)
+        self.conn.json_request('PUT', '/jobs/items/%d/' % id_, body=kwargs)
 
     def delete(self, id_):
-        self.conn.json_request('DELETE', '/jobs/%d/' % id_)
+        self.conn.json_request('DELETE', '/jobs/items/%d/' % id_)
 
     def reset(self):
         self.conn.json_request('POST', '/jobs/reset/')
