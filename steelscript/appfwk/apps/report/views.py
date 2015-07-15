@@ -19,6 +19,7 @@ import pytz
 from django.conf import settings
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import JsonResponse
 from django.template import loader, RequestContext
 from django.template.defaultfilters import date
 from django.shortcuts import render_to_response, get_object_or_404
@@ -309,36 +310,26 @@ class ReportView(GenericReportView):
                                'debug': formdata['debug']})
 
             # create matrix of Widgets
-            lastrow = -1
-            rows = []
             for w in report.widgets().order_by('row', 'col'):
-                if w.row != lastrow:
-                    lastrow = w.row
-                    rows.append([])
-                rows[-1].append(Widget.objects.get_subclass(id=w.id))
-
-            # populate definitions
-            for row in rows:
-                for w in row:
-                    widget_def = {"widgettype": w.widgettype().split("."),
-                                  "posturl": reverse('widget-job-list',
-                                                     args=(report.namespace,
-                                                           report.slug,
-                                                           w.slug)),
-                                  "options": w.uioptions,
-                                  "widgetid": w.id,
-                                  "widgetslug": w.slug,
-                                  "row": w.row,
-                                  "width": w.width,
-                                  "height": w.height,
-                                  "criteria": form.as_text()
-                                  }
-                    definition.append(widget_def)
+                widget_def = {"widgettype": w.widgettype().split("."),
+                              "posturl": reverse('widget-job-list',
+                                                 args=(report.namespace,
+                                                       report.slug,
+                                                       w.slug)),
+                              "options": w.uioptions,
+                              "widgetid": w.id,
+                              "widgetslug": w.slug,
+                              "row": w.row,
+                              "width": w.width,
+                              "height": w.height,
+                              "criteria": form.as_text()
+                              }
+                definition.append(widget_def)
 
             logger.debug("Sending widget definitions for report %s: %s" %
                          (report_slug, definition))
 
-            return HttpResponse(json.dumps(definition))
+            return JsonResponse(definition, safe=False)
         else:
             # return form with errors attached in a HTTP 400 Error response
             return HttpResponse(str(form.errors), status=400)
@@ -542,7 +533,7 @@ class ReportCriteria(views.APIView):
         criteria = dict(zip(keys, [None]*len(keys)))
         criteria.update(form.data)
 
-        return HttpResponse(json.dumps(criteria))
+        return JsonResponse(criteria)
 
     def post(self, request, namespace=None, report_slug=None):
         # handle REST calls
@@ -568,7 +559,7 @@ class ReportCriteria(views.APIView):
         for field in form.dynamic_fields():
             response.append({'id': field.auto_id,
                              'html': str(field)})
-        return HttpResponse(json.dumps(response))
+        return JsonResponse(response, safe=False)
 
 
 class ReportWidgets(views.APIView):
@@ -642,7 +633,7 @@ class ReportWidgets(views.APIView):
 
             widget_defs.append(widget_def)
 
-        return HttpResponse(json.dumps(widget_defs))
+        return JsonResponse(widget_defs, safe=False)
 
 
 class ReportTableList(generics.ListAPIView):
@@ -849,7 +840,7 @@ class WidgetJobsList(views.APIView):
                 resp['exception'] = "".join(
                     traceback.format_exception(*sys.exc_info()))
 
-                return HttpResponse(json.dumps(resp), status=400)
+                return JsonResponse(resp, status=400)
 
         else:
             logger.error("form is invalid, entering debugger")
@@ -937,7 +928,7 @@ geolocation documentation</a> for more information.'''
         resp['message'] = cgi.escape(resp['message'])
 
         try:
-            return HttpResponse(json.dumps(resp))
+            return JsonResponse(resp)
         except:
             logger.error('Failed to generate HttpResponse:\n%s' % str(resp))
             raise
