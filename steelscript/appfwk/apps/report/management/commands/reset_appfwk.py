@@ -166,3 +166,9 @@ class Command(BaseCommand):
                               'If you would like to include the default '
                               'admin user, rerun this command with the '
                               "'--drop-users' option.")
+
+        # reset progressd cache
+        self.stdout.write('Resetting progressd ...', ending='')
+        from steelscript.appfwk.apps.jobs.progress import progressd
+        progressd.reset()
+        self.stdout.write('done.')
