@@ -22,6 +22,7 @@ rvbd.report = {
     debugFlag: false,
     launchingPrintWindow: false,
 
+    intervalID: 0,              // ID to manage scheduled reports
     reportHasRendered: false,
 
     /**
@@ -39,7 +40,7 @@ rvbd.report = {
             rvbd.report.runFixedCriteriaReport();
         } else if (rvbd.report.reloadMinutes > 0) { // Auto-run report (updates at intervals)
             rvbd.report.runFixedCriteriaReport();
-            setInterval(rvbd.report.runFixedCriteriaReport, rvbd.report.reloadMinutes * 60 * 1000);
+            rvbd.report.intervalID = setInterval(rvbd.report.reloadAllWidgets, rvbd.report.reloadMinutes * 60 * 1000);
         } else if (typeof rvbd.report.printCriteria !== 'undefined') { // We're in print view, so launch right away
             rvbd.report.doRunFormReport(false);
         } else { // Standard report
@@ -130,6 +131,18 @@ rvbd.report = {
     },
 
     /**
+     * Tell each Widget to refresh its content, used in auto-load reports
+     */
+    reloadAllWidgets: function () {
+        rvbd.report.disableReloadButton();
+        rvbd.report.disablePrintButton();
+
+        $.each(rvbd.report.widgets, function (i, w) {
+            w.reloadWidget()
+        })
+    },
+
+    /**
      * Called when user chooses new criteria through UI
      */
     criteriaChanged: function() {
@@ -168,7 +181,18 @@ rvbd.report = {
              .replaceAll('#print-report');
     },
 
-    /** 
+    enableReloadButton: function() {
+        $('<a id="reload-report" class="icon-refresh" href="#" title="Reload all widgets in report"></a>')
+            .click(rvbd.report.reloadAllWidgets)
+            .replaceAll('#reload-report');
+    },
+
+    disableReloadButton: function() {
+        $('<span id="reload-report" class="icon-refresh" title="Reload all widgets in this report"></span>')
+            .replaceAll('#reload-report');
+    },
+
+    /**
      * Starts execution of a standard form-based report; not used for embedded widgets or auto-run
      * reports. rvbd.report.doRunStandardReport() is triggered after the criteria box is fully collapsed.
      */
@@ -227,7 +251,7 @@ rvbd.report = {
         rvbd.report.debugFlag = false;
     },
 
-    /*
+    /**
      * Called to update criteria field HTML after the user chooses new criteria.
      */
     updateCriteria: function(data) {
@@ -245,19 +269,27 @@ rvbd.report = {
     },
 
     /**
+     * Update the date/time header values
+     */
+    updateReportDateTime: function(meta) {
+        $('#report-datetime').html(meta.datetime);
+        $('#report-timezone').html(meta.timezone);
+    },
+
+    /**
      * Renders all widgets in the current report (or just the one if this is an
      * embedded widget).
      */
-    renderWidgets: function(widgets) {
+    renderWidgets: function(definition) {
         var $report = $('#report'),
-            reportMeta = widgets.shift(), // pull first element off list which contains information about the report
+            reportMeta = definition.meta,
+            widgets = definition.widgets,
             widgetsToRender;
 
         $('#id_debug').val(rvbd.report.debugFlag ? 'on' : '');
         rvbd.report.debug = reportMeta.debug;
 
-        $('#report-datetime').html(reportMeta.datetime);
-        $('#report-timezone').html(reportMeta.timezone);
+        rvbd.report.updateReportDateTime(reportMeta);
 
         $report.empty();
 
@@ -289,7 +321,7 @@ rvbd.report = {
         $.each(widgetsToRender, function(i, w) {
             if (w.row !== rownum) { // If we're at a new row number, create a new row element
                 $row = $('<div></div>')
-                    .addClass('row-fluid')
+                    .addClass('row-fluid');
                 rownum = w.row;
             }
 
@@ -303,9 +335,10 @@ rvbd.report = {
             opts.width = w.width;
 
             var widgetModule = w.widgettype[0],
-                widgetClass = w.widgettype[1];
+                widgetClass = w.widgettype[1],
+                urls = {"postUrl": w.posturl, "updateUrl": w.updateurl};
 
-            widget = new rvbd.widgets[widgetModule][widgetClass](w.posturl, rvbd.report.isEmbedded, $div[0],
+            widget = new rvbd.widgets[widgetModule][widgetClass](urls, rvbd.report.isEmbedded, $div[0],
                                                                  w.widgetid, w.widgetslug, opts, w.criteria);
             rvbd.report.widgets.push(widget);
         });
@@ -314,7 +347,7 @@ rvbd.report = {
             rvbd.report.reportHasRendered = true;
 
             $(document).on('widgetDoneLoading', function(e, widget) {
-                rvbd.report.handleReportLoadedIfNeeded();
+                rvbd.report.handleReportLoadedIfNeeded(widget);
             });
         }
     },
@@ -323,10 +356,11 @@ rvbd.report = {
      * Check if all widgets are done loading, and if so, update the UI to indicate
      * the report is loaded.
      */
-    handleReportLoadedIfNeeded: function() {
+    handleReportLoadedIfNeeded: function(widget) {
         var widgetsRunning = false;
-        $.each(rvbd.report.widgets, function(i, widget) {
-            if (widget.status === 'running') {
+
+        $.each(rvbd.report.widgets, function(i, w) {
+            if (w.status === 'running') {
                 widgetsRunning = true;
                 return;
             }
@@ -340,7 +374,14 @@ rvbd.report = {
                                  function() { window.location = rvbd.report.debugUrl; });
             }
 
+            // update datetime with meta from this last widget update
+            // only updates from widget reloads
+            if (widget.lastUpdate) {
+                rvbd.report.updateReportDateTime(widget.lastUpdate);
+            }
+
             rvbd.report.enablePrintButton();
+            rvbd.report.enableReloadButton();
         }
     }
 };

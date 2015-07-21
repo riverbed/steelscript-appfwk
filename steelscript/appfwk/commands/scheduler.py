@@ -161,7 +161,7 @@ def run_table_via_rest(url, authfile, verify, **kwargs):
     logger.debug('POSTing new job with criteria: %s' % criteria)
     r = s.post(url, data=criteria)
     if r.ok:
-        logger.debug('Job creation sucessful.')
+        logger.debug('Job creation successful.')
     else:
         logger.error('Error creating Job: %s' % r.content)
 

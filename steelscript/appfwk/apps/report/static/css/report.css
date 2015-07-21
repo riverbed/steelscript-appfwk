@@ -65,8 +65,19 @@
     margin-left: 4px;
 }
 
-/* When the print report icon is a span (rather than a link), gray it out */
+#reload-report {
+    float: right;
+    margin-top: 2px;
+    margin-right: 1px;
+    margin-left: 4px;
+}
+
+/* When the print and reload report icons are span (rather than a link), gray it out */
 span#print-report {
+    opacity: 0.4;
+}
+
+span#reload-report {
     opacity: 0.4;
 }
 

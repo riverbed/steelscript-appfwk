@@ -24,13 +24,17 @@ urlpatterns = patterns(
         views.ReportView.as_view(),
         name='report-view'),
 
+    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/$',
+        views.ReportAutoView.as_view(),
+        name='report-auto-view'),
+
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/print/$',
         views.ReportPrintView.as_view(),
         name='report-print-view'),
 
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/criteria/$',
-        views.ReportCriteria.as_view(),
-        name='report-criteria'),
+        views.FormCriteria.as_view(),
+        name='form-criteria'),
 
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/tables/$',
         views.ReportTableList.as_view(),
@@ -56,16 +60,12 @@ urlpatterns = patterns(
         'reload_config',
         name='reload-report'),
 
-    url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/$',
-        views.ReportWidgets.as_view(),
-        name='report-widgets'),
-
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/$',
         views.WidgetDetailView.as_view(),
         name='widget-slug'),
 
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/render/$',
-        views.WidgetView.as_view(),
+        views.WidgetEmbeddedView.as_view(),
         name='widget-stand-alone'),
 
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/authtoken/$',
@@ -89,7 +89,7 @@ urlpatterns = patterns(
         name='report-job-status'),
 
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/(?P<widget_slug>[0-9_a-zA-Z-]+)/criteria/$',
-        views.ReportCriteria.as_view(),
+        views.ReportAutoView.as_view(),
         name='widget-criteria'),
 
     # this makes more sense at the project level, but since its implemented

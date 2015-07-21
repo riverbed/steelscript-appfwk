@@ -14,6 +14,7 @@ from django.template.defaultfilters import slugify
 from django.db import transaction
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
+from django.core.urlresolvers import reverse
 from django.utils.datastructures import SortedDict
 from django.core.exceptions import ObjectDoesNotExist
 from model_utils.managers import InheritanceManager
@@ -221,6 +222,17 @@ class Report(models.Model):
                         report=self)))
                 .distinct().order_by(order_by))
 
+    def widget_definitions(self, criteria):
+        """Return list of widget definitions suitable for a JSON response.
+        """
+        definitions = []
+
+        for w in self.widgets().order_by('row', 'col'):
+            widget_def = w.get_definition(criteria)
+            definitions.append(widget_def)
+
+        return definitions
+
 
 class Section(models.Model):
     """ Define a section of a report.
@@ -417,6 +429,31 @@ class Widget(models.Model):
     def save(self, *args, **kwargs):
         self.slug = '%s-%d-%d' % (slugify(self.title), self.row, self.col)
         super(Widget, self).save(*args, **kwargs)
+
+    def get_definition(self, criteria):
+        """Get dict of widget attributes for sending via JSON."""
+        report = self.section.report
+
+        widget_def = {
+            "widgettype": self.widgettype().split("."),
+            "posturl": reverse('widget-job-list',
+                               args=(report.namespace,
+                                     report.slug,
+                                     self.slug)),
+            "updateurl": reverse('widget-criteria',
+                                 args=(report.namespace,
+                                       report.slug,
+                                       self.slug)),
+            "options": self.uioptions,
+            "widgetid": self.id,
+            "widgetslug": self.slug,
+            "row": self.row,
+            "width": self.width,
+            "height": self.height,
+            "criteria": criteria,
+        }
+
+        return widget_def
 
     def widgettype(self):
         return '%s.%s' % (self.module.split('.')[-1], self.uiwidget)

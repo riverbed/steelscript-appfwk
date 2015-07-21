@@ -99,7 +99,7 @@ class ReportRunnerTestCase(TestCase):
         logger.debug("Report data:\n%s" % json.dumps(report_data, indent=2))
 
         widgets = SortedDict()
-        for widget_data in report_data[1:]:
+        for widget_data in report_data['widgets']:
             wid = widget_data['widgetid']
             widget = Widget.objects.get(id=wid)
             logger.info('Processing widget %s' % widget)

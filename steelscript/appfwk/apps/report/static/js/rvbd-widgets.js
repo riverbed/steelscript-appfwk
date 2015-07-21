@@ -94,10 +94,11 @@ rvbd.formatters = {
 
 rvbd.widgets = {};
 
-rvbd.widgets.Widget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    self.postUrl = postUrl;
+    self.postUrl = urls.postUrl;
+    self.updateUrl = urls.updateUrl;
     self.div = div;
     self.id = id;
     self.slug = slug;
@@ -105,6 +106,7 @@ rvbd.widgets.Widget = function(postUrl, isEmbedded, div, id, slug, options, crit
     self.criteria = criteria;
 
     self.status = 'running';
+    self.lastUpdate = {};     // object datetime/timezone of last update
 
     var $div = $(div);
 
@@ -120,23 +122,32 @@ rvbd.widgets.Widget = function(postUrl, isEmbedded, div, id, slug, options, crit
         .showLoading()
         .setLoading(0);
 
-    $.ajax({
-        dataType: 'json',
-        type: 'POST',
-        url: self.postUrl,
-        data: { criteria: JSON.stringify(criteria) },
-        success: function(data, textStatus) {
-            self.jobUrl = data.joburl;
-            setTimeout(function() { self.getData(criteria); }, 1000);
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-            self.displayError(JSON.parse(jqXHR.responseText));
-            self.status = 'error';
-        }
-    });
+    self.postRequest(criteria);
 };
 
 rvbd.widgets.Widget.prototype = {
+
+    postRequest: function(criteria) {
+        var self = this;
+
+        $.ajax({
+            dataType: 'json',
+            type: 'POST',
+            url: self.postUrl,
+            data: {criteria: JSON.stringify(criteria)},
+            success: function (data, textStatus) {
+                self.jobUrl = data.joburl;
+                setTimeout(function () {
+                    self.getData(criteria);
+                }, 1000);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                self.displayError(JSON.parse(jqXHR.responseText));
+                self.status = 'error';
+            }
+        });
+    },
+
     getData: function(criteria) {
         var self = this;
 
@@ -170,8 +181,107 @@ rvbd.widgets.Widget.prototype = {
                 break;
             default:
                 $(self.div).setLoading(response.progress);
-                setTimeout(function() { self.getData(criteria); }, 1000);
+                setTimeout(function() {
+                    self.getData(criteria, self.processResponse);
+                }, 1000);
         }
+    },
+
+    // Background Versions - post and query in the background without updates until done
+
+    postRequestAsync: function(criteria) {
+        var self = this;
+
+        $.ajax({
+            dataType: 'json',
+            type: 'POST',
+            url: self.postUrl,
+            data: {criteria: JSON.stringify(criteria)},
+            success: function (data, textStatus) {
+                self.jobUrl = data.joburl;
+                setTimeout(function () {
+                    self.getDataAsync(criteria);
+                }, 500);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                self.displayError(JSON.parse(jqXHR.responseText));
+                self.status = 'error';
+            }
+        });
+    },
+
+    getDataAsync: function(criteria) {
+        var self = this;
+
+        $.ajax({
+            dataType: "json",
+            url: self.jobUrl,
+            data: null,
+            success: function(data, textStatus) {
+                self.processResponseAsync(criteria, data, textStatus);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                self.displayError(errorThrown);
+            }
+        });
+    },
+
+    processResponseAsync: function(criteria, response, textStatus) {
+        var self = this;
+
+        switch (response.status) {
+            case 3: // Complete, show spinner briefly then load data
+                $(self.div).showLoading();
+                setTimeout(function() {
+                    self.processResponse(criteria, response, textStatus)
+                }, 500);
+                break;
+            case 4: // Error
+                self.processResponse(criteria, response, textStatus)
+                break;
+            default:
+                setTimeout(function() {
+                    self.getDataAsync(criteria);
+                }, 500);
+        }
+    },
+
+    reloadCriteria: function(callback) {
+        // request updated criteria from server
+        var self = this;
+
+        $.ajax({
+            dataType: 'json',
+            type: 'GET',
+            url: self.updateUrl,
+            data: null,
+            success: function (data, textStatus) {
+                self.criteria = data.widgets[0].criteria;
+                self.lastUpdate.datetime = data.meta.datetime;
+                self.lastUpdate.timezone = data.meta.timezone;
+
+                if (callback) {
+                    callback();
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                self.displayError(JSON.parse(jqXHR.responseText));
+                self.status = 'error';
+            }
+        });
+    },
+
+    reloadWidget: function() {
+        // update whole widget with latest information
+        var self = this;
+
+        self.status = 'running';
+
+        self.reloadCriteria(
+            function () {
+                self.postRequestAsync(self.criteria);
+            }
+        );
     },
 
     /**
@@ -249,6 +359,9 @@ rvbd.widgets.Widget.prototype = {
         menuItems.push(
             '<a tabindex="0" id="' + self.id + '_export_widget_csv" class="export_widget_csv" href="#">Export CSV (Table Data)...</a>'
         );
+        menuItems.push(
+            '<a tabindex="1" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
+        );
 
         var $menuContainer = $('<div></div>')
                 .attr('id', 'reports-dropdown')
@@ -286,6 +399,7 @@ rvbd.widgets.Widget.prototype = {
         $menuContainer.find('.export_widget_csv').click($.proxy(self.onCsvExport, self));
 
         $(self.title).find('.get-embed').click($.proxy(self.embedModal, self));
+        $(self.title).find('.show_criteria').click($.proxy(self.showCriteriaModal, self));
     },
 
     onCsvExport: function() {
@@ -506,7 +620,18 @@ rvbd.widgets.Widget.prototype = {
             // update the embed code to reflect the checked criteria fields
             $('#criteriaTbl').click(toggleEditField);
         });
-    }
+    },
+
+    /**
+     * Display dialog with widget's criteria
+     */
+    showCriteriaModal: function() {
+        var self = this;
+        var body = $('<pre></pre>').html(JSON.stringify(self.criteria, null, 2));
+        var title = self.titleMsg + ' Criteria';
+
+        rvbd.modal.alert(title, body, "OK", function() { })
+    },
 };
 
 rvbd.widgets.raw = {};

@@ -85,7 +85,7 @@ $.extend(rvbd.widgets.yui3.YUIWidget.prototype, {
         self.titleMsg = data['chartTitle'];
         self.buildInnerLayout();
 
-        var $content = $(self.content)
+        var $content = $(self.content);
         self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
                                   parseInt($content.css('margin-right'), 10);
         self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
