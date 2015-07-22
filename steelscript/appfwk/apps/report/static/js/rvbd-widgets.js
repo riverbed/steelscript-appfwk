@@ -201,7 +201,7 @@ rvbd.widgets.Widget.prototype = {
                 self.jobUrl = data.joburl;
                 setTimeout(function () {
                     self.getDataAsync(criteria);
-                }, 500);
+                }, 1000);
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 self.displayError(JSON.parse(jqXHR.responseText));
@@ -242,7 +242,7 @@ rvbd.widgets.Widget.prototype = {
             default:
                 setTimeout(function() {
                     self.getDataAsync(criteria);
-                }, 500);
+                }, 1000);
         }
     },
 

@@ -271,9 +271,9 @@ rvbd.report = {
     /**
      * Update the date/time header values
      */
-    updateReportDateTime: function(meta) {
-        $('#report-datetime').html(meta.datetime);
-        $('#report-timezone').html(meta.timezone);
+    updateReportDateTime: function(datetime, timezone) {
+        $('#report-datetime').html(datetime);
+        $('#report-timezone').html(timezone);
     },
 
     /**
@@ -289,7 +289,7 @@ rvbd.report = {
         $('#id_debug').val(rvbd.report.debugFlag ? 'on' : '');
         rvbd.report.debug = reportMeta.debug;
 
-        rvbd.report.updateReportDateTime(reportMeta);
+        rvbd.report.updateReportDateTime(reportMeta.datetime, reportMeta.timezone);
 
         $report.empty();
 
@@ -377,7 +377,7 @@ rvbd.report = {
             // update datetime with meta from this last widget update
             // only updates from widget reloads
             if (widget.lastUpdate) {
-                rvbd.report.updateReportDateTime(widget.lastUpdate);
+                rvbd.report.updateReportDateTime(widget.lastUpdate.datetime, widget.lastUpdate.timezone);
             }
 
             rvbd.report.enablePrintButton();

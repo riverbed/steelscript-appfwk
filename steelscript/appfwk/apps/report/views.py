@@ -390,7 +390,7 @@ class ReportAutoView(GenericReportView):
             criteria = dict(zip(keys, [None]*len(keys)))
             criteria.update(form.data)
 
-            if 'endtime' in criteria:
+            if 'endtime' in criteria and 'duration' in criteria:
                 criteria['endtime'] = now.isoformat()
 
             # setup json definition object
