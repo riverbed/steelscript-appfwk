@@ -16,6 +16,7 @@ from django.core import management
 from django.conf import settings
 from django import db
 from django.db import transaction, DatabaseError
+from requests.exceptions import ConnectionError
 
 from steelscript.appfwk.apps.preferences.models import SystemSettings, \
     AppfwkUser
@@ -169,6 +170,10 @@ class Command(BaseCommand):
 
         # reset progressd cache
         self.stdout.write('Resetting progressd ...', ending='')
-        from steelscript.appfwk.apps.jobs.progress import progressd
-        progressd.reset()
-        self.stdout.write('done.')
+        try:
+            from steelscript.appfwk.apps.jobs.progress import progressd
+            progressd.reset()
+        except ConnectionError:
+            self.stdout.write(' unable to connect to progressd, skipping ...',
+                              ending='')
+        self.stdout.write(' done.')
