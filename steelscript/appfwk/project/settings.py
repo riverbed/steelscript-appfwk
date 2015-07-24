@@ -336,7 +336,10 @@ LOGGING = {
 LOGVIEWER_ENABLE_SYSLOGS = True
 LOGVIEWER_SYSLOGS_DIR = '/var/log'
 LOGVIEWER_SYSLOGS_PATTERNS = (r'messages(-)?([0-9]+)?', r'cron(-)?([0-9]+)?',
-                              r'dmesg', r'boot.log')
+                              r'dmesg', r'boot.log', r'appfwk', 'progressd.*')
+
+LOGVIEWER_CELERY_SYSLOGS_DIR = '/var/log/celery'
+LOGVIEWER_CELERY_SYSLOGS_PATTERNS = (r'.*.log',)
 
 LOGVIEWER_ENABLE_HTTPD_LOGS = True
 LOGVIEWER_HTTPD_DIR = os.path.join(LOGVIEWER_SYSLOGS_DIR, 'httpd')  # debian

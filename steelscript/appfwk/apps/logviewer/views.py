@@ -61,6 +61,9 @@ class LogFinder(object):
             logs = self.match_files(settings.LOGVIEWER_SYSLOGS_DIR,
                                     settings.LOGVIEWER_SYSLOGS_PATTERNS)
             self.append_logs(logs, 'Syslogs')
+            logs = self.match_files(settings.LOGVIEWER_CELERY_SYSLOGS_DIR,
+                                    settings.LOGVIEWER_CELERY_SYSLOGS_PATTERNS)
+            self.append_logs(logs, 'Syslogs')
 
         if settings.LOGVIEWER_ENABLE_HTTPD_LOGS:
             logs = self.match_files(settings.LOGVIEWER_HTTPD_DIR,
