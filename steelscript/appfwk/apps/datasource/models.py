@@ -390,7 +390,7 @@ class Table(models.Model):
                         getvalue = True
                     else:
                         newexpr += tvalue
-
+                    newexpr += ' '
                 try:
                     df[syncol.name] = eval(newexpr)
                 except NameError as e:
