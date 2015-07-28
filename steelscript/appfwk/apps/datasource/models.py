@@ -328,8 +328,11 @@ class Table(models.Model):
 
             c.pk = None
             c.table = self
-            c.position = Column.get_position()
 
+            c.save()
+
+            # Allocate an id, use that as the position
+            c.position = c.id
             c.save()
 
         if sortcols:
@@ -806,20 +809,9 @@ class Column(models.Model):
         super(Column, self).save()
 
     @classmethod
-    def get_position(cls):
-        """ Get position value to use for model object. """
-
-        # This value will reset on server restarts or when the class goes
-        # out of scope/reloaded, but since we are only looking for positions
-        # relative to other columns in a given table, we don't need
-        # to be too precise.
-        cls.POS_MAX += 1
-        return cls.POS_MAX
-
-    @classmethod
     def create(cls, table, name, label=None,
                datatype=DATATYPE_FLOAT, units=UNITS_NONE,
-               iskey=False, **kwargs):
+               iskey=False, position=None, **kwargs):
 
         column_options = copy.deepcopy(cls.COLUMN_OPTIONS)
 
@@ -851,7 +843,6 @@ class Column(models.Model):
         c = Column(table=table, name=name, label=label, datatype=datatype,
                    units=units, iskey=iskey, options=options, **col_kwargs)
 
-        c.position = cls.get_position()
         try:
             c.save()
         except DatabaseError as e:
@@ -859,6 +850,9 @@ class Column(models.Model):
                 msg = str(e) + ' -- did you forget class Meta: proxy=True?'
                 raise DatabaseError(msg)
             raise
+
+        c.position = position or c.id
+        c.save()
 
         return c
 
