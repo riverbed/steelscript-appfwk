@@ -71,7 +71,10 @@ class TableWidget(object):
             ci = colinfo[key]
             w_column = {'key': ci.key, 'label': ci.col.label, "sortable": True}
 
-            if ci.col.isnumeric():
+            if ci.col.formatter:
+                w_column['formatter'] = ci.col.formatter
+                w_column['allowHTML'] = True
+            elif ci.col.isnumeric():
                 if ci.col.units == ci.col.UNITS_PCT:
                     w_column['formatter'] = 'formatPct'
                 else:

@@ -500,7 +500,7 @@ rvbd.widgets.Widget.prototype = {
         delete urlCriteria.starttime;
         delete urlCriteria.endtime;
 
-        var widgetUrl = window.location.href.split('#')[0] + 'widgets/' + self.slug; 
+        var widgetUrl = window.location.href.split('#')[0] + 'widgets/' + self.slug;
 
         //call server for auth token
         $.ajax({
@@ -568,7 +568,7 @@ rvbd.widgets.Widget.prototype = {
         function getEditFields() {
             var editFields = [];
             for (var field in criteria)
-                if (criteria.hasOwnProperty(field)) 
+                if (criteria.hasOwnProperty(field))
                     if ($('#criteria-' + field).prop('checked'))
                         editFields.push(field);
             return editFields
@@ -658,6 +658,17 @@ rvbd.widgets.raw.TableWidget.prototype.render = function(data) {
     });
 
     $(self.div).empty().append($table);
+};
+
+rvbd.renderHealth = function(o) {
+    e = d3.select(o);
+    e.enter()
+        .append("div")
+        .html("foo");
+};
+
+rvbd.formatHealth = function(v) {
+    return '<div class="' + v + '-circle"></div>';
 };
 
 })();

@@ -104,3 +104,37 @@ input[type="file"] {
     padding-top: 5px;
     line-height: 0;
 }
+
+.red-circle
+{
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #f00;
+  background: radial-gradient(#f00, #e00, #200);
+}
+
+.yellow-circle
+{
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #ff0;
+  background: radial-gradient(#ff0, #ff0, #ff0, #dd0, #880, #220);
+}
+
+.green-circle
+{
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(#0f0, #0d0, #020);
+}
+
+.gray-circle
+{
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(#eee, #eee, #333);
+}

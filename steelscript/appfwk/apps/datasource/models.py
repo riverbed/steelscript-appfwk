@@ -793,6 +793,8 @@ class Column(models.Model):
                  )
     )
 
+    formatter = models.TextField(null=True, blank=True)
+
     # default options to populate options field
     COLUMN_OPTIONS = {}
     POS_MAX = 0
