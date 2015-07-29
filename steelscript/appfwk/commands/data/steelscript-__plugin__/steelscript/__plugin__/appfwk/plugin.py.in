@@ -6,6 +6,8 @@
 
 import pkg_resources
 
+from django.apps import AppConfig
+
 from steelscript.appfwk.apps.plugins import Plugin as AppsPlugin
 
 
@@ -34,3 +36,9 @@ class Plugin(AppsPlugin):
     #
     js = []
     cs = []
+
+
+class SteelScriptAppConfig(AppConfig):
+    name = 'steelscript.{{name}}.appfwk'
+    label = 'steelscript.{{name}}'
+    verbose_name = '{{title}}'
