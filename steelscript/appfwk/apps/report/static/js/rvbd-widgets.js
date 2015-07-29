@@ -660,12 +660,15 @@ rvbd.widgets.raw.TableWidget.prototype.render = function(data) {
     $(self.div).empty().append($table);
 };
 
-rvbd.renderHealth = function(o) {
-    e = d3.select(o);
-    e.enter()
-        .append("div")
-        .html("foo");
-};
+/* Use this with the Column.formatter as follows:
+
+     table.add_column('col', datatype='string',
+                      formatter='rvbd.formatHealth')
+
+   The valid table column values are defined in report.css:
+      green, yellow, red, yellow
+   yielding "green-circle" as a class.
+*/
 
 rvbd.formatHealth = function(v) {
     return '<div class="' + v + '-circle"></div>';
