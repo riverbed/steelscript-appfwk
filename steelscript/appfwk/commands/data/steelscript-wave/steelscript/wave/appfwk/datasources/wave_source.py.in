@@ -6,11 +6,12 @@
 
 import logging
 import pandas
-from random import randint
 
 from steelscript.common.timeutils import \
     datetime_to_seconds, timedelta_total_seconds, parse_timedelta
 
+from steelscript.appfwk.apps.jobs import \
+    QueryComplete
 from steelscript.appfwk.apps.datasource.models import \
     DatasourceTable, TableQueryBase, Column, TableField
 from steelscript.appfwk.apps.datasource.modules.analysis import \
@@ -43,7 +44,8 @@ class WaveColumn(Column):
     # table / column defintiion time.
     COLUMN_OPTIONS = { 'func': 'sin',
                        'period': '1m',
-                       'alpha': 1 }
+                       'alpha': 1,
+                       'beta': None }
 
 
 #
@@ -144,6 +146,10 @@ class WaveQuery(TableQueryBase):
             logger.debug('%s: No wave device selected' % self.table)
             self.job.mark_error("No Wave Device Selected")
             return False
+        # Retrieve the wavegen device that was selected
+        # (There's probably only one, but in general there may
+        # by multiple devices defined that the user can select
+        # from).
         wave_device = DeviceManager.get_device(criteria.wave_device)
 
         # Get the columns for this report
@@ -156,13 +162,6 @@ class WaveQuery(TableQueryBase):
 
         # Time resolution is a timedelta object
         resolution = criteria.resolution
-
-        # Grab the custom min and max criteria
-        cmin = float(criteria.min)
-        cmax = float(criteria.max)
-
-        # Grab the table options
-        beta = self.table.options.beta
 
         # Now, do some computation -- create table with a 'time' column
         # ranging from t0 to t1 with the defined resolution.  Then
@@ -180,35 +179,33 @@ class WaveQuery(TableQueryBase):
             period_td = parse_timedelta(col.options.period)
             period_secs = timedelta_total_seconds(period_td)
             alpha = col.options.alpha
-            waves.append(Wave(period=period_secs,
-                              alpha = col.options.alpha,
-                              beta = self.table.options.beta,
-                              func = col.options.func))
+            beta = col.options.beta or self.table.options.beta
 
-        # Retrieve the wavegen device that was selected
-        # (There's probably only one, but in general there may
-        # by multiple devices defined that the user can select
-        # from).
-        wavegen = DeviceManager.get_device(criteria.wave_device)
+            waves.append(Wave(period=period_secs,
+                              alpha=alpha,
+                              beta=beta,
+                              func=col.options.func))
+
 
         # Incoming resolution is a timedelta
         resolution = timedelta_total_seconds(criteria.resolution)
 
         # Call off to the wave generator to generate our waves
-        rows = wavegen.generate(datetime_to_seconds(t0),
-                                datetime_to_seconds(t1), waves,
-                                resolution=resolution,
-                                progress=lambda p: self.job.mark_progress(p))
+        rows = wave_device.generate(
+            datetime_to_seconds(t0),
+            datetime_to_seconds(t1), waves,
+            resolution=resolution,
+            progress=lambda p: self.job.mark_progress(p))
 
         # Convert to a pandas dataframe to ensure we have the right labels
         if rows:
-            self.data = pandas.DataFrame(rows, columns=labels)
-            logger.info("Report %s returned %s rows" % (self.job, len(self.data)))
+            df = pandas.DataFrame(rows, columns=labels)
+            logger.info("Report %s returned %s rows" % (self.job, len(df)))
         else:
-            self.data = None
+            df = None
             logger.info("Report %s returned no data" % (self.job))
 
-        return True
+        return QueryComplete(df)
 
 
 #
