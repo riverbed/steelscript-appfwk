@@ -40,5 +40,6 @@ class Plugin(AppsPlugin):
 
 class SteelScriptAppConfig(AppConfig):
     name = 'steelscript.{{name}}.appfwk'
-    label = 'steelscript.{{name}}'
+    # label cannot have '.' in it
+    label = 'steelscript_{{name}}'
     verbose_name = '{{title}}'
