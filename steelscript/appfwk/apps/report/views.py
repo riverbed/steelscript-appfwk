@@ -4,6 +4,7 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+import re
 import os
 import sys
 import cgi
@@ -30,7 +31,6 @@ from django.utils.datastructures import SortedDict
 from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 
-
 from rest_framework import generics, views
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAdminUser
@@ -41,7 +41,8 @@ from rest_framework.authentication import (SessionAuthentication,
                                            BasicAuthentication)
 from steelscript.appfwk.apps.jobs.models import Job
 
-from steelscript.common.timeutils import round_time
+from steelscript.common.timeutils import round_time, timedelta_total_seconds, \
+    parse_timedelta
 from steelscript.commands.steel import shell, ShellFailed
 from steelscript.appfwk.apps.datasource.serializers import TableSerializer
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
@@ -390,8 +391,23 @@ class ReportAutoView(GenericReportView):
             criteria = dict(zip(keys, [None]*len(keys)))
             criteria.update(form.data)
 
-            if 'endtime' in criteria and 'duration' in criteria:
+            # calculate time offsets
+            if 'endtime' in criteria:
                 criteria['endtime'] = now.isoformat()
+
+                # only consider starttime if its paired with an endtime
+                if 'starttime' in criteria:
+                    start = now
+
+                    field = form.fields['starttime']
+                    initial = field.widget.attrs.get('initial_time', None)
+                    if initial:
+                        m = re.match("now *- *(.+)", initial)
+                        if m:
+                            delta = parse_timedelta(m.group(1))
+                            start = now - delta
+
+                    criteria['starttime'] = start.isoformat()
 
             # setup json definition object
             widget_def = w.get_definition(criteria)
