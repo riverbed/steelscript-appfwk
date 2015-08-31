@@ -7,9 +7,9 @@ SteelScript App Framework  plugin. No tutorial can be as useful as an example.
 Therefore, in this tutorial, a steelscript-stock plugin is used to explain
 the process of how to construct SteelScript App Framework plugin. Note that
 the stock data is fetched from yahoo finance API as a thrid party resource.
-By changing the data source as well as modify the reports, App Framework plugin
-can be used to display data from almost any where, such as a csv file, a
-rest API or a device with reporting capability, etc.
+By changing the data source as well as modifying the reports, App Framework
+plugin can be used to display data from almost any where, such as a csv file,
+a rest API or a device with reporting capability, etc.
 
 Creating the skeleton of a plugin
 ---------------------
@@ -214,6 +214,7 @@ to the data fetch API. Details are shown below.
     from steelscript.appfwk.apps.datasource.forms import (DateTimeField, ReportSplitDateWidget,
                                                           fields_add_time_selection, fields_add_resolution)
     from steelscript.appfwk.apps.datasource.models import TableField, DatasourceTable, Column
+    from steelscript.appfwk.apps.jobs import QueryComplete
 
     class StockColumn(Column):
         class Meta:
@@ -298,6 +299,8 @@ After the ``StockTable`` class in the same module, we need to define the ``run``
 
 .. code-block:: python
 
+    import pandas
+
     from steelscript.stock.core.app import get_historical_prices
     from steelscript.appfwk.apps.datasource.models import TableField, TableQueryBase
 
@@ -321,18 +324,20 @@ After the ``StockTable`` class in the same module, we need to define the ``run``
             self.symbol = criteria.stock_symbol
     
             # Dict storing stock prices/volumes according to specific report
-            self.data = get_historical_prices(self.t0, self.t1, self.symbol, ['close'],
-                                              self.resolution, date_obj=True)
-        
-            return True
+            prices = get_historical_prices(self.t0, self.t1, self.symbol, ['close'],
+                                           self.resolution, date_obj=True)
+
+            if prices:
+                df = pandas.DataFrame(prices)
+            else:
+                df = None
+
+            return QueryComplete(df)
 
 .. note::
-    This method only returns 'True' after it is successful. The data gets saved to an
-    instance variable 'self.data', and follow-on methods will extract and save this data
-    for future use.
-
-    If the function returns with any value other than True, it will be presumed to be an
-    error, and an error message will be presented in App Framework widget.
+    This method only returns a ``QueryComplete`` object with a ``pandas.DataFrame``
+    object as an attribute after it is successful. If this function failed or no data is
+    obtained, an error message will be presented in App Framework widget.
 
 Writing Reports
 ^^^^^^^^^^^^^^^

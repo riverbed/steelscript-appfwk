@@ -85,7 +85,7 @@ New Application Framwork plugins can be created at any time using
 .. note::
 
    You can create a fully functional sample "Wave Generator" plugin
-   using the command ``steel appfwk plugin -w``.  This will populate
+   using the command ``steel appfwk mkplugin -w``.  This will populate
    ``steelscript-wave`` in the current directory with all the files
    associated with this plugin.  The source files are well documented.
    Once created, ``cd steelscript-wave`` followed by ``pip install -e .``
