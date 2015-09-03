@@ -1,4 +1,5 @@
 .. _plugin tutorial:
+
 Writing a Plugin
 ================
 
@@ -12,7 +13,7 @@ plugin can be used to display data from almost any where, such as a csv file,
 a rest API or a device with reporting capability, etc.
 
 Creating the skeleton of a plugin
----------------------
+---------------------------------
 
 First we need to run the command ``steel appfwk mkplugin`` in a shell:
 
@@ -98,12 +99,12 @@ be used independently without App Framework. Below shows how a stock data API mi
 
     class StockApiException(Exception):
         pass
-    
+
     def get_historical_prices(begin, end, symbol, measures,
                               resolution='day', date_obj=False):
         """Get historical prices for the given ticker symbol.
         Returns a list of dicts keyed by 'date' and measures
-    
+
         :param string begin: begin date of the inquire interval
           in the format of YYYY-MM-DD
         :param string end: end date of the inquire interval
@@ -190,7 +191,7 @@ Creating App Framework reports
 From the above API, we can see that in order to generate stock data, we need to pass in
 parameters, including stock symbol, start date, end date, the price names, resolution.
 The returned data can have information such as dates, daily (include open, close
-high, low) prices, and daily transaction volumes. 
+high, low) prices, and daily transaction volumes.
 
 
 Now that the data format has been understood, one can set out to create the Application
@@ -223,13 +224,13 @@ to the data fetch API. Details are shown below.
         COLUMN_OPTIONS = {}
 
     class StockTable(DatasourceTable):
-    
+
         class Meta:
             proxy = True
-    
+
         # When a custom column is used, it must be linked
         _column_class = 'StockColumn'
-        
+
         # Using StockQuery class to extract data
         _query_class = 'StockQuery'
 
@@ -247,22 +248,22 @@ to the data fetch API. Details are shown below.
                          'resolution': 'day',
                          'resolutions': ('day', 'week')
                          }
-    
+
         def post_process_table(self, field_options):
             # Add a time selection field
             fields_add_time_selection(self, show_end=False,
                                       initial_duration=field_options['duration'],
                                       durations=field_options['durations'])
-    
+
             # Add time resolution selection
             fields_add_resolution(self,
                                   initial=field_options['resolution'],
                                   resolutions=field_options['resolutions'])
-    
+
             # Add end date field
             self.fields_add_end_date()
             self.fields_add_stock_symbol()
-    
+
         def fields_add_stock_symbol(self, keyword='stock_symbol',
                                     initial=None):
             field = TableField(keyword=keyword,
@@ -305,24 +306,24 @@ After the ``StockTable`` class in the same module, we need to define the ``run``
     from steelscript.appfwk.apps.datasource.models import TableField, TableQueryBase
 
     class StockQuery(TableQueryBase):
-    
+
         def __init__(self, table, job):
             self.table = table
             self.job = job
-    
+
         def run(self):
             criteria = self.job.criteria
-        
+
             # These are date time strings in the format of YYYY-MM-DD
             self.t0 = str((criteria.end_date - criteria.duration).date())
             self.t1 = str((criteria.end_date).date())
-        
+
             # resolution is either 'day' or 'week'
             self.resolution = 'day' if str(criteria.resolution).startswith('1 day') else 'week'
 
             # stock symbol string
             self.symbol = criteria.stock_symbol
-    
+
             # Dict storing stock prices/volumes according to specific report
             prices = get_historical_prices(self.t0, self.t1, self.symbol, ['close'],
                                            self.resolution, date_obj=True)
@@ -343,7 +344,7 @@ Writing Reports
 ^^^^^^^^^^^^^^^
 After finishing off writing data sources, finally it is time to collect results.
 In <plugin>/appfwk/reports/stock_report.py, we first need to define a report and
-create a section asscociated with it. 
+create a section asscociated with it.
 
 .. code-block:: python
 
@@ -440,7 +441,7 @@ Lastly, when writing data source, a device field needs to be added to the criter
 for example, the code is shown as below.
 
 .. code-block:: python
-    
+
     from steelscript.appfwk.apps.devices.forms import fields_add_device_selection
 
 
