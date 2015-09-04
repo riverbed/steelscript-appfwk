@@ -10,8 +10,10 @@ and analysis.
 * idenify related table definitions for columns and running additional queries
 * define custom table fields to allow run-time changes in behaviour by the user
 
-This section will walk you through the
+This section will first walk you through the
 :py:class:`ClippedWaveTable` from the Wave sample plugin.
+Then the `Whois` plugin is presented to explain another way of how to utilize the
+:py:class:`AnalysisTable` features of App framework.
 
 :py:class:`ClippedWaveTable`
 ----------------------------
@@ -210,14 +212,16 @@ performs the clipping function at run time:
 
 .. code-block:: python
 
+   from steelscript.appfwk.apps.jobs import QueryComplete
+
    class ClippedWaveQuery(AnalysisQuery):
 
-       def post_run(self):
-           assert('waves' in self.tables)
+       def analyze(self, jobs):
+           assert('waves' in jobs)
 
            # Grab the incoming 'waves' table, which will have already been
            # run prior to this call.  The result is a pandas DataFrame
-           waves = self.tables['waves']
+           waves = jobs['waves'].data()
 
            # Index on 'time' -- this allows the next operation to proceed
            # only the remaining columns
@@ -230,18 +234,102 @@ performs the clipping function at run time:
            # Reset the index before returning
            waves = waves.reset_index()
 
-           # Save the result and return success
-           self.data = waves
-           return True
+           return QueryComplete(waves)
 
 This class is based on :py:class:`AnalysisQuery`.  When the report is
 run, the base class will run all necessary input tables and store the
-results in ``self.tables``.  This dictionary will have the same labels
+results in ``jobs``.  This dictionary will have the same labels
 as defined above to the ``tables`` argument.  The results here will be
 Pandas DataFrames.
 
 User input criteria is accessible via ``self.job.criteria``.  This is
 where we get the run time values for ``min`` and ``max`` to use.
 
-On success, the function will save the result in ``self.data`` and
-return True.
+On success, the function will return ``QueryComplete(waves)``, where
+``waves`` is a Pandas DataFrame.
+
+`Whois` Plugin
+--------------
+Description:
+
+* Report hosts' average bytes and their detailed information in `Whois` links
+
+* Add extra column which is derived from columns of input table
+
+* Use a single function to perform the data preparation of the `AnalysisTable`
+
+Define the input table
+~~~~~~~~~~~~~~~~~~~~~~
+
+Firstly, We need to define an input table in the report module:
+
+.. code-block:: python
+
+   report = Report.create("Whois Example Report", position=1)
+
+   report.add_section()
+   table = NetProfilerGroupbyTable.create(
+       '5-hosts', groupby='host', duration='1 hour',
+       filterexpr='not srv host 10/8 and not srv host 192.168/16'
+   )
+   table.add_column('host_ip', 'IP Addr', iskey=True, datatype='string')
+   table.add_column('avg_bytes', 'Avg Bytes', units='B/s', sortdesc=True)
+
+Define the analysis function
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Secondly, an analysis function needs to be defined. This is usually done
+in the datasource module to facilitate importing. This function builds
+the required data based on the data of the input table to be used for the report.
+
+.. code-block:: python
+
+   # Common translation function
+   def make_whois_link(ip):
+       s = ('<a href="http://whois.arin.net/rest/nets;q=%s?showDetails=true&'
+            'showARIN=false&ext=netref2" target="_blank">Whois record</a>' % ip)
+       return s
+
+   def whois_function(query, tables, criteria, params):
+       # we want the first table, don't care what its been named
+       t = query.tables.values()[0]
+       t['whois'] = t['host_ip'].map(make_whois_link)
+       return t
+
+It is worth mentioning that ``t`` is a pandas DataFrame, thus you can add
+the extra ``whois`` column to ``t`` by applying the mapping function ``make_whois_link``
+to ``t['host_ip']``.
+
+Define the columns for report
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+At last, create an Analysis table that uses ``whois_function``
+to add columns to the analysis table in the report module.
+
+.. code-block:: python
+
+   function_table = AnalysisTable.create('whois-function-table',
+                                         tables={'t': table},
+                                         function=whois_function)
+   function_table.copy_columns(table)
+   function_table.add_column('whois', label='Whois link', datatype='html')
+
+   report.add_widget(yui3.TableWidget, function_table,
+                     "Analysis Function Link table", width=12)
+
+Note that an extra column ``whois`` is added to the ``function_table``, so that
+the report can render all the data returned by the ``whois_function``.
+
+Summary
+-------
+The two examples demonstrate two different ways to utilize the `AnalysisTable`
+features of App framework.
+
+The `ClippedWaveTable` example uses the extensible **custom table definition**
+approach where two new classes are defined to perform the initial table
+definition and data processing.
+
+The `Whois` plugin looks much like the first, but uses a **single
+function** to perform the data processing.
+
+Both approaches have benefits. The custom definitions allow far more
+flexibility in how things get defined, while the function approach can
+be simpler for a quick report.

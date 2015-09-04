@@ -1,4 +1,4 @@
-# Copyright (c) 2015 Riverbed Technology, Inc.
+# Copyright (c) 2014-2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -22,14 +22,15 @@ from steelscript.appfwk.apps.datasource.forms import \
     fields_add_time_selection, fields_add_resolution
 
 from steelscript.wave.core.wave import Wave
+from steelscript.appfwk.apps.jobs import QueryComplete
 
 logger = logging.getLogger(__name__)
 
 
 #
-# Define a cusotm WaveColumn class
+# Define a custom WaveColumn class
 #
-# This allows defintion of custom column options that may
+# This allows definition of custom column options that may
 # be set in reports.
 #
 # Use of this class is entirely optional, it may be deleted
@@ -41,7 +42,7 @@ class WaveColumn(Column):
     # are specific to columns for tables in this file.
     # The column options are available when the query is run.
     # The values are stored with the column definition at
-    # table / column defintiion time.
+    # table / column definition time.
     COLUMN_OPTIONS = { 'func': 'sin',
                        'period': '1m',
                        'alpha': 1,
@@ -82,7 +83,7 @@ class WaveTable(DatasourceTable):
     TABLE_OPTIONS = { 'beta': 10 }
 
     # FIELD_OPTIONS is a dictionary of default values for field
-    # options.  These by be overriden by keyword arguments to the
+    # options.  These by be overridden by keyword arguments to the
     # WaveTable.create() call in a report file
     FIELD_OPTIONS = { 'duration': '1h',
                       'durations': ('1m', '15m', '1h', '6h'),
@@ -258,12 +259,12 @@ class ClippedWaveTable(AnalysisTable):
 #
 class ClippedWaveQuery(AnalysisQuery):
 
-    def post_run(self):
-        assert('waves' in self.tables)
+    def analyze(self, jobs):
+        assert('waves' in jobs)
 
         # Grab the incoming 'waves' table, which will have already been
         # run prior to this call.  The result is a pandas DataFrame
-        waves = self.tables['waves']
+        waves = jobs['waves'].data()
 
         # Index on 'time' -- this allows the next operation to proceed
         # only the remaining columns
@@ -276,6 +277,4 @@ class ClippedWaveQuery(AnalysisQuery):
         # Reset the index before returning
         waves = waves.reset_index()
 
-        # Save the result and return success
-        self.data = waves
-        return True
+        return QueryComplete(waves)
