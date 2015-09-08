@@ -41,6 +41,7 @@
 #
 from steelscript.{{name}}.core.wave import WaveGenerator
 
+
 def new_device_instance(host, port, auth):
     """This function returns a WaveGenerator object.
 

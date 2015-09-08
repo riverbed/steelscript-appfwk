@@ -8,6 +8,7 @@
 
 import math
 
+
 class Wave(object):
 
     def __init__(self, period, alpha, beta, func):
@@ -32,12 +33,12 @@ class Wave(object):
 
         self.func = funcmap[func]
 
-
     def compute(self, t):
         '''Compute the waveform at time t'''
 
         rad = (t / self.period) * 2 * math.pi
         return (self.alpha * self.func(rad)) + self.beta
+
 
 class WaveGenerator(object):
 

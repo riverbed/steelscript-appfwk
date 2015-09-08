@@ -1,24 +1,26 @@
 Analysis Tables
 ===============
 
-.. module:: steelscript.appfwk.apps.datasource.modules.analysis
+The ``AnalyisTable`` allows for fully custom data collection
+and analysis and provides the following features:
 
-The :py:class:`AnalyisTable` allows for fully custom data collection
-and analysis.
-
-* leverage pre-requisite tables from other data sources as input
-* idenify related table definitions for columns and running additional queries
-* define custom table fields to allow run-time changes in behaviour by the user
+* Ability to leverage pre-requisite tables from other data sources as input
+* Idenify related table definitions for columns and running additional queries
+* Define custom table fields to allow run-time changes in behaviour by the user
 
 This section will first walk you through the
-:py:class:`ClippedWaveTable` from the Wave sample plugin.
+``ClippedWaveTable`` from the Wave sample plugin.
 Then the `Whois` plugin is presented to explain another way of how to utilize the
-:py:class:`AnalysisTable` features of App framework.
+``AnalysisTable`` features of App framework.
 
-:py:class:`ClippedWaveTable`
-----------------------------
+.. _clipped wave:
 
-Description:
+``ClippedWaveTable``
+--------------------
+
+The ``ClippedWaveTable`` is an example ``AnalysisTable`` included within the
+Wave plugin that takes a base ``WaveTable`` as input and applies some transformations
+on the data. These changes include:
 
 * Define criteria fields ``min`` and ``max`` that define the upper and lower
   clipping bounds
@@ -59,11 +61,11 @@ input table references.  The label ``waves`` is specified by the
 ``ClippedWaveTable``.  The labels become important when there are two
 or more input tables.
 
-Notice that no columns are defined -- this is because the function
-performed by this analysis table is to replicate the same number of
-columns as the input.  In some cases it will be necessary to add
-columns, but often the output column set is a function of the input
-column set.
+Notice that no columns are defined -- this is because within the function
+definition of this table, it already replicates the same columns from the
+input table (see the end of the next section for how this gets handled).
+In some cases it will be necessary to add columns like you do for normal
+App Framework tables. But as shown here, this step can be skipped.
 
 Defining the ClippedWaveTable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -74,12 +76,13 @@ Now let's look at the code behind that last
 .. code-block:: python
 
    class ClippedWaveTable(AnalysisTable):
-       class Meta: proxy = True
+       class Meta:
+           proxy = True
 
        _query_class = 'ClippedWaveQuery'
 
-       FIELD_OPTIONS = { 'min': 2,
-                         'max': 7 }
+       FIELD_OPTIONS = {'min': 2,
+                        'max': 7}
 
        @classmethod
        def process_options(cls, table_options):
@@ -119,7 +122,7 @@ Stepping through this in more detial:
        class Meta: proxy = True
 
 All analysis tables must be subclassed from the base
-:py:class:`AnalysisTable`.  The next line is a bit of Django
+``AnalysisTable``.  The next line is a bit of Django
 magic that is required to indicate that this is class is a proxy
 for the base ``Table`` model.
 
@@ -129,7 +132,7 @@ for the base ``Table`` model.
 
 This class method indicates what class will actually implement the
 query function when this table is run.  We will run through the
-:py:class:`ClippedWaveQuery` below.
+``ClippedWaveQuery`` below.
 
 The next few lines define default fields values that will be used
 for custom fields.
@@ -148,7 +151,8 @@ case verify that the user properly included a ``waves`` input table.
 
        @classmethod
        def process_options(cls, table_options):
-           table_options = super(ClippedWaveTable, cls).process_options(table_options)
+           table_options = (super(ClippedWaveTable, cls).
+	                    process_options(table_options))
 
            # Verify that the user defined a 'waves' input table
            tables = table_options['tables']
@@ -174,18 +178,20 @@ to add columns and custom fields:
            # Add a custom field for 'min'
            TableField.create(obj=self, keyword='min',  label='Min value',
                              initial=field_options['min'],
-                             help_text=('Clip all wave forms at this minimum value'),
+                             help_text=('Clip all wave forms at this'
+			                ' minimum value'),
                              required=False)
 
            # Add a custom field for 'max'
            TableField.create(obj=self, keyword='max', label='Max value',
                              initial=field_options['max'],
-                             help_text=('Clip all wave forms at this maximum value'),
+                             help_text=('Clip all wave forms at this'
+			                ' maximum value'),
                              required=False)
 
 Again, we must call the parent class' ``post_process_table`` method
 first, then we add our two custom fields for ``min`` and ``max``.
-Note here taht we set the initial value to ``field_options['min']``.
+Note here that we set the initial value to ``field_options['min']``.
 This will be either the value defined above in the ``FIELD_OPTIONS``
 dictionary, or any override specified on the ``create`` line.  Above
 in the previous section the table was created with ``min=3``, so that
@@ -201,10 +207,10 @@ Finally:
            self.copy_columns(tables['waves'])
 
 This copies all columns from the input ``waves`` table.  This ensures
-that whatever columsn were provided on input will show up on output as
+that whatever columns were provided on input will show up on output as
 well.
 
-:py:class:`ClippedWaveQuery`
+``ClippedWaveQuery``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The final missing piece is the ``ClippedWaveQuery`` which actually
@@ -236,7 +242,7 @@ performs the clipping function at run time:
 
            return QueryComplete(waves)
 
-This class is based on :py:class:`AnalysisQuery`.  When the report is
+This class is based on ``AnalysisQuery``.  When the report is
 run, the base class will run all necessary input tables and store the
 results in ``jobs``.  This dictionary will have the same labels
 as defined above to the ``tables`` argument.  The results here will be
@@ -250,18 +256,25 @@ On success, the function will return ``QueryComplete(waves)``, where
 
 `Whois` Plugin
 --------------
-Description:
+The Whois Plugin provides a very simple view into how to utilize
+AnalysisTables in the two supported means:
 
-* Report hosts' average bytes and their detailed information in `Whois` links
+* custom datasource via subclassing AnalysisTable and AnalysisQuery
+  (as shown above in section :ref:`ClippedWaveTable <clipped wave>`)
 
-* Add extra column which is derived from columns of input table
+* single python function
 
-* Use a single function to perform the data preparation of the `AnalysisTable`
+In both cases, the analysis function takes an input table with one
+column that includes IP addresses, then creates a new column from
+that with an HTML link to the whois lookup page on the internet.
+
+This section will go into some details about how to utilize a python
+function for analysis purposes.
 
 Define the input table
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Firstly, We need to define an input table in the report module:
+To start off, we need to define an input table in the report module:
 
 .. code-block:: python
 
@@ -275,9 +288,12 @@ Firstly, We need to define an input table in the report module:
    table.add_column('host_ip', 'IP Addr', iskey=True, datatype='string')
    table.add_column('avg_bytes', 'Avg Bytes', units='B/s', sortdesc=True)
 
+There is nothing special about this table, except that it includes a column
+of IP addresses that will be used as input to our analysis function.
+   
 Define the analysis function
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Secondly, an analysis function needs to be defined. This is usually done
+Next, an analysis function needs to be defined. This is usually done
 in the datasource module to facilitate importing. This function builds
 the required data based on the data of the input table to be used for the report.
 
@@ -289,20 +305,48 @@ the required data based on the data of the input table to be used for the report
             'showARIN=false&ext=netref2" target="_blank">Whois record</a>' % ip)
        return s
 
+``make_whois_link`` is a function which will be used by the analysis function
+defined below. It takes an IP address as an argument and returns an HTML link to
+the whois lookup page on the internet.
+       
+.. code-block:: python
+       
    def whois_function(query, tables, criteria, params):
        # we want the first table, don't care what its been named
        t = query.tables.values()[0]
        t['whois'] = t['host_ip'].map(make_whois_link)
        return t
 
-It is worth mentioning that ``t`` is a pandas DataFrame, thus you can add
-the extra ``whois`` column to ``t`` by applying the mapping function ``make_whois_link``
-to ``t['host_ip']``.
+This ``whois_function`` does all the analysis in place of the AnalysisQuery
+we've seen before. When writing your own, you can name it anything you like,
+but you will need the same four keyword arguments in your function definition.
+They don't all have to be used, as you can see in our example, though.
+
+========= ===============================================================
+Arguments 
+========= ===============================================================
+query     The incoming Job reference, this includes the calculated \ 
+          results of all dependant tables.
+tables    A dictionary reference to the dependant table definitions.\ 
+          These should be used if needing to get to the original tables \
+	  in the database.
+criteria  A dictionary of all the passed criteria
+params    Additional parameters that were defined in the report.\ 
+          These can help make the functions more flexible so the same \
+	  definition can be used across multiple report types with a \
+	  different attribute in each case.
+========= =============================================================== 
+
+
+Inside the ``whois_function``, it is worth mentioning that ``t`` is a pandas
+DataFrame, thus you can add the extra ``whois`` column to ``t`` by applying the
+mapping function ``make_whois_link`` to ``t['host_ip']``.
 
 Define the columns for report
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-At last, create an Analysis table that uses ``whois_function``
-to add columns to the analysis table in the report module.
+And finally, now that we have our base table defined and our analysis function created,
+it is time to create an Analysis table in the report module. Note that we also need to
+add columns to the analysis table.
 
 .. code-block:: python
 
@@ -320,7 +364,7 @@ the report can render all the data returned by the ``whois_function``.
 
 Summary
 -------
-The two examples demonstrate two different ways to utilize the `AnalysisTable`
+The two examples demonstrate two different ways to utilize the ``AnalysisTable``
 features of App framework.
 
 The `ClippedWaveTable` example uses the extensible **custom table definition**
