@@ -20,6 +20,7 @@ from requests.exceptions import ConnectionError
 
 from steelscript.appfwk.apps.preferences.models import SystemSettings, \
     AppfwkUser
+from steelscript.common import RvbdException
 
 # list of files/directories to ignore
 IGNORE_FILES = ['helpers']
@@ -173,7 +174,7 @@ class Command(BaseCommand):
         try:
             from steelscript.appfwk.apps.jobs.progress import progressd
             progressd.reset()
-        except ConnectionError:
+        except RvbdException:
             self.stdout.write(' unable to connect to progressd, skipping ...',
                               ending='')
         self.stdout.write(' done.')
