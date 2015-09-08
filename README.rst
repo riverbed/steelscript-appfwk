@@ -48,7 +48,7 @@ For next steps, see the full documentation guide:
 License
 =======
 
-Copyright (c) 2014 Riverbed Technology, Inc.
+Copyright (c) 2015 Riverbed Technology, Inc.
 
 SteelScript-appfwk is licensed under the terms and conditions of the MIT
 License accompanying the software ("License").  SteelScript-appfwk is
