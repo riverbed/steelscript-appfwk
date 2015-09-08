@@ -114,7 +114,7 @@ Now let's look at the code behind that last
            tables = self.options['tables']
            self.copy_columns(tables['waves'])
 
-Stepping through this in more detial:
+Stepping through this in more detail:
 
 .. code-block:: python
 
