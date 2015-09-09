@@ -139,8 +139,8 @@ for custom fields.
 
 .. code-block:: python
 
-       FIELD_OPTIONS = { 'min': 2,
-                         'max': 7 }
+       FIELD_OPTIONS = {'min': 2,
+                        'max': 7}
 
 The ``process_options`` class method below is called after table
 options have been pre-processed but before the table is actually
@@ -327,11 +327,11 @@ Arguments
 ========= ===============================================================
 query     The incoming Job reference, this includes the calculated \ 
           results of all dependant tables.
-tables    A dictionary reference to the dependant table definitions.\ 
+tables    A dictionary reference to the dependant table definitions. \ 
           These should be used if needing to get to the original tables \
 	  in the database.
 criteria  A dictionary of all the passed criteria
-params    Additional parameters that were defined in the report.\ 
+params    Additional parameters that were defined in the report. \ 
           These can help make the functions more flexible so the same \
 	  definition can be used across multiple report types with a \
 	  different attribute in each case.
