@@ -650,6 +650,7 @@ class DatasourceTable(Table):
             * time
             * string
             * html
+            * date
 
         :param enum units: Units for data in this column, defaults to none:
 

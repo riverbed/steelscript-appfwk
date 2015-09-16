@@ -86,7 +86,7 @@ Lets discuss in order listed above:
   in this documentation.
 
 * ``reports`` - contains a few sample reports to get started with.  See
-  `reports` for detailed walkthrough of how reports are defined.
+  `reports` for detailed walk through of how reports are defined.
 
 * ``local_settings.py`` - the project settings file, covered in more detail
   under `Configuration`.  The database, logging, and other project configuration

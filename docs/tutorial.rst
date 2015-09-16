@@ -7,7 +7,7 @@ This tutorial presents a step-by-step description of how to develop a
 SteelScript App Framework  plugin. No tutorial can be as useful as an example.
 Therefore, in this tutorial, a steelscript-stock plugin is used to explain
 the process of how to construct SteelScript App Framework plugin. Note that
-the stock data is fetched from yahoo finance API as a thrid party resource.
+the stock data is fetched from yahoo finance API as a third party resource.
 By changing the data source as well as modifying the reports, App Framework
 plugin can be used to display data from almost any where, such as a csv file,
 a rest API or a device with reporting capability, etc.
@@ -70,7 +70,7 @@ Details about installing steelscript plugin can be found
 .. _Data fetch API:
 
 Developing data fetch API
---------------------------------
+-------------------------
 You need to develop an API to fetch data to feed the App Framework engine. This step is recommended
 to be done early as we can understand better the data format, which would help define the
 structure of the App Framework reports later.
@@ -235,13 +235,13 @@ to the data fetch API. Details are shown below.
         _query_class = 'StockQuery'
 
         # TABLE_OPTIONS is a dictionary of options that are specific to
-        # StockQuery objects in this file.  These will be overriden by
+        # StockQuery objects in this file.  These will be overridden by
         # keyword arguments to the StockTable.create() call in a report
         # file
         TABLE_OPTIONS = { }
 
         # FIELD_OPTIONS is a dictionary of default values for field
-        # options.  These by be overriden by keyword arguments to the
+        # options.  These by be overridden by keyword arguments to the
         # StockTable.create() call in a report file
         FIELD_OPTIONS = {'duration': '4w',
                          'durations': ('4w', '12w', '24w', '52w', '260w', '520w'),
@@ -391,7 +391,7 @@ added to the ``<appfwk_project>/reports`` directory, one needs to click 'Reload 
 option from the dropdown menu of the admin button at the top right corner. If the report was added to
 the plugin directory, one needs to first click 'Edit Plugins' option from the dropdown menu
 of the admin button, then click the 'Update All Report' button at the bottom, then check the boxes
-for 'Collect Reports', 'and Overwirte Reports' and 'Reload Reports' at the popup window, and finally
+for 'Collect Reports', 'and Overwrite Reports' and 'Reload Reports' at the popup window, and finally
 click the 'Go!' button, shown as the image below. More information about picking up plugin reports are
 described :ref:`here <plugin reports>`.
 
@@ -417,7 +417,7 @@ just to put necessary device-related fields in the criteria and run the :ref:`da
 the operation suffers from two flaws: firstly, the criteria fields would be cluttered with
 hostname, port, username, password and module fields, all of which would not change between running
 reports against the same device; Secondly, it would be very costly to reconnect to the device
-everytime the report is run. Configuring a device separately from running reports can reduce
+every time the report is run. Configuring a device separately from running reports can reduce
 the amount information to deal with when filling criteria. It can also cache the device connection
 and thus reduce network latency for future reporting runs.
 

@@ -60,7 +60,7 @@ you have made to the reports in your folder.
 .. _reloading reports:
 
 Reloading Reports
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 With any new changes made to the reports in your :ref:`reports directory <directory layout>`
 you will want to get those changes recognized by the system.  The most useful
@@ -128,7 +128,7 @@ be used to clear the database, caches, and logs then re-initialize everything.
 
 A helpful warning will be presented (unless skipped with the ``--force``
 option) as a reminder that this will completely delete the database!  Though
-the warning is dire, there are only a few items which will be irretrieveably
+the warning is dire, there are only a few items which will be irretrievably
 lost, and there are workarounds for users and devices:
 
     * users
@@ -182,7 +182,7 @@ process.
 Running the server
 ------------------
 
-As decribed above, the server can be run in one of two modes :ref:`development`
+As described above, the server can be run in one of two modes :ref:`development`
 and :ref:`production` via sofware like Apache, or nginx.
 
 .. _development:
@@ -193,7 +193,7 @@ Development server
 As described under :ref:`creating a new project`, a file called
 :ref:`manage.py <directory layout>` has been linked inside your project folder.
 Executing this file will present a large number of subcommands available for
-performing maintenace and development with the server.  The one we are
+performing maintenance and development with the server.  The one we are
 considering is called ``runserver``.  See below for example help output:
 
 .. code-block:: console

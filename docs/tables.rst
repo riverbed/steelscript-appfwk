@@ -74,7 +74,7 @@ differently.
 The term "data source" is intentionally vague, as all that is required
 of a given type of table is that it can, on demand, produce a
 data set -- a two dimensional set of rows and columns that match
-the requested table configruation (options and columns) as well as
+the requested table configuration (options and columns) as well as
 dynamic user provided criteria.  The following are some examples of
 valid data sources:
 
@@ -145,7 +145,7 @@ This is best explained by an example based on the WaveTable above:
 
 The first is a normal column whose data will be provided by
 the wave data source.  The second column is a synthetic column
-that is simply the 'sin1' column multipled by 2.
+that is simply the 'sin1' column multiplied by 2.
 
 The ``compute_expression`` column keyword defines the operation to
 perform:
@@ -154,7 +154,7 @@ perform:
   where ``name`` is the name assigned to another column in the same
   table.  Any number of other columns may be referenced
 
-* Standard mathemtical operators may be used: ``+``, ``-``, ``*``,
+* Standard mathematical operators may be used: ``+``, ``-``, ``*``,
   ``/``, and others.
 
 * ``{name}`` is actually a Python Pandas Series object, and thus
@@ -170,8 +170,8 @@ perform:
 
 For more advanced analysis techniques, see :doc:`analysis`.
 
-Resamping Time Series Tables
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Resampling Time Series Tables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When working with time series data, a common operation is to resample
 that data:
@@ -184,7 +184,7 @@ that data:
 
 The application framework will automatically resample timeseries data
 when the ``resample=True`` at creation.  In addition, there must be
-a critieria field named either ``resample_resolution`` or just
+a criteria field named either ``resample_resolution`` or just
 ``resolution``, which sets the target resample interval.
 
 When resampling, data from multiple rows must be aggregated (each row

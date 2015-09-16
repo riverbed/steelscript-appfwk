@@ -12,6 +12,7 @@ from steelscript.commands.steel import (BaseCommand, shell, prompt, prompt_yn,
                                         check_git, ShellFailed)
 import steelscript.appfwk.commands
 
+
 def process_file(src, dst, options):
     srcf = open(src, 'r')
     dstf = open(dst, 'w')
@@ -40,7 +41,7 @@ def process_file(src, dst, options):
 
 
 class Command(BaseCommand):
-    help = 'Create a new SteelScript Application Framwork plugin'
+    help = 'Create a new SteelScript Application Framework plugin'
 
     def add_options(self, parser):
         parser.add_option('-n', '--name',
@@ -169,14 +170,12 @@ class Command(BaseCommand):
                     continue
 
                 srcfile = os.path.join(dir, f)
-                dstfile = os.path.join(targetdir, f.replace('.py.in', '.py'))
                 dstfile = os.path.join(targetdir,
                                        (f.replace('.py.in', '.py')
                                          .replace(which, options.name)))
 
                 process_file(srcfile, dstfile, vars(options))
                 print('Writing:  {dst}'.format(dst=dstfile))
-
 
         shell('(cd {dir}; python setup.py develop )'.format(dir=targetbasedir))
 

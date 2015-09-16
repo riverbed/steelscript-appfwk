@@ -1,11 +1,11 @@
 Analysis Tables
 ===============
 
-The ``AnalyisTable`` allows for fully custom data collection
+The ``AnalysisTable`` allows for fully custom data collection
 and analysis and provides the following features:
 
 * Ability to leverage pre-requisite tables from other data sources as input
-* Idenify related table definitions for columns and running additional queries
+* Identify related table definitions for columns and running additional queries
 * Define custom table fields to allow run-time changes in behaviour by the user
 
 This section will first walk you through the
@@ -211,7 +211,7 @@ that whatever columns were provided on input will show up on output as
 well.
 
 ``ClippedWaveQuery``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 The final missing piece is the ``ClippedWaveQuery`` which actually
 performs the clipping function at run time:

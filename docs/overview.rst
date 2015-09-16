@@ -34,7 +34,7 @@ Overview
 
 The SteelScript Application Framework is a Django application that
 provides a web front end to metrics collected from available
-datasources.  A primary goal is to focus on extensibilty and
+datasources.  A primary goal is to focus on extensibility and
 modularity:
 
 * Data is normalized to Python Pandas DataFrames
@@ -57,7 +57,7 @@ Getting an application up and running involves the following steps:
 
 For more advanced use cases, the output of one or more tables can be
 fed as input to analysis tables hooked to a Python callback.  This
-allows data to be processed in virtually any conceiveable way.
+allows data to be processed in virtually any conceivable way.
 The output of the analysis table is just another table.  This can
 then be connected to one or more widgets for visualization, or in turn
 be inputs to yet another analysis table for further processing.
