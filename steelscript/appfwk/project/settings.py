@@ -389,3 +389,6 @@ LOCAL_APPS = None
 APPFWK_SYNTHETIC_MODULES = (
     'pandas',
     )
+
+# Size limit of all netshark downloaded pcap files in bytes (default 10GB)
+PCAP_SIZE_LIMIT = 10000000000

@@ -87,6 +87,9 @@ LOCAL_ERROR_HANDLERS = (
 )
 GLOBAL_ERROR_HANDLERS += LOCAL_ERROR_HANDLERS
 
+# Overwrite overall size limit of all Netshark Pcap downloaded files in Bytes
+# PCAP_SIZE_LIMIT = 10000000000
+
 # To enable syslog handling instead of local logging, see the next blocks of
 # LOGGING statements.  Note the different section for Linux/Mac vs Windows.
 
