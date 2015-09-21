@@ -8,7 +8,7 @@ from steelscript.appfwk.apps.report.models import Report
 import steelscript.appfwk.apps.report.modules.yui3 as yui3
 from steelscript.appfwk.apps.datasource.modules import alerting
 
-report = Report.create('App Framework Alerts')
+report = Report.create('App Framework Alerts', position=11)
 
 report.add_section()
 

@@ -241,15 +241,15 @@ class ReportView(GenericReportView):
     # ReportView.get()
     def get(self, request, namespace=None, report_slug=None):
         if request.accepted_renderer.format == 'html':  # handle HTML calls
-            queryset = Report.objects.filter(enabled=True)
+            queryset = Report.objects.filter(enabled=True).order_by('position',
+                                                                    'title')
 
             try:
                 if namespace is None:
                     namespace = queryset[0].namespace
 
                 if report_slug is None:
-                    qs = (queryset.filter(namespace=namespace)
-                          ).order_by('position', 'title')
+                    qs = queryset.filter(namespace=namespace)
                     kwargs = {'report_slug': qs[0].slug,
                               'namespace': namespace}
                     return HttpResponseRedirect(reverse('report-view',

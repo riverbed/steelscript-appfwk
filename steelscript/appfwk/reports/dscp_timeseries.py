@@ -12,7 +12,7 @@ import steelscript.appfwk.apps.report.modules.yui3 as yui3
 from steelscript.netprofiler.appfwk.datasources.netprofiler import \
     NetProfilerTimeSeriesTable, NetProfilerGroupbyTable, NetProfilerTable
 
-report = Report.create("DSCP Report", position=11,
+report = Report.create("DSCP Report", position=10,
                        hidden_fields=['netprofiler_filterexpr'])
 
 netprofiler_filterexpr = TableField.create(
