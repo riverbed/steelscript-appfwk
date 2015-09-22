@@ -15,7 +15,7 @@ import steelscript.wave.appfwk.datasources.wave_source as wave
 # Sample WaveGenerator report
 #
 
-report = Report.create("Wave Report", position=1)
+report = Report.create("Wave Report", position=12)
 
 report.add_section()
 
