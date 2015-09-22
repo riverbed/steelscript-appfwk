@@ -343,7 +343,7 @@ After the ``StockTable`` class in the same module, we need to define the ``run``
 Writing Reports
 ^^^^^^^^^^^^^^^
 After finishing off writing data sources, finally it is time to collect results.
-In <plugin>/appfwk/reports/stock_report.py, we first need to define a report and
+In ``<plugin>/appfwk/reports/stock_report.py``, we first need to define a report and
 create a section asscociated with it.
 
 .. code-block:: python
