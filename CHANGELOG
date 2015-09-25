@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+[1.0]
+ * Refactor Jobs to use different task models: celery, sync, and async
+   * Job methods now return QueryComplete, QueryContinue, or QueryError's
+   * Update AnalysisTable definitions and approach with new Job model
+ * Introduce 'progressd', external Job status daemon
+ * Update base Django to version 1.7
+ * Support additional auth methods for Devices
+ * Add support for custom data formatters
+ * Improved documentation
+
 [0.9.8.3]
  * Enhance job handling with interrupted jobs
 
