@@ -62,7 +62,7 @@ $.extend(rvbd.widgets.yui3.YUIWidget.prototype, {
         var width = $(self.outerContainer).width() - self.contentExtraWidth,
             height = $(self.outerContainer).height() - self.contentExtraHeight - self.titleHeight;
 
-        // Chart widgets take an integer pixels for dimensions, others take CSS dimensions 
+        // Chart widgets take an integer pixels for dimensions, others take CSS dimensions
         if (self.widgetClass === 'Chart') {
             self.yuiWidget.set('width', width);
             self.yuiWidget.set('height', height);
@@ -85,7 +85,7 @@ $.extend(rvbd.widgets.yui3.YUIWidget.prototype, {
         self.titleMsg = data['chartTitle'];
         self.buildInnerLayout();
 
-        var $content = $(self.content)
+        var $content = $(self.content);
         self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
                                   parseInt($content.css('margin-right'), 10);
         self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
@@ -98,7 +98,7 @@ $.extend(rvbd.widgets.yui3.YUIWidget.prototype, {
         self.data = data;
 
         var requirements = self.requirements.concat(['event-resize']); // All widgets need event-resize
-        
+
         YUI().use(requirements, function(Y) {
             self.yuiWidget = new Y[self.widgetClass](data);
             Y.on('windowresize', self.onResize.bind(self));
@@ -123,12 +123,16 @@ $.extend(rvbd.widgets.yui3.TableWidget.prototype, {
         data.scrollable = 'xy';
 
         $.each(data.columns, function(i, c) {
-            if (typeof c.formatter !== 'undefined' && c.formatter in rvbd.formatters) {
+            var formatter;
+            if (typeof c.formatter !== 'undefined') {
+                if (c.formatter in rvbd.formatters) {
+                    formatter = rvbd.formatters[c.formatter];
+                } else {
+                    formatter = eval(c.formatter);
+                }
                 c.formatter = (function(key, formatter) {
                     return function(v) { return formatter(v.data[key]); }
-                })(c.key, rvbd.formatters[c.formatter]);
-            } else {
-                delete c.formatter;
+                })(c.key, formatter);
             }
         });
 
@@ -273,7 +277,7 @@ rvbd.widgets.yui3.CandleStickWidget.prototype = Object.create(rvbd.widgets.yui3.
 $.extend(rvbd.widgets.yui3.CandleStickWidget.prototype, {
     requirements: ['series-candlestick', 'charts'],
     widgetClass: 'Chart',
-    
+
     prepareData: function(data) {
         data.tooltip = {
             setTextFunction: function(textField, val) {

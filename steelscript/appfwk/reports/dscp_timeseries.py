@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -12,7 +12,7 @@ import steelscript.appfwk.apps.report.modules.yui3 as yui3
 from steelscript.netprofiler.appfwk.datasources.netprofiler import \
     NetProfilerTimeSeriesTable, NetProfilerGroupbyTable, NetProfilerTable
 
-report = Report.create("DSCP Report", position=11,
+report = Report.create("DSCP Report", position=10,
                        hidden_fields=['netprofiler_filterexpr'])
 
 netprofiler_filterexpr = TableField.create(

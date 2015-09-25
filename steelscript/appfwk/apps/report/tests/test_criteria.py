@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -12,7 +12,7 @@ import tempfile
 import dateutil.parser
 from django.test import Client
 
-from steelscript.appfwk.apps.datasource.models import Job
+from steelscript.appfwk.apps.jobs.models import Job
 from steelscript.appfwk.apps.report.models import Report, Widget, Section
 from . import reportrunner
 from steelscript.appfwk.libs.call_command import call_command

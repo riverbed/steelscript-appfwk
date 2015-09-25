@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -6,6 +6,7 @@
 import functools
 
 import logging
+import datetime
 
 import pytz
 import numpy
@@ -16,6 +17,7 @@ from steelscript.appfwk.apps.alerting.models import Alert
 from steelscript.appfwk.apps.datasource.forms import fields_add_time_selection
 from steelscript.appfwk.apps.datasource.models import (DatasourceTable,
                                                        TableQueryBase, Column)
+from steelscript.appfwk.apps.jobs import QueryComplete
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +93,10 @@ class AlertQuery(TableQueryBase):
 
         self.data = df
 
-        return True
+        return self.post_run()
+
+    def post_run(self):
+        return QueryComplete(self.data)
 
 
 class AlertHyperlinkedTable(AlertTable):
@@ -117,7 +122,7 @@ class AlertHyperlinkedQuery(AlertQuery):
                 make_link = functools.partial(self.make_link, 'alert-detail')
                 df['id'] = df['id'].map(make_link)
             self.data = df
-        return True
+        return QueryComplete(self.data)
 
 
 class AlertAnalysisGroupbyTable(AlertTable):
@@ -136,7 +141,7 @@ class AlertAnalysisGroupbyQuery(AlertQuery):
         if self.data is not None:
             dfg = self.data.groupby(groupby).count()
             self.data = dfg.reset_index()
-        return True
+        return QueryComplete(self.data)
 
 
 class AlertAnalysisTimeseriesTable(AlertTable):
@@ -157,8 +162,20 @@ class AlertAnalysisTimeseriesQuery(AlertQuery):
             dft = self.data.set_index(timecol)[datacol]
             # add null value to beginning and end of time series to make sure
             # resample interval lines up
-            dft[self.starttime.astimezone(pytz.UTC)] = numpy.nan
-            dft[self.endtime.astimezone(pytz.UTC)] = numpy.nan
-            dft = dft.resample('5min', how='count')
+            start = self.starttime.astimezone(pytz.UTC)
+            end = self.endtime.astimezone(pytz.UTC)
+            dft[start] = numpy.nan
+            dft[end] = numpy.nan
+
+            # adjust the resample size depending on overall time interval
+            delta = end - start
+            if delta <= datetime.timedelta(minutes=1):
+                resample = '1S'
+            elif delta <= datetime.timedelta(minutes=15):
+                resample = '60S'  # 1 minute
+            else:
+                resample = '5T'   # 5 minutes
+
+            dft = dft.resample(resample, how='count')
             self.data = dft.reset_index().rename(columns={'index': timecol})
-        return True
+        return QueryComplete(self.data)

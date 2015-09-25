@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2015 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% load cycle from future %}
+
+{% block title %}App Framework: Log Viewer{% endblock %}
+
+{% block header %}
+<style>
+.logForm {
+    background-color: #e0e0e0;
+    border: solid 1px #ccc;
+    padding: 3px 12px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+.logForm form {
+    margin: 10px 10px;
+}
+.logForm label {
+    padding: 3px 5px;
+}
+.logForm input {
+    margin: 10px 10px;
+}
+
+.logTable {
+    border: solid 1px #ccc;
+}
+.logLine {
+    display: block;
+    font-family: Lucida Console, monospace;
+    font-size: 11px;
+    color: #000000;
+    padding: 3px 12px;
+    line-height: normal;
+    white-space: pre-wrap;
+}
+.logEven {
+    background-color: #f4f4f4;
+}
+.logOdd {
+    background-color: #ffffff;
+}
+
+.logNormal {
+    color: #000000;
+}
+.logWarning {
+    color: #ffa522;
+}
+
+.logError {
+    color: #ff0005;
+}
+</style>
+{% endblock %}
+
+{% block header_row %}
+    <h3>Log Viewer</h3>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="logForm">
+            <form class="form-inline">
+                {{ form }}
+                <div style="text-align: center">
+                    <input type="submit" value="Get Logfile" class="btn btn-primary">
+                </div>
+            </form>
+        </div>
+        <p></p>
+        <div class="logTable">
+        {% for tag, line in lines %}
+            <div class="logLine {% cycle 'logEven' 'logOdd' %} {{ tag }}">{{ line }}</div>
+        {% endfor %}
+        </div>
+    </div>
+{% endblock %}

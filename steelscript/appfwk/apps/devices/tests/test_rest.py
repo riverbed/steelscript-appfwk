@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -10,7 +10,7 @@ import copy
 from django.test import TestCase, Client
 from django.core.exceptions import ObjectDoesNotExist
 
-from steelscript.appfwk.apps.preferences.models import PortalUser
+from steelscript.appfwk.apps.preferences.models import AppfwkUser
 
 logger = logging.getLogger(__name__)
 
@@ -22,15 +22,17 @@ class DeviceRestTestCase(TestCase):
               "port": 443,
               "username": "admin",
               "password": "password",
-              "enabled": True
+              "enabled": True,
+              "auth": 1,
+              "access_code": ''
               }
 
     @classmethod
     def setUpClass(cls):
         try:
-            PortalUser.objects.get(username='admin')
+            AppfwkUser.objects.get(username='admin')
         except ObjectDoesNotExist:
-            PortalUser.objects.create_superuser(
+            AppfwkUser.objects.create_superuser(
                 'admin', 'admin@admin.com', 'admin')
 
     def setUp(self):

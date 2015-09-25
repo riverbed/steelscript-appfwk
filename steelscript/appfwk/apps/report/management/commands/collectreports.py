@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -17,7 +17,7 @@ from steelscript.appfwk.apps.plugins import plugins
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Collects reports into App Framework project.'
 
     option_list = BaseCommand.option_list + (

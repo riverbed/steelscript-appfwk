@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -7,6 +7,7 @@
 """This file defines a very basic wave generator."""
 
 import math
+
 
 class Wave(object):
 
@@ -32,12 +33,12 @@ class Wave(object):
 
         self.func = funcmap[func]
 
-
     def compute(self, t):
         '''Compute the waveform at time t'''
 
         rad = (t / self.period) * 2 * math.pi
         return (self.alpha * self.func(rad)) + self.beta
+
 
 class WaveGenerator(object):
 

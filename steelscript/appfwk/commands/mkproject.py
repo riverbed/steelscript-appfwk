@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -24,12 +24,33 @@ DATAHOME = os.getenv('DATAHOME', PROJECT_ROOT)
 DATA_CACHE = os.path.join(DATAHOME, 'data', 'datacache')
 INITIAL_DATA = os.path.join(DATAHOME, 'data', 'initial_data')
 REPORTS_DIR = os.path.join(PROJECT_ROOT, 'reports')
+LOG_DIR = os.path.join(DATAHOME, 'logs')
 
 STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
 MEDIA_ROOT = DATA_CACHE
 
-# Optionally add additional applications specific to this project instance
+# Task model specific configs
+APPFWK_TASK_MODEL = 'async'
+#APPFWK_TASK_MODEL = 'celery'
 
+if APPFWK_TASK_MODEL == 'celery':
+    LOCAL_APPS = (
+        'djcelery',
+    )
+    INSTALLED_APPS += LOCAL_APPS
+
+    # redis for broker and backend
+    BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+    CELERY_ACKS_LATE = True
+
+    import djcelery
+    djcelery.setup_loader()
+
+    #CELERY_ALWAYS_EAGER = True
+    TEST_RUNNER = 'djcelery.contrib.test_runner.CeleryTestSuiteRunner'
+
+# Optionally add additional applications specific to this project instance
 LOCAL_APPS = (
     # additional apps can be listed here
 )
@@ -55,9 +76,8 @@ DATABASES = {
 }
 
 # Setup loggers to local directory
-LOGGING['handlers']['logfile']['filename'] = os.path.join(DATAHOME, 'logs',
-                                                          'log.txt')
-LOGGING['handlers']['backend-log']['filename'] = os.path.join(DATAHOME, 'logs',
+LOGGING['handlers']['logfile']['filename'] = os.path.join(LOG_DIR, 'log.txt')
+LOGGING['handlers']['backend-log']['filename'] = os.path.join(LOG_DIR,
                                                               'log-db.txt')
 
 # Optionally add additional global error handlers
@@ -66,6 +86,9 @@ LOCAL_ERROR_HANDLERS = (
     # additional global error handlers can be listed here
 )
 GLOBAL_ERROR_HANDLERS += LOCAL_ERROR_HANDLERS
+
+# Overwrite overall size limit of all Netshark Pcap downloaded files in Bytes
+# PCAP_SIZE_LIMIT = 10000000000
 
 # To enable syslog handling instead of local logging, see the next blocks of
 # LOGGING statements.  Note the different section for Linux/Mac vs Windows.

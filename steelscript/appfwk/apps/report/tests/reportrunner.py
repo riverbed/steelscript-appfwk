@@ -1,3 +1,9 @@
+# Copyright (c) 2015 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+
 import time
 import json
 import logging
@@ -10,9 +16,10 @@ from django.core.exceptions import ObjectDoesNotExist
 #from django.contrib.auth.tests.utils import skipIfCustomUser
 from django.test.utils import override_settings
 
-from steelscript.appfwk.apps.datasource.models import Job
+from steelscript.appfwk.apps.jobs.models import Job
+from steelscript.appfwk.apps.jobs.progress import progressd
 from steelscript.appfwk.apps.report.models import Report, Widget
-from steelscript.appfwk.apps.preferences.models import PortalUser
+from steelscript.appfwk.apps.preferences.models import AppfwkUser
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +39,9 @@ class ReportRunnerTestCase(TestCase):
             cls.load_report(report)
 
         try:
-            PortalUser.objects.get(username='admin')
+            AppfwkUser.objects.get(username='admin')
         except ObjectDoesNotExist:
-            PortalUser.objects.create_superuser(
+            AppfwkUser.objects.create_superuser(
                 'admin', 'admin@admin.com', 'admin')
 
     @classmethod
@@ -44,6 +51,8 @@ class ReportRunnerTestCase(TestCase):
         management.call_command('reload', report_name=path)
 
     def setUp(self):
+        logger.info('Resetting progressd ...')
+        progressd.reset()
 
         logger.info('Logging in as admin')
         logger.info('Report count: %d' % len(Report.objects.all()))
@@ -90,7 +99,7 @@ class ReportRunnerTestCase(TestCase):
         logger.debug("Report data:\n%s" % json.dumps(report_data, indent=2))
 
         widgets = SortedDict()
-        for widget_data in report_data[1:]:
+        for widget_data in report_data['widgets']:
             wid = widget_data['widgetid']
             widget = Widget.objects.get(id=wid)
             logger.info('Processing widget %s' % widget)

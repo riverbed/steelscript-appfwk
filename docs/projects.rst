@@ -83,14 +83,15 @@ Lets discuss in order listed above:
   as well as helpful development and debugging tools.  Execute
   'python manage.py -h' to see an exhaustive list of available subcommands,
   but those which are most helpful to use for App Framework are discussed
-  in this documentation.
+  in this :doc:`documentation </appfwk/managing>`.
 
 * ``reports`` - contains a few sample reports to get started with.  See
-  `reports` for detailed walkthrough of how reports are defined.
+  :doc:`reports </appfwk/reports>` for detailed walk through of how reports
+  are defined.
 
 * ``local_settings.py`` - the project settings file, covered in more detail
-  under `Configuration`.  The database, logging, and other project configuration
-  gets handled via this file.
+  under :doc:`Configuration </appfwk/configuration>`. The database, logging,
+  and other project configuration gets handled via this file.
 
 * ``logs`` - App Framework runtime logs are stored here, under log.txt and
   log-db.txt.  Both logs provide very detailed debug level logging, and are

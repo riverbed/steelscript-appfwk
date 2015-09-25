@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -47,20 +47,4 @@ urlpatterns = patterns(
     url(r'^columns/(?P<pk>[0-9]+)/$',
         views.ColumnDetail.as_view(),
         name='column-detail'),
-
-    url(r'^jobs/$',
-        views.JobList.as_view(),
-        name='job-list'),
-
-    url(r'^jobs/(?P<pk>[0-9]+)/$',
-        views.JobDetail.as_view(),
-        name='job-detail'),
-
-    url(r'^jobs/(?P<pk>[0-9]+)/data/$',
-        views.JobDetailData.as_view(),
-        name='job-detail-data'),
-
-    url(r'^jobs/(?P<pk>[0-9]+)/data/(?P<format>[a-z]+)/$',
-        views.JobDetailData.as_view(),
-        name='job-detail-data'),
 )

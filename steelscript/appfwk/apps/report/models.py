@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -14,17 +14,19 @@ from django.template.defaultfilters import slugify
 from django.db import transaction
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
+from django.core.urlresolvers import reverse
 from django.utils.datastructures import SortedDict
 from django.core.exceptions import ObjectDoesNotExist
 from model_utils.managers import InheritanceManager
+from steelscript.appfwk.apps.jobs.models import Job
 
 from steelscript.common.datastructures import JsonDict
 from steelscript.appfwk.project.utils import (get_module, get_module_name,
                                               get_sourcefile, get_namespace)
-from steelscript.appfwk.apps.datasource.models import Table, Job, TableField
+from steelscript.appfwk.apps.datasource.models import Table, TableField
 from steelscript.appfwk.libs.fields import \
     PickledObjectField, SeparatedValuesField
-from steelscript.appfwk.apps.preferences.models import PortalUser
+from steelscript.appfwk.apps.preferences.models import AppfwkUser
 logger = logging.getLogger(__name__)
 
 
@@ -41,10 +43,10 @@ class Report(models.Model):
     position = models.DecimalField(max_digits=7, decimal_places=3, default=10)
     enabled = models.BooleanField(default=True)
 
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, max_length=100)
     namespace = models.CharField(max_length=100)
     sourcefile = models.CharField(max_length=200)
-    filepath = models.FilePathField(path=settings.REPORTS_DIR)
+    filepath = models.FilePathField(max_length=200, path=settings.REPORTS_DIR)
 
     fields = models.ManyToManyField(TableField, null=True, blank=True)
     field_order = SeparatedValuesField(null=True,
@@ -219,6 +221,17 @@ class Report(models.Model):
                     section__in=Section.objects.filter(
                         report=self)))
                 .distinct().order_by(order_by))
+
+    def widget_definitions(self, criteria):
+        """Return list of widget definitions suitable for a JSON response.
+        """
+        definitions = []
+
+        for w in self.widgets().order_by('row', 'col'):
+            widget_def = w.get_definition(criteria)
+            definitions.append(widget_def)
+
+        return definitions
 
 
 class Section(models.Model):
@@ -403,7 +416,7 @@ class Widget(models.Model):
     uioptions = PickledObjectField()
 
     # not globally unique, but should be sufficiently unique within a report
-    slug = models.SlugField()
+    slug = models.SlugField(max_length=100)
 
     objects = InheritanceManager()
 
@@ -416,6 +429,31 @@ class Widget(models.Model):
     def save(self, *args, **kwargs):
         self.slug = '%s-%d-%d' % (slugify(self.title), self.row, self.col)
         super(Widget, self).save(*args, **kwargs)
+
+    def get_definition(self, criteria):
+        """Get dict of widget attributes for sending via JSON."""
+        report = self.section.report
+
+        widget_def = {
+            "widgettype": self.widgettype().split("."),
+            "posturl": reverse('widget-job-list',
+                               args=(report.namespace,
+                                     report.slug,
+                                     self.slug)),
+            "updateurl": reverse('widget-criteria',
+                                 args=(report.namespace,
+                                       report.slug,
+                                       self.slug)),
+            "options": self.uioptions,
+            "widgetid": self.id,
+            "widgetslug": self.slug,
+            "row": self.row,
+            "width": self.width,
+            "height": self.height,
+            "criteria": criteria,
+        }
+
+        return widget_def
 
     def widgettype(self):
         return '%s.%s' % (self.module.split('.')[-1], self.uiwidget)
@@ -487,9 +525,10 @@ class WidgetAuthToken(models.Model):
     """ Authentication token for each user per widget per report """
 
     token = models.CharField(max_length=200)
-    user = models.ForeignKey(PortalUser)
+    user = models.ForeignKey(AppfwkUser)
     pre_url = models.CharField(max_length=200, verbose_name='URL')
     criteria = PickledObjectField()
+    edit_fields = SeparatedValuesField(null=True)
     touched = models.DateTimeField(auto_now=True,
                                    verbose_name='Last Time used')
 

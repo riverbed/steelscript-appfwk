@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -21,7 +21,7 @@ except ImportError:
 
 from gitpy_versioning import get_version
 
-test = ('selenium', 'mock')
+test = ('selenium', 'mock', 'celerytest')
 doc = []
 
 setup_args = {
@@ -73,7 +73,7 @@ http://pythonhosted.org/steelscript/
     'scripts': None,
 
     'install_requires': (
-        'Django>=1.5.1,<1.6',
+        'Django>=1.7,<1.8',
         'steelscript>=0.9.5',
         'steelscript.netprofiler>=0.9.4',
 
@@ -89,13 +89,20 @@ http://pythonhosted.org/steelscript/
         'pytz>=2013.8',
         'six>=1.3.0',
         'wsgiref>=0.1.2',
-        'django-announcements==1.2.0',
 
         'django-admin-tools==0.5.2',
 
         'ansi2html>=1.0.6',
-        'django-ace==1.0.1',
+        'django-ace==1.0.2',
         'apscheduler>=3.0',
+
+        'celery>=3.1',
+        'django-celery==3.1.16',
+        'redis==2.10.3',
+
+        # progressd
+        'flask==0.10.1',
+        'flask_restful==0.3.2',
     ),
 
     'extras_require': {

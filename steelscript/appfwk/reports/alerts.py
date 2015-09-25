@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -8,7 +8,7 @@ from steelscript.appfwk.apps.report.models import Report
 import steelscript.appfwk.apps.report.modules.yui3 as yui3
 from steelscript.appfwk.apps.datasource.modules import alerting
 
-report = Report.create('App Framework Alerts')
+report = Report.create('App Framework Alerts', position=11)
 
 report.add_section()
 

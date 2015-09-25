@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -15,7 +15,7 @@ import steelscript.wave.appfwk.datasources.wave_source as wave
 # Sample WaveGenerator report
 #
 
-report = Report.create("Wave Report", position=1)
+report = Report.create("Wave Report", position=12)
 
 report.add_section()
 
@@ -43,11 +43,13 @@ clipped_table = wave.ClippedWaveTable.create(
     name='clipped-wave-table', tables={'waves': table})
 
 # Bind to a timeseries widget
-report.add_widget(yui3.TimeSeriesWidget, clipped_table, "Clipped Waves", width=12)
+report.add_widget(yui3.TimeSeriesWidget, clipped_table,
+                  "Clipped Waves", width=12)
 
 #
 # Define a criteria table that just displays all criteria for a
 # given report run
 #
 table = analysis.CriteriaTable.create('wave-criteria')
-report.add_widget(yui3.TableWidget, table, "Report Criteria", width=12, height=200)
+report.add_widget(yui3.TableWidget, table, "Report Criteria",
+                  width=12, height=200)

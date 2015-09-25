@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -20,7 +20,7 @@ from steelscript.appfwk.project.utils import Importer
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Reloads the configuration defined in the config directory'
 
     option_list = BaseCommand.option_list + (

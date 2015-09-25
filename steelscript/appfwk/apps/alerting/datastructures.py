@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -65,7 +65,7 @@ class Results(object):
     the data list.
 
     The .add_results method also supports pandas DataFrames as data objects,
-    which will be convered internally to a list of dicts.  If a DataFrame
+    which will be converted internally to a list of dicts.  If a DataFrame
     is passed to the singleton method, it will just be stored as an object
     without conversion.
 
@@ -85,6 +85,15 @@ class Results(object):
 
     def __len__(self):
         return len(self._data)
+
+    def __str__(self):
+        return "<Results items: %d keys: %s>" % (len(self._data), self._keys)
+
+    def __unicode__(self):
+        return str(self)
+
+    def __repr__(self):
+        return unicode(self)
 
     def _validate_keys(self, severity, **kwargs):
         if severity is None:

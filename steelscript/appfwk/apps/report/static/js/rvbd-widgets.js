@@ -38,6 +38,16 @@ rvbd.formatters = {
         return (new Date(t)).toString();
     },
 
+    formatDate: function(t, precision) {
+        //t is epoch seconds in UTC time zone
+        //Convert t to the date in UTC time zone
+        var time = new Date(t);
+        var year = time.getUTCFullYear();
+        var month = time.getUTCMonth();
+        var day = time.getUTCDate();
+        return String(month+1) + "/" + String(day) + "/" + String(year);
+    },
+
     formatTimeMs: function(t, precision) {
         var d = new Date(t);
         return d.getHours() +
@@ -84,10 +94,11 @@ rvbd.formatters = {
 
 rvbd.widgets = {};
 
-rvbd.widgets.Widget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteria) {
     var self = this;
 
-    self.postUrl = postUrl;
+    self.postUrl = urls.postUrl;
+    self.updateUrl = urls.updateUrl;
     self.div = div;
     self.id = id;
     self.slug = slug;
@@ -95,6 +106,7 @@ rvbd.widgets.Widget = function(postUrl, isEmbedded, div, id, slug, options, crit
     self.criteria = criteria;
 
     self.status = 'running';
+    self.lastUpdate = {};     // object datetime/timezone of last update
 
     var $div = $(div);
 
@@ -110,25 +122,32 @@ rvbd.widgets.Widget = function(postUrl, isEmbedded, div, id, slug, options, crit
         .showLoading()
         .setLoading(0);
 
-    $.ajax({
-        dataType: 'json',
-        type: 'POST',
-        url: self.postUrl,
-        data: { criteria: JSON.stringify(criteria) },
-        success: function(data, textStatus) {
-            self.jobUrl = data.joburl;
-            setTimeout(function() { self.getData(criteria); }, 1000);
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-            var message = $("<div/>").html(textStatus + " : " + errorThrown).text()
-            $div.hideLoading()
-                .append("<p>Server error: <pre>" + message + "</pre></p>");
-            self.status = 'error';
-        }
-    });
+    self.postRequest(criteria);
 };
 
 rvbd.widgets.Widget.prototype = {
+
+    postRequest: function(criteria) {
+        var self = this;
+
+        $.ajax({
+            dataType: 'json',
+            type: 'POST',
+            url: self.postUrl,
+            data: {criteria: JSON.stringify(criteria)},
+            success: function (data, textStatus) {
+                self.jobUrl = data.joburl;
+                setTimeout(function () {
+                    self.getData(criteria);
+                }, 1000);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                self.displayError(JSON.parse(jqXHR.responseText));
+                self.status = 'error';
+            }
+        });
+    },
+
     getData: function(criteria) {
         var self = this;
 
@@ -162,8 +181,107 @@ rvbd.widgets.Widget.prototype = {
                 break;
             default:
                 $(self.div).setLoading(response.progress);
-                setTimeout(function() { self.getData(criteria); }, 1000);
+                setTimeout(function() {
+                    self.getData(criteria, self.processResponse);
+                }, 1000);
         }
+    },
+
+    // Background Versions - post and query in the background without updates until done
+
+    postRequestAsync: function(criteria) {
+        var self = this;
+
+        $.ajax({
+            dataType: 'json',
+            type: 'POST',
+            url: self.postUrl,
+            data: {criteria: JSON.stringify(criteria)},
+            success: function (data, textStatus) {
+                self.jobUrl = data.joburl;
+                setTimeout(function () {
+                    self.getDataAsync(criteria);
+                }, 1000);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                self.displayError(JSON.parse(jqXHR.responseText));
+                self.status = 'error';
+            }
+        });
+    },
+
+    getDataAsync: function(criteria) {
+        var self = this;
+
+        $.ajax({
+            dataType: "json",
+            url: self.jobUrl,
+            data: null,
+            success: function(data, textStatus) {
+                self.processResponseAsync(criteria, data, textStatus);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                self.displayError(errorThrown);
+            }
+        });
+    },
+
+    processResponseAsync: function(criteria, response, textStatus) {
+        var self = this;
+
+        switch (response.status) {
+            case 3: // Complete, show spinner briefly then load data
+                $(self.div).showLoading();
+                setTimeout(function() {
+                    self.processResponse(criteria, response, textStatus)
+                }, 500);
+                break;
+            case 4: // Error
+                self.processResponse(criteria, response, textStatus)
+                break;
+            default:
+                setTimeout(function() {
+                    self.getDataAsync(criteria);
+                }, 1000);
+        }
+    },
+
+    reloadCriteria: function(callback) {
+        // request updated criteria from server
+        var self = this;
+
+        $.ajax({
+            dataType: 'json',
+            type: 'GET',
+            url: self.updateUrl,
+            data: null,
+            success: function (data, textStatus) {
+                self.criteria = data.widgets[0].criteria;
+                self.lastUpdate.datetime = data.meta.datetime;
+                self.lastUpdate.timezone = data.meta.timezone;
+
+                if (callback) {
+                    callback();
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                self.displayError(JSON.parse(jqXHR.responseText));
+                self.status = 'error';
+            }
+        });
+    },
+
+    reloadWidget: function() {
+        // update whole widget with latest information
+        var self = this;
+
+        self.status = 'running';
+
+        self.reloadCriteria(
+            function () {
+                self.postRequestAsync(self.criteria);
+            }
+        );
     },
 
     /**
@@ -241,6 +359,9 @@ rvbd.widgets.Widget.prototype = {
         menuItems.push(
             '<a tabindex="0" id="' + self.id + '_export_widget_csv" class="export_widget_csv" href="#">Export CSV (Table Data)...</a>'
         );
+        menuItems.push(
+            '<a tabindex="1" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
+        );
 
         var $menuContainer = $('<div></div>')
                 .attr('id', 'reports-dropdown')
@@ -278,6 +399,7 @@ rvbd.widgets.Widget.prototype = {
         $menuContainer.find('.export_widget_csv').click($.proxy(self.onCsvExport, self));
 
         $(self.title).find('.get-embed').click($.proxy(self.embedModal, self));
+        $(self.title).find('.show_criteria').click($.proxy(self.showCriteriaModal, self));
     },
 
     onCsvExport: function() {
@@ -313,7 +435,7 @@ rvbd.widgets.Widget.prototype = {
                         // remove spaces and special chars from widget title
                         var fname = self.titleMsg.replace(/\W/g, '');
                         // Should trigger file download
-                        window.location = origin + '/data/jobs/' + data.id + '/data/csv/?filename=' + fname;
+                        window.location = origin + '/jobs/' + data.id + '/data/csv/?filename=' + fname;
                         break;
                     case 4: // Error
                         var alertBody = ('The server returned the following error: <pre>' +
@@ -378,17 +500,16 @@ rvbd.widgets.Widget.prototype = {
         delete urlCriteria.starttime;
         delete urlCriteria.endtime;
 
-        var baseUrl = window.location.href.split('#')[0] + 'widgets/'; // Current URL minus anchor
-        var url = baseUrl + self.slug + '/render/?';
+        var widgetUrl = window.location.href.split('#')[0] + 'widgets/' + self.slug;
 
         //call server for auth token
         $.ajax({
             dataType: 'json',
             type: 'POST',
-            url: baseUrl + self.slug + '/authtoken/',
+            url: widgetUrl + '/authtoken/',
             data: { criteria: JSON.stringify(urlCriteria) },
             success: function(data, textStatus) {
-                   self.genEmbedWindow(url, data.auth);
+                   self.genEmbedWindow(widgetUrl, data.auth, urlCriteria, data.label_map);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 var alertBody = ("The server returned the following HTTP error: <pre>" +
@@ -396,14 +517,12 @@ rvbd.widgets.Widget.prototype = {
                 rvbd.modal.alert("Auth Token Generation Error", alertBody, "OK", function() { })
             }
         });
-
-
     },
 
-    genEmbedWindow: function(url, token) {
+    genEmbedWindow: function(widgetUrl, token, criteria, label_map) {
 
         var self = this;
-        var authUrl = url + 'auth=' + token;
+        var authUrl = widgetUrl + '/render/?auth=' + token;
 
         /* Generates the source code for the embed iframe */
         function genEmbedCode(url, width, height) {
@@ -411,23 +530,84 @@ rvbd.widgets.Widget.prototype = {
                    '" src="' + url + '" frameborder="0"></iframe>';
         };
 
+        var div = '<div id="embed-modal" class="modal-content">' +
+        '  Choose dimensions for the embedded widget:<br>' +
+        '  <table>' +
+        '  <tr>' +
+        '     <th>Width:</th>' +
+        '     <td><input value="500" type="text" id="embed-widget-width"></td>' +
+        '  </tr>' +
+        '  <tr>' +
+        '      <th>Height:</th>' +
+        '      <td><input value="312" type="text" id="embed-widget-height"></td>' +
+        '  </tr>' +
+        '  </table><br>' +
+        '  Copy the following HTML to embed the widget:' +
+        '  <input id="embed-widget-code" type="text">' +
+        ' Choose criteria fields that can be overridden in the URL string:<br>' +
+        ' <table id="criteriaTbl">';
+
+        for (var field in criteria){
+            if (criteria.hasOwnProperty(field) && label_map.hasOwnProperty(field)){
+                div += '<tr>'+
+                       '<th align="left">' + label_map[field] + '    ('+field + ')'+'</th>'+
+                       '     <td><input type="checkbox" id="criteria-' + field + '"></td>' +
+                       ' </tr>';
+            }
+        }
+        div += ' </table><br>' +
+               '</div>';
+
+        $('body').append(div);
+
+
         var embedCode = genEmbedCode(authUrl, 500, self.options.height + 12);
-        $('body').append('<div id="embed-modal" class="modal-content">' +
-            '  Choose dimensions for the embedded widget:<br>' +
-            '  <table>' +
-            '  <tr>' +
-            '     <th>Width:</th>' +
-            '     <td><input value="500" type="text" id="embed-widget-width"></td>' +
-            '  </tr>' +
-            '  <tr>' +
-            '      <th>Height:</th>' +
-            '      <td><input value="312" type="text" id="embed-widget-height"></td>' +
-            '  </tr>' +
-            '  </table><br>' +
-            '  Copy the following HTML to embed the widget:' +
-            '  <input id="embed-widget-code" type="text">' +
-            '</div>');
+
         $('#embed-modal #embed-widget-code').attr('value', embedCode);
+
+        function getEditFields() {
+            var editFields = [];
+            for (var field in criteria)
+                if (criteria.hasOwnProperty(field))
+                    if ($('#criteria-' + field).prop('checked'))
+                        editFields.push(field);
+            return editFields
+        }
+
+        function toggleEditField() {
+             var editFieldsUrl = widgetUrl +'/' + token + '/editfields/';
+
+             var dict = {edit_fields: getEditFields()};
+            //call server for auth token
+            $.ajax({
+                dataType: 'json',
+                type: 'POST',
+                url: editFieldsUrl,
+                //data: {dict: JSON.stringify(dict)},
+                data: {edit_fields: JSON.stringify(getEditFields())},
+                success: function(data, textStatus) {
+                    updateIframe();
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    var alertBody = ("The server returned the following HTTP error: <pre>" +
+                                     + errorThrown + '</pre>');
+                    rvbd.modal.alert("Add Edit Field Error", alertBody, "OK", function() { })
+                }
+            });
+        }
+
+        function updateIframe() {
+            var tempUrl = authUrl;
+            var fields = getEditFields();
+            var fieldsObj = {}
+            for (var index in fields)
+                fieldsObj[fields[index]] = criteria[fields[index]]
+
+            tempUrl += '&' + $.param(fieldsObj)
+            $('#embed-modal #embed-widget-code').attr('value',
+                genEmbedCode(tempUrl, $('#embed-widget-width').val(),
+                                      $('#embed-widget-height').val()));
+        };
 
         rvbd.modal.alert("Embed Widget HTML", $('#embed-modal')[0], "OK", function() {
             // automatically focus and select the embed code
@@ -436,13 +616,22 @@ rvbd.widgets.Widget.prototype = {
                 .focus();
 
             // update the embed code to reflect the width and height fields
-            $('#embed-widget-width, #embed-widget-height').keyup(function() {
-                $('#embed-modal #embed-widget-code').attr('value',
-                    genEmbedCode(authUrl, $('#embed-widget-width').val(),
-                                          $('#embed-widget-height').val()));
-            });
+            $('#embed-widget-width, #embed-widget-height').keyup(updateIframe);
+            // update the embed code to reflect the checked criteria fields
+            $('#criteriaTbl').click(toggleEditField);
         });
-    }
+    },
+
+    /**
+     * Display dialog with widget's criteria
+     */
+    showCriteriaModal: function() {
+        var self = this;
+        var body = $('<pre></pre>').html(JSON.stringify(self.criteria, null, 2));
+        var title = self.titleMsg + ' Criteria';
+
+        rvbd.modal.alert(title, body, "OK", function() { })
+    },
 };
 
 rvbd.widgets.raw = {};
@@ -469,6 +658,20 @@ rvbd.widgets.raw.TableWidget.prototype.render = function(data) {
     });
 
     $(self.div).empty().append($table);
+};
+
+/* Use this with the Column.formatter as follows:
+
+     table.add_column('col', datatype='string',
+                      formatter='rvbd.formatHealth')
+
+   The valid table column values are defined in report.css:
+      green, yellow, red, yellow
+   yielding "green-circle" as a class.
+*/
+
+rvbd.formatHealth = function(v) {
+    return '<div class="' + v + '-circle"></div>';
 };
 
 })();

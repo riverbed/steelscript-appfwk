@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -7,6 +7,7 @@
 
 from steelscript.appfwk.apps.datasource.modules.analysis import \
     AnalysisTable, AnalysisQuery
+from steelscript.appfwk.apps.jobs import QueryComplete
 
 
 # Common translation function
@@ -33,12 +34,11 @@ class WhoisTable(AnalysisTable):
 
 class WhoisQuery(AnalysisQuery):
 
-    def post_run(self):
+    def analyze(self, jobs):
         """ Return a data frame that simply adds a whois link for each IP. """
-        df = self.tables['t']
+        df = jobs['t'].data()
         df['whois'] = df['host_ip'].map(make_whois_link)
-        self.data = df
-        return True
+        return QueryComplete(df)
 
 
 #

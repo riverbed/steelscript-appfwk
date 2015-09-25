@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -35,7 +35,7 @@ DURATIONS = ('1 min', '15 min', '1 hour',
 
 
 class CriteriaError(Exception):
-    """ Exception raised when a problem resolving criteria occurs. """
+    """Exception raised when a problem resolving criteria occurs."""
     pass
 
 
@@ -59,7 +59,7 @@ def all_timezones_map():
 
 
 class DateWidget(forms.DateInput):
-    """ Custom DateWidget """
+    """Custom DateWidget."""
 
     def __init__(self, attrs=None, format=None):
         final_attrs = {'class': 'date'}
@@ -100,8 +100,7 @@ class DateWidget(forms.DateInput):
 
 
 class TimeWidget(forms.TimeInput):
-    """ Custom TimeWidget for Reports
-    """
+    """Custom TimeWidget for Reports."""
 
     def __init__(self, attrs=None, format=None):
         final_attrs = {'class': 'time'}
@@ -117,8 +116,8 @@ class TimeWidget(forms.TimeInput):
             if m:
                 secs = timedelta_total_seconds(parse_timedelta(m.group(1)))
                 initial_time = (
-                    "d = new Date(); d.setSeconds(d.getSeconds()-%d);" \
-                    % secs)
+                    "d = new Date(); d.setSeconds(d.getSeconds()-%d);" % secs
+                )
             else:
                 initial_time = "d = '%s';" % initial_time
         else:
@@ -146,8 +145,7 @@ class TimeWidget(forms.TimeInput):
 
 
 class ReportSplitDateTimeWidget(forms.SplitDateTimeWidget):
-    """ A SplitDateTime Widget that uses overridden Report widgets
-    """
+    """A SplitDateTime Widget that uses overridden Report widgets."""
     def __init__(self, attrs=None):
         split_widgets = [DateWidget, TimeWidget]
         # Note that we're calling MultiWidget, not SplitDateTimeWidget, because
@@ -156,7 +154,7 @@ class ReportSplitDateTimeWidget(forms.SplitDateTimeWidget):
 
 
 class ReportSplitDateWidget(forms.SplitDateTimeWidget):
-    """A Date Widget with """
+    """A DateWidget using overridden Report widgets."""
     def __init__(self, attrs=None):
         # Simply using DateWidget will not work, the javascript code
         # will be displayed on browser instead of rendering the widget
@@ -200,8 +198,7 @@ class FileSelectField(forms.Field):
 
 
 class DateTimeField(forms.DateTimeField):
-    """Field that takes a date/time string and parses it to datetime object.
-    """
+    """Field that parses a date/time string into a datetime object."""
 
     def to_python(self, value):
         if value in validators.EMPTY_VALUES:
@@ -258,7 +255,7 @@ class DurationWidget(forms.MultiWidget):
 
 
 class DurationField(forms.ChoiceField):
-    """ Field that takes duration string and parses it to timedelta object. """
+    """Field that parses a duration string into a timedelta object."""
 
     def __init__(self, **kwargs):
         self._special_values = kwargs.pop('special_values', None)
@@ -396,8 +393,7 @@ def fields_add_resolution(obj, initial=None,
 
 
 class TableFieldForm(forms.Form):
-    """ Form built from a set of TableFields.
-    """
+    """Form built from a set of TableFields."""
     # css definitions
     error_css_class = 'text-error'
 
@@ -569,8 +565,7 @@ class TableFieldForm(forms.Form):
                 if tablefield.dynamic and id_ in self.fields]
 
     def as_text(self):
-        """ Return certain field values as a dict for simple json parsing
-        """
+        """Return certain field values as a dict for simple json parsing."""
         result = {}
 
         for k, v in self.cleaned_data.iteritems():
@@ -596,7 +591,7 @@ class TableFieldForm(forms.Form):
         return result
 
     def criteria(self):
-        """ Return a Criteria object based on this form data. """
+        """Return a Criteria object based on this form data."""
 
         if not self.is_valid():
             raise ValidationError("Form data is not valid")
@@ -657,7 +652,7 @@ class TableFieldForm(forms.Form):
         return self.is_bound and not bool(self.errors)
 
     def apply_timezone(self, tzinfo):
-        """ Apply `tzinfo` as the timezone of any naive datetime objects. """
+        """Apply `tzinfo` as the timezone of any naive datetime objects."""
         if not self.is_valid():
             raise ValidationError("Form data is not valid")
 

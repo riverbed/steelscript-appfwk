@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -81,7 +81,7 @@ def create_preference_fixture(initial_admin_only=True):
                                                               fname))
 
 
-class PortalUser(AbstractUser):
+class AppfwkUser(AbstractUser):
     """ Extend base user class with additional profile prefs. """
     timezone = models.CharField(max_length=50,
                                 default='UTC',

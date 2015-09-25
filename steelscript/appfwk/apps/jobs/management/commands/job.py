@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -10,10 +10,9 @@ import logging
 import optparse
 
 from django.core.management.base import BaseCommand
+from steelscript.appfwk.apps.jobs.models import Job
 
 from steelscript.common.datautils import Formatter
-
-from steelscript.appfwk.apps.datasource.models import Job
 
 # not pretty, but pandas insists on warning about
 # some deprecated behavior we really don't care about
@@ -26,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Work with already run jobs'
 
     def create_parser(self, prog_name, subcommand):
@@ -69,8 +68,8 @@ class Command(BaseCommand):
 
         if options['job_list']:
             # print out the id's instead of processing anything
-            columns = ['ID', 'Parent', 'PID', 'Table', 'Created', 'Touched',
-                       'Status', 'Refs', 'Progress', 'Data file']
+            columns = ['ID', 'Master', 'Parent', 'PID', 'Table', 'Created',
+                       'Touched', 'Status', 'Refs', 'Progress', 'Data file']
             data = []
             for j in Job.objects.all().order_by('id'):
 
@@ -81,10 +80,11 @@ class Command(BaseCommand):
                 status = (s for s in ('NEW', 'RUNNING', 'COMPLETE', 'ERROR')
                           if getattr(Job, s) == j.status).next()
                 parent_id = j.parent.id if j.parent else '--'
+                master_id = j.master.id if j.master else '--'
 
-                data.append([j.id, parent_id, j.pid, j.table.name, j.created,
-                             j.touched, status, j.refcount, j.progress,
-                             datafile])
+                data.append([j.id, master_id, parent_id, j.pid, j.table.name,
+                             j.created, j.touched, status, j.refcount,
+                             j.progress, datafile])
 
             Formatter.print_table(data, columns)
 
@@ -98,10 +98,12 @@ class Command(BaseCommand):
 
         elif options['job_age']:
             logger.debug('Aging all jobs.')
-            Job.age_jobs(force=True)
+            Job.objects.age_jobs(force=True)
 
         elif options['job_flush']:
             logger.debug('Flushing all jobs.')
             while Job.objects.count():
                 ids = Job.objects.values_list('pk', flat=True)[:100]
-                Job.objects.filter(pk__in=ids).delete()
+                # Using list(ids) forces a DB hit, otherwise we may hit
+                # a MySQL limitation
+                Job.objects.filter(pk__in=list(ids)).delete()

@@ -9,7 +9,7 @@ Setting up the database
 
 By default, ``local_settings.py`` uses a simple sqlite database to store
 configurations, reports, and other data.  This is fine for single-user
-and basic development, but sqlite has concurrancy and performance limitations
+and basic development, but sqlite has concurrency and performance limitations
 which make it unsuitable for more dedicated use.
 
 .. code-block:: python
@@ -97,7 +97,7 @@ the admin-only list of system configuration items.
 Map Widgets
 ^^^^^^^^^^^
 
-Two options are availble for Map Widgets in App Framework,
+Two options are available for Map Widgets in App Framework,
 `OpenStreetMap <http://www.openstreetmap.org/about>`_ and
 `Google Maps <https://developers.google.com/maps/>`_.  Use of either service
 is subject to their license terms.  Additionally, use of Google Maps

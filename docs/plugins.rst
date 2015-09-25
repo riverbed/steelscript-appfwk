@@ -11,16 +11,16 @@ A plugin is some collection of one or more of the following:
 * data sources
 
   * new table types for collecting data from devices
-  * analyais tables for manipulating data from other data sources
+  * analysis tables for manipulating data from other data sources
 
 * reports - defined based on new tables and or tables from other
   plugins
 
-Each plugin is fundamentally a Python Package, and thus yeilds
+Each plugin is fundamentally a Python Package, and thus yields
 all the benefits that such packaging provides:
 
 * setup.py - single script for building a distribution for sharing
-* versioning - major.minor.patch version numbers to faciitate tracking and upgrade
+* versioning - major.minor.patch version numbers to facilitate tracking and upgrade
 * simple installation both from source as well as from a single distribution file
 
 Managing plugins
@@ -30,12 +30,12 @@ SteelScript Application Framework provides a page allowing easy management of
 reports within each of your installed Application Framework plugins.
 To open the page, choose the "Edit Plugins" option from the upper-right drop-down
 menu in the browser. Then a table with all installed Application Framework
-plugins will show up. 
+plugins will show up.
 
 The first column of each plugin shows the status of the plugin. By checking
 the box of each row, the reports belonging to the plugin will be accessible
 in the Reports drop-down upper-left in the browser. For instance, by enabling the
-Netshark Datasource Plugin, a total of 5 reports are available, shown as below. 
+NetShark Datasource Plugin, a total of 5 reports are available, shown as below.
 
 .. image:: app-fwk-plugins.png
    :align: center
@@ -55,7 +55,7 @@ installed plugins after they have been collected, as described in :ref:`reload r
 Creating a new plugin
 ---------------------
 
-New Application Framwork plugins can be created at any time using
+New Application Framework plugins can be created at any time using
 ``steel appfwk mkplugin``:
 
 .. code-block:: python
@@ -85,7 +85,7 @@ New Application Framwork plugins can be created at any time using
 .. note::
 
    You can create a fully functional sample "Wave Generator" plugin
-   using the command ``steel appfwk plugin -w``.  This will populate
+   using the command ``steel appfwk mkplugin -w``.  This will populate
    ``steelscript-wave`` in the current directory with all the files
    associated with this plugin.  The source files are well documented.
    Once created, ``cd steelscript-wave`` followed by ``pip install -e .``
@@ -142,6 +142,8 @@ steelscript/wave/commands/              Sub-commands for ``steel``
 steelscript/wave/core/                  Low-level functions and classes
 ======================================= ===========================================================
 
+.. _installing a plugin:
+
 Installing from source
 ----------------------
 
@@ -180,6 +182,8 @@ Once your package is installed, it should show up in the output of
 
 This means that in any of your scripts you can now import your code
 via the module path ``steelscript.wave``.
+
+.. _plugin reports:
 
 Plugin Reports
 --------------

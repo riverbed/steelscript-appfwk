@@ -1,0 +1,87 @@
+$schema: "http://support.riverbed.com/apis/service_def/2.2"
+id: "https://github.com/riverbed/steelscript-appfwk/raw/master/steelscript/appfwk/project/progressd.yaml"
+provider: "riverbed"
+name: "progressd"
+version: "1.0"
+title: "REST API for App Framework Progress Daemon"
+defaultAuthorization: "required"
+
+resources:
+    jobs:
+        description: "Collection of Job objects"
+        type: object
+        additionalProperties: false
+        properties:
+            items:
+                type: array
+                items:
+                    $ref: '#/resources/job'
+
+        links:
+            self:
+                path: "$/jobs"
+                params:
+                    master_id: { type: integer }
+            get:
+                method: GET
+                response: { $ref: '#/resources/jobs' }
+            create:
+                method: POST
+                request: { $ref: '#/resources/job' }
+                response: { $ref: '#/resources/job' }
+            reset:
+                description: "Reset all Jobs and re-read database"
+                path: "$/jobs/reset"
+                method: POST
+
+    job:
+        description: "Job instance object"
+        type: object
+        additionalProperties: false
+
+        properties:
+            job_id: { type: integer }
+            status:
+                type: integer
+                enum: [0, 1, 3, 4]
+                description: "Job execution status"
+            progress:
+                type: integer
+                minimum: 0
+                maximum: 100
+                description: "Job progress indicator"
+            master_id:
+                description: "ID for master job, defaults to 0 for no master"
+                type: integer
+                default: 0
+            parent_id:
+                description: "ID for parent job, defaults to 0 for no parent"
+                type: integer
+                default: 0
+
+        links:
+            self: { path: "$/jobs/items/{job_id}" }
+
+            get:
+                method: GET
+                response: { $ref: '#/resources/job' }
+
+            done:
+                path: "$/jobs/items/{job_id}/done"
+                method: POST
+
+        relations:
+            instances: { resource: '#/resources/jobs' }
+            master:
+                resource: '#/resources/job'
+                vars: { id: '0/master_id' }
+            followers:
+                resource: '#/resources/jobs'
+                vars: { master_id: '0/job_id' }
+
+            parent:
+                resource: '#/resources/job'
+                vars: { id: '0/parent_id' }
+            children:
+                resource: '#/resources/jobs'
+                vars: { parent_id: '0/job_id' }

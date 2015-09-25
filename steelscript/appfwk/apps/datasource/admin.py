@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -7,7 +7,7 @@
 
 from django.contrib import admin
 
-from steelscript.appfwk.apps.datasource.models import Table, Column, Job, TableField
+from steelscript.appfwk.apps.datasource.models import Table, Column, TableField
 
 
 class TableAdmin(admin.ModelAdmin):
@@ -24,12 +24,6 @@ class ColumnAdmin(admin.ModelAdmin):
 admin.site.register(Column, ColumnAdmin)
 
 
-class JobAdmin(admin.ModelAdmin):
-    list_display = ('table', 'status', 'progress', 'message')
-
-#admin.site.register(Job, JobAdmin)
-
-
 class TableFieldAdmin(admin.ModelAdmin):
     list_display = (
         'label', 'help_text', 'initial', 'required',
@@ -38,5 +32,3 @@ class TableFieldAdmin(admin.ModelAdmin):
     )
 
 admin.site.register(TableField, TableFieldAdmin)
-
-

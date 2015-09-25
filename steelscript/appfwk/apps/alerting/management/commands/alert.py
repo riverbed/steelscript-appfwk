@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'View and manage system Alerts and Events'
 
     def create_parser(self, prog_name, subcommand):

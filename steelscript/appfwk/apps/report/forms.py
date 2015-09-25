@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -11,6 +11,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django_ace import AceWidget
+from django.utils.safestring import mark_safe
 
 from steelscript.appfwk.apps.report.models import Report, Widget
 
@@ -28,11 +29,23 @@ class ReportDetailForm(forms.ModelForm):
 
     class Meta:
         model = Report
+        fields = '__all__'
 
 
 class AceReportWidget(AceWidget):
     def render(self, name, value, attrs=None):
-        return super(AceReportWidget, self).render(name, value, attrs)
+        html = super(AceReportWidget, self).render(name, value, attrs)
+        # html = '<div class="django-ace-editor">
+        # <div style="width: <width>" class="django-ace-toolbar">
+        # <a href="./" class="django-ace-max_min"></a></div><html></div>'
+        # need to remove the fullscreen button as it causes scrolling to fail
+        # after maximizing the editor and then resizing it to normal
+        # for now just remove toolbar to avoid this issue
+
+        # add style="display:none" to <a> tag
+        class_str = 'class="django-ace-max_min"'
+        return mark_safe(html.replace(class_str,
+                                      class_str + ' style="display:none"'))
 
 
 class ReportEditorForm(forms.Form):

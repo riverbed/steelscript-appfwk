@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -16,16 +16,18 @@ from django.core import management
 from django.conf import settings
 from django import db
 from django.db import transaction, DatabaseError
+from requests.exceptions import ConnectionError
 
 from steelscript.appfwk.apps.preferences.models import SystemSettings, \
-    PortalUser
+    AppfwkUser
+from steelscript.common import RvbdException
 
 # list of files/directories to ignore
 IGNORE_FILES = ['helpers']
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = ('Reset the database. Prompts for confirmation unless '
             '`--force` is included as an argument.')
 
@@ -39,7 +41,7 @@ class Command(BaseCommand):
     # introduced buffer_names list to keep order of loading sequeces of
     # different buffers
     buffer_names = ['users', 'tokens']
-    buffers = {'users': {'model': 'preferences.PortalUser',
+    buffers = {'users': {'model': 'preferences.AppfwkUser',
                          'buffer': None},
                'tokens': {'model': 'report.WidgetAuthToken',
                           'buffer': None},
@@ -161,8 +163,18 @@ class Command(BaseCommand):
 
         if (not options['drop_users'] and
             (self.buffers['users']['buffer'] is None or
-             len(PortalUser.objects.all()) == 0)):
+             len(AppfwkUser.objects.all()) == 0)):
             self.stdout.write('WARNING: No users added to database.  '
                               'If you would like to include the default '
                               'admin user, rerun this command with the '
                               "'--drop-users' option.")
+
+        # reset progressd cache
+        self.stdout.write('Resetting progressd ...', ending='')
+        try:
+            from steelscript.appfwk.apps.jobs.progress import progressd
+            progressd.reset()
+        except RvbdException:
+            self.stdout.write(' unable to connect to progressd, skipping ...',
+                              ending='')
+        self.stdout.write(' done.')

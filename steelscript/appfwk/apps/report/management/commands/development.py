@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -8,6 +8,7 @@
 import logging
 import optparse
 from cStringIO import StringIO
+
 logger = logging.getLogger(__name__)
 
 from django.core.management.base import BaseCommand
@@ -15,15 +16,14 @@ from django.core.management.base import BaseCommand
 from steelscript.common.datautils import Formatter
 from steelscript.appfwk.project.utils import Importer
 
-from steelscript.appfwk.apps.datasource.models import Table, Job, DatasourceTable
-from steelscript.appfwk.apps.datasource.forms import TableFieldForm
-from steelscript.appfwk.apps.report.models import Report, Widget
+from steelscript.appfwk.apps.datasource.models import DatasourceTable
+from steelscript.appfwk.apps.report.models import Widget
 
 from steelscript.appfwk.apps.plugins import plugins
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Run a defined table and return results in nice tabular format'
 
     def create_parser(self, prog_name, subcommand):

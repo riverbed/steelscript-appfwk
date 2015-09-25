@@ -1,9 +1,10 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+import re
 import os
 import sys
 import cgi
@@ -19,6 +20,7 @@ import pytz
 from django.conf import settings
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import JsonResponse
 from django.template import loader, RequestContext
 from django.template.defaultfilters import date
 from django.shortcuts import render_to_response, get_object_or_404
@@ -29,7 +31,6 @@ from django.utils.datastructures import SortedDict
 from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 
-
 from rest_framework import generics, views
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAdminUser
@@ -38,16 +39,17 @@ from rest_framework.parsers import JSONParser
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.authentication import (SessionAuthentication,
                                            BasicAuthentication)
+from steelscript.appfwk.apps.jobs.models import Job
 
-from steelscript.common.timeutils import round_time
+from steelscript.common.timeutils import round_time, timedelta_total_seconds, \
+    parse_timedelta
 from steelscript.commands.steel import shell, ShellFailed
-from steelscript.appfwk.apps.datasource.models import Job, Table
 from steelscript.appfwk.apps.datasource.serializers import TableSerializer
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
 from steelscript.appfwk.apps.devices.models import Device
 from steelscript.appfwk.apps.geolocation.models import Location, LocationIP
 from steelscript.appfwk.apps.preferences.models import (SystemSettings,
-                                                        PortalUser)
+                                                        AppfwkUser)
 from steelscript.appfwk.apps.report.models import (Report, Section, Widget,
                                                    WidgetJob, WidgetAuthToken)
 from steelscript.appfwk.apps.report.serializers import ReportSerializer, \
@@ -113,6 +115,7 @@ def rm_file(filepath):
 
 
 class GenericReportView(views.APIView):
+
     def get_media_params(self, request):
         """ Implement this method in subclasses to compute the values of
             the template, criteria and expand_tables template params.
@@ -121,29 +124,44 @@ class GenericReportView(views.APIView):
         raise NotImplementedError('get_media_params() must be implemented in '
                                   ' subclass.')
 
+    def report_def(self, widgets, report_time, debug=False):
+        """Return dict for report definition."""
+        meta = {
+            'datetime': str(date(report_time, 'jS F Y H:i:s')),
+            'timezone': str(report_time.tzinfo),
+            'debug': debug
+        }
+        return {'meta': meta, 'widgets': widgets}
+
     def render_html(self, report, request, namespace, report_slug, isprint):
         """ Render HTML response
         """
-
         logging.debug('Received request for report page: %s' % report_slug)
 
         if not request.user.profile_seen:
             # only redirect if first login
             return HttpResponseRedirect(reverse('preferences')+'?next=/report')
 
-        devices = Device.objects.all()
-        if len(devices) == 0:
-            # redirect if no devices defined
-            return HttpResponseRedirect(reverse('device-list'))
+        devices = Device.objects.filter(enabled=True)
+        device_modules = [obj.module for obj in devices]
 
-        # search across all enabled devices
-        for device in devices:
-            if (device.enabled and ('host.or.ip' in device.host or
-                                    device.username == '<username>' or
-                                    device.password == '<password>' or
-                                    device.password == '')):
-                return HttpResponseRedirect('%s?invalid=true' %
-                                            reverse('device-list'))
+        # iterate through all sections of the report, for each section,
+        # iterate through the fields, and if any field's
+        # pre_process_func function is device_selection_preprocess
+        # then the field is a device field, then fetch the module and check
+        # the module is included in Device objects in database
+        missing_devices = set()
+        for _id, fields in report.collect_fields_by_section().iteritems():
+            for _name, field_obj in fields.iteritems():
+                func = field_obj.pre_process_func
+                if (func and func.function == 'device_selection_preprocess'):
+                    # This field is a device field,
+                    # check if the device is configured
+                    module = func.params['module']
+                    if module not in device_modules:
+                        missing_devices.add(module)
+        if missing_devices:
+            missing_devices = ', '.join(list(missing_devices))
 
         if not request.user.profile_seen:
             # only redirect if first login
@@ -188,18 +206,22 @@ class GenericReportView(views.APIView):
 
         template, criteria, expand_tables = self.get_media_params(request)
 
-        return render_to_response(template,
-                                  {'report': report,
-                                   'developer': system_settings.developer,
-                                   'maps_version': system_settings.maps_version,
-                                   'maps_api_key': system_settings.maps_api_key,
-                                   'endtime': 'endtime' in form.fields,
-                                   'form': form,
-                                   'section_map': section_map,
-                                   'show_sections': (len(section_map) > 1),
-                                   'criteria': criteria,
-                                   'expand_tables': expand_tables},
-                                  context_instance=RequestContext(request))
+        return render_to_response(
+            template,
+            {'report': report,
+             'developer': system_settings.developer,
+             'maps_version': system_settings.maps_version,
+             'maps_api_key': system_settings.maps_api_key,
+             'endtime': 'endtime' in form.fields,
+             'form': form,
+             'section_map': section_map,
+             'show_sections': (len(section_map) > 1),
+             'criteria': criteria,
+             'expand_tables': expand_tables,
+             'missing_devices': missing_devices,
+             'is_superuser': request.user.is_superuser},
+            context_instance=RequestContext(request)
+        )
 
 
 class ReportView(GenericReportView):
@@ -219,15 +241,15 @@ class ReportView(GenericReportView):
     # ReportView.get()
     def get(self, request, namespace=None, report_slug=None):
         if request.accepted_renderer.format == 'html':  # handle HTML calls
-            queryset = Report.objects.filter(enabled=True)
+            queryset = Report.objects.filter(enabled=True).order_by('position',
+                                                                    'title')
 
             try:
                 if namespace is None:
                     namespace = queryset[0].namespace
 
                 if report_slug is None:
-                    qs = (queryset.filter(namespace=namespace)
-                          ).order_by('position', 'title')
+                    qs = queryset.filter(namespace=namespace)
                     kwargs = {'report_slug': qs[0].slug,
                               'namespace': namespace}
                     return HttpResponseRedirect(reverse('report-view',
@@ -287,50 +309,113 @@ class ReportView(GenericReportView):
             logger.debug("Report %s validated form: %s" %
                          (report_slug, formdata))
 
-            # setup definitions for each Widget
-            definition = []
-
-            # store datetime info about when report is being run
-            # XXX move datetime format to preferences or somesuch
+            # construct report definition
             now = datetime.datetime.now(timezone)
-            definition.append({'datetime': str(date(now, 'jS F Y H:i:s')),
-                               'timezone': str(timezone),
-                               'debug': formdata['debug']})
-
-            # create matrix of Widgets
-            lastrow = -1
-            rows = []
-            for w in report.widgets().order_by('row', 'col'):
-                if w.row != lastrow:
-                    lastrow = w.row
-                    rows.append([])
-                rows[-1].append(Widget.objects.get_subclass(id=w.id))
-
-            # populate definitions
-            for row in rows:
-                for w in row:
-                    widget_def = {"widgettype": w.widgettype().split("."),
-                                  "posturl": reverse('widget-job-list',
-                                                     args=(report.namespace,
-                                                           report.slug,
-                                                           w.slug)),
-                                  "options": w.uioptions,
-                                  "widgetid": w.id,
-                                  "widgetslug": w.slug,
-                                  "row": w.row,
-                                  "width": w.width,
-                                  "height": w.height,
-                                  "criteria": form.as_text()
-                                  }
-                    definition.append(widget_def)
+            widgets = report.widget_definitions(form.as_text())
+            report_def = self.report_def(widgets, now, formdata['debug'])
 
             logger.debug("Sending widget definitions for report %s: %s" %
-                         (report_slug, definition))
+                         (report_slug, report_def))
 
-            return HttpResponse(json.dumps(definition))
+            return JsonResponse(report_def, safe=False)
         else:
             # return form with errors attached in a HTTP 400 Error response
             return HttpResponse(str(form.errors), status=400)
+
+
+class ReportAutoView(GenericReportView):
+    """Return default criteria values, with latest time, if applicable.
+
+    Used in auto-run reports when specifying detailed criteria isn't
+    necessary.
+
+    Also used by individual widgets for retrieving updated criteria values.
+    """
+    authentication_classes = (SessionAuthentication,
+                              BasicAuthentication,
+                              URLTokenAuthentication)
+
+    def get_media_params(self, request):
+        # json only - no media needed
+        pass
+
+    def get(self, request, namespace=None, report_slug=None, widget_slug=None):
+        try:
+            report = Report.objects.get(namespace=namespace,
+                                        slug=report_slug)
+        except:
+            raise Http404
+
+        logger.debug("Received GET for report %s widget definition" %
+                     report_slug)
+
+        if widget_slug:
+            w = get_object_or_404(
+                Widget,
+                slug=widget_slug,
+                section__in=Section.objects.filter(report=report)
+            )
+            widgets = [w]
+        else:
+            widgets = report.widgets().order_by('row', 'col')
+
+        # parse time and localize to user profile timezone
+        timezone = pytz.timezone(request.user.timezone)
+        now = datetime.datetime.now(timezone)
+
+        # pin the endtime to a round interval if we are set to
+        # reload periodically
+        minutes = report.reload_minutes
+        if minutes:
+            # avoid case of long duration reloads to have large reload gap
+            # e.g. 24-hour report will consider 12:15 am or later a valid time
+            # to roll-over the time time values, rather than waiting
+            # until 12:00 pm
+            trimmed = round_time(dt=now, round_to=60*minutes, trim=True)
+            if now - trimmed > datetime.timedelta(minutes=15):
+                now = trimmed
+            else:
+                now = round_time(dt=now, round_to=60*minutes)
+
+        widget_defs = []
+
+        for w in widgets:
+            # get default criteria values for widget
+            # and set endtime to now, if applicable
+            widget_fields = w.collect_fields()
+            form = TableFieldForm(widget_fields, use_widgets=False)
+
+            # create object from the tablefield keywords
+            # and populate it with initial data generated by default
+            keys = form._tablefields.keys()
+            criteria = dict(zip(keys, [None]*len(keys)))
+            criteria.update(form.data)
+
+            # calculate time offsets
+            if 'endtime' in criteria:
+                criteria['endtime'] = now.isoformat()
+
+                # only consider starttime if its paired with an endtime
+                if 'starttime' in criteria:
+                    start = now
+
+                    field = form.fields['starttime']
+                    initial = field.widget.attrs.get('initial_time', None)
+                    if initial:
+                        m = re.match("now *- *(.+)", initial)
+                        if m:
+                            delta = parse_timedelta(m.group(1))
+                            start = now - delta
+
+                    criteria['starttime'] = start.isoformat()
+
+            # setup json definition object
+            widget_def = w.get_definition(criteria)
+            widget_defs.append(widget_def)
+
+        report_def = self.report_def(widget_defs, now)
+
+        return JsonResponse(report_def, safe=False)
 
 
 class ReportPrintView(GenericReportView):
@@ -393,7 +478,7 @@ class ReportEditor(views.APIView):
         else:
             msg = 'Problem saving report ... review content.'
 
-        messages.add_message(request, messages.INFO, msg)
+        messages.add_message(request._request, messages.INFO, msg)
         copyform = CopyReportForm(report)
         return render_to_response('edit.html',
                                   {'report': report,
@@ -493,45 +578,13 @@ class ReportCopy(views.APIView):
         return Response(json.dumps(response))
 
 
-class ReportCriteria(views.APIView):
-    """ Handle requests for criteria fields.
-
-        `get`  returns a json object of all criteria for the specified
-               Report, or optionally for a specific widget within the Report
+class FormCriteria(views.APIView):
+    """Process updated criteria form values in report page.
 
         `post` takes a criteria form and returns a json object of just
                the changed, or dynamic values
     """
     renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
-
-    def get(self, request, namespace=None, report_slug=None, widget_slug=None):
-        all_fields = SortedDict()
-
-        report = get_object_or_404(Report,
-                                   namespace=namespace,
-                                   slug=report_slug)
-
-        if widget_slug:
-            w = get_object_or_404(
-                Widget,
-                slug=widget_slug,
-                section__in=Section.objects.filter(report=report)
-            )
-            all_fields = w.collect_fields()
-        else:
-            fields_by_section = report.collect_fields_by_section()
-            for c in fields_by_section.values():
-                all_fields.update(c)
-
-        form = TableFieldForm(all_fields, use_widgets=False)
-
-        # create object from the tablefield keywords
-        # then populate it with the initial data that got generated by default
-        keys = form._tablefields.keys()
-        criteria = dict(zip(keys, [None]*len(keys)))
-        criteria.update(form.data)
-
-        return HttpResponse(json.dumps(criteria))
 
     def post(self, request, namespace=None, report_slug=None):
         # handle REST calls
@@ -557,81 +610,7 @@ class ReportCriteria(views.APIView):
         for field in form.dynamic_fields():
             response.append({'id': field.auto_id,
                              'html': str(field)})
-        return HttpResponse(json.dumps(response))
-
-
-class ReportWidgets(views.APIView):
-    """ Return default criteria values for all widgets, with latest time,
-        if applicable.
-
-        Used in auto-run reports when specifying detailed criteria isn't
-        necessary.
-    """
-
-    authentication_classes = (SessionAuthentication,
-                              BasicAuthentication,
-                              URLTokenAuthentication)
-
-    def get(self, request, namespace=None, report_slug=None):
-        try:
-            report = Report.objects.get(namespace=namespace,
-                                        slug=report_slug)
-        except:
-            raise Http404
-
-        # parse time and localize to user profile timezone
-        timezone = pytz.timezone(request.user.timezone)
-        now = datetime.datetime.now(timezone)
-
-        # pin the endtime to a round interval if we are set to
-        # reload periodically
-        minutes = report.reload_minutes
-        if minutes:
-            # avoid case of long duration reloads to have large reload gap
-            # e.g. 24-hour report will consider 12:15 am or later a valid time
-            # to roll-over the time time values, rather than waiting
-            # until 12:00 pm
-            trimmed = round_time(dt=now, round_to=60*minutes, trim=True)
-            if now - trimmed > datetime.timedelta(minutes=15):
-                now = trimmed
-            else:
-                now = round_time(dt=now, round_to=60*minutes)
-
-        widget_defs = []
-
-        widget_defs.append({'datetime': str(date(now, 'jS F Y H:i:s')),
-                            'timezone': str(timezone),
-                            })
-        for w in report.widgets().order_by('row', 'col'):
-            # get default criteria values for widget
-            # and set endtime to now, if applicable
-            criteria = ReportCriteria.as_view()(request,
-                                                w.section.report.namespace,
-                                                w.section.report.slug,
-                                                w.slug)
-            widget_criteria = json.loads(criteria.content)
-            if 'endtime' in widget_criteria:
-                widget_criteria['endtime'] = now.isoformat()
-
-            # setup json definition object
-            widget_def = {
-                "widgettype": w.widgettype().split("."),
-                "posturl": reverse('widget-job-list',
-                                   args=(w.section.report.namespace,
-                                         w.section.report.slug,
-                                         w.slug)),
-                "options": w.uioptions,
-                "widgetid": w.id,
-                "widgetslug": w.slug,
-                "row": w.row,
-                "width": w.width,
-                "height": w.height,
-                "criteria": widget_criteria
-            }
-
-            widget_defs.append(widget_def)
-
-        return HttpResponse(json.dumps(widget_defs))
+        return JsonResponse(response, safe=False)
 
 
 class ReportTableList(generics.ListAPIView):
@@ -653,21 +632,37 @@ class WidgetDetailView(generics.RetrieveAPIView):
     renderer_classes = (JSONRenderer, )
 
 
-class WidgetView(views.APIView):
-    """ Handler for displaying one widget which uses default criteria
-    """
+class WidgetEmbeddedView(views.APIView):
+    """ Handler to display embedded widget using default criteria """
     serializer_class = ReportSerializer
     renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
 
     authentication_classes = (URLTokenAuthentication,)
 
     def get(self, request, namespace=None, report_slug=None, widget_slug=None):
-        token = request.GET.dict()['auth']
+        request_data = request.GET.dict()
+        token = request_data['auth']
+        del request_data['auth']
 
         token_obj = WidgetAuthToken.objects.get(token=token)
-        criteria = json.dumps(token_obj.criteria)
+        criteria_dict = token_obj.criteria
 
-        token_obj.save()
+        # request_data carries fields to override the criteria of the widget,
+        # each token maps to a list fields that are allowed to be modified,
+        # check to ensure each field in request_data:
+        # 1. is a valid field included in criteria
+        # 2. is included in the editable fields mapping the token in the url
+        for field in request_data:
+            if field not in criteria_dict:
+                msg = "Field '%s' is invalid" % field
+                logger.error(msg)
+                return HttpResponse(msg, status=403)
+            if not token_obj.edit_fields or field not in token_obj.edit_fields:
+                msg = "Field '%s' is not allowed to change" % field
+                logger.error(msg)
+                return HttpResponse(msg, status=403)
+            criteria_dict[field] = request_data[field]
+        criteria_str = json.dumps(criteria_dict)
 
         report = get_object_or_404(Report, namespace=namespace,
                                    slug=report_slug)
@@ -681,20 +676,14 @@ class WidgetView(views.APIView):
         )
 
         system_settings = SystemSettings.get_system_settings()
-        widget_type = [str(x) for x in w.widgettype().split(".")]
-        widget_def = {
-            "namespace": namespace,
-            "report_slug": report_slug,
-            "widgettype": [widget_type[0], widget_type[1]],
-            "widgetid": w.id,
-            "widgetslug": w.slug,
-            "criteria": mark_safe(criteria),
-            "authtoken": token
-        }
+        widget_def = w.get_definition(mark_safe(criteria_str))
 
         return render_to_response(
             'widget.html',
             {"widget": widget_def,
+             "widget_url": reverse('report-auto-view', args=(namespace,
+                                                             report_slug)),
+             "widget_authtoken": token,
              'maps_version': system_settings.maps_version,
              'maps_api_key': system_settings.maps_api_key},
             context_instance=RequestContext(request)
@@ -709,7 +698,7 @@ class WidgetTokenView(views.APIView):
         logger.debug("Received POST for widget token, widget %s: %s" %
                      (widget_slug, request.POST))
 
-        user = PortalUser.objects.get(username=request.user)
+        user = AppfwkUser.objects.get(username=request.user)
 
         # First remove last '/' at the end
         # then remove authtoken at the end
@@ -717,18 +706,40 @@ class WidgetTokenView(views.APIView):
 
         criteria = json.loads(request.POST.dict()['criteria'])
 
-        tokens = WidgetAuthToken.objects.filter(user=user, pre_url=pre_url,
-                                                criteria=criteria)
-        if tokens:
-            token = tokens[0].token
-        else:
-            token = uuid.uuid4().hex
-            widget_auth = WidgetAuthToken(token=token,
-                                          user=user,
-                                          pre_url=pre_url,
-                                          criteria=criteria)
-            widget_auth.save()
-        return Response({'auth': token})
+        token = uuid.uuid4().hex
+        widget_auth = WidgetAuthToken(token=token,
+                                      user=user,
+                                      pre_url=pre_url,
+                                      criteria=criteria)
+        widget_auth.save()
+
+        # Construct label map to facilitate overridden fields display
+        report = Report.objects.get(slug=report_slug)
+        label_map = {}
+        all_fields = {}
+        fields_by_section = report.collect_fields_by_section()
+        [all_fields.update(fields) for fields in fields_by_section.values()]
+
+        for k in all_fields:
+            label_map[k] = all_fields[k].label
+
+        return Response({'auth': token, 'label_map': label_map})
+
+
+class EditFieldsView(views.APIView):
+    parser_classes = (JSONParser,)
+
+    def post(self, request, namespace=None,
+             report_slug=None, widget_slug=None, auth_token=None):
+
+        logger.debug("Received POST for adding editable fields, widget %s, "
+                     "auth_token %s, request data %s" %
+                     (widget_slug, auth_token, request.POST))
+        request_data = json.loads(request.POST.dict()['edit_fields'])
+        token_obj = WidgetAuthToken.objects.filter(token=auth_token)[0]
+        token_obj.edit_fields = request_data
+        token_obj.save()
+        return Response({})
 
 
 class WidgetJobsList(views.APIView):
@@ -754,7 +765,6 @@ class WidgetJobsList(views.APIView):
         req_json = json.loads(request.POST['criteria'])
 
         fields = widget.collect_fields()
-
         form = TableFieldForm(fields, use_widgets=False,
                               hidden_fields=report.hidden_fields,
                               include_hidden=True,
@@ -793,7 +803,14 @@ class WidgetJobsList(views.APIView):
                                                          wjob.id])})
             except Exception as e:
                 logger.exception("Failed to start job, an exception occurred")
-                return HttpResponse(str(e), status=400)
+                ei = sys.exc_info()
+                resp = {}
+                resp['message'] = "".join(
+                    traceback.format_exception_only(*sys.exc_info()[0:2])),
+                resp['exception'] = "".join(
+                    traceback.format_exception(*sys.exc_info()))
+
+                return JsonResponse(resp, status=400)
 
         else:
             logger.error("form is invalid, entering debugger")
@@ -808,15 +825,16 @@ class WidgetJobDetail(views.APIView):
 
     def get(self, request, namespace, report_slug, widget_slug, job_id,
             format=None, status=None):
+        logger.debug("WidgetJobDetail GET %s/%s/%s/%s" %
+                     (namespace, report_slug, widget_slug, job_id))
+
         wjob = WidgetJob.objects.get(id=job_id)
 
         job = wjob.job
         widget = wjob.widget
 
         if not job.done():
-            # job not yet done, return an empty data structure
-            #logger.debug("%s: Not done yet, %d%% complete" % (str(wjob),
-            #                                                  job.progress))
+            # job not yet done
             resp = job.json()
         elif job.status == Job.ERROR:
             resp = job.json()
@@ -866,8 +884,9 @@ geolocation documentation</a> for more information.'''
                     logger.debug("%s complete" % str(wjob))
 
             except:
-                logger.exception("Widget %s (%s) Job %s processing failed" %
-                                 (widget.slug, widget.id, job.id))
+                logger.exception(("Widget %s (%s) WidgetJob %s, Job %s "
+                                 "processing failed") %
+                                 (widget.slug, widget.id, wjob.id, job.id))
                 resp = job.json()
                 resp['status'] = Job.ERROR
                 ei = sys.exc_info()
@@ -878,4 +897,8 @@ geolocation documentation</a> for more information.'''
 
         resp['message'] = cgi.escape(resp['message'])
 
-        return HttpResponse(json.dumps(resp))
+        try:
+            return JsonResponse(resp)
+        except:
+            logger.error('Failed to generate HttpResponse:\n%s' % str(resp))
+            raise

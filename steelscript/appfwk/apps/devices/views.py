@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -17,9 +17,11 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
-from steelscript.appfwk.apps.devices.forms import DeviceListForm, DeviceDetailForm
+from steelscript.appfwk.apps.devices.forms import (DeviceListForm,
+                                                   DeviceDetailForm)
 from steelscript.appfwk.apps.devices.models import Device
 from steelscript.appfwk.apps.devices.serializers import DeviceSerializer
+from steelscript.common.service import Auth
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +41,8 @@ class DeviceDetail(views.APIView):
                 form = DeviceDetailForm(instance=device)
             else:
                 form = DeviceDetailForm()
-            return Response({'form': form}, template_name='device_detail.html')
+            return Response({'form': form, 'auth': Auth},
+                            template_name='device_detail.html')
         else:
             device = get_object_or_404(Device, pk=device_id)
             serializer = DeviceSerializer(instance=device)
@@ -55,9 +58,11 @@ class DeviceDetail(views.APIView):
 
         if form.is_valid():
             form.save()
+            DeviceManager.clear()
             return HttpResponseRedirect(reverse('device-list'))
         else:
-            return Response({'form': form}, template_name='device_detail.html')
+            return Response({'form': form, 'auth': Auth},
+                            template_name='device_detail.html')
 
     def delete(self, request, device_id):
         device = get_object_or_404(Device, pk=device_id)
@@ -82,7 +87,7 @@ class DeviceList(generics.ListAPIView):
             formset = DeviceFormSet(queryset=queryset)
             tabledata = zip(formset.forms, queryset)
             data = {'formset': formset, 'tabledata': tabledata,
-                    'invalid': invalid}
+                    'invalid': invalid, 'auth': Auth}
             return Response(data, template_name='device_list.html')
 
         serializer = DeviceSerializer(instance=queryset)
@@ -110,5 +115,5 @@ class DeviceList(generics.ListAPIView):
                 return HttpResponseRedirect(reverse('device-list'))
 
         else:
-            data = {'formset': formset}
+            data = {'formset': formset, 'auth': Auth}
             return Response(data, template_name='device_list.html')

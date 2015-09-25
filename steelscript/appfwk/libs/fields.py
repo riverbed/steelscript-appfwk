@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -245,6 +245,123 @@ class FunctionField(PickledObjectField):
     def get_prep_value(self, value):
         if value is not None:
             value = super(FunctionField, self).get_prep_value(value.to_dict())
+        return value
+
+
+class CallableError(Exception):
+    pass
+
+
+class Callable(object):
+    """Serializable object for callable objects with their parameters.
+
+    This class is similar to Function, except that it supports class
+    methods in addition to functions.  In the event that a class method
+    is used, it is the responsibility of the caller after serialization
+    to provide an object of the same class as the first argument.
+
+    """
+    def __init__(self, callable=None, called_args=None, called_kwargs=None):
+        if callable:
+            if hasattr(callable, 'im_func'):
+                # This is a class method
+                self.classname = callable.im_class.__name__
+                self.module = callable.im_class.__module__
+                self.function = callable.im_func.func_name
+            else:
+                self.module = callable.__module__
+                self.function = callable.func_name
+                self.classname = None
+        else:
+            self.module = None
+            self.function = None
+            self.classname = None
+
+        self.called_args = called_args
+        self.called_kwargs = called_kwargs
+
+    def __repr__(self):
+        return "<Function %s:%s>" % (self.module, self.function)
+
+    def __str__(self):
+        return "Function %s:%s" % (self.module, self.function)
+
+    @classmethod
+    def from_dict(cls, d):
+        self = Callable()
+
+        self.module = d['module']
+        self.function = d['function']
+        self.classname = d['classname']
+        self.called_args = d['called_args']
+        self.called_kwargs = d['called_kwargs']
+
+        return self
+
+    def to_dict(self):
+        return {'module': self.module,
+                'function': self.function,
+                'classname': self.classname,
+                'called_args': self.called_args,
+                'called_kwargs': self.called_kwargs}
+
+    def __call__(self, *args, **kwargs):
+
+        if self.classname:
+            assert(len(args) >= 1)
+            obj = args[0]
+            args = args[1:]
+
+            if obj.__class__.__name__ != self.classname:
+                raise CallableError(
+                    "Callable is a class '%s' method but first arg is a '%s'"
+                    % (self.classname, obj.__class__.__name__))
+
+            if not hasattr(obj, self.function):
+                raise CallableError(
+                    ("Callable reference is invalid, class '%s' "
+                     "has no method '%s'")
+                    % (self.classname, self.function))
+
+            func = getattr(obj, self.function)
+        else:
+            try:
+                mod = importlib.import_module(self.module)
+                func = mod.__dict__[self.function]
+            except ImportError:
+                raise CallableError(
+                    ("Callable reference is invalid, could not "
+                     "import module <%s>")
+                    % self.module)
+            except KeyError:
+                raise CallableError(
+                    "Callable reference is invalid, could not find function "
+                    "<%s> in module <%s>"
+                    % (self.function, self.module))
+
+        args = self.called_args or args
+        kwargs = self.called_kwargs or kwargs
+        return func(*args, **kwargs)
+
+
+class CallableField(PickledObjectField):
+    """Model field which stores a Callable object."""
+
+    __metaclass__ = models.SubfieldBase
+
+    def to_python(self, value):
+        if isinstance(value, Callable):
+            return value
+
+        value = super(CallableField, self).to_python(value)
+        if value is not None:
+            return Callable.from_dict(value)
+        else:
+            return None
+
+    def get_prep_value(self, value):
+        if value is not None:
+            value = super(CallableField, self).get_prep_value(value.to_dict())
         return value
 
 

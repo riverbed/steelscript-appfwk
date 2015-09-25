@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block comments %}
 <!--
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -12,6 +12,67 @@
 {% load url from future %}
 
 {% block title %}App Framework: Device Detail{% endblock %}
+
+
+{% block header %}
+   <script type="text/javascript">
+
+        $(document).ready( function() {
+
+         var auth = document.getElementById("id_auth");
+         changeAuth(auth);
+
+        // copy input value and bind changes to feed to
+        // hidden fields: username, password and access_code
+        // note that the id of field "hidden" is "id_hidden"
+
+        $('#auth_input').val( $('#id_auth').val() );
+
+        $('#username_input').val( $('#id_username').val() );
+        $('#username_input').change( function(e) {
+            text = this.value;
+            $('#id_username').val(text);
+            });
+
+
+        $('#password_input').val( $('#id_password').val() );
+        $('#password_input').change( function(e) {
+            text = this.value;
+            $('#id_password').val(text);
+            });
+
+        $('#access_code_input').val( $('#id_access_code').val() );
+        $('#access_code_input').change( function(e) {
+            text = this.value;
+            $('#id_access_code').val(text);
+            });
+
+       });
+
+        function changeAuth(sel) {
+
+            var auth_method = sel.value;
+            $('#id_auth').val(auth_method);
+
+           if ( auth_method == {{ auth.NONE }} ) {
+                $('#username_div').hide();
+                $('#password_div').hide();
+                $('#access_code_div').hide();
+           }
+           else if ( auth_method == {{ auth.BASIC }} ) {
+               $('#username_div').show();
+               $('#password_div').show();
+               $('#access_code_div').hide();
+           }
+           else {
+               $('#username_div').hide();
+               $('#password_div').hide();
+               $('#access_code_div').show();
+           };
+       };
+
+   </script>
+{% endblock %}
 
 {% block header_row %}
     <h3>Add/Edit Device</h3>
@@ -42,7 +103,60 @@
                             </div>
                         </div>
                     {% endfor %}
-                </fieldset>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                Auth Method:
+                            </div>
+                            <div class="controls">
+                             <select onchange="changeAuth(this)" id="auth_input">
+                                 <option value={{ auth.NONE }}>None</option>
+                                 <option value={{ auth.BASIC }}>Username/Password</option>
+                                 <option value={{ auth.OAUTH }}>OAuth2</option>
+                             </select>
+
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="username_div" style="...; margin-left:50px">
+                            <div class="control-label" id="username_label">
+                                Username:
+                            </div>
+                            <div class="controls">
+                                <input type="text" id="username_input" >
+                                {% if form.username.errors %}
+                                    <p class="text-error">{% for err in form.username.errors %}{{ err }}{% endfor %}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="password_div" style="...; margin-left:50px">
+                            <div class="control-label">
+                                Password:
+                            </div>
+                            <div class="controls">
+                                <input type="password"  id="password_input">
+                                {% if form.password.errors %}
+                                    <p class="text-error">{% for err in form.password.errors %}{{ err }}{% endfor %}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+
+                        <div class="control-group" id="access_code_div" style="...; margin-left:50px">
+                            <div class="control-label">
+                                Access code:
+                            </div>
+                            <div class="controls">
+                                <textarea id="access_code_input"></textarea>
+                                {% if form.access_code.errors %}
+                                    <p class="text-error">{% for err in form.access_code.errors %}{{ err }}{% endfor %}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </fieldset>
+
                 <div style="text-align: center">
                     <input type="submit" value="Save Changes" class="btn btn-primary">
                     {% if form.instance.pk %}
@@ -78,6 +192,6 @@
                 }); 
             };
             rvbd.modal.confirm(heading, question, cancelButtonTxt, okButtonTxt, callback);
-        })
+        });
     </script>
 {% endblock %}

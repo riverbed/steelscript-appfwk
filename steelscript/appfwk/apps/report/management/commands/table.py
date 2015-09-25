@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -10,13 +10,16 @@ import time
 import datetime
 import logging
 import optparse
+
+from steelscript.appfwk.apps.jobs.models import Job
+
 logger = logging.getLogger(__name__)
 
 from django.core.management.base import BaseCommand
 
 from steelscript.common.datautils import Formatter
 
-from steelscript.appfwk.apps.datasource.models import Table, Job
+from steelscript.appfwk.apps.datasource.models import Table
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
 from steelscript.appfwk.apps.report.models import Report, Widget
 
@@ -28,7 +31,7 @@ warnings.filterwarnings("ignore")
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Run a defined table and return results in nice tabular format'
 
     def create_parser(self, prog_name, subcommand):
@@ -153,7 +156,7 @@ class Command(BaseCommand):
         elif options['criteria_list']:
             if 'table_id' in options and options['table_id'] is not None:
                 table = Table.objects.get(id=options['table_id'])
-            elif 'table_name' in options:
+            elif 'table_name' in options and options['table_name'] is not None:
                 table = Table.objects.get(name=options['table_name'])
             else:
                 raise ValueError("Must specify either --table-id or "
@@ -171,7 +174,7 @@ class Command(BaseCommand):
         else:
             if 'table_id' in options and options['table_id'] is not None:
                 table = Table.objects.get(id=options['table_id'])
-            elif 'table_name' in options:
+            elif 'table_name' in options and options['table_name'] is not None:
                 table = Table.objects.get(name=options['table_name'])
             else:
                 raise ValueError("Must specify either --table-id or "

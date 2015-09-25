@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -9,7 +9,7 @@ import threading
 from collections import defaultdict
 
 from django.db.models.loading import get_model
-
+from steelscript.appfwk.apps.alerting.source import Source
 
 logger = logging.getLogger(__name__)
 lock = threading.Lock()
@@ -68,6 +68,8 @@ class ModelCache(Cache):
         cls.debug('filtering on %s' % value)
         if cls._lookup is None:
             cls._get()
+        if not isinstance(value, frozenset):
+            value = Source.encode(value)
         return cls._lookup[value]
 
 

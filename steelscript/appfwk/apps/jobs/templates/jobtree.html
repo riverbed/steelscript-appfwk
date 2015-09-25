@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2015 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% block title %}App Framework: Job Visualization{% endblock %}
+
+{% block header_row %}
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+      <div class="row-fluid">
+          <div class="row block-centered" style="text-align: center">
+              <object data="{{ MEDIA_URL }}{{ svg_image }}" type="image/svg+xml">
+                <img src='{{ MEDIA_URL }}{{ svg_image }}'/>
+             </object>
+          </div>
+      </div>
+    </div>
+{% endblock %}

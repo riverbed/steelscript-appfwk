@@ -35,6 +35,17 @@
                       <li><a href="https://support.riverbed.com/apis/steelscript/appfwk/overview.html">Docs: SteelScript App Framework</a></li>
                   </ul>
               </li>
+              {% if developer and user.is_superuser %}
+              <li class="dropdown active">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown"> Developer <b class="caret"></b></a>
+                  <ul class="dropdown-menu">
+                      <li><a href="{% url 'job-list' %}">Job List API</a></li>
+                      <li><a href="{% url 'table-list' %}">Table List API</a></li>
+                      <li><a href="{% url 'job-visualize' %}">Job Visualization</a></li>
+                      <li><a href="{% url 'logviewer' %}">Log Viewer</a></li>
+                  </ul>
+              </li>
+              {% endif %}
 {% endblock %}
 
 {% block extra_nav_left %}
@@ -47,7 +58,7 @@
 
         {% block login %}
                 <small id="report-datetime" class="text-info pull-right">{% now "jS F Y H:i:s" %}</small><br>
-                <small class="text-info pull-right"><span id="report-timezone">{{ TIME_ZONE }}</span>&nbsp;<span class="text-info"><a id='update-tz' href='/preferences/user/?next={{ request.path }}'>(update)</a></span></small>
+                <small class="text-info pull-right"><span id="report-timezone"><a id='update-tz' href='/preferences/user/?next={{ request.path }}'>{{ TIME_ZONE }}</a></span></small>
         {% endblock %}
 
 {% block content %}{% endblock %}

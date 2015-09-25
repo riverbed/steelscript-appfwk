@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -13,7 +13,7 @@ from steelscript.appfwk.apps.report.utils import create_debug_zipfile
 
 
 class Command(BaseCommand):
-    args = None
+    args = ''
     help = 'Collects logfiles and system info and creates file `debug-<timestamp>.zip`'
 
     option_list = BaseCommand.option_list + (

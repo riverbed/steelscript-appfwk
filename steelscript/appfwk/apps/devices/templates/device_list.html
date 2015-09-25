@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block comments %}
 <!--
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -37,6 +37,7 @@
                         <th>Module</th>
                         <th>Host</th>
                         <th>Port</th>
+                        <th>Auth Method</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -47,22 +48,39 @@
                         {% endif %}
                         {% for form, device in tabledata %}
                             <tr {% if not device.enabled %}class="row-disabled"{% endif %}>
-                                {% for field in form.visible_fields %}
-                                    <td>{{ field }}</td>
-                                {% endfor %}
+                                {% if device.auth == auth.BASIC and not device.password %}
+                                   <td ><input type="checkbox" disabled="disabled"></td>
+                                {% elif device.auth == auth.OAUTH and not device.access_code %}
+                                   <td ><input type="checkbox" disabled="disabled"></td>
+                                {% else %}
+                                    {% for field in form.visible_fields %}
+                                        <td>{{ field }}</td>
+                                    {% endfor %}
+                                {% endif %}
+
                                 {% for hidden in form.hidden_fields %}
                                     {{ hidden }}
                                 {% endfor %}
-
                                 <td>
                                     <a href="{% url 'device-detail' device.id %}">{{ device.name }}</a>
-                                    {% if not device.password %}
+
+                                    {% if device.auth == auth.BASIC and not device.password %}
                                     <br><span class="text-error">(missing password)</span>
+                                    {% elif device.auth == auth.OAUTH and not device.access_code %}
+                                    <br><span class="text-error">(missing access code)</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ device.module }}</td>
                                 <td>{{ device.host }}</td>
                                 <td>{{ device.port }}</td>
+                                {% if device.auth == auth.NONE %}
+                                   <td>None</td>
+                                {% elif device.auth == auth.BASIC %}
+                                   <td>Username/Password</td>
+                                {% elif device.auth == auth.OAUTH %}
+                                   <td>OAuth2</td>
+                                {% endif %}
+
                             </tr>
                         {% endfor %}
                     </tbody>

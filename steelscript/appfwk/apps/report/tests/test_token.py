@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -31,12 +31,20 @@ class WidgetTokenTest(reportrunner.ReportRunnerTestCase):
 
         self.token = response.data['auth']
 
-        # log out so that only token is used for authentication
-        self.client.logout()
-
     def run_get_url(self, url=None, code=None):
         response = self.client.get(url)
         assert response.status_code == code
+
+
+class SimpleWidgetTokenTest(WidgetTokenTest):
+
+    report = 'token_report'
+
+    def setUp(self):
+        super(SimpleWidgetTokenTest, self).setUp()
+
+        # log out so that only token is used for authentication
+        self.client.logout()
 
     def test_get_user(self):
         """Test normal GET URL would fail to authenticate due to logged out"""
@@ -59,20 +67,37 @@ class WidgetTokenTest(reportrunner.ReportRunnerTestCase):
         get_url = no_widget_slug + '/wrong-widget/render/?auth=%s' % self.token
         self.run_get_url(url=get_url, code=403)
 
-    def test_same_token(self):
-        """Test when posting token url again with same user, url and criteria,
-        the same token should be returned.
-        """
-        # log back in the server to run the post using same credentials
-        super(WidgetTokenTest, self).setUp()
-        response = self.client.post(self.post_url,
-                                    data={'criteria': self.criteria_json})
-        self.assertEqual(response.data['auth'], self.token)
 
-        # different criteria should return different token
-        criteria = self.criteria
-        criteria['duration'] = '1min'
-        criteria_json = json.dumps(criteria)
-        response = self.client.post(self.post_url,
-                                    data={'criteria': criteria_json})
-        self.assertNotEqual(response.data['auth'], self.token)
+class EditFieldsWidgetTokenTest(WidgetTokenTest):
+
+    def test_normal_render(self):
+        self.post_url = self.base_url + '/%s/editfields/' % self.token
+        edit_fields = json.dumps(['endtime_0', 'duration'])
+        self.client.post(self.post_url, data={'edit_fields': edit_fields})
+
+        get_url = (self.base_url +
+                   '/render/?auth=%s&endtime_0=1&duration=2d' % self.token)
+        self.run_get_url(get_url, 200)
+
+        get_url = (self.base_url +
+                   '/render/?auth=%s&endtime=1' % self.token)
+        self.run_get_url(get_url, 403)
+
+        get_url = (self.base_url +
+                   '/render/?auth=%s&endtime_1=1&resolution=2d' % self.token)
+        self.run_get_url(get_url, 403)
+
+
+class ReportEditorTest(WidgetTokenTest):
+
+    def setUp(self):
+        super(ReportEditorTest, self).setUp()
+        # base_url = /report/appfwk/token_report
+        self.base_url = self.base_url.rsplit('/', 2)[0]
+        with open('reports/token_report.py', 'r') as f:
+            self.text = f.readlines()
+
+    def test_report_save(self):
+        url = self.base_url + '/edit/'
+        response = self.client.post(url, data={'text': self.text})
+        self.assertEqual(response.status_code, 200)

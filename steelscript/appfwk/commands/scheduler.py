@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -161,7 +161,7 @@ def run_table_via_rest(url, authfile, verify, **kwargs):
     logger.debug('POSTing new job with criteria: %s' % criteria)
     r = s.post(url, data=criteria)
     if r.ok:
-        logger.debug('Job creation sucessful.')
+        logger.debug('Job creation successful.')
     else:
         logger.error('Error creating Job: %s' % r.content)
 

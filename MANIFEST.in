@@ -4,6 +4,7 @@ include LICENSE
 include gitpy_versioning/*
 include steelscript/appfwk/initial_data/*
 include steelscript/appfwk/apps/geolocation/*.txt
+include steelscript/appfwk/progressd/progressd*
 recursive-include steelscript/appfwk/commands/data *.py.in LICENSE MANIFEST.in README.rst
 recursive-include steelscript/appfwk/project/example-configs *.*
 global-include *.html *.js *.css

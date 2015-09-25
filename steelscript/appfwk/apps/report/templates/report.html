@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block comments %}
 <!--
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -39,10 +39,18 @@
         <script type="text/javascript" src="{{ STATIC_URL }}js/rvbd-google-maps.js"></script>
     {% endif %}
 
+    {% for js in js_extensions %}
+        <script type="text/javascript" src="{{ js }}"></script>
+    {% endfor %}
+
+    {% for css in css_extensions %}
+        <link href="{{ css }}" rel="stylesheet"/>
+    {% endfor %}
+
     <script type="text/javascript">
     {% block header_script %}
       rvbd.report.isEmbedded = false;
-      rvbd.report.widgetsUrl = "{% url 'report-widgets' report.namespace report.slug %}";
+      rvbd.report.widgetsUrl = "{% url 'report-auto-view' report.namespace report.slug %}";
       rvbd.report.csrfToken = "{{ csrf_token }}";
 
       rvbd.report.autoLoad = {% if report.hide_criteria %} true {% else %} false {% endif %};
@@ -66,7 +74,20 @@
       {{ report.description | safe }}
     </div>
     {% endif %}
-    {% if not report.hide_criteria %}
+        {% if missing_devices %}
+            <div class="block-centered" style="text-align: center">
+                <h4 class="text-error">
+                    {% if is_superuser %}
+                        This report requires the following devices to be added or enabled: '{{ missing_devices }}'.
+                        Please visit <a href="{%  url 'device-list' %}">Devices</a>.
+                    {% else %}
+                        This report requires the following devices to be added or enabled: '{{ missing_devices  }}'.
+                        Please contact a system administrator.
+                    {% endif %}
+                </h4>
+            </div>
+        {% endif %}
+    {% if not report.hide_criteria and report.reload_minutes == 0 %}
     <div class="container-fluid">
       <div id="criteria-row" class="row-fluid">
         <div class="span12 widget-box">
@@ -75,6 +96,7 @@
               Criteria
             </a>
           </div>
+
           <div id="criteria" class="collapse in">
             <div class="widget-content">
                 <form class="form-horizontal" action="{% url 'report-view' report.namespace report.slug %}" method="post" id="criteria-form"
@@ -123,20 +145,22 @@
                     </fieldset>
               </form>
               <p></p>
-              <div class="btn-group dropup">
-                  <button id="button-run" class="btn btn-primary">Run</button>
-                  <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-                    <span class="caret"></span>
-                  </button>
-                  <ul class="dropdown-menu">
-                      {% if developer %}
-                          <li><a href="#" id="menu-debug">Debug This Report</a></li>
-                      {% endif %}
-                      <li><a href="#" id="menu-update-time-run">Update Time & Run</a></li>
-                      <li class="divider"></li>
-                      <li><a href="#" id="menu-run">Run Report</a></li>
-                  </ul>
-              </div>
+              {% if not missing_devices %}
+                  <div class="btn-group dropup">
+                      <button id="button-run" class="btn btn-primary">Run</button>
+                      <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                        <span class="caret"></span>
+                      </button>
+                      <ul class="dropdown-menu">
+                          {% if developer %}
+                              <li><a href="#" id="menu-debug">Debug This Report</a></li>
+                          {% endif %}
+                          <li><a href="#" id="menu-update-time-run">Update Time & Run</a></li>
+                          <li class="divider"></li>
+                          <li><a href="#" id="menu-run">Run Report</a></li>
+                      </ul>
+                  </div>
+              {% endif  %}
             </div>
           </div>
         </div>
@@ -149,21 +173,17 @@
         <div class="span12 widget-box">
           <div class="widget-title report-title">
               {% if report.hide_criteria %}
-                <span id="print-report" class="icon-print pull-right" title="Print this report (run report to enable)"></span>
-                <a data-toggle="collapse" data-target="#report-container" href="#">
-                <small id="report-datetime" class="text-info pull-right">{% now "jS F Y H:i:s" %}</small><br>
-                </a>
+                <a data-toggle="collapse" data-target="#report-container" href="#">&nbsp;</a>
               {% else %}
-                <a data-toggle="collapse" data-target="#report-container" href="#">
-                Report
-                </a>
-                <span id="print-report" class="icon-print" title="Print this report (run report to enable)"></span>
+                <a data-toggle="collapse" data-target="#report-container" href="#"> Report </a>
               {% endif %}
+              <span id="print-report" class="icon-print pull-right" title="Print this report (run report to enable)"></span>
+              <span id="reload-report" class="icon-refresh pull-right" title="Reload all widgets in this report"></span>
           </div>
           <div class="collapse in" id="report-container">
             <div class="widget-content collapse in" id="report">
-            </div> <!-- criteria -->
-          </div> <!-- criteria -->
+            </div>
+          </div>
         </div> <!-- span12 -->
       </div> <!-- row-fluid -->
     </div>

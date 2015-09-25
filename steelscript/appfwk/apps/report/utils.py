@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2015 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -15,7 +15,7 @@ from django.conf import settings
 
 from steelscript.commands.steel import shell
 from steelscript.common.timeutils import datetime_to_seconds
-from steelscript.appfwk.apps.preferences.models import PortalUser
+from steelscript.appfwk.apps.preferences.models import AppfwkUser
 
 import logging
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def create_debug_zipfile(no_summary=False):
                      zipped package.  Default is to include the file.
     """
     # setup correct timezone based on admin settings
-    admin = PortalUser.objects.filter(is_superuser=True)[0]
+    admin = AppfwkUser.objects.filter(is_superuser=True)[0]
     tz = pytz.timezone(admin.timezone)
     current_tz = os.environ['TZ']
 
