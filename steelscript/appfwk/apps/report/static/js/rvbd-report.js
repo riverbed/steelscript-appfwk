@@ -43,6 +43,8 @@ rvbd.report = {
             rvbd.report.intervalID = setInterval(rvbd.report.reloadAllWidgets, rvbd.report.reloadMinutes * 60 * 1000);
         } else if (typeof rvbd.report.printCriteria !== 'undefined') { // We're in print view, so launch right away
             rvbd.report.doRunFormReport(false);
+        } else if (rvbd.report.autoRun) {
+            rvbd.report.doRunFormReport(false);
         } else { // Standard report
             var $form = $('#criteria-form');
 

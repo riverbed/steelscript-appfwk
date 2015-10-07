@@ -55,6 +55,7 @@
 
       rvbd.report.autoLoad = {% if report.hide_criteria %} true {% else %} false {% endif %};
       rvbd.report.reloadMinutes = {{ report.reload_minutes }};
+      rvbd.report.autoRun = {% if report.auto_run %} true {% else %} false {% endif %};
       rvbd.report.expandTables = {% if expand_tables %} true {% else %} false {% endif %};
 
       // rvbd.report.debugUrl is used in rvbd-report.js to allow the user to download a zip

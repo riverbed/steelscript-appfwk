@@ -12,6 +12,7 @@ from steelscript.appfwk.libs.fields import Function
 from steelscript.appfwk.apps.datasource.models import TableField
 from steelscript.appfwk.apps.devices.models import Device
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
+from steelscript.appfwk.apps.datasource.forms import NonDurationChoiceField
 
 
 class DeviceForm(forms.ModelForm):
@@ -78,7 +79,7 @@ def fields_add_device_selection(obj, keyword='device',
                                 label='Device',
                                 module=None, enabled=None):
     field = TableField(keyword=keyword, label=label,
-                       field_cls=forms.ChoiceField,
+                       field_cls=NonDurationChoiceField,
                        pre_process_func=Function(device_selection_preprocess,
                                                  {'module': module,
                                                   'enabled': enabled}))

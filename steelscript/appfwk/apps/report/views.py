@@ -58,6 +58,7 @@ from steelscript.appfwk.apps.report.utils import create_debug_zipfile
 from steelscript.appfwk.apps.report.forms import (ReportEditorForm,
                                                   CopyReportForm)
 from steelscript.appfwk.project.middleware import URLTokenAuthentication
+from steelscript.common.timeutils import TimeParser, datetime_to_seconds
 
 
 logger = logging.getLogger(__name__)
@@ -136,7 +137,7 @@ class GenericReportView(views.APIView):
     def render_html(self, report, request, namespace, report_slug, isprint):
         """ Render HTML response
         """
-        logging.debug('Received request for report page: %s' % report_slug)
+        logger.debug('Received request for report page: %s' % report_slug)
 
         if not request.user.profile_seen:
             # only redirect if first login
@@ -181,6 +182,75 @@ class GenericReportView(views.APIView):
         # Merge fields into a single dict for use by the Django Form # logic
         all_fields = SortedDict()
         [all_fields.update(c) for c in fields_by_section.values()]
+
+        # Update fields' initial values using request data
+        request_data = request.GET.dict()
+        for k, v in request_data.iteritems():
+            if k == 'auto_run':
+                report.auto_run = v.lower() in ['t', 'true']
+                continue
+
+            field = all_fields.get(k, None)
+            if not field:
+                continue
+
+            if k in ['starttime', 'endtime']:
+                try:
+                    dt = TimeParser().parse(v)
+                except ValueError:
+                    field.error_msg = "%s '%s' is invalid, use now." % (k, v)
+                    continue
+
+                timezone = pytz.timezone(request.user.timezone)
+
+                current = datetime.datetime.now(timezone)
+
+                delta = (datetime_to_seconds(current) -
+                         datetime_to_seconds(dt))
+                if delta < 0:
+                    field.error_msg = ("%s %s is later than current time, "
+                                       "use now." % (k, v))
+                    continue
+
+                for key in field.field_kwargs['widget_attrs']:
+                    if key.startswith('initial_'):
+                        field.field_kwargs['widget_attrs'][key] = ('now-%s'
+                                                                   % delta)
+
+            elif (field.field_kwargs and 'widget' in field.field_kwargs and
+                  (field.field_kwargs['widget'].__name__ ==
+                   'ReportSplitDateWidget')):
+                # Calculate the number of days between today and the date
+                # in bookmark
+                try:
+                    epoch = datetime_to_seconds(TimeParser().parse(v +
+                                                                   ' 00:00'))
+                except ValueError:
+                    field.error_msg = ("%s '%s' is invalid, use today."
+                                       % (k, v))
+                    continue
+
+                timezone = pytz.timezone(request.user.timezone)
+                current = datetime.datetime.now(timezone)
+
+                today_epoch = datetime_to_seconds(current)/86400*86400
+
+                delta = today_epoch - epoch
+
+                if delta < 0:
+                    field.error_msg = ("%s %s is later than current date, "
+                                       "use now." % (k, v))
+                    continue
+                field.field_kwargs['widget_attrs']['initial_date'] = ('now-%s'
+                                                                      % delta)
+
+            elif (field.field_cls and
+                  field.field_cls.__name__ == 'BooleanField'):
+                field.initial = v.lower() in ['true', 't']
+                field.initial = v
+            else:
+                field.initial = v
+
         form = TableFieldForm(all_fields,
                               hidden_fields=report.hidden_fields,
                               initial=form_init)

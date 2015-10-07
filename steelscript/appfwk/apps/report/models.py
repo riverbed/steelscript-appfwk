@@ -59,6 +59,7 @@ class Report(models.Model):
     # values only, and optionally set a refresh timer
     hide_criteria = models.BooleanField(default=False)
     reload_minutes = models.IntegerField(default=0)  # 0 means no reloads
+    auto_run = models.BooleanField(default=False)
 
     @classmethod
     def create(cls, title, **kwargs):
@@ -79,6 +80,7 @@ class Report(models.Model):
         :param bool hide_criteria: Set to true to hide criteria and run on load
         :param int reload_minutes: If non-zero, report will be reloaded
             automatically at the given duration in minutes
+        :param bool auto_run: Set to true to run report automatically
 
         """
 
