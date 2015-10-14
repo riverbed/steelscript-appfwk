@@ -136,6 +136,7 @@ class GenericReportView(views.APIView):
         return {'meta': meta, 'widgets': widgets}
 
     def is_field_cls(self, field, cls_name):
+        """Determine if a field is of a field class."""
         return (field.field_cls and
                 field.field_cls.__name__ == cls_name)
 
