@@ -300,7 +300,7 @@ class DurationField(forms.ChoiceField):
 
         kwargs['choices'] = choices
         if not initial_valid:
-            self.error_msg = ('Invalid initial %s : %s. Use default.'
+            self.error_msg = ('Invalid initial %s : %s. '
                               % (kwargs['label'], initial))
 
         super(DurationField, self).__init__(initial=initial, **kwargs)
@@ -320,21 +320,6 @@ class DurationField(forms.ChoiceField):
 
     def validate(self, value):
         pass
-
-
-class NonDurationChoiceField(forms.ChoiceField):
-    def __init__(self, **kwargs):
-        initial = kwargs.pop('initial', None)
-        if initial:
-            # Convert the choice name to choice id
-            # choices are lists as [(choice_id, choice_name),...]
-            res = filter(lambda x: x[1] == initial, kwargs['choices'])
-            if res:
-                initial = res[0][0]
-            else:
-                self.error_msg = ("No %s found with name '%s'. Use default."
-                                  % (kwargs['label'], initial))
-        super(NonDurationChoiceField, self).__init__(initial=initial, **kwargs)
 
 
 def fields_add_time_selection(obj, show_duration=True, initial_duration=None,

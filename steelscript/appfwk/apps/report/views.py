@@ -8,6 +8,7 @@ import re
 import os
 import sys
 import cgi
+import time
 import json
 import uuid
 import shutil
@@ -58,7 +59,7 @@ from steelscript.appfwk.apps.report.utils import create_debug_zipfile
 from steelscript.appfwk.apps.report.forms import (ReportEditorForm,
                                                   CopyReportForm)
 from steelscript.appfwk.project.middleware import URLTokenAuthentication
-from steelscript.common.timeutils import TimeParser, datetime_to_seconds
+from steelscript.common.timeutils import sec_string_to_datetime
 
 
 logger = logging.getLogger(__name__)
@@ -134,6 +135,57 @@ class GenericReportView(views.APIView):
         }
         return {'meta': meta, 'widgets': widgets}
 
+    def is_field_cls(self, field, cls_name):
+        return (field.field_cls and
+                field.field_cls.__name__ == cls_name)
+
+    def update_criteria_from_bookmark(self, report, request, fields):
+        """ Update fields' initial values using bookmark. """
+        request_data = request.GET.dict()
+        override_msg = 'Set field %s with initial value %s from bookmark.'
+        for k, v in request_data.iteritems():
+            if k == 'auto_run':
+                report.auto_run = (v == 'true')
+                continue
+
+            field = fields.get(k, None)
+            if field is None:
+                logger.warning("Keyword %s in bookmark does not match any "
+                               "criteria field." % k)
+                continue
+
+            if self.is_field_cls(field, 'DateTimeField'):
+                # Only accepts epoch seconds
+                try:
+                    delta = int(time.time()) - int(v)
+                except ValueError:
+                    field.error_msg = ("%s '%s' is invalid." % (k, v))
+                    continue
+
+                if delta < 0:
+                    field.error_msg = ("%s %s is later than current time."
+                                       % (k, v))
+                    continue
+
+                logger.debug(override_msg % (k,
+                                             sec_string_to_datetime(int(v))))
+                for key in field.field_kwargs['widget_attrs']:
+                    if key.startswith('initial_'):
+                        field.field_kwargs['widget_attrs'][key] = ('now-%s'
+                                                                   % delta)
+
+            elif self.is_field_cls(field, 'BooleanField'):
+                logger.debug(override_msg % (k, v == 'true'))
+                field.initial = (v == 'true')
+
+            elif self.is_field_cls(field, 'ChoiceField'):
+                logger.debug(override_msg % (k, v))
+                field.initial = int(v)
+
+            else:
+                logger.debug(override_msg % (k, v))
+                field.initial = v
+
     def render_html(self, report, request, namespace, report_slug, isprint):
         """ Render HTML response
         """
@@ -183,73 +235,7 @@ class GenericReportView(views.APIView):
         all_fields = SortedDict()
         [all_fields.update(c) for c in fields_by_section.values()]
 
-        # Update fields' initial values using request data
-        request_data = request.GET.dict()
-        for k, v in request_data.iteritems():
-            if k == 'auto_run':
-                report.auto_run = v.lower() in ['t', 'true']
-                continue
-
-            field = all_fields.get(k, None)
-            if not field:
-                continue
-
-            if k in ['starttime', 'endtime']:
-                try:
-                    dt = TimeParser().parse(v)
-                except ValueError:
-                    field.error_msg = "%s '%s' is invalid, use now." % (k, v)
-                    continue
-
-                timezone = pytz.timezone(request.user.timezone)
-
-                current = datetime.datetime.now(timezone)
-
-                delta = (datetime_to_seconds(current) -
-                         datetime_to_seconds(dt))
-                if delta < 0:
-                    field.error_msg = ("%s %s is later than current time, "
-                                       "use now." % (k, v))
-                    continue
-
-                for key in field.field_kwargs['widget_attrs']:
-                    if key.startswith('initial_'):
-                        field.field_kwargs['widget_attrs'][key] = ('now-%s'
-                                                                   % delta)
-
-            elif (field.field_kwargs and 'widget' in field.field_kwargs and
-                  (field.field_kwargs['widget'].__name__ ==
-                   'ReportSplitDateWidget')):
-                # Calculate the number of days between today and the date
-                # in bookmark
-                try:
-                    epoch = datetime_to_seconds(TimeParser().parse(v +
-                                                                   ' 00:00'))
-                except ValueError:
-                    field.error_msg = ("%s '%s' is invalid, use today."
-                                       % (k, v))
-                    continue
-
-                timezone = pytz.timezone(request.user.timezone)
-                current = datetime.datetime.now(timezone)
-
-                today_epoch = datetime_to_seconds(current)/86400*86400
-
-                delta = today_epoch - epoch
-
-                if delta < 0:
-                    field.error_msg = ("%s %s is later than current date, "
-                                       "use now." % (k, v))
-                    continue
-                field.field_kwargs['widget_attrs']['initial_date'] = ('now-%s'
-                                                                      % delta)
-
-            elif (field.field_cls and
-                  field.field_cls.__name__ == 'BooleanField'):
-                field.initial = v.lower() in ['true', 't']
-                field.initial = v
-            else:
-                field.initial = v
+        self.update_criteria_from_bookmark(report, request, all_fields)
 
         form = TableFieldForm(all_fields,
                               hidden_fields=report.hidden_fields,
