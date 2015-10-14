@@ -157,12 +157,7 @@ class GenericReportView(views.APIView):
 
             if self.is_field_cls(field, 'DateTimeField'):
                 # Only accepts epoch seconds
-                try:
-                    delta = int(time.time()) - int(v)
-                except ValueError:
-                    field.error_msg = ("%s '%s' is invalid." % (k, v))
-                    continue
-
+                delta = int(time.time()) - int(v)
                 if delta < 0:
                     field.error_msg = ("%s %s is later than current time."
                                        % (k, v))
