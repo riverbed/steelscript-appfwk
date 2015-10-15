@@ -322,6 +322,34 @@ class DurationField(forms.ChoiceField):
         pass
 
 
+class IDChoiceField(forms.ChoiceField):
+    """Choice field that checks if the initial value is a valid ID."""
+    def __init__(self, **kwargs):
+        initial = kwargs.get('initial', None)
+        if initial:
+            # choices are lists as [(choice_id, choice_name),...]
+            res = filter(lambda x: x[0] == initial, kwargs['choices'])
+            if not res:
+                self.error_msg = ("No %s found with ID %s."
+                                  % (kwargs['label'], initial))
+                kwargs.pop('initial')
+        super(IDChoiceField, self).__init__(**kwargs)
+
+
+class IntegerIDChoiceField(IDChoiceField):
+    """Choice field that checks if the initial value is a valid integer ID."""
+    def __init__(self, **kwargs):
+        initial = kwargs.pop('initial', None)
+        if initial:
+            if initial.isdigit():
+                kwargs['initial'] = int(initial)
+            else:
+                self.error_msg = ("%s id '%s' is invalid."
+                                  % (kwargs['label'], initial))
+
+        super(IntegerIDChoiceField, self).__init__(**kwargs)
+
+
 def fields_add_time_selection(obj, show_duration=True, initial_duration=None,
                               durations=None, show_start=False,
                               initial_start_time='now-1h',

@@ -136,7 +136,7 @@ class GenericReportView(views.APIView):
         return {'meta': meta, 'widgets': widgets}
 
     def is_field_cls(self, field, cls_name):
-        """Determine if a field is of a field class."""
+        """Determine if a field is of a certain field class."""
         return (field.field_cls and
                 field.field_cls.__name__ == cls_name)
 
@@ -157,6 +157,10 @@ class GenericReportView(views.APIView):
 
             if self.is_field_cls(field, 'DateTimeField'):
                 # Only accepts epoch seconds
+                if not v.isdigit():
+                    field.error_msg = ("%s '%s' is invalid." % (k, v))
+                    continue
+
                 delta = int(time.time()) - int(v)
                 if delta < 0:
                     field.error_msg = ("%s %s is later than current time."
@@ -173,10 +177,6 @@ class GenericReportView(views.APIView):
             elif self.is_field_cls(field, 'BooleanField'):
                 logger.debug(override_msg % (k, v == 'true'))
                 field.initial = (v == 'true')
-
-            elif self.is_field_cls(field, 'ChoiceField'):
-                logger.debug(override_msg % (k, v))
-                field.initial = int(v)
 
             else:
                 logger.debug(override_msg % (k, v))
