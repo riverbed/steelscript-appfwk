@@ -143,7 +143,7 @@ class GenericReportView(views.APIView):
     def update_criteria_from_bookmark(self, report, request, fields):
         """ Update fields' initial values using bookmark. """
         request_data = request.GET.dict()
-        override_msg = 'Set field %s with initial value %s from bookmark.'
+        override_msg = 'Setting criteria field %s to %s.'
         for k, v in request_data.iteritems():
             if k == 'auto_run':
                 report.auto_run = (v == 'true')
