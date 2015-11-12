@@ -8,11 +8,10 @@ import os
 import itertools
 
 try:
-    from setuptools import setup, find_packages, Command
+    from setuptools import setup, find_packages
     packagedata = True
 except ImportError:
     from distutils.core import setup
-    from distutils.cmd import Command
     packagedata = False
 
     def find_packages(where='steelscript', exclude=None):
