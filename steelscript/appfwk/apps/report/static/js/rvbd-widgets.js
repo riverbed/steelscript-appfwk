@@ -106,6 +106,7 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
     self.criteria = criteria;
 
     self.status = 'running';
+    self.asyncID = null;
     self.lastUpdate = {};     // object datetime/timezone of last update
 
     var $div = $(div);
@@ -137,7 +138,7 @@ rvbd.widgets.Widget.prototype = {
             data: {criteria: JSON.stringify(criteria)},
             success: function (data, textStatus) {
                 self.jobUrl = data.joburl;
-                setTimeout(function () {
+                self.asyncID = setTimeout(function () {
                     self.getData(criteria);
                 }, 1000);
             },
@@ -181,7 +182,7 @@ rvbd.widgets.Widget.prototype = {
                 break;
             default:
                 $(self.div).setLoading(response.progress);
-                setTimeout(function() {
+                self.asyncID = setTimeout(function() {
                     self.getData(criteria, self.processResponse);
                 }, 1000);
         }
@@ -199,7 +200,7 @@ rvbd.widgets.Widget.prototype = {
             data: {criteria: JSON.stringify(criteria)},
             success: function (data, textStatus) {
                 self.jobUrl = data.joburl;
-                setTimeout(function () {
+                self.asyncID = setTimeout(function () {
                     self.getDataAsync(criteria);
                 }, 1000);
             },
@@ -240,7 +241,7 @@ rvbd.widgets.Widget.prototype = {
                 self.processResponse(criteria, response, textStatus)
                 break;
             default:
-                setTimeout(function() {
+                self.asyncID = setTimeout(function() {
                     self.getDataAsync(criteria);
                 }, 1000);
         }
@@ -271,9 +272,25 @@ rvbd.widgets.Widget.prototype = {
         });
     },
 
+    cancelAsync: function() {
+        var self = this;
+
+        // cancel any pending async operations
+        if (self.asyncID != null) {
+            console.log('Cancelling async for id ' + self.asyncID);
+            clearTimeout(self.asyncID);
+            self.asyncID = null;
+        }
+    },
+
     reloadWidget: function() {
         // update whole widget with latest information
         var self = this;
+
+        // avoid multiple request threads
+        if (self.status == 'running') {
+            self.cancelAsync();
+        }
 
         self.status = 'running';
 
