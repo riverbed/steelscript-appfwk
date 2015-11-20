@@ -55,6 +55,7 @@
 
       rvbd.report.autoLoad = {% if report.hide_criteria %} true {% else %} false {% endif %};
       rvbd.report.reloadMinutes = {{ report.reload_minutes }};
+      rvbd.report.offsetSeconds = {{ report.reload_offset }};
       rvbd.report.autoRun = {% if report.auto_run and not form.errors %} true {% else %} false {% endif %};
       rvbd.report.expandTables = {% if expand_tables %} true {% else %} false {% endif %};
 
