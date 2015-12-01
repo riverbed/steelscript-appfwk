@@ -155,6 +155,8 @@ rvbd.report = {
             rvbd.report.intervalID = setInterval(rvbd.report.reloadAllWidgets, interval);
         } else {
             // need to set a timeout to align with offset then set the interval
+            // assumes string datetime similar to:
+            // "20th November 15:34:23"
             var date_parts = datetime.split(' '),
                 time_parts = date_parts[3].split(':'),
                 now = new Date(Date.now()),
@@ -182,8 +184,6 @@ rvbd.report = {
     reloadAllWidgets: function () {
         rvbd.report.disableReloadButton();
         rvbd.report.disablePrintButton();
-
-        //console.log(new Date() + ' reloading widgets');
 
         $.each(rvbd.report.widgets, function (i, w) {
             w.reloadWidget()
