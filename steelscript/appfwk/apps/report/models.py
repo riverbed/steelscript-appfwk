@@ -58,7 +58,8 @@ class Report(models.Model):
     # create an 'auto-load'-type report which uses default criteria
     # values only, and optionally set a refresh timer
     hide_criteria = models.BooleanField(default=False)
-    reload_minutes = models.IntegerField(default=0)  # 0 means no reloads
+    reload_minutes = models.IntegerField(default=0)     # 0 means no reloads
+    reload_offset = models.IntegerField(default=15*60)  # secs, default 15 min
     auto_run = models.BooleanField(default=False)
 
     @classmethod
@@ -80,7 +81,19 @@ class Report(models.Model):
         :param bool hide_criteria: Set to true to hide criteria and run on load
         :param int reload_minutes: If non-zero, report will be reloaded
             automatically at the given duration in minutes
-        :param bool auto_run: Set to true to run report automatically
+        :param bool reload_offset: In seconds, the amount of time to consider
+            a reload interval to have passed.  This avoids waiting until
+            half of the reload interval before turning over to next interval.
+            This also affects how the report gets reloaded in the browser,
+            if this offset value is smaller than the interval, it will be used
+            to delay the report reloads.
+            For example, given ``reload_minutes`` of ``1`` and
+            ``reload_offset`` of ``10``, the browser will reload all the
+            widgets every minute at 10 seconds past the minute.
+
+        :param bool auto_run: Set to true to run report automatically.  This
+            will only run the report once, versus the reload options which
+            setup continuous report reloads.
 
         """
 
