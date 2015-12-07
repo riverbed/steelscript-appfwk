@@ -99,11 +99,21 @@ $.extend(rvbd.widgets.yui3.YUIWidget.prototype, {
 
         var requirements = self.requirements.concat(['event-resize']); // All widgets need event-resize
 
-        YUI().use(requirements, function(Y) {
-            self.yuiWidget = new Y[self.widgetClass](data);
-            Y.on('windowresize', self.onResize.bind(self));
-            self.onRender();
-        });
+        // clean up the widget so it can be gc'd
+        if (self.yuiWidget) {
+            self.yuiWidget.destroy(true);
+        }
+
+        // only allocate one YUI instance and re-use it for follow on calls
+        if (self.yuiHandle) {
+            self.yuiWidget = new self.yuiHandle[self.widgetClass](data);
+        } else {
+            self.yuiHandle = YUI().use(requirements, function (Y) {
+                self.yuiWidget = new Y[self.widgetClass](data);
+                Y.on('windowresize', self.onResize.bind(self));
+            });
+        }
+        self.onRender();
     }
 });
 

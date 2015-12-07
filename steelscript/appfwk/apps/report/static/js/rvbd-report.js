@@ -398,8 +398,8 @@ rvbd.report = {
         if (!rvbd.report.reportHasRendered) { // If first time rendering the report, attach widgetDoneLoading handler
             rvbd.report.reportHasRendered = true;
 
-            $(document).on('widgetDoneLoading', function(e, widget) {
-                rvbd.report.handleReportLoadedIfNeeded(widget);
+            $(document).on('widgetDoneLoading', function(e, widget_) {
+                rvbd.report.handleReportLoadedIfNeeded(widget_);
             });
         }
     },
@@ -414,7 +414,6 @@ rvbd.report = {
         $.each(rvbd.report.widgets, function(i, w) {
             if (w.status === 'running') {
                 widgetsRunning = true;
-                return;
             }
         });
 
