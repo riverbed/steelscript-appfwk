@@ -11,23 +11,21 @@ import datetime
 import logging
 import optparse
 
-from steelscript.appfwk.apps.jobs.models import Job
-
-logger = logging.getLogger(__name__)
-
 from django.core.management.base import BaseCommand
 
-from steelscript.common.datautils import Formatter
-
+from steelscript.appfwk.apps.jobs.models import Job
 from steelscript.appfwk.apps.datasource.models import Table
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
 from steelscript.appfwk.apps.report.models import Report, Widget
+from steelscript.common.datautils import Formatter
 
 # not pretty, but pandas insists on warning about
 # some deprecated behavior we really don't care about
 # for this script, so ignore them all
 import warnings
 warnings.filterwarnings("ignore")
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -130,7 +128,8 @@ class Command(BaseCommand):
             for f in table.fields.all():
                 all_fields[f.keyword] = f
 
-        return TableFieldForm(all_fields, use_widgets=False, data=data)
+        return TableFieldForm(all_fields, use_widgets=False,
+                              include_hidden=True, data=data)
 
     def handle(self, *args, **options):
         """ Main command handler. """
@@ -140,8 +139,8 @@ class Command(BaseCommand):
             # print out the id's instead of processing anything
             output = []
             for t in Table.objects.all():
-                output.append([t.id, t.namespace, t.datasource, t.name, t])
-            Formatter.print_table(output, ['ID', 'Namespace', 'Datasource',
+                output.append([t.id, t.namespace, t.queryclassname, t.name, t])
+            Formatter.print_table(output, ['ID', 'Namespace', 'QueryClass',
                                            'Name', 'Table'])
         elif options['table_list_by_report']:
             # or print them out organized by report/widget/table
