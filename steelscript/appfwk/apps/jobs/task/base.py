@@ -55,11 +55,12 @@ class QueryError(QueryResponse):
 
 class BaseTask(object):
 
-    def __init__(self, job, callback):
+    def __init__(self, job, callback, generic=False):
         job.reference("Task created")
         # Change to job id?
         self.job = job
         self.callback = callback
+        self.generic = generic
 
     def __unicode__(self):
         return "<%s %s %s>" % (self.__class__, self.job, self.callback)
@@ -71,6 +72,13 @@ class BaseTask(object):
         return unicode(self)
 
     def call_method(self):
+        if self.generic:
+            return self._call_generic_method()
+        else:
+            return self._call_query_method()
+
+    def _call_query_method(self):
+        """ Run query-based Job. """
         callback = self.callback
 
         # Instantiate the query class - this gets used as 'self' object
@@ -128,6 +136,26 @@ class BaseTask(object):
                     traceback.format_exception_only(*sys.exc_info()[0:2])),
                 exception="".join(
                     traceback.format_exception(*sys.exc_info()))
+            )
+
+        finally:
+            self.job.dereference("Task exiting")
+
+    def _call_generic_method(self):
+        """ Run generic Job operations. """
+        callback = self.callback
+
+        try:
+            logger.info("%s: running %s()" % (self, callback))
+            callback(self.job)
+
+        except:
+            logger.exception("%s raised an exception" % self)
+            self.job.mark_error(
+                    message="".join(
+                            traceback.format_exception_only(*sys.exc_info()[0:2])),
+                    exception="".join(
+                            traceback.format_exception(*sys.exc_info()))
             )
 
         finally:

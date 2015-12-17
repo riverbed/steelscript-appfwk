@@ -482,7 +482,8 @@ class Job(models.Model):
             logger.debug("%s: Asking parent %s to check children" %
                          (self, self.parent))
             t = Task(self.parent,
-                     callback=Callable(self.parent.check_children))
+                     callback=Callable(self.parent.check_children),
+                     generic=True)
             logger.debug("%s: Created check_children task %s" % (self, t))
             t.start()
 
