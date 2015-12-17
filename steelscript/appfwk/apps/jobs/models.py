@@ -481,7 +481,9 @@ class Job(models.Model):
         if self.parent:
             logger.debug("%s: Asking parent %s to check children" %
                          (self, self.parent))
-            self.parent.check_children()
+            t = Task(self.parent, callback=self.parent.check_children)
+            logger.debug("%s: Created check_children task %s" % (self, t))
+            t.start()
 
         return True
 
