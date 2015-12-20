@@ -268,23 +268,21 @@ class Command(BaseCommand):
             s.headers.update({'Accept': 'application/json'})
             s.verify = verify
 
-            tableid = None
+            tableurl = None
             url = baseurl
-            while tableid is None:
+            while tableurl is None:
                 r = s.get(url)
                 results = r.json()['results']
-                ids = [t['id'] for t in results if t['name'] == name]
-                if len(ids) > 1:
-                    msg = 'Multiple tables found for name %s: %s' % (name, ids)
+                urls = [t['url'] for t in results if t['name'] == name]
+                if len(urls) > 1:
+                    msg = 'Multiple tables found for name %s: %s' % (name, urls)
                     raise ValueError(msg)
-                elif len(ids) == 1:
-                    tableid = ids[0]
+                elif len(urls) == 1:
+                    tableurl = urls[0] + 'jobs/'
                 else:
                     url = r.json()['next']
                     if url is None:
                         raise ValueError('No table found for name %s' % (name))
-
-            tableurl = urljoin(baseurl, str(tableid) + '/jobs/')
 
             job_params = {'func': run_table_via_rest,
                           'args': [tableurl, self.options.authfile, verify]}
