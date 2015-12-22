@@ -399,11 +399,21 @@ class Job(models.Model):
         for name, job in jobs.iteritems():
             job.start()
 
-    def check_children(self):
-        running_children = Job.objects.filter(
-            parent=self, status__in=[Job.NEW, Job.RUNNING])
+    def check_children(self, objlock=None):
+        # get a lock on the child that's called us to ensure any status
+        # from its transaction will be seen.
+        if objlock is None:
+            objlock = self
 
-        logger.debug("%s: %d running children" % (self, len(running_children)))
+        with TransactionLock(objlock, '%s.checking_children' % self):
+            running_children = Job.objects.filter(
+                parent=self, status__in=[Job.NEW, Job.RUNNING])
+
+        logger.info("%s: %d running children" % (self, len(running_children)))
+        logger.debug("%s: all children: %s" %
+                     (self, ';'.join('%s - %s' %
+                                     (j.status, j) for j in
+                                     Job.objects.filter(parent=self))))
 
         if len(running_children) > 0:
             # Not done yet, do nothing
@@ -416,7 +426,7 @@ class Job(models.Model):
             # details
             self.refresh()
 
-            logger.debug("%s: checking callback %s" % (self, self.callback))
+            logger.info("%s: checking callback %s" % (self, self.callback))
             if self.callback is None:
                 # Some other child got to it first
                 return
@@ -429,7 +439,7 @@ class Job(models.Model):
             self.save()
 
         t = Task(self, callback=callback)
-        logger.debug("%s: Created callback task %s" % (self, t))
+        logger.info("%s: Created callback task %s" % (self, t))
         t.start()
 
     def done(self):
@@ -479,12 +489,13 @@ class Job(models.Model):
                     follower.mark_done(status=status, **kwargs)
 
         if self.parent:
-            logger.debug("%s: Asking parent %s to check children" %
-                         (self, self.parent))
+            logger.info("%s: Asking parent %s to check children" %
+                        (self, self.parent))
             t = Task(self.parent,
-                     callback=Callable(self.parent.check_children),
+                     callback=Callable(self.parent.check_children,
+                                       called_kwargs={'objlock': self}),
                      generic=True)
-            logger.debug("%s: Created check_children task %s" % (self, t))
+            logger.info("%s: Created check_children task %s" % (self, t))
             t.start()
 
         return True
