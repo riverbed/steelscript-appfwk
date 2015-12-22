@@ -41,6 +41,8 @@ The config file uses the ConfigParser format. For example:
     interval_minutes=15
     ; offsets can be used to run reports further in the past
     offset=1min
+    ; if needed you can specify which timezone the endtime should be in
+    timezone=US/Eastern
 
 Each section name (the line with sourrounding brackets) will
 translate into a scheduled job name.  The key-value pairs include
@@ -83,13 +85,19 @@ def process_criteria(kws):
     """Process criteria options into separate dict."""
     # get runtime parameters
     interval = kws.pop('interval')
+    timezone = kws.pop('timezone')
+    if timezone:
+        tz = pytz.timezone(timezone)
+    else:
+        tz = pytz.UTC
 
     if interval['offset'] > datetime.timedelta(0):
         # round now to nearest whole second
-        now = datetime.datetime.now(pytz.UTC)
+        now = datetime.datetime.now(tz)
         roundnow = timeutils.round_time(now, round_to=1)
 
         endtime = roundnow - interval['offset']
+        endtime = endtime.isoformat()
         logger.debug('Setting end time to %s (via offset: %s)' %
                      (endtime, interval['offset']))
     else:
