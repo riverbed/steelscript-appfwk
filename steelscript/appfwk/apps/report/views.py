@@ -8,6 +8,7 @@ import re
 import os
 import sys
 import cgi
+import math
 import time
 import json
 import uuid
@@ -43,23 +44,25 @@ from rest_framework.authentication import (SessionAuthentication,
 from steelscript.appfwk.apps.jobs.models import Job
 
 from steelscript.common.timeutils import round_time, timedelta_total_seconds, \
-    parse_timedelta
+    parse_timedelta, sec_string_to_datetime, datetime_to_seconds
 from steelscript.commands.steel import shell, ShellFailed
 from steelscript.appfwk.apps.datasource.serializers import TableSerializer
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
+from steelscript.appfwk.apps.datasource.models import Criteria
 from steelscript.appfwk.apps.devices.models import Device
 from steelscript.appfwk.apps.geolocation.models import Location, LocationIP
 from steelscript.appfwk.apps.preferences.models import (SystemSettings,
                                                         AppfwkUser)
 from steelscript.appfwk.apps.report.models import (Report, Section, Widget,
-                                                   WidgetJob, WidgetAuthToken)
+                                                   WidgetJob, WidgetAuthToken,
+                                                   ReportHistory)
 from steelscript.appfwk.apps.report.serializers import ReportSerializer, \
     WidgetSerializer
 from steelscript.appfwk.apps.report.utils import create_debug_zipfile
 from steelscript.appfwk.apps.report.forms import (ReportEditorForm,
                                                   CopyReportForm)
 from steelscript.appfwk.project.middleware import URLTokenAuthentication
-from steelscript.common.timeutils import sec_string_to_datetime
+from steelscript.appfwk.apps.datasource.modules.history import ReportStatus
 
 
 logger = logging.getLogger(__name__)
@@ -116,6 +119,90 @@ def rm_file(filepath):
         pass
 
 
+def _get_url_fields(flds):
+    """ Generator of tuples of field and field value for bookmark url.
+
+    :param flds: dict of fields
+    :return: generator of tuple of field name and field value as string
+    """
+
+    for k, v in flds.iteritems():
+        if k in ['starttime', 'endtime']:
+            yield (k, str(datetime_to_seconds(v)))
+        elif k in ['duration', 'resolution']:
+            yield (k, str(int(timedelta_total_seconds(v))))
+        else:
+            yield (k, str(v))
+    yield ('auto_run', 'true')
+
+
+def create_report_history(request, report, form):
+    """Create a report history object.
+
+    :param request: request object
+    :param report: Report object
+    :param form: TableFieldForm object
+    """
+
+    url = request._request.path + '?'
+
+    form_data = form.cleaned_data
+
+    # form_data contains fields that don't belong to url
+    # e.g. ignore_cache, debug
+    # thus use compute_field_precedence method to filter those
+    table_fields = {k: form_data[k] for k in form.compute_field_precedence()}
+
+    url_fields = ['='.join([k, v]) for k, v in _get_url_fields(table_fields)]
+
+    # Form the bookmark link
+    url += '&'.join(url_fields)
+
+    last_run = datetime.datetime.now()
+
+    handles = []
+    for widget in report.widgets():
+        form_criteria = form.criteria()
+        widget_table = widget.table()
+        form_criteria = form_criteria.build_for_table(widget_table)
+        try:
+            form_criteria.compute_times()
+        except ValueError:
+            pass
+
+        handles.append(Job._compute_handle(widget_table, form_criteria))
+    job_handles = ','.join(handles)
+
+    rh = ReportHistory.create(namespace=report.namespace,
+                              slug=report.slug,
+                              bookmark=url,
+                              first_run=last_run,
+                              last_run=last_run,
+                              job_handles=job_handles,
+                              user=request.user.username,
+                              criteria=table_fields,
+                              run_count=1)
+
+    # Start a task to query the status of all report jobs
+    # When all jobs are complete/or one job is failed,
+    # update the status of the report history in db
+    criteria = Criteria()
+    criteria.report_history = rh
+    status_job = Job.create(report.status_table, criteria)
+    status_job.start()
+
+
+class ReportHistoryView(views.APIView):
+    """ Display a list of report history. """
+
+    renderer_classes = (TemplateHTMLRenderer, )
+
+    def get(self, request):
+        return Response({'history': ReportHistory.objects.all(),
+                         'status': ReportStatus},
+                        template_name='history.html')
+
+
 class GenericReportView(views.APIView):
 
     def get_media_params(self, request):
@@ -146,7 +233,7 @@ class GenericReportView(views.APIView):
         override_msg = 'Setting criteria field %s to %s.'
         for k, v in request_data.iteritems():
             if k == 'auto_run':
-                report.auto_run = (v == 'true')
+                report.auto_run = (v.lower() == 'true')
                 continue
 
             field = fields.get(k, None)
@@ -161,7 +248,10 @@ class GenericReportView(views.APIView):
                     field.error_msg = ("%s '%s' is invalid." % (k, v))
                     continue
 
-                delta = int(time.time()) - int(v)
+                # Needs to set delta derived from ceiling of current time
+                # Otherwise the resulting timestamp would advance 1 sec
+                # vs the original timestamp from bookmark
+                delta = int(math.ceil(time.time())) - int(v)
                 if delta < 0:
                     field.error_msg = ("%s %s is later than current time."
                                        % (k, v))
@@ -175,8 +265,8 @@ class GenericReportView(views.APIView):
                                                                    % delta)
 
             elif self.is_field_cls(field, 'BooleanField'):
-                logger.debug(override_msg % (k, v == 'true'))
-                field.initial = (v == 'true')
+                logger.debug(override_msg % (k, v.lower() == 'true'))
+                field.initial = (v.lower() == 'true')
 
             else:
                 logger.debug(override_msg % (k, v))
@@ -368,6 +458,8 @@ class ReportView(GenericReportView):
 
             logger.debug("Sending widget definitions for report %s: %s" %
                          (report_slug, report_def))
+
+            create_report_history(request, report, form)
 
             return JsonResponse(report_def, safe=False)
         else:

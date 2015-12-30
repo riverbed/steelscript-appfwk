@@ -16,6 +16,9 @@ urlpatterns = patterns(
     url(r'^reload$', 'reload_config',
         name='reload-all'),
 
+    url(r'^history$', views.ReportHistoryView.as_view(),
+        name='report-history'),
+
     url(r'^(?P<namespace>[0-9_a-zA-Z]+)/$',
         views.ReportView.as_view(),
         name='report-view'),

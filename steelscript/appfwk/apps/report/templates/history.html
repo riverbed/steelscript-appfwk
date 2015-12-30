@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2015 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% block title %}App Framework: Report History{% endblock %}
+
+{% block header_row %}
+    <h3>Report History</h3>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <table border="0" class="table table-bordered block-centered" style="max-width: 90%">
+            <thead>
+            <tr>
+                <th>Name Space</th>
+                <th>Report Slug</th>
+                <th>First Run</th>
+                <th>Last Run</th>
+                <th>Status</th>
+                <th>User</th>
+                <th>Criteria</th>
+                <th>Run Count</th>
+                <th>Run Report</th>
+            </tr>
+            </thead>
+            <tbody>
+                {% if not history %}
+                    <tr>
+                        <td colspan="6" style="text-align: center">No report has been run.</td>
+                    </tr>
+                {% endif %}
+                {% for record in history %}
+                    <tr>
+                        <td>{{ record.namespace }}</td>
+                        <td>{{ record.slug }}</td>
+                        <td>{{ record.first_run }}</td>
+                        <td>{{ record.last_run }}</td>
+                        {% if record.status == status.NEW %}
+                            <td>New</td>
+                        {% elif record.status == status.RUNNING %}
+                            <td>Running</td>
+                        {% elif record.status == status.COMPLETE %}
+                            <td>Complete</td>
+                        {% elif record.status == status.ERROR %}
+                            <td>Error</td>
+                        {% endif %}
+                        <td>{{ record.user }}</td>
+                        <td>{% for k, v in record.criteria.iteritems %}
+                            <li>{{ k }} : {{ v }}</li>
+                            {% endfor %}
+                        </td>
+                        <td>{{ record.run_count }}</td>
+                        <td><a href={{ record.bookmark }} class="btn btn-info" role="button">Run</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

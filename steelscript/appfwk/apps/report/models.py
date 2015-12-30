@@ -27,6 +27,9 @@ from steelscript.appfwk.apps.datasource.models import Table, TableField
 from steelscript.appfwk.libs.fields import \
     PickledObjectField, SeparatedValuesField
 from steelscript.appfwk.apps.preferences.models import AppfwkUser
+from steelscript.appfwk.apps.datasource.modules.history import \
+    ReportStatusTable, ReportStatus
+
 logger = logging.getLogger(__name__)
 
 
@@ -62,11 +65,16 @@ class Report(models.Model):
     reload_offset = models.IntegerField(default=15*60)  # secs, default 15 min
     auto_run = models.BooleanField(default=False)
 
+    # report status table
+    status_table = PickledObjectField()
+
     @classmethod
     def create(cls, title, **kwargs):
         """Create a new Report object and save it to the database.
 
         :param str title: Title for the report
+
+        :param obj status_table: a ReportStatusTable object
 
         :param float position: Position in the menu for this report.
             By default, all system reports have a ``position`` of 9 or
@@ -98,7 +106,9 @@ class Report(models.Model):
         """
 
         logger.debug('Creating report %s' % title)
-        r = cls(title=title, **kwargs)
+        status_table = ReportStatusTable.create('-'.join([title,
+                                                          'Status']))
+        r = cls(title=title, status_table=status_table, **kwargs)
         r.save()
         return r
 
@@ -247,6 +257,67 @@ class Report(models.Model):
             definitions.append(widget_def)
 
         return definitions
+
+
+class ReportHistory(models.Model):
+    """ Define a record history of running report."""
+    namespace = models.CharField(max_length=50)
+    slug = models.CharField(max_length=50)
+    bookmark = models.CharField(max_length=400)
+    first_run = models.DateTimeField()
+    last_run = models.DateTimeField()
+    job_handles = models.TextField()
+    user = models.CharField(max_length=50)
+    criteria = PickledObjectField()
+    run_count = models.IntegerField()
+
+    status = models.IntegerField(
+        default=ReportStatus.NEW,
+        choices=((ReportStatus.NEW, "New"),
+                 (ReportStatus.RUNNING, "Running"),
+                 (ReportStatus.COMPLETE, "Complete"),
+                 (ReportStatus.ERROR, "Error")))
+
+    @classmethod
+    def create(cls, **kwargs):
+        """ Create a new report history object and save it to database.
+        :param str namespace: name of one set of report slugs
+        :param str slug: the slug of the report
+        :param str bookmark: the bookmark link of the report
+        :param datetime last_run: Time when the report with the same criteria
+          ran at the first time
+        :param datetime last_run: Time when the report with the same criteria
+          ran last time
+        :param str job_handles: comma separated job handle strings of the
+          report
+        :param str user: name of the user who ran the report
+        :param dict criteria: criteria fields that the report is running with
+        :param int run_count: the number of times the report has run with the
+          same criteria
+        :return: the created report history object
+        """
+        job_handles = kwargs.get('job_handles')
+        try:
+            rh_obj = cls.objects.get(job_handles=job_handles)
+        except ObjectDoesNotExist:
+            rh_obj = cls(**kwargs)
+        else:
+            rh_obj.last_run = kwargs.get('last_run')
+            rh_obj.run_count += 1
+        finally:
+            rh_obj.save()
+            return rh_obj
+
+    def __unicode__(self):
+        return ("<Report History %s %s/%s %s>"
+                % (self.id, self.namespace, self.slug, self.bookmark))
+
+    def __repr__(self):
+        return unicode(self)
+
+    def update_status(self, status):
+        self.status = status
+        self.save()
 
 
 class Section(models.Model):
