@@ -27,8 +27,10 @@ from steelscript.appfwk.apps.datasource.models import Table, TableField
 from steelscript.appfwk.libs.fields import \
     PickledObjectField, SeparatedValuesField
 from steelscript.appfwk.apps.preferences.models import AppfwkUser
-from steelscript.appfwk.apps.datasource.modules.history import \
-    ReportStatusTable, ReportStatus
+from steelscript.appfwk.apps.jobs.models import TransactionLock
+
+from steelscript.appfwk.apps.alerting.models import (post_data_save,
+                                                     error_signal)
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,50 @@ class WidgetOptions(JsonDict):
     _default = {'key': None,
                 'value': None,
                 'axes': None}
+
+
+@receiver(post_data_save, dispatch_uid='job_complete_receiver')
+def update_report_history_status_on_complete(sender, **kwargs):
+    """ Update the status of the report history that shares the same job handle
+    with the just completed job.
+
+    If one widget job's status is ERROR, then update the status of the report
+    history as ERROR; if one report job's status is running, then update the
+    status of the report history as RUNNING; if all jobs' status are COMPLETE,
+    then update the status of the report history as COMPLETE.
+
+    :param sender: job object that just completed
+    """
+    rhs = ReportHistory.objects.filter(
+        job_handles__contains=sender.handle).exclude(
+        status__in=[ReportStatus.ERROR, ReportStatus.COMPLETE])
+
+    for rh in rhs:
+        jobs = Job.objects.filter(handle__in=rh.job_handles.split(','))
+
+        if any([job.status == Job.ERROR for job in jobs]):
+            rh.update_status(ReportStatus.ERROR)
+
+        elif any([job.status == Job.RUNNING for job in jobs]):
+            rh.update_status(ReportStatus.RUNNING)
+
+        elif jobs and all([job.status == Job.COMPLETE for job in jobs]):
+            rh.update_status(ReportStatus.COMPLETE)
+
+
+@receiver(error_signal, dispatch_uid='job_error_receiver')
+def update_report_history_status_on_error(sender, **kwargs):
+    """ Set Error status for the report history that shares the same job handle
+    with the just erred job.
+
+    :param sender: job object that just erred
+    """
+    rhs = ReportHistory.objects.filter(
+        job_handles__contains=sender.handle).exclude(
+        status__in=[ReportStatus.ERROR, ReportStatus.COMPLETE])
+
+    for rh in rhs:
+        rh.update_status(ReportStatus.ERROR)
 
 
 class Report(models.Model):
@@ -65,16 +111,11 @@ class Report(models.Model):
     reload_offset = models.IntegerField(default=15*60)  # secs, default 15 min
     auto_run = models.BooleanField(default=False)
 
-    # report status table
-    status_table = PickledObjectField()
-
     @classmethod
     def create(cls, title, **kwargs):
         """Create a new Report object and save it to the database.
 
         :param str title: Title for the report
-
-        :param obj status_table: a ReportStatusTable object
 
         :param float position: Position in the menu for this report.
             By default, all system reports have a ``position`` of 9 or
@@ -106,9 +147,7 @@ class Report(models.Model):
         """
 
         logger.debug('Creating report %s' % title)
-        status_table = ReportStatusTable.create('-'.join([title,
-                                                          'Status']))
-        r = cls(title=title, status_table=status_table, **kwargs)
+        r = cls(title=title, **kwargs)
         r.save()
         return r
 
@@ -259,6 +298,13 @@ class Report(models.Model):
         return definitions
 
 
+class ReportStatus(object):
+    NEW = 0
+    RUNNING = 1
+    COMPLETE = 2
+    ERROR = 3
+
+
 class ReportHistory(models.Model):
     """ Define a record history of running report."""
     namespace = models.CharField(max_length=50)
@@ -302,11 +348,12 @@ class ReportHistory(models.Model):
         except ObjectDoesNotExist:
             rh_obj = cls(**kwargs)
         else:
+            rh_obj.status = ReportStatus.NEW
             rh_obj.last_run = kwargs.get('last_run')
             rh_obj.run_count += 1
         finally:
             rh_obj.save()
-            return rh_obj
+            return
 
     def __unicode__(self):
         return ("<Report History %s %s/%s %s>"
@@ -316,8 +363,9 @@ class ReportHistory(models.Model):
         return unicode(self)
 
     def update_status(self, status):
-        self.status = status
-        self.save()
+        with TransactionLock(self, '%s.update_status' % self):
+            self.status = status
+            self.save()
 
 
 class Section(models.Model):

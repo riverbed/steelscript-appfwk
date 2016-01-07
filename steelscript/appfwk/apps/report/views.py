@@ -48,21 +48,19 @@ from steelscript.common.timeutils import round_time, timedelta_total_seconds, \
 from steelscript.commands.steel import shell, ShellFailed
 from steelscript.appfwk.apps.datasource.serializers import TableSerializer
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
-from steelscript.appfwk.apps.datasource.models import Criteria
 from steelscript.appfwk.apps.devices.models import Device
 from steelscript.appfwk.apps.geolocation.models import Location, LocationIP
 from steelscript.appfwk.apps.preferences.models import (SystemSettings,
                                                         AppfwkUser)
 from steelscript.appfwk.apps.report.models import (Report, Section, Widget,
                                                    WidgetJob, WidgetAuthToken,
-                                                   ReportHistory)
+                                                   ReportHistory, ReportStatus)
 from steelscript.appfwk.apps.report.serializers import ReportSerializer, \
     WidgetSerializer
 from steelscript.appfwk.apps.report.utils import create_debug_zipfile
 from steelscript.appfwk.apps.report.forms import (ReportEditorForm,
                                                   CopyReportForm)
 from steelscript.appfwk.project.middleware import URLTokenAuthentication
-from steelscript.appfwk.apps.datasource.modules.history import ReportStatus
 
 
 logger = logging.getLogger(__name__)
@@ -173,23 +171,15 @@ def create_report_history(request, report, form):
         handles.append(Job._compute_handle(widget_table, form_criteria))
     job_handles = ','.join(handles)
 
-    rh = ReportHistory.create(namespace=report.namespace,
-                              slug=report.slug,
-                              bookmark=url,
-                              first_run=last_run,
-                              last_run=last_run,
-                              job_handles=job_handles,
-                              user=request.user.username,
-                              criteria=table_fields,
-                              run_count=1)
-
-    # Start a task to query the status of all report jobs
-    # When all jobs are complete/or one job is failed,
-    # update the status of the report history in db
-    criteria = Criteria()
-    criteria.report_history = rh
-    status_job = Job.create(report.status_table, criteria)
-    status_job.start()
+    ReportHistory.create(namespace=report.namespace,
+                         slug=report.slug,
+                         bookmark=url,
+                         first_run=last_run,
+                         last_run=last_run,
+                         job_handles=job_handles,
+                         user=request.user.username,
+                         criteria=table_fields,
+                         run_count=1)
 
 
 class ReportHistoryView(views.APIView):
@@ -257,12 +247,14 @@ class GenericReportView(views.APIView):
                                        % (k, v))
                     continue
 
-                logger.debug(override_msg % (k,
-                                             sec_string_to_datetime(int(v))))
-                for key in field.field_kwargs['widget_attrs']:
-                    if key.startswith('initial_'):
-                        field.field_kwargs['widget_attrs'][key] = ('now-%s'
-                                                                   % delta)
+                dt = sec_string_to_datetime(int(v))
+                logger.debug(override_msg % (k, dt))
+                # Setting initial date as 'mm/dd/yy'
+                field.field_kwargs['widget_attrs']['initial_date'] = \
+                    dt.strftime('%m/%d/%Y')
+                # Setting initial time as 'hh:mm:ss'
+                field.field_kwargs['widget_attrs']['initial_time'] = \
+                    dt.strftime('%H:%M:%S')
 
             elif self.is_field_cls(field, 'BooleanField'):
                 logger.debug(override_msg % (k, v.lower() == 'true'))
