@@ -156,7 +156,8 @@ def create_report_history(request, report, form):
     # Form the bookmark link
     url += '&'.join(url_fields)
 
-    last_run = datetime.datetime.now()
+    timezone = pytz.timezone(request.user.timezone)
+    last_run = datetime.datetime.now(timezone)
 
     handles = []
     for widget in report.widgets():
@@ -247,14 +248,17 @@ class GenericReportView(views.APIView):
                                        % (k, v))
                     continue
 
-                dt = sec_string_to_datetime(int(v))
-                logger.debug(override_msg % (k, dt))
+                dt_utc = sec_string_to_datetime(int(v))
+                tz = pytz.timezone(request.user.timezone)
+                dt_local = dt_utc.astimezone(tz)
+
+                logger.debug(override_msg % (k, dt_local))
                 # Setting initial date as 'mm/dd/yy'
                 field.field_kwargs['widget_attrs']['initial_date'] = \
-                    dt.strftime('%m/%d/%Y')
+                    dt_local.strftime('%m/%d/%Y')
                 # Setting initial time as 'hh:mm:ss'
                 field.field_kwargs['widget_attrs']['initial_time'] = \
-                    dt.strftime('%H:%M:%S')
+                    dt_local.strftime('%H:%M:%S')
 
             elif self.is_field_cls(field, 'BooleanField'):
                 logger.debug(override_msg % (k, v.lower() == 'true'))
