@@ -41,50 +41,6 @@ class WidgetOptions(JsonDict):
                 'axes': None}
 
 
-@receiver(post_data_save, dispatch_uid='job_complete_receiver')
-def update_report_history_status_on_complete(sender, **kwargs):
-    """ Update the status of the report history that shares the same job handle
-    with the just completed job.
-
-    If one widget job's status is ERROR, then update the status of the report
-    history as ERROR; if one report job's status is running, then update the
-    status of the report history as RUNNING; if all jobs' status are COMPLETE,
-    then update the status of the report history as COMPLETE.
-
-    :param sender: job object that just completed
-    """
-    rhs = ReportHistory.objects.filter(
-        job_handles__contains=sender.handle).exclude(
-        status__in=[ReportStatus.ERROR, ReportStatus.COMPLETE])
-
-    for rh in rhs:
-        jobs = Job.objects.filter(handle__in=rh.job_handles.split(','))
-
-        if any([job.status == Job.ERROR for job in jobs]):
-            rh.update_status(ReportStatus.ERROR)
-
-        elif any([job.status == Job.RUNNING for job in jobs]):
-            rh.update_status(ReportStatus.RUNNING)
-
-        elif jobs and all([job.status == Job.COMPLETE for job in jobs]):
-            rh.update_status(ReportStatus.COMPLETE)
-
-
-@receiver(error_signal, dispatch_uid='job_error_receiver')
-def update_report_history_status_on_error(sender, **kwargs):
-    """ Set Error status for the report history that shares the same job handle
-    with the just erred job.
-
-    :param sender: job object that just erred
-    """
-    rhs = ReportHistory.objects.filter(
-        job_handles__contains=sender.handle).exclude(
-        status__in=[ReportStatus.ERROR, ReportStatus.COMPLETE])
-
-    for rh in rhs:
-        rh.update_status(ReportStatus.ERROR)
-
-
 class Report(models.Model):
     """ Defines a Report as a collection of Sections and their Widgets. """
     title = models.CharField(max_length=200)
@@ -347,12 +303,14 @@ class ReportHistory(models.Model):
             rh_obj = cls.objects.get(job_handles=job_handles)
         except ObjectDoesNotExist:
             rh_obj = cls(**kwargs)
-        else:
-            rh_obj.status = ReportStatus.NEW
-            rh_obj.last_run = kwargs.get('last_run')
-            rh_obj.run_count += 1
-        finally:
             rh_obj.save()
+        else:
+            with TransactionLock(rh_obj, '%s_create' % rh_obj):
+                rh_obj.status = ReportStatus.NEW
+                rh_obj.last_run = kwargs.get('last_run')
+                rh_obj.run_count += 1
+                rh_obj.save()
+        finally:
             return
 
     def __unicode__(self):
@@ -363,9 +321,54 @@ class ReportHistory(models.Model):
         return unicode(self)
 
     def update_status(self, status):
-        with TransactionLock(self, '%s.update_status' % self):
-            self.status = status
-            self.save()
+        if self.status != status:
+            with TransactionLock(self, '%s.update_status' % self):
+                self.status = status
+                self.save()
+
+
+@receiver(post_data_save, dispatch_uid='job_complete_receiver')
+def update_report_history_status_on_complete(sender, **kwargs):
+    """ Update the status of the report history that shares the same job handle
+    with the just completed job.
+
+    If one widget job's status is ERROR, then update the status of the report
+    history as ERROR; if one report job's status is running, then update the
+    status of the report history as RUNNING; if all jobs' status are COMPLETE,
+    then update the status of the report history as COMPLETE.
+
+    :param sender: job object that just completed
+    """
+    rhs = ReportHistory.objects.filter(
+        job_handles__contains=sender.handle).exclude(
+        status__in=[ReportStatus.ERROR, ReportStatus.COMPLETE])
+
+    for rh in rhs:
+        jobs = Job.objects.filter(handle__in=rh.job_handles.split(','))
+
+        if any([job.status == Job.ERROR for job in jobs]):
+            rh.update_status(ReportStatus.ERROR)
+
+        elif any([job.status == Job.RUNNING for job in jobs]):
+            rh.update_status(ReportStatus.RUNNING)
+
+        elif jobs and all([job.status == Job.COMPLETE for job in jobs]):
+            rh.update_status(ReportStatus.COMPLETE)
+
+
+@receiver(error_signal, dispatch_uid='job_error_receiver')
+def update_report_history_status_on_error(sender, **kwargs):
+    """ Set Error status for the report history that shares the same job handle
+    with the just erred job.
+
+    :param sender: job object that just erred
+    """
+    rhs = ReportHistory.objects.filter(
+        job_handles__contains=sender.handle).exclude(
+        status__in=[ReportStatus.ERROR, ReportStatus.COMPLETE])
+
+    for rh in rhs:
+        rh.update_status(ReportStatus.ERROR)
 
 
 class Section(models.Model):

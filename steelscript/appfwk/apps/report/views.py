@@ -117,83 +117,6 @@ def rm_file(filepath):
         pass
 
 
-def _get_url_fields(flds):
-    """ Generator of tuples of field and field value for bookmark url.
-
-    :param flds: dict of fields
-    :return: generator of tuple of field name and field value as string
-    """
-
-    for k, v in flds.iteritems():
-        if k in ['starttime', 'endtime']:
-            yield (k, str(datetime_to_seconds(v)))
-        elif k in ['duration', 'resolution']:
-            yield (k, str(int(timedelta_total_seconds(v))))
-        else:
-            yield (k, str(v))
-    yield ('auto_run', 'true')
-
-
-def create_report_history(request, report, form):
-    """Create a report history object.
-
-    :param request: request object
-    :param report: Report object
-    :param form: TableFieldForm object
-    """
-
-    url = request._request.path + '?'
-
-    form_data = form.cleaned_data
-
-    # form_data contains fields that don't belong to url
-    # e.g. ignore_cache, debug
-    # thus use compute_field_precedence method to filter those
-    table_fields = {k: form_data[k] for k in form.compute_field_precedence()}
-
-    url_fields = ['='.join([k, v]) for k, v in _get_url_fields(table_fields)]
-
-    # Form the bookmark link
-    url += '&'.join(url_fields)
-
-    timezone = pytz.timezone(request.user.timezone)
-    last_run = datetime.datetime.now(timezone)
-
-    handles = []
-    for widget in report.widgets():
-        form_criteria = form.criteria()
-        widget_table = widget.table()
-        form_criteria = form_criteria.build_for_table(widget_table)
-        try:
-            form_criteria.compute_times()
-        except ValueError:
-            pass
-
-        handles.append(Job._compute_handle(widget_table, form_criteria))
-    job_handles = ','.join(handles)
-
-    ReportHistory.create(namespace=report.namespace,
-                         slug=report.slug,
-                         bookmark=url,
-                         first_run=last_run,
-                         last_run=last_run,
-                         job_handles=job_handles,
-                         user=request.user.username,
-                         criteria=table_fields,
-                         run_count=1)
-
-
-class ReportHistoryView(views.APIView):
-    """ Display a list of report history. """
-
-    renderer_classes = (TemplateHTMLRenderer, )
-
-    def get(self, request):
-        return Response({'history': ReportHistory.objects.all(),
-                         'status': ReportStatus},
-                        template_name='history.html')
-
-
 class GenericReportView(views.APIView):
 
     def get_media_params(self, request):
@@ -582,6 +505,77 @@ class ReportPrintView(GenericReportView):
             raise Http404
 
         return self.render_html(report, request, namespace, report_slug, True)
+
+
+def create_report_history(request, report, form):
+    """Create a report history object.
+
+    :param request: request object
+    :param report: Report object
+    :param form: TableFieldForm object
+    """
+
+    url = request._request.path + '?'
+
+    form_data = form.cleaned_data
+
+    # form_data contains fields that don't belong to url
+    # e.g. ignore_cache, debug
+    # thus use compute_field_precedence method to filter those
+    table_fields = {k: form_data[k] for k in form.compute_field_precedence()}
+
+    # Convert field values into strings suitable for bookmark
+    def _get_url_fields(flds):
+        for k, v in flds.iteritems():
+            if k in ['starttime', 'endtime']:
+                yield (k, str(datetime_to_seconds(v)))
+            elif k in ['duration', 'resolution']:
+                yield (k, str(int(timedelta_total_seconds(v))))
+            else:
+                yield (k, str(v))
+        yield ('auto_run', 'true')
+
+    url_fields = ['='.join([k, v]) for k, v in _get_url_fields(table_fields)]
+
+    # Form the bookmark link
+    url += '&'.join(url_fields)
+
+    timezone = pytz.timezone(request.user.timezone)
+    last_run = datetime.datetime.now(timezone)
+
+    handles = []
+    for widget in report.widgets():
+        form_criteria = form.criteria()
+        widget_table = widget.table()
+        form_criteria = form_criteria.build_for_table(widget_table)
+        try:
+            form_criteria.compute_times()
+        except ValueError:
+            pass
+
+        handles.append(Job._compute_handle(widget_table, form_criteria))
+    job_handles = ','.join(handles)
+
+    ReportHistory.create(namespace=report.namespace,
+                         slug=report.slug,
+                         bookmark=url,
+                         first_run=last_run,
+                         last_run=last_run,
+                         job_handles=job_handles,
+                         user=request.user.username,
+                         criteria=table_fields,
+                         run_count=1)
+
+
+class ReportHistoryView(views.APIView):
+    """ Display a list of report history. """
+
+    renderer_classes = (TemplateHTMLRenderer, )
+
+    def get(self, request):
+        return Response({'history': ReportHistory.objects.all(),
+                         'status': ReportStatus},
+                        template_name='history.html')
 
 
 class ReportEditor(views.APIView):
