@@ -378,7 +378,7 @@ class ReportView(GenericReportView):
             logger.debug("Sending widget definitions for report %s: %s" %
                          (report_slug, report_def))
 
-            create_report_history(request, report, form)
+            create_report_history(request, report)
 
             return JsonResponse(report_def, safe=False)
         else:
@@ -507,17 +507,33 @@ class ReportPrintView(GenericReportView):
         return self.render_html(report, request, namespace, report_slug, True)
 
 
-def create_report_history(request, report, form):
+def create_report_history(request, report):
     """Create a report history object.
 
     :param request: request object
     :param report: Report object
-    :param form: TableFieldForm object
     """
 
-    url = request._request.path + '?'
+    # create the form to derive criteria
+    # the form in the calling context can not be used
+    # because it does not include hidden fields
+    fields_by_section = report.collect_fields_by_section()
+    all_fields = SortedDict()
+    [all_fields.update(c) for c in fields_by_section.values()]
+
+    form = TableFieldForm(all_fields,
+                          hidden_fields=report.hidden_fields,
+                          include_hidden=True,
+                          data=request.POST,
+                          files=request.FILES)
+
+    # parse time and localize to user profile timezone
+    timezone = pytz.timezone(request.user.timezone)
+    form.apply_timezone(timezone)
 
     form_data = form.cleaned_data
+
+    url = request._request.path + '?'
 
     # form_data contains fields that don't belong to url
     # e.g. ignore_cache, debug
@@ -532,7 +548,8 @@ def create_report_history(request, report, form):
             elif k in ['duration', 'resolution']:
                 yield (k, str(int(timedelta_total_seconds(v))))
             else:
-                yield (k, str(v))
+                # use + as encoded white space
+                yield (k, str(v).replace(' ', '+'))
         yield ('auto_run', 'true')
 
     url_fields = ['='.join([k, v]) for k, v in _get_url_fields(table_fields)]
