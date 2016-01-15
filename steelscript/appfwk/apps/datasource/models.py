@@ -663,7 +663,7 @@ class DatasourceTable(Table):
             * b/s - bits per second
             * pct - percentage
 
-        :param float position: Display position relative to other columns,
+        :param int position: Display position relative to other columns,
             automatically computed by default
 
         :param bool synthetic: Set True to compute this columns value
@@ -742,7 +742,7 @@ class Column(models.Model):
     table = models.ForeignKey(Table)
     name = models.CharField(max_length=300)
     label = models.CharField(max_length=300, null=True)
-    position = models.DecimalField(max_digits=7, decimal_places=3, default=1)
+    position = models.IntegerField(default=1)
     options = PickledObjectField()
 
     iskey = models.BooleanField(default=False)
