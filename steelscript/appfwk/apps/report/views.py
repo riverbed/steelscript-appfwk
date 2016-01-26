@@ -546,7 +546,11 @@ def create_report_history(request, report):
             if k in ['starttime', 'endtime']:
                 yield (k, str(datetime_to_seconds(v)))
             elif k in ['duration', 'resolution']:
-                yield (k, str(int(timedelta_total_seconds(v))))
+                try:
+                    yield (k, str(int(timedelta_total_seconds(v))))
+                except AttributeError:
+                    # v is of special value, not a string of some duration
+                    yield (k, v.replace(' ', '+'))
             else:
                 # use + as encoded white space
                 yield (k, str(v).replace(' ', '+'))
