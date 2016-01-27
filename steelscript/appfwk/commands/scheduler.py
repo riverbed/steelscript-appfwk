@@ -343,10 +343,11 @@ class Command(BaseCommand):
 
             # this gives the latest rounded time in the past
             # so we add interval to it to get a future run time
-            total_offset = timeutils.timedelta_total_seconds(delta + offset)
+            delta_secs = timeutils.timedelta_total_seconds(delta)
             next_run_time = timeutils.round_time(now,
-                                                 round_to=total_offset,
+                                                 round_to=delta_secs,
                                                  trim=True)
+
             next_run_time += (delta + offset)
 
             logger.debug('Setting next run time to %s (delta: %s, offset: %s)'
