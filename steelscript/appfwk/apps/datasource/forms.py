@@ -185,12 +185,19 @@ class FileSelectField(forms.Field):
             # temporary file and return the path for use in JSON
             # consumers of this file will need to clean them up
             # TODO this will be replaced by the File Storage App
-            newtemp = tempfile.NamedTemporaryFile(delete=False)
-            data.seek(0)
-            shutil.copyfileobj(data, newtemp)
-            data.close()
-            newtemp.close()
-            return newtemp.name
+            try:
+                newtemp = tempfile.NamedTemporaryFile(delete=False)
+                data.seek(0)
+                shutil.copyfileobj(data, newtemp)
+                data.close()
+                newtemp.close()
+                return newtemp.name
+            except ValueError:
+                # if the file has already been processed, a ValueError
+                # gets raised when trying to access a closed file.
+                # instead, just return the original file name since that's
+                # what is important from a criteria standpoint
+                return file_name
         else:
             raise ValidationError('Unsupported widget source: %s' %
                                   str(self.widget))
