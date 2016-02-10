@@ -16,8 +16,6 @@ from steelscript.common import RvbdException
 
 logger = logging.getLogger(__name__)
 
-# Seconds that progressd needs to restart
-RESTART_DURATION = 10
 
 class ProgressDaemon(object):
     def __init__(self):
@@ -31,14 +29,15 @@ class ProgressDaemon(object):
             # In case progressd is restarting due to daily logrotate
             # resending the request after 10 seconds
             logger.warning("Waiting %s seconds before reconnecting progressd"
-                           % RESTART_DURATION)
-            time.sleep(RESTART_DURATION)
+                           % settings.PROGRESSD_CONN_TIMEOUT)
+            time.sleep(settings.PROGRESSD_CONN_TIMEOUT)
             try:
                 return self.conn.json_request(method, url, **kwargs)
             except ConnectionError:
                 raise RvbdException(
                     "Error connecting to appfwk service 'progressd': "
-                    "try restarting the service (sudo service progressd restart) "
+                    "try restarting the service "
+                    "(sudo service progressd restart) "
                     "or contact your administrator for assistance."
                 )
 

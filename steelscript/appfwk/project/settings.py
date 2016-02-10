@@ -61,6 +61,8 @@ APPFWK_TASK_MODEL = 'async'
 # Location of progressd daemon, default for locally running
 PROGRESSD_HOST = 'http://127.0.0.1'
 PROGRESSD_PORT = '5000'
+# Seconds that it takes to restart progressd with around 5000 jobs
+PROGRESSD_CONN_TIMEOUT = 10
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
