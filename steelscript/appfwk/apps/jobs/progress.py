@@ -17,7 +17,7 @@ from steelscript.common import RvbdException
 logger = logging.getLogger(__name__)
 
 # Seconds that progressd needs to restart
-RESTART_DURATION = 20
+RESTART_DURATION = 10
 
 class ProgressDaemon(object):
     def __init__(self):
