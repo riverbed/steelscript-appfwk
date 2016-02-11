@@ -12,21 +12,15 @@ from steelscript.appfwk.apps.preferences.models import SystemSettings
 from steelscript.appfwk.apps.plugins import plugins
 
 
-def django_version(request):
-    return {'django_version': django.VERSION}
-
-
-def offline_js(request):
-    return {'offline_js': settings.OFFLINE_JS}
-
-
-def versions(request):
-    return {'appfwk_version': settings.VERSION,
-            'js_versions': settings.JS_VERSIONS}
-
-
-def developer(request):
-    return {'developer': SystemSettings.get_system_settings().developer}
+def appfwk_vars(request):
+    return {
+        'django_version': django.VERSION,
+        'offline_js': settings.OFFLINE_JS,
+        'appfwk_version': settings.VERSION,
+        'js_versions': settings.JS_VERSIONS,
+        'developer': SystemSettings.get_system_settings().developer,
+        'report_history_enabled': settings.REPORT_HISTORY_ENABLED,
+    }
 
 
 def static_extensions(request):

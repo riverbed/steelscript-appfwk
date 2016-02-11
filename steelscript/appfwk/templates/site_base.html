@@ -45,7 +45,9 @@
                                   <li><a href="{% url 'system_settings' %}"><i class="icon-list"></i> System Settings</a></li>
                                   <li><a href="{% url 'device-list' %}"><i class="icon-pencil"></i> Edit Devices</a></li>
                                   <li><a href="{% url 'plugins-list' %}"><i class="icon-resize-small"></i> Edit Plugins</a></li>
+                                  {% if report_history_enabled %}
                                   <li><a href="{% url 'report-history' %}"><i class="icon-resize-small"></i> Report History</a></li>
+                                  {% endif %}
                                   <li><a href="/admin"><i class="icon-wrench"></i> Admin Panel</a></li>
                                   <li class="divider"></li>
                                   {% if report %}
