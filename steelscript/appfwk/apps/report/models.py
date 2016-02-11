@@ -339,6 +339,9 @@ def update_report_history_status_on_complete(sender, **kwargs):
 
     :param sender: job object that just completed
     """
+    if not settings.REPORT_HISTORY_ENABLED:
+        return
+
     rhs = ReportHistory.objects.filter(
         job_handles__contains=sender.handle).exclude(
         status__in=[ReportStatus.ERROR, ReportStatus.COMPLETE])
@@ -363,6 +366,9 @@ def update_report_history_status_on_error(sender, **kwargs):
 
     :param sender: job object that just erred
     """
+    if not settings.REPORT_HISTORY_ENABLED:
+        return
+
     rhs = ReportHistory.objects.filter(
         job_handles__contains=sender.handle).exclude(
         status__in=[ReportStatus.ERROR, ReportStatus.COMPLETE])

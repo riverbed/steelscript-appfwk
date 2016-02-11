@@ -378,7 +378,8 @@ class ReportView(GenericReportView):
             logger.debug("Sending widget definitions for report %s: %s" %
                          (report_slug, report_def))
 
-            create_report_history(request, report)
+            if settings.REPORT_HISTORY_ENABLED:
+                create_report_history(request, report)
 
             return JsonResponse(report_def, safe=False)
         else:

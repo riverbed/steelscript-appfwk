@@ -394,3 +394,7 @@ APPFWK_SYNTHETIC_MODULES = (
 
 # Size limit of all netshark downloaded pcap files in bytes (default 10GB)
 PCAP_SIZE_LIMIT = 10000000000
+
+# Create report history
+REPORT_HISTORY_ENABLED = True
+
