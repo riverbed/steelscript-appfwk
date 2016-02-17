@@ -17,7 +17,7 @@ def report_list_processor(request):
     for k, g in groupby(r, lambda x: x.namespace):
         # because of ordering above, the 'default' namespace items
         # will always appear first before any 'default' reports
-        if k in ('appfwk', 'default'):
+        if k in ('default', 'custom', 'appfwk'):
             reports[0:0] = list(g)
         else:
             reports.append((k, list(g)))
