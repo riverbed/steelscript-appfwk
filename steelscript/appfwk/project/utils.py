@@ -89,7 +89,13 @@ def get_namespace(sourcefile):
         namespace = 'default'
     elif sourcefile.startswith('custom_reports'):
         namespace = 'custom'
-    elif ns[0] == 'steelscript':
+    elif sourcefile.startswith('steelscript.appfwk.apps.plugins.'):
+        # 'steelscript.apps.plugins.builtin.whois' --> 'whois'
+        namespace = ns[5]
+    elif sourcefile.startswith('steelscript.appfwk'):
+        # 'steelscript.appfwk.business_hours' --> 'business_hours'
+        namespace = ns[2]
+    elif sourcefile.startswith('steelscript.'):
         # 'steelscript.wireshark.appfwk.plugin' --> 'wireshark'
         namespace = ns[1]
     elif len(ns) >= 3:
