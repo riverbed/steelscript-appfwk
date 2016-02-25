@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2015 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% block title %}About this VM{% endblock %}
+
+
+{% block header_row %}
+    <h4>Installed SteelScript Packages</h4>
+    {% for title, data in dicts.items %}
+      {% if 'packages' in title or 'REST' in title %}
+        <h5>{{ title }}</h5>
+      {% else %}
+        <h4>{{ title }}</h4>
+      {% endif %}
+      <div class="container-fluid">
+        <table border="0" class="table table-bordered block-centered" style="max-width: 90%">
+            <tbody>
+                {% if data %}
+                  {% for k, v in data.items %}
+                    <tr>
+                        <td>{{ k }}</td>
+                        <td>{{ v }}</td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr><td>None</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+      </div>
+    {% endfor %}
+
+    {% for title, data in lists.items %}
+    <h4>{{ title }}</h4>
+    <div class="container-fluid">
+        <table border="0" class="table table-bordered block-centered" style="max-width: 90%">
+            <tbody>
+                {% for v in data %}
+                    <tr>
+                        <td>{{ v }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+{% endblock %}
+
+
+

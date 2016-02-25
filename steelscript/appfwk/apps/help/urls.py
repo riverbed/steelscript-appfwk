@@ -13,6 +13,9 @@ import steelscript.appfwk.apps.help.views as views
 urlpatterns = patterns(
     'steelscript.appfwk.apps.help.views',
 
+    url(r'^about/$',
+        views.SteelAbout.as_view()),
+
     url(r'^(?P<device_type>[a-z]+)/$',
         views.ColumnHelper.as_view()),
 )
