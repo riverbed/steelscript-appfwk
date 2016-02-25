@@ -38,7 +38,30 @@ class SteelAbout(views.APIView):
     PLATFORM_TITLE = 'Platform information:'
     PY_PATH_TITLE = 'Python path:'
 
-    def get(self, request):
+    def _get_stdout(self):
+        """Get the output of command `steel about`."""
+        p = subprocess.Popen(['/home/vagrant/virtualenv/bin/steel',
+                              'about', '-v'],
+                             stdout=subprocess.PIPE)
+
+        return p.communicate()[0]
+
+    def _to_python(self, data):
+        """Parse the output of `steel about` to python structures.
+
+        There are 7 sections in the output, the data in the package
+        and info sections will be stored as dicts, while the data
+        in the section of source paths and python paths are stored
+        as lists.
+
+        :param string data: the output of `steel about`.
+
+        :return: tuple of pkgs_and_info and paths
+           pkgs_and_info is a dict keyed by titles of package and info
+             sections with values as the data of each section;
+           paths is a dict keyed by titles of source path and python path
+             sections with values as the data of each section.
+        """
 
         core_pkgs = OrderedDict()
         appfwk_pkgs = OrderedDict()
@@ -47,12 +70,6 @@ class SteelAbout(views.APIView):
         python_info = OrderedDict()
         platform_info = OrderedDict()
         python_path = None
-
-        p = subprocess.Popen(['/home/vagrant/virtualenv/bin/steel',
-                              'about', '-v'],
-                             stdout=subprocess.PIPE)
-
-        data = p.communicate()[0]
 
         lines = data.split('\n')
 
@@ -89,19 +106,25 @@ class SteelAbout(views.APIView):
             elif idx == python_path_idx + 1:
                 python_path = ast.literal_eval(line)
 
-        dicts = OrderedDict()
-        dicts[SteelAbout.CORE_TITLE] = core_pkgs
-        dicts[SteelAbout.APPFWK_TITLE] = appfwk_pkgs
-        dicts[SteelAbout.REST_TITLE] = rest_pkgs
-        dicts[SteelAbout.PY_INFO_TITLE] = python_info
-        dicts[SteelAbout.PLATFORM_TITLE] = platform_info
+        pkgs_and_info = OrderedDict()
+        pkgs_and_info[SteelAbout.CORE_TITLE] = core_pkgs
+        pkgs_and_info[SteelAbout.APPFWK_TITLE] = appfwk_pkgs
+        pkgs_and_info[SteelAbout.REST_TITLE] = rest_pkgs
+        pkgs_and_info[SteelAbout.PY_INFO_TITLE] = python_info
+        pkgs_and_info[SteelAbout.PLATFORM_TITLE] = platform_info
 
-        lists = OrderedDict()
-        lists[SteelAbout.SRC_PATH_TITLE] = src_paths
-        lists[SteelAbout.PY_PATH_TITLE] = python_path
+        paths = OrderedDict()
+        paths[SteelAbout.SRC_PATH_TITLE] = src_paths
+        paths[SteelAbout.PY_PATH_TITLE] = python_path
+
+        return pkgs_and_info, paths
+
+    def get(self, request):
+        data = self._get_stdout()
+        pkgs_and_info, paths = self._to_python(data)
 
         return render_to_response('about.html',
-                                  {'dicts': dicts, 'lists': lists},
+                                  {'dicts': pkgs_and_info, 'lists': paths},
                                   context_instance=RequestContext(request))
 
 
