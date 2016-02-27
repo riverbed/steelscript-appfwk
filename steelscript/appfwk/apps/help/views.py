@@ -38,6 +38,12 @@ class SteelAbout(views.APIView):
     PLATFORM_TITLE = 'Platform information:'
     PY_PATH_TITLE = 'Python path:'
 
+    PROVISIONED_TIME_FILE = '/etc/vagrant_last_provisioned'
+
+    def _get_last_provision(self):
+        with open(SteelAbout.PROVISIONED_TIME_FILE) as f:
+            return f.read()
+
     def _get_stdout(self):
         """Get the output of command `steel about`."""
         p = subprocess.Popen(['/home/vagrant/virtualenv/bin/steel',
@@ -124,7 +130,8 @@ class SteelAbout(views.APIView):
         pkgs_and_info, paths = self._to_python(data)
 
         return render_to_response('about.html',
-                                  {'dicts': pkgs_and_info, 'lists': paths},
+                                  {'provisioned': self._get_last_provision(),
+                                   'dicts': pkgs_and_info, 'lists': paths},
                                   context_instance=RequestContext(request))
 
 
