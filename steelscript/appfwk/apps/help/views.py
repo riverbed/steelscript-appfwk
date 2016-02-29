@@ -4,8 +4,8 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+import os
 import ast
-
 import operator
 import logging
 import subprocess
@@ -40,9 +40,16 @@ class SteelAbout(views.APIView):
 
     PROVISIONED_TIME_FILE = '/etc/vagrant_last_provisioned'
 
-    def _get_last_provision(self):
-        with open(SteelAbout.PROVISIONED_TIME_FILE) as f:
-            return f.read()
+    def _get_sys_info(self):
+        """ Obtain the system info from the Environment (mostly a VM).
+        :return: a dict containing system information
+           (only provisioned time for now).
+        """
+        sys_info = OrderedDict()
+        if os.path.exists(SteelAbout.PROVISIONED_TIME_FILE):
+            with open(SteelAbout.PROVISIONED_TIME_FILE) as f:
+                sys_info['Time'] = f.read()
+        return sys_info
 
     def _get_stdout(self):
         """Get the output of command `steel about`."""
@@ -126,12 +133,14 @@ class SteelAbout(views.APIView):
         return pkgs_and_info, paths
 
     def get(self, request):
+        sys_info = self._get_sys_info()
         data = self._get_stdout()
         pkgs_and_info, paths = self._to_python(data)
 
         return render_to_response('about.html',
-                                  {'provisioned': self._get_last_provision(),
-                                   'dicts': pkgs_and_info, 'lists': paths},
+                                  {'sys_info': sys_info,
+                                   'dicts': pkgs_and_info,
+                                   'lists': paths},
                                   context_instance=RequestContext(request))
 
 
