@@ -13,10 +13,22 @@
 
 
 {% block header_row %}
-    <h3>About this VM</h3>
-    <div class="container-fluid">
-       <h6><font size="2" color="blue">{{ provisioned }}</font></h6>
-    </div>
+    <h3>About this Application Framework Instance</h3>
+    {% if sys_info %}
+      <div class="container-fluid">
+        <table border="0" class="table table-bordered block-centered" style="max-width: 100%">
+            <tbody>
+               {% for k, v in sys_info.items %}
+                 <tr>
+                     <td>{{ k }}</td>
+                     <td>{{ v }}</td>
+                 </tr>
+               {% endfor %}
+            </tbody>
+        </table>
+      </div>
+    {% endif %}
+
     <h4>Installed SteelScript Packages</h4>
     {% for title, data in dicts.items %}
       {% if 'packages' in title or 'REST' in title %}
