@@ -48,7 +48,7 @@ class SteelAbout(views.APIView):
         sys_info = OrderedDict()
         if os.path.exists(SteelAbout.PROVISIONED_TIME_FILE):
             with open(SteelAbout.PROVISIONED_TIME_FILE) as f:
-                sys_info['Time'] = f.read()
+                sys_info['Last Provisioned'] = f.read()
         return sys_info
 
     def _get_stdout(self):
