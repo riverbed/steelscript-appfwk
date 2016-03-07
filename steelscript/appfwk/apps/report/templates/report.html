@@ -50,6 +50,7 @@
     <script type="text/javascript">
     {% block header_script %}
       rvbd.report.isEmbedded = false;
+      rvbd.report.embeddable_widgets = {% if user.is_authenticated %} true {% else %} false {% endif %}
       rvbd.report.widgetsUrl = "{% url 'report-auto-view' report.namespace report.slug %}";
       rvbd.report.csrfToken = "{{ csrf_token }}";
 

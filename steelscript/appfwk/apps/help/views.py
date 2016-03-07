@@ -15,6 +15,7 @@ from django.http import Http404
 from django.template import RequestContext
 from django.shortcuts import render_to_response
 from rest_framework import views
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import TemplateHTMLRenderer
 from collections import OrderedDict
 
@@ -27,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 class SteelAbout(views.APIView):
     """View class of rendering `steel about` info"""
+    permission_classes = (IsAuthenticated, )   # no guests
     renderer_classes = (TemplateHTMLRenderer, )
 
     # Titles for each section
@@ -145,6 +147,7 @@ class SteelAbout(views.APIView):
 
 
 class ColumnHelper(views.APIView):
+    permission_classes = (IsAuthenticated, )   # no guests
     renderer_classes = (TemplateHTMLRenderer, )
 
     def get(self, request, device_type):

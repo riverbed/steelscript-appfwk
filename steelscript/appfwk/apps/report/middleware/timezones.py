@@ -5,13 +5,20 @@
 # as set forth in the License.
 
 
+import pytz
 from django.utils import timezone
+from django.conf import settings
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class TimezoneMiddleware(object):
     def process_request(self, request):
-        tz = request.session.get('django_timezone')
-        if tz:
-            timezone.activate(tz)
-        elif request.user.is_authenticated():
+        if request.user.is_authenticated():
             timezone.activate(request.user.timezone)
+        elif settings.GUEST_USER_ENABLED:
+            tz = settings.GUEST_USER_TIME_ZONE
+            timezone.activate(pytz.timezone(tz))
+        else:
+            logger.debug('GUEST ACCESS DISABLED, using default timezone')

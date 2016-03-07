@@ -132,8 +132,14 @@ class URLTokenAuthentication(authentication.BaseAuthentication):
               self._token_in_header(request)):
             token = request.META.get(self.TOKEN_KEY_HEADER)
 
-        else:
+        elif (self._is_embed_widget_url(request) or
+              not settings.GUEST_USER_ENABLED):
+            # no token provided, and guest access not allowed
             raise exceptions.AuthenticationFailed('No valid token')
+
+        else:
+            # no token and guest access enabled
+            return None
 
         try:
             token_obj = WidgetAuthToken.objects.get(token=token)

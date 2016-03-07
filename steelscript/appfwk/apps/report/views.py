@@ -35,7 +35,7 @@ from django.core.exceptions import ValidationError
 
 from rest_framework import generics, views
 from rest_framework.decorators import api_view
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
@@ -117,6 +117,13 @@ def rm_file(filepath):
         pass
 
 
+def get_timezone(request):
+        if request.user.is_authenticated():
+            return pytz.timezone(request.user.timezone)
+        else:
+            return pytz.timezone(settings.GUEST_USER_TIME_ZONE)
+
+
 class GenericReportView(views.APIView):
 
     def get_media_params(self, request):
@@ -196,7 +203,7 @@ class GenericReportView(views.APIView):
         """
         logger.debug('Received request for report page: %s' % report_slug)
 
-        if not request.user.profile_seen:
+        if request.user.is_authenticated() and not request.user.profile_seen:
             # only redirect if first login
             return HttpResponseRedirect(reverse('preferences')+'?next=/report')
 
@@ -221,7 +228,7 @@ class GenericReportView(views.APIView):
         if missing_devices:
             missing_devices = ', '.join(list(missing_devices))
 
-        if not request.user.profile_seen:
+        if request.user.is_authenticated() and not request.user.profile_seen:
             # only redirect if first login
             return HttpResponseRedirect(reverse('preferences')+'?next=/report')
 
@@ -360,7 +367,7 @@ class ReportView(GenericReportView):
             logger.debug('Form cleaned data: %s' % formdata)
 
             # parse time and localize to user profile timezone
-            timezone = pytz.timezone(request.user.timezone)
+            timezone = get_timezone(request)
             form.apply_timezone(timezone)
 
             if formdata['debug']:
@@ -424,7 +431,7 @@ class ReportAutoView(GenericReportView):
             widgets = report.widgets().order_by('row', 'col')
 
         # parse time and localize to user profile timezone
-        timezone = pytz.timezone(request.user.timezone)
+        timezone = get_timezone(request)
         now = datetime.datetime.now(timezone)
 
         # pin the endtime to a round interval if we are set to
@@ -529,7 +536,7 @@ def create_report_history(request, report):
                           files=request.FILES)
 
     # parse time and localize to user profile timezone
-    timezone = pytz.timezone(request.user.timezone)
+    timezone = get_timezone(request)
     form.apply_timezone(timezone)
 
     form_data = form.cleaned_data
@@ -562,7 +569,6 @@ def create_report_history(request, report):
     # Form the bookmark link
     url += '&'.join(url_fields)
 
-    timezone = pytz.timezone(request.user.timezone)
     last_run = datetime.datetime.now(timezone)
 
     handles = []
@@ -577,6 +583,13 @@ def create_report_history(request, report):
 
         handles.append(Job._compute_handle(widget_table, form_criteria))
     job_handles = ','.join(handles)
+
+    if request.user.is_authenticated():
+        user = request.user.username
+    else:
+        user = settings.GUEST_USER_NAME
+
+    logger.debug('Creating ReportHistory for user %s at URL %s' % (user, url))
 
     ReportHistory.create(namespace=report.namespace,
                          slug=report.slug,
@@ -593,6 +606,7 @@ class ReportHistoryView(views.APIView):
     """ Display a list of report history. """
 
     renderer_classes = (TemplateHTMLRenderer, )
+    permission_classes = (IsAuthenticated, )   # no guests
 
     def get(self, request):
         return Response({'history': ReportHistory.objects.all(),
@@ -937,7 +951,7 @@ class WidgetJobsList(views.APIView):
             logger.debug('Form cleaned data: %s' % formdata)
 
             # parse time and localize to user profile timezone
-            timezone = pytz.timezone(request.user.timezone)
+            timezone = get_timezone(request)
             form.apply_timezone(timezone)
 
             try:

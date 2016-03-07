@@ -369,7 +369,8 @@ rvbd.widgets.Widget.prototype = {
         var menuItems = [];
 
         // Don't include the embed option when already embedded!
-        if (!rvbd.report.isEmbedded) {
+        // or if not explicitly asked for
+        if (!rvbd.report.isEmbedded && rvbd.report.embeddable_widgets) {
             menuItems.push('<a tabindex="-1" class="get-embed" href="#">Embed This Widget...</a>');
         }
 

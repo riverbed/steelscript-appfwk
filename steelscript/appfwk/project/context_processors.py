@@ -19,6 +19,8 @@ def appfwk_vars(request):
         'appfwk_version': settings.VERSION,
         'js_versions': settings.JS_VERSIONS,
         'developer': SystemSettings.get_system_settings().developer,
+        'guest_enabled': settings.GUEST_USER_ENABLED,
+        'guest_show_button': settings.GUEST_SHOW_BUTTON,
         'report_history_enabled': settings.REPORT_HISTORY_ENABLED,
     }
 

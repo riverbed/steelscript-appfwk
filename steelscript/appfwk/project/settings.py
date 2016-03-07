@@ -85,6 +85,12 @@ USE_L10N = True
 # If you set this to False, Django will not use timezone-aware datetimes.
 USE_TZ = True
 
+# Optional support for Guest users
+GUEST_USER_ENABLED = False
+GUEST_USER_NAME = 'Guest'             # display name when in guest-mode
+GUEST_USER_TIME_ZONE = 'US/Eastern'   # timezone to use when in guest-mode
+GUEST_SHOW_BUTTON = True              # whether to show user button when Guest
+
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
 MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'datacache')
@@ -249,7 +255,10 @@ REST_FRAMEWORK = {
 
     # Use Django's standard `django.contrib.auth` permissions,
     'DEFAULT_PERMISSION_CLASSES': [
+        # default, no guest access:
         'rest_framework.permissions.IsAuthenticated'
+        # with guest access enabled:
+        # 'rest_framework.permissions.AllowAny'
     ],
 
     'EXCEPTION_HANDLER':

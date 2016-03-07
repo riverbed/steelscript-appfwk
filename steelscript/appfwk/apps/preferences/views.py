@@ -9,7 +9,7 @@ import logging
 
 from django.http import HttpResponseRedirect
 from django.utils import timezone
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class PreferencesView(APIView):
     """ Display and update user preferences. """
+    permission_classes = (IsAuthenticated, )   # no guests
     renderer_classes = (TemplateHTMLRenderer, )
 
     def get(self, request):
