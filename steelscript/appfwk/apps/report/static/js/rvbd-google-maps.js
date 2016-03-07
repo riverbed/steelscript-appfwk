@@ -70,4 +70,18 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data) {
         });
     });
     map.fitBounds(bounds);
+
+    // Insert the weather layer
+    var myMapType = new google.maps.ImageMapType({
+      getTileUrl: function(coord, zoom) {
+        return "http://maps.owm.io:8091/56ce0fcd4376d3010038aaa8/" + 
+               zoom + "/" + coord.x + "/" + coord.y + "?hash=5";
+      },
+      tileSize: new google.maps.Size(256, 256),
+      maxZoom: 9,
+      minZoom: 0,
+      name: 'mymaptype'
+    });
+
+    map.overlayMapTypes.insertAt(0, myMapType);
 }
