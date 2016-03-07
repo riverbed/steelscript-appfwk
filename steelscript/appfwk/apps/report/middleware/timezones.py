@@ -5,11 +5,12 @@
 # as set forth in the License.
 
 
+import logging
+
 import pytz
 from django.utils import timezone
 from django.conf import settings
 
-import logging
 logger = logging.getLogger(__name__)
 
 

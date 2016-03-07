@@ -179,7 +179,7 @@ class GenericReportView(views.APIView):
                     continue
 
                 dt_utc = sec_string_to_datetime(int(v))
-                tz = pytz.timezone(request.user.timezone)
+                tz = get_timezone(request)
                 dt_local = dt_utc.astimezone(tz)
 
                 logger.debug(override_msg % (k, dt_local))
@@ -597,7 +597,7 @@ def create_report_history(request, report):
                          first_run=last_run,
                          last_run=last_run,
                          job_handles=job_handles,
-                         user=request.user.username,
+                         user=user,
                          criteria=table_fields,
                          run_count=1)
 
