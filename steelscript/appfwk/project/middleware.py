@@ -121,7 +121,7 @@ class URLTokenAuthentication(authentication.BaseAuthentication):
         '^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/'
         """
 
-        return resolve(request.path).url_name == 'report-widgets'
+        return resolve(request.path).url_name == 'report-auto-view'
 
     def authenticate(self, request):
         if (self._is_embed_widget_url(request) and
