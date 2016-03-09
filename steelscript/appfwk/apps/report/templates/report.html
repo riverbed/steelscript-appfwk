@@ -53,7 +53,11 @@
       rvbd.report.embeddable_widgets = {% if user.is_authenticated %} true {% else %} false {% endif %}
       rvbd.report.widgetsUrl = "{% url 'report-auto-view' report.namespace report.slug %}";
       rvbd.report.csrfToken = "{{ csrf_token }}";
-
+      rvbd.report.weatherWidget = {
+        url: {% if weather_url %} {{ weather_url }} {% else %} undefined {% endif %},
+        tileWidth: {% if weather_tile_width %} {{ weather_tile_width }} {% else %} undefined {% endif %},
+        tileHeight: {% if weather_tile_height %} {{ weather_tile_height }} {% else %} undefined {% endif %}
+      }
       rvbd.report.autoLoad = {% if report.hide_criteria %} true {% else %} false {% endif %};
       rvbd.report.reloadMinutes = {{ report.reload_minutes }};
       rvbd.report.offsetSeconds = {{ report.reload_offset }};

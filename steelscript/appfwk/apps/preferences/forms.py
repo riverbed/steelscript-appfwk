@@ -70,9 +70,15 @@ class SystemSettingsForm(forms.ModelForm):
     class Meta:
         model = SystemSettings
         fields = ('ignore_cache', 'developer', 'maps_version',
-                  'maps_api_key', 'global_error_handler')
+                  'maps_api_key', 'global_error_handler',
+                  'weather_enabled', 'weather_url',
+                  'weather_tile_width', 'weather_tile_height')
         widgets = {'maps_version': forms.HiddenInput(),
-                   'maps_api_key': forms.HiddenInput()}
+                   'maps_api_key': forms.HiddenInput(),
+                   'weather_enabled': forms.HiddenInput(),
+                   'weather_url': forms.HiddenInput(),
+                   'weather_tile_width': forms.HiddenInput(),
+                   'weather_tile_height': forms.HiddenInput()}
 
     def clean(self):
         # check for API key if maps are either FREE or BUSINESS

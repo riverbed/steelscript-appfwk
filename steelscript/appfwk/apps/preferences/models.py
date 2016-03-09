@@ -121,6 +121,22 @@ class SystemSettings(models.Model):
         blank=True,
         null=True
     )
+    weather_enabled = models.BooleanField(
+        default=False,
+        help_text='Enable or disable the weather map tiles'
+    )
+    weather_url = models.CharField(
+        max_length=500,
+        verbose_name='URL for weather map tiles',
+        blank=True,
+        null=True
+    )
+    weather_tile_width = models.PositiveSmallIntegerField(
+        default=0
+    )
+    weather_tile_height = models.PositiveSmallIntegerField(
+        default=0
+    )
     global_error_handler = models.BooleanField(
         default=True,
         help_text='Apply global error handlers',
