@@ -252,8 +252,11 @@
                    <br>
                    Tile Width (px): <input id="weather-tile-width" type="text" style="width: 15%; margin-right:75px;" placeholder="256">
                    Tile Height (px): <input id="weather-tile-height" type="text" style="width: 15%;" placeholder="256">
-                   {% if form.maps_api_key.errors %}
-                       <p class="text-error">{% for err in form.maps_api_key.errors %}{{ err }}{% endfor %}</p>
+                   {% if form.weather_url.errors %}
+                       <p class="text-error">{% for err in form.weather_url.errors %}{{ err }}{% endfor %}</p>
+                   {% endif %}
+                   {% if form.weather_enabled.errors %}
+                       <p class="text-error">{% for err in form.weather_enabled.errors %}{{ err }}{% endfor %}</p>
                    {% endif %}
                 </div>
               </div>

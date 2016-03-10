@@ -8,6 +8,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
+from urlparse import urlparse
 
 from steelscript.appfwk.apps.preferences.models import AppfwkUser, SystemSettings
 
@@ -93,5 +94,31 @@ class SystemSettingsForm(forms.ModelForm):
                 msg = u'Usage of Business version of Google Maps requires API Key'
             self._errors['maps_api_key'] = self.error_class([msg])
             del cleaned_data['maps_api_key']
+
+        # Check if we have a weather url
+        weather_url = cleaned_data.get('weather_url')
+        if weather_url:
+            # Validate that the weather url is valid
+            parsed = urlparse(weather_url)
+            if not all([parsed.scheme, parsed.netloc]):
+                msg = u'Weather URL must be a properly formed URL'
+                self._errors['weather_url'] = self.error_class([msg])
+                del cleaned_data['weather_url']
+
+            # Validate that the weather url contains x, y, and z
+            coordinates = ['{x}', '{y}', '{z}']
+            if not all(coordinate in weather_url for coordinate in coordinates):
+                msg = u'Weather URL must contain {x} {y} and {z}'
+                self._errors['weather_url'] = self.error_class([msg])
+                del cleaned_data['weather_url']
+
+            # Validate that the dimensions for the image are valid
+            weather_tile_width = cleaned_data.get('weather_tile_width')
+            weather_tile_height = cleaned_data.get('weather_tile_height')
+            if not weather_tile_width.isdigit() or \
+               not weather_tile_height.isdigit():
+                msg = u'Weather tile dimensions must be integers'
+                self._errors['weather_enabled'] = self.error_class([msg])
+                del cleaned_data['weather_enabled']
 
         return cleaned_data
