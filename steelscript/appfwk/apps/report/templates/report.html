@@ -54,8 +54,8 @@
       rvbd.report.widgetsUrl = "{% url 'report-auto-view' report.namespace report.slug %}";
       rvbd.report.csrfToken = "{{ csrf_token }}";
       rvbd.report.weatherWidget = {
-        enabled: {% if weather_enabled %}'{{ weather_enabled }}'{% else %}'false'{% endif %},
-        url: {% if weather_url %}'{{ weather_url }}'{% else %} undefined {% endif %},
+          enabled: {% if weather_enabled %}'{{ weather_enabled }}'{% else %}'false'{% endif %},
+          url: {% if weather_url %}'{{ weather_url }}'{% else %} undefined {% endif %},
       }
       rvbd.report.autoLoad = {% if report.hide_criteria %} true {% else %} false {% endif %};
       rvbd.report.reloadMinutes = {{ report.reload_minutes }};
