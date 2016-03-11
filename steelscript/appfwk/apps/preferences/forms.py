@@ -72,14 +72,11 @@ class SystemSettingsForm(forms.ModelForm):
         model = SystemSettings
         fields = ('ignore_cache', 'developer', 'maps_version',
                   'maps_api_key', 'global_error_handler',
-                  'weather_enabled', 'weather_url',
-                  'weather_tile_width', 'weather_tile_height')
+                  'weather_enabled', 'weather_url')
         widgets = {'maps_version': forms.HiddenInput(),
                    'maps_api_key': forms.HiddenInput(),
                    'weather_enabled': forms.HiddenInput(),
-                   'weather_url': forms.HiddenInput(),
-                   'weather_tile_width': forms.HiddenInput(),
-                   'weather_tile_height': forms.HiddenInput()}
+                   'weather_url': forms.HiddenInput()}
 
     def clean(self):
         # check for API key if maps are either FREE or BUSINESS
@@ -107,24 +104,15 @@ class SystemSettingsForm(forms.ModelForm):
             # Validate that the weather url is valid
             parsed = urlparse(weather_url)
             if not all([parsed.scheme, parsed.netloc]):
-                msg = u'Weather URL must be a properly formed URL'
+                msg = u'Weather URL must resemble: http://example.com/{x}{y}{z}'
                 self._errors['weather_url'] = self.error_class([msg])
                 del cleaned_data['weather_url']
-
-            # Validate that the weather url contains {x}, {y}, and {z}
-            coordinates = ['{x}', '{y}', '{z}']
-            if not all(coordinate in weather_url for coordinate in coordinates):
-                msg = u'Weather URL must contain {x} {y} and {z}'
-                self._errors['weather_url'] = self.error_class([msg])
-                del cleaned_data['weather_url']
-
-            # Validate that the dimensions for the tiles are valid
-            weather_tile_width = cleaned_data.get('weather_tile_width')
-            weather_tile_height = cleaned_data.get('weather_tile_height')
-            if not weather_tile_width.isdigit() or \
-               not weather_tile_height.isdigit():
-                msg = u'Weather tile dimensions must be integers'
-                self._errors['weather_width'] = self.error_class([msg])
-                del cleaned_data['weather_width']
+            else:
+                # Validate that the weather url contains {x}, {y}, and {z}
+                coordinates = ['{x}', '{y}', '{z}']
+                if not all(coordinate in weather_url for coordinate in coordinates):
+                    msg = u'Weather URL must contain {x} {y} and {z}'
+                    self._errors['weather_url'] = self.error_class([msg])
+                    del cleaned_data['weather_url']
 
         return cleaned_data

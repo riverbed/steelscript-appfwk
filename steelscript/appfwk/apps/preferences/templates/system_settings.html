@@ -85,8 +85,6 @@
           var weatherFields = {
             enabled: '#id_weather_enabled',
             url: '#id_weather_url',
-            width: '#id_weather_tile_width',
-            height: '#id_weather_tile_height'
           }
 
           // Assign our handlers
@@ -94,8 +92,6 @@
 
           // Input the values we have saved in the DB
           $('#weather-tile-url').val($(weatherFields.url).val());
-          $('#weather-tile-width').val($(weatherFields.width).val());
-          $('#weather-tile-height').val($(weatherFields.height).val());
 
           if ($(weatherFields.enabled).val() === 'True') {
             // Check the the "Enable Weather Overlay" box if weather is enabled
@@ -116,12 +112,6 @@
           });
           $('#weather-tile-url').change(function() {
             $(weatherFields.url).val($('#weather-tile-url').val());
-          });
-          $('#weather-tile-width').change(function() {
-            $(weatherFields.width).val($('#weather-tile-width').val());
-          });
-          $('#weather-tile-height').change(function() {
-            $(weatherFields.height).val($('#weather-tile-height').val());
           });
         }
 
@@ -260,16 +250,11 @@
                    </p>
                    <input id="weather-tile-url" type="text" style="width: 95%; margin-bottom:10px;" placeholder="Example URL: http://site.domain/api_key/tiles/{z}/{x}/{y}">
                    <br>
-                   Tile Width (px): <input id="weather-tile-width" type="text" style="width: 15%; margin-right:75px;" placeholder="256">
-                   Tile Height (px): <input id="weather-tile-height" type="text" style="width: 15%;" placeholder="256">
                    {% if form.weather_enabled.errors %}
                        <p class="text-error">{% for err in form.weather_enabled.errors %}{{ err }}{% endfor %}</p>
                    {% endif %}
                    {% if form.weather_url.errors %}
                        <p class="text-error">{% for err in form.weather_url.errors %}{{ err }}{% endfor %}</p>
-                   {% endif %}
-                   {% if form.weather_width.errors %}
-                       <p class="text-error">{% for err in form.weather_width.errors %}{{ err }}{% endfor %}</p>
                    {% endif %}
                 </div>
               </div>

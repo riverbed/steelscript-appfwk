@@ -131,18 +131,6 @@ class SystemSettings(models.Model):
         blank=True,
         null=True
     )
-    weather_tile_width = models.CharField(
-        max_length=50,
-        verbose_name='URL for weather map tiles',
-        blank=True,
-        null=True
-    )
-    weather_tile_height = models.CharField(
-        max_length=50,
-        verbose_name='URL for weather map tiles',
-        blank=True,
-        null=True
-    )
     global_error_handler = models.BooleanField(
         default=True,
         help_text='Apply global error handlers',

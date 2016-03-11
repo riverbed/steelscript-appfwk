@@ -77,7 +77,6 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data) {
             getTileUrl: function(coord, zoom) {
                 return rvbd.report.weatherWidget.url.replace('{x}', coord.x).replace('{y}', coord.y).replace('{z}', zoom)
             },
-            tileSize: new google.maps.Size(rvbd.report.weatherWidget.tileWidth, rvbd.report.weatherWidget.tileHeight),
             maxZoom: 9,
             minZoom: 0,
             name: 'mymaptype'
