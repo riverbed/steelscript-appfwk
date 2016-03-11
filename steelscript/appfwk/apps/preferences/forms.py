@@ -104,13 +104,14 @@ class SystemSettingsForm(forms.ModelForm):
             # Validate that the weather url is valid
             parsed = urlparse(weather_url)
             if not all([parsed.scheme, parsed.netloc]):
-                msg = u'Weather URL must resemble: http://example.com/{x}{y}{z}'
+                msg = u'URL must resemble: http://example.com/{x}/{y}/{z}'
                 self._errors['weather_url'] = self.error_class([msg])
                 del cleaned_data['weather_url']
             else:
                 # Validate that the weather url contains {x}, {y}, and {z}
                 coordinates = ['{x}', '{y}', '{z}']
-                if not all(coordinate in weather_url for coordinate in coordinates):
+                if not all(coordinate in weather_url
+                           for coordinate in coordinates):
                     msg = u'Weather URL must contain {x} {y} and {z}'
                     self._errors['weather_url'] = self.error_class([msg])
                     del cleaned_data['weather_url']
