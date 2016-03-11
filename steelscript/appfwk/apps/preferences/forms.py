@@ -95,6 +95,12 @@ class SystemSettingsForm(forms.ModelForm):
             self._errors['maps_api_key'] = self.error_class([msg])
             del cleaned_data['maps_api_key']
 
+        # Check if maps are disabled but weather is enabled
+        if not api_key and version in 'DISABLED':
+            msg = u'Weather layers cannot be enabled while maps are disabled'
+            self._errors['weather_enabled'] = self.error_class([msg])
+            del cleaned_data['weather_enabled']
+
         # Check if we have a weather url
         weather_url = cleaned_data.get('weather_url')
         if weather_url:
@@ -105,20 +111,20 @@ class SystemSettingsForm(forms.ModelForm):
                 self._errors['weather_url'] = self.error_class([msg])
                 del cleaned_data['weather_url']
 
-            # Validate that the weather url contains x, y, and z
+            # Validate that the weather url contains {x}, {y}, and {z}
             coordinates = ['{x}', '{y}', '{z}']
             if not all(coordinate in weather_url for coordinate in coordinates):
                 msg = u'Weather URL must contain {x} {y} and {z}'
                 self._errors['weather_url'] = self.error_class([msg])
                 del cleaned_data['weather_url']
 
-            # Validate that the dimensions for the image are valid
+            # Validate that the dimensions for the tiles are valid
             weather_tile_width = cleaned_data.get('weather_tile_width')
             weather_tile_height = cleaned_data.get('weather_tile_height')
             if not weather_tile_width.isdigit() or \
                not weather_tile_height.isdigit():
                 msg = u'Weather tile dimensions must be integers'
-                self._errors['weather_enabled'] = self.error_class([msg])
-                del cleaned_data['weather_enabled']
+                self._errors['weather_width'] = self.error_class([msg])
+                del cleaned_data['weather_width']
 
         return cleaned_data
