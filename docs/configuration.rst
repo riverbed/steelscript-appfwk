@@ -91,6 +91,10 @@ the admin-only list of system configuration items.
       sources and Google Maps sources.  In order to use Google Maps,
       an ``API Key`` or a ``Client ID`` is required.  See :ref:`map widgets`
       for more information.
+    * ``Enable Weather Map Overlay`` - provides the option to enable/disable
+      weather overlays for map widgets. In order to use weather overlays,
+      a ``Weather Tile URL`` is required.  See :ref:`weather overlays`
+      for more information.
 
 .. _map widgets:
 
@@ -107,6 +111,30 @@ information:
 
     * `Google Maps API Key <https://developers.google.com/maps/documentation/javascript/tutorial>`_
     * `Google Maps Client ID <https://developers.google.com/maps/documentation/business/clientside/#MapsJS>`_
+
+
+.. _weather overlays:
+
+Weather Overlays
+^^^^^^^^^^^^^^^^
+
+To add weather overlays to map widgets, you will need a weather tile URL.
+This URL can be generated from any number of weather tile providers with
+X, Y, Z map coordinates.
+
+**Generating a URL using Open Weather Map**:
+
+1. Visit `OpenWeatherMap <http://openweathermap.org/>`_ and sign up
+2. Once signed up, visit `https://home.openweathermap.org/ <https://home.openweathermap.org/>`_ and
+   click **Map Editor**
+3. Click **+ New Project** and name your new map overlay project
+4. Begin adding layers, choosing what weather data to display until you are satisfied with your overlay.
+5. Click the globe icon to view the overlay's URL. It should look something like this:
+
+``http://maps.owm.io:8091/56e64a322ee3260100f4a254/{z}/{x}/{y}?hash={your_app_id}``
+
+6. Replace ``{your_app_id}`` with an identifier for your application. For example: ``?hash=my_app``.
+7. Copy and paste the URL into the Appfwk Weather Tile URL box.
 
 
 .. _locations import:
