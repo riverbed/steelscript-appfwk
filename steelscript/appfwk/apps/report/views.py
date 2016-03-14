@@ -34,7 +34,7 @@ from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 
 from rest_framework import generics, views
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
@@ -66,7 +66,8 @@ from steelscript.appfwk.project.middleware import URLTokenAuthentication
 logger = logging.getLogger(__name__)
 
 
-@api_view(['GET'])
+@api_view(('GET',))
+@permission_classes((IsAdminUser,))
 def reload_config(request, namespace=None, report_slug=None):
     """ Reload all reports or one specific report
     """
