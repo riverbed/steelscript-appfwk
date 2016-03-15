@@ -4,11 +4,11 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+from urlparse import urlparse
 
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from urlparse import urlparse
 
 from steelscript.appfwk.apps.preferences.models import AppfwkUser, SystemSettings
 
@@ -93,14 +93,16 @@ class SystemSettingsForm(forms.ModelForm):
             del cleaned_data['maps_api_key']
 
         # Check if maps are disabled but weather is enabled
-        if not api_key and version in 'DISABLED':
+        if not api_key and version == 'DISABLED':
             msg = u'Weather layers cannot be enabled while maps are disabled'
             self._errors['weather_enabled'] = self.error_class([msg])
             del cleaned_data['weather_enabled']
 
-        # Check if we have a weather url
+        # Get our weather related variables
+        weather_enabled = cleaned_data.get('weather_enabled')
         weather_url = cleaned_data.get('weather_url')
-        if weather_url:
+        # Check if weather is enabled
+        if weather_enabled:
             # Validate that the weather url is valid
             parsed = urlparse(weather_url)
             if not all([parsed.scheme, parsed.netloc]):

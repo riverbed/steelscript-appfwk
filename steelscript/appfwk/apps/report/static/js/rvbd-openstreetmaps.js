@@ -38,11 +38,11 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data)
 
     L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', {
         subdomains: ['otile1', 'otile2', 'otile3', 'otile4'],
-        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Tiles Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">',        
+        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Tiles Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">',
     }).addTo(map);
 
     // If we have the weather layer enabled
-    if (rvbd.report.weatherWidget.enabled === 'True') {
+    if (rvbd.report.weatherWidget.enabled) {
         // Then add our layer to the map
         L.tileLayer(rvbd.report.weatherWidget.url).addTo(map);
     }

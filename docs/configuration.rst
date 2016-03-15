@@ -119,8 +119,10 @@ Weather Overlays
 ^^^^^^^^^^^^^^^^
 
 To add weather overlays to map widgets, you will need a weather tile URL.
-This URL can be generated from any number of weather tile providers with
-X, Y, Z map coordinates.
+This URL can be generated from any number of weather tile providers. The
+only requirement is that the URL contains `{x}`, `{y}`, and `{z}`. These are
+special values which will be used to calculate the x, y, and z positions
+of the tiles that will be used to display over the map.
 
 **Generating a URL using Open Weather Map**:
 

@@ -72,7 +72,7 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data) {
     map.fitBounds(bounds);
 
     // Insert the weather layer
-    if (rvbd.report.weatherWidget.enabled === 'True') {
+    if (rvbd.report.weatherWidget.enabled) {
         var myMapType = new google.maps.ImageMapType({
             getTileUrl: function(coord, zoom) {
                 return rvbd.report.weatherWidget.url.replace('{x}', coord.x).replace('{y}', coord.y).replace('{z}', zoom)
