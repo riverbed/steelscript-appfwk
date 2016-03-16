@@ -69,7 +69,7 @@
 
       $(rvbd.report.start);
 
-      function addCacheInvalidationURLParameter(uri, timeoutValue) {
+      function appendCurrentTimeUrlParam(uri, timeoutValue) {
           // Calculate the current time rounding to the last 15 minutes
           var coeff = 1000 * 60 * timeoutValue;
           var timeout = new Date();  //or use any other date

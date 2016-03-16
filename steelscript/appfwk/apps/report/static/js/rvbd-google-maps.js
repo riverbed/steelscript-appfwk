@@ -74,7 +74,7 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data) {
     // Insert the weather layer
     if (rvbd.report.weatherWidget.enabled) {
         // Add a URL parameter which will invalidate the image cache every 15 minutes
-        rvbd.report.weatherWidget.url = addCacheInvalidationURLParameter(rvbd.report.weatherWidget.url, 15);
+        rvbd.report.weatherWidget.url = appendCurrentTimeUrlParam(rvbd.report.weatherWidget.url, 15);
         var myMapType = new google.maps.ImageMapType({
             getTileUrl: function(coord, zoom) {
                 return rvbd.report.weatherWidget.url.replace('{x}', coord.x).replace('{y}', coord.y).replace('{z}', zoom)
@@ -87,4 +87,3 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data) {
 
     map.overlayMapTypes.insertAt(0, myMapType);
 }
-
