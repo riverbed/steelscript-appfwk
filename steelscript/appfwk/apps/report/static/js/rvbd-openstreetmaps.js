@@ -44,7 +44,7 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data)
     // If we have the weather layer enabled
     if (rvbd.report.weatherWidget.enabled) {
         // Add a URL parameter which will invalidate the image cache every 15 minutes
-        rvbd.report.weatherWidget.url = appendCurrentTimeUrlParam(rvbd.report.weatherWidget.url, 15);
+        rvbd.report.weatherWidget.url = appendCurrentTimeUrlParam(rvbd.report.weatherWidget.url, rvbd.report.weatherWidget.timeout);
         // Then add our layer to the map
         L.tileLayer(rvbd.report.weatherWidget.url).addTo(map);
     }

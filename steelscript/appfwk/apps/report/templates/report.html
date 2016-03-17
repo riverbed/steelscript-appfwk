@@ -56,6 +56,7 @@
       rvbd.report.weatherWidget = {
           enabled: {% if weather_enabled %}true{% else %}false{% endif %},
           url: {% if weather_url %}'{{ weather_url }}'{% else %} undefined {% endif %},
+          timeout: 15 // The number of minutes until we force the image cache to be replaced
       }
       rvbd.report.autoLoad = {% if report.hide_criteria %} true {% else %} false {% endif %};
       rvbd.report.reloadMinutes = {{ report.reload_minutes }};
@@ -79,14 +80,9 @@
           var key = 'time';
           var value = roundedTimeout;
           // Append "time = <roundedTimeout>" to the url
-          var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+          // If we have a url parameter, add it with an &, otherwise add ?
           var separator = uri.indexOf('?') !== -1 ? "&" : "?";
-          if (uri.match(re)) {
-              return uri.replace(re, '$1' + key + "=" + value + '$2');
-          }
-          else {
-              return uri + separator + key + "=" + value;
-          }
+          return uri + separator + key + "=" + value;
       }
     {% endblock %}
     </script>
