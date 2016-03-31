@@ -54,6 +54,7 @@ from steelscript.appfwk.apps.preferences.models import (SystemSettings,
                                                         AppfwkUser)
 from steelscript.appfwk.apps.report.models import (Report, Section, Widget,
                                                    WidgetJob, WidgetAuthToken,
+                                                   WidgetDataCache,
                                                    ReportHistory, ReportStatus)
 from steelscript.appfwk.apps.report.serializers import ReportSerializer, \
     WidgetSerializer
@@ -383,6 +384,7 @@ class ReportView(GenericReportView):
             # construct report definition
             now = datetime.datetime.now(timezone)
             widgets = report.widget_definitions(form.as_text())
+
             report_def = self.report_def(widgets, now, formdata['debug'])
 
             logger.debug("Sending widget definitions for report %s: %s" %
@@ -487,6 +489,17 @@ class ReportAutoView(GenericReportView):
             # setup json definition object
             widget_def = w.get_definition(criteria)
             widget_defs.append(widget_def)
+
+            # Build the primary key corresponding to static data for this widget
+            rw_id = str(report_slug) + str(widget_def['widgetslug'])
+            # Add cached widget data if available.
+            # TODO: Only add static data if ?static=true
+            try:
+                data_cache = WidgetDataCache.objects.get(
+                                                    report_widget_id=rw_id)
+                widget_def['data'] = str(data_cache.data)
+            except WidgetDataCache.DoesNotExist:
+                pass
 
         report_def = self.report_def(widget_defs, now)
 
@@ -1055,6 +1068,23 @@ geolocation documentation</a> for more information.'''
                 else:
                     data = widget_func(widget, job, tabledata)
                     resp = job.json(data)
+                    # TODO: Only cache widget if we are sent 'static: true'
+                    # How to do this:
+                    # 1. Lookup in urls.py where this method gets called
+                    # 2. Find it in the JS
+                    # 3. In the JS, check URL param, if static=true, send
+                    #    'static: true'
+                    # Cache data before sending it using the
+                    # report slug + widget slug as the primary key
+                    if data:
+                        widget_data = WidgetDataCache(
+                                        report_widget_id=str(report_slug) +
+                                        str(widget_slug),
+                                        data=json.dumps(data))
+                        widget_data.save()
+                        logger.debug("Cached widget %s" % json.dumps(data))
+                    else:
+                        logger.debug("Unable to cache widget")
                     logger.debug("%s complete" % str(wjob))
 
             except:

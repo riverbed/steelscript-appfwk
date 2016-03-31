@@ -94,7 +94,7 @@ rvbd.formatters = {
 
 rvbd.widgets = {};
 
-rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteria, dataCache) {
     var self = this;
 
     self.postUrl = urls.postUrl;
@@ -104,6 +104,9 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
     self.slug = slug;
     self.options = options;
     self.criteria = criteria;
+    if (dataCache) {
+      self.dataCache = JSON.parse(dataCache);
+    }
 
     self.status = 'running';
     self.asyncID = null;
@@ -123,7 +126,16 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
         .showLoading()
         .setLoading(0);
 
-    self.postRequest(criteria);
+    if (!self.dataCache) {
+      // If we are not using the cached report, follow normal
+      // post request sequence
+      self.postRequest(criteria);
+    } else {
+      // If we are using the cached report, load the data immediately
+      $(self.div).hideLoading();
+      self.render(self.dataCache);
+      self.status = 'complete';
+    }
 };
 
 rvbd.widgets.Widget.prototype = {
@@ -654,8 +666,8 @@ rvbd.widgets.Widget.prototype = {
 
 rvbd.widgets.raw = {};
 
-rvbd.widgets.raw.TableWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
-    rvbd.widgets.Widget.apply(this, [postUrl, isEmbedded, div, id, slug, options, criteria]);
+rvbd.widgets.raw.TableWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria, dataCache) {
+    rvbd.widgets.Widget.apply(this, [postUrl, isEmbedded, div, id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.raw.TableWidget.prototype = Object.create(rvbd.widgets.Widget.prototype);
 

@@ -129,7 +129,7 @@ rvbd.report = {
             success: function(data, textStatus, jqXHR) {
                 rvbd.report.renderWidgets(data);
             },
-            error: function(jqXHR, textStatus, errorThrown) { 
+            error: function(jqXHR, textStatus, errorThrown) {
                 rvbd.report.alertReportError(textStatus, errorThrown);
             }
         });
@@ -185,9 +185,12 @@ rvbd.report = {
         rvbd.report.disableReloadButton();
         rvbd.report.disablePrintButton();
 
-        $.each(rvbd.report.widgets, function (i, w) {
-            w.reloadWidget()
-        })
+        rvbd.report.runFixedCriteriaReport();
+
+        // TODO: Uncomment this and only run fixed criteria if url param is static
+        // $.each(rvbd.report.widgets, function (i, w) {
+        //     w.reloadWidget()
+        // })
     },
 
     /**
@@ -391,7 +394,7 @@ rvbd.report = {
                 urls = {"postUrl": w.posturl, "updateUrl": w.updateurl};
 
             widget = new rvbd.widgets[widgetModule][widgetClass](urls, rvbd.report.isEmbedded, $div[0],
-                                                                 w.widgetid, w.widgetslug, opts, w.criteria);
+                                                                 w.widgetid, w.widgetslug, opts, w.criteria, w.data);
             rvbd.report.widgets.push(widget);
         });
 

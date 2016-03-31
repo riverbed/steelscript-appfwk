@@ -6,6 +6,7 @@
 
 
 import logging
+from datetime import datetime
 
 from django.conf import settings
 from django.db import models
@@ -645,6 +646,21 @@ class Widget(models.Model):
                         fields[f.keyword] = f
 
         return fields
+
+
+class WidgetDataCache(models.Model):
+    """
+    Defines a cache of widget data for a static report. The primary key is
+    defined as <report_slug><widget_slug>
+    """
+    report_widget_id = models.CharField(max_length=500, primary_key=True)
+    data = models.TextField(blank=False)
+    created = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        ''' On save, update created timestamp '''
+        self.created = datetime.utcnow()
+        return super(WidgetDataCache, self).save(*args, **kwargs)
 
 
 class WidgetJob(models.Model):
