@@ -1068,12 +1068,6 @@ geolocation documentation</a> for more information.'''
                 else:
                     data = widget_func(widget, job, tabledata)
                     resp = job.json(data)
-                    # TODO: Only cache widget if we are sent 'static: true'
-                    # How to do this:
-                    # 1. Lookup in urls.py where this method gets called
-                    # 2. Find it in the JS
-                    # 3. In the JS, check URL param, if static=true, send
-                    #    'static: true'
                     # Cache data before sending it using the
                     # report slug + widget slug as the primary key
                     if data:
