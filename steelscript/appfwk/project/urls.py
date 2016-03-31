@@ -32,6 +32,9 @@ urlpatterns = patterns('',
     url(r'^jobs/', include('steelscript.appfwk.apps.jobs.urls')),
     url(r'^logs/', include('steelscript.appfwk.apps.logviewer.urls')),
 
+    # pboehm: announcements
+    url(r'^announcements/', include('pinax.announcements.urls', namespace='pinax_announcements')),
+
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 

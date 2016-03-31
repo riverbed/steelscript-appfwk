@@ -219,7 +219,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'django_extensions',
     'django_ace',
-    #'announcements',
+    'pinax.announcements',
 
     # portal apps
     'steelscript.appfwk.apps.datasource',
