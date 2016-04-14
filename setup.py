@@ -102,6 +102,9 @@ http://pythonhosted.org/steelscript/
         # progressd
         'flask==0.10.1',
         'flask_restful==0.3.2',
+
+        # hitcount
+        'django-visits>=0.1.6',
     ),
 
     'extras_require': {
