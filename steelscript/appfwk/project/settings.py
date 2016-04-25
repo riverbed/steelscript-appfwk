@@ -291,6 +291,7 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.logviewer',
     'steelscript.appfwk.apps.metrics',
     'steelscript.appfwk.apps.hitcount',
+    'steelscript.appfwk.apps.db',
 
     # 'standard' plugins
     'steelscript.appfwk.apps.plugins.builtin.whois',
@@ -465,6 +466,7 @@ PCAP_SIZE_LIMIT = 10000000000
 # Create report history
 REPORT_HISTORY_ENABLED = True
 
+<<<<<<< HEAD
 # Hitcount parameters
 #  Visted URLs in the following list (based on regular expression
 #  search, see https://docs.python.org/2/library/re.html) will be ignored, and
@@ -472,3 +474,7 @@ REPORT_HISTORY_ENABLED = True
 HITCOUNT_IGNORE_URLS = [
     '/admin/', '/accounts/', '/favicon.ico', r'/report/.*/jobs/[0-9]+/'
 ]
+=======
+# DB solution
+DB_SOLUTION = 'elastic'
+>>>>>>> Add db storage approach for time series table
