@@ -37,7 +37,7 @@ class CustomIndexDashboard(Dashboard):
         self.children.append(modules.AppList(
             _('Administration'),
             models=(
-                'visits.*',
+                'steelscript.appfwk.apps.hitcount.*',
                 'announcements.*',
                 'steelscript.appfwk.apps.preferences.*',
                 'steelscript.appfwk.apps.devices.*',

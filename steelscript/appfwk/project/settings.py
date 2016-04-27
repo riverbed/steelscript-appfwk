@@ -181,7 +181,7 @@ MIDDLEWARE_CLASSES = (
     #'project.middleware.LoginRequiredMiddleware',
 
     # hitcount
-    'visits.middleware.CounterMiddleware',
+    'steelscript.appfwk.apps.hitcount.middleware.CounterMiddleware',
 )
 
 ROOT_URLCONF = 'steelscript.appfwk.project.urls'
@@ -241,8 +241,7 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.plugins.builtin.solarwinds',
     'steelscript.appfwk.apps.plugins.builtin.sharepoint',
 
-    # hitcount: 3rd-party (visits) + custom (hitcount) to override admin display
-    'visits',
+    # hitcount
     'steelscript.appfwk.apps.hitcount',
 )
 
@@ -413,6 +412,4 @@ PCAP_SIZE_LIMIT = 10000000000
 REPORT_HISTORY_ENABLED = True
 
 # Hitcount parameters
-URI_WITH_GET_PARAMS = False         # - don't take GET params into account, just base URL
-VISITS_OBJECTS_AS_COUNTERS = True   # - maintain counter within single Visit object per URL
-MIN_TIME_BETWEEN_VISITS = 0         # - keep count of ALL visits
+IGNORE_URLS = ['/admin/', '/accounts/', '/favicon.ico']
