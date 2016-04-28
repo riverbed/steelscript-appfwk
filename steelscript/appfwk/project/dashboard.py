@@ -37,7 +37,7 @@ class CustomIndexDashboard(Dashboard):
         self.children.append(modules.AppList(
             _('Administration'),
             models=(
-                'pinax.announcements.*', #pboehm
+                'pinax.announcements.*',
                 'steelscript.appfwk.apps.preferences.*',
                 'steelscript.appfwk.apps.devices.*',
                 'steelscript.appfwk.apps.geolocation.*',
