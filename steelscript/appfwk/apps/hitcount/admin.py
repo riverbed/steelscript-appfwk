@@ -11,7 +11,7 @@ from steelscript.appfwk.apps.hitcount.models import Hitcount
 
 
 # NOTE on ignored URLs:
-# Ignored URLs are specified in settings.py under "INGORE_URLS".
+# Ignored URLs are specified in appfwk's (local_)settings.py under "HITCOUNT_INGORE_URLS".
 # They will be collected, but have 'hits' set to 0.
 # There are at least two options for displaying only Targeted (= non-ignored) URL hits:
 # - Option #1: Override get_queryset() in custom HitcountAdmin to show only nonzero-hit entries.
@@ -54,6 +54,7 @@ class HitcountIgnoreListFilter(admin.SimpleListFilter):
         else:
             # For "All", just show everything.
             return queryset
+
 
 class HitcountAdmin(admin.ModelAdmin):
     list_display = ['uri', 'hits', 'last_hit']

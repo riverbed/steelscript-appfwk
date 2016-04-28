@@ -235,14 +235,12 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.alerting',
     'steelscript.appfwk.apps.jobs',
     'steelscript.appfwk.apps.logviewer',
+    'steelscript.appfwk.apps.hitcount',
 
     # 'standard' plugins
     'steelscript.appfwk.apps.plugins.builtin.whois',
     'steelscript.appfwk.apps.plugins.builtin.solarwinds',
     'steelscript.appfwk.apps.plugins.builtin.sharepoint',
-
-    # hitcount
-    'steelscript.appfwk.apps.hitcount',
 )
 
 ADMIN_TOOLS_MENU = 'steelscript.appfwk.project.menu.CustomMenu'
@@ -412,4 +410,6 @@ PCAP_SIZE_LIMIT = 10000000000
 REPORT_HISTORY_ENABLED = True
 
 # Hitcount parameters
-IGNORE_URLS = ['/admin/', '/accounts/', '/favicon.ico']
+#  Any URL with a prefix in the following list (based on simple "startswith" comparison)
+#  will not have its hitcount incremented and will not be displayed on admin page.
+HITCOUNT_IGNORE_URLS = ['/admin/', '/accounts/', '/favicon.ico']
