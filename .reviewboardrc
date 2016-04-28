@@ -1,4 +1,0 @@
-REVIEWBOARD_URL = "https://review.lab.nbttech.com"
-REPOSITORY = "steelscript-appfwk.git"
-BRANCH = "banners"
-LAND_DEST_BRANCH = "banners"
