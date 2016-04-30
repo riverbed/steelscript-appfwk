@@ -232,6 +232,7 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.alerting',
     'steelscript.appfwk.apps.jobs',
     'steelscript.appfwk.apps.logviewer',
+    'steelscript.appfwk.apps.metrics',
 
     # 'standard' plugins
     'steelscript.appfwk.apps.plugins.builtin.whois',
