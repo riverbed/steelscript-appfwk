@@ -10,8 +10,8 @@ from collections import defaultdict
 
 from rest_framework import serializers
 
-from steelscript.appfwk.apps.metrics.models import NetworkMetric, ServicesMetric, \
-    ServiceNode
+from steelscript.appfwk.apps.metrics.models import \
+    NetworkMetric, ServicesMetric
 
 logger = logging.getLogger(__name__)
 
@@ -62,63 +62,12 @@ class BaseMetricSerializer(serializers.ModelSerializer):
 #
 # Custom Metrics - goes in plugin
 #
-from rest_framework import serializers
-
-
-class SeparatedValuesSerializerField(serializers.Field):
-    def field_from_native(self, data, files, field_name, into):
-        """
-        Override base class method:
-        Given a dictionary and a field name, updates the dictionary `into`,
-        with the field and it's deserialized value.
-        """
-        n = set([self.context[field_name]] or [])
-        n.add(data[field_name])
-        #into[field_name] = [data.get(field_name)]
-        into[field_name] = list(n)
-        return
-
-    def field_to_native(self, obj, fieldname):
-        """
-        Override base class method:
-        Given and object and a field name, returns the value that should be
-        serialized for that field.
-        """
-        # converts list to list
-        data = getattr(obj, fieldname, [])
-        return data
-
 
 class NetworkMetricSerializer(BaseMetricSerializer):
     class Meta:
         model = NetworkMetric
 
 register_serializer(NetworkMetricSerializer)
-
-
-class ServiceNodeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ServiceNode
-        fields = ('name',)
-
-    def to_native(self, value):
-        return value.name
-
-
-class HybridPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
-    """Serialize out as PK, in will get_or_create new object."""
-    def to_internal_value(self, data):
-        return self.get_queryset().get_or_create(pk=data)
-
-    def from_native(self, data):
-        s = ServicesMetric.objects.get(name=self.context['name'])
-        obj, created = self.queryset.get_or_create(pk=data, service=s)
-        if created:
-            logger.debug('Created new ServiceNode %s' % obj)
-        else:
-            logger.debug('Found existing ServiceNode %s' % obj)
-
-        return super(HybridPrimaryKeyRelatedField, self).from_native(data)
 
 
 class ServicesMetricSerializer(BaseMetricSerializer):
