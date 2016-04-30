@@ -612,7 +612,7 @@ class ReportHistoryView(views.APIView):
     permission_classes = (IsAuthenticated, )   # no guests
 
     def get(self, request):
-        return Response({'history': ReportHistory.objects.all(),
+        return Response({'history': ReportHistory.objects.order_by('-last_run'),
                          'status': ReportStatus},
                         template_name='history.html')
 
