@@ -26,8 +26,6 @@ rvbd.report = {
     needs_reload_scheduled: false,
     reportHasRendered: false,
 
-    urlParams: {},
-
     /**
      * Called after DOM load to set up and launch report (or embedded widget).
      */
@@ -39,25 +37,16 @@ rvbd.report = {
             }
         });
 
-        // Load the url params, as seen here: http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
-        (window.onpopstate = function () {
-            var match,
-                pl     = /\+/g,  // Regex for replacing addition symbol with a space
-                search = /([^&=]+)=?([^&]*)/g,
-                decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
-                query  = window.location.search.substring(1);
-
-            rvbd.report.urlParams = {};
-            while (match = search.exec(query))
-               rvbd.report.urlParams[decode(match[1])] = decode(match[2]);
-        })();
-
         if (rvbd.report.isEmbedded) { // We already have the widget spec data, so launch right away
             rvbd.report.runFixedCriteriaReport();
-        } else if (rvbd.report.reloadMinutes > 0) { // Auto-run report (updates at intervals)
-            rvbd.report.runFixedCriteriaReport();
-            rvbd.report.needs_reload_scheduled = true;
-        } else if (typeof rvbd.report.printCriteria !== 'undefined') { // We're in print view, so launch right away
+        } else if (rvbd.report.static && !rvbd.report.live) {
+                $("#criteria-row").hide();
+                rvbd.report.runFixedCriteriaReport();
+         } else if (rvbd.report.reloadMinutes > 0 && !rvbd.report.live) { // Auto-run report (updates at intervals)
+                rvbd.report.runFixedCriteriaReport();
+                rvbd.report.needs_reload_scheduled = true;
+       }
+        else if (typeof rvbd.report.printCriteria !== 'undefined') { // We're in print view, so launch right away
             rvbd.report.doRunFormReport(false);
         } else { // Standard report
             var $form = $('#criteria-form');
@@ -86,12 +75,7 @@ rvbd.report = {
 
             $("#criteria").on('hidden', rvbd.report.doRunFormReport);
 
-            if (rvbd.report.urlParams.static) {
-                // If the static param is included, hide criteria, and run
-                // the report with the static data
-                $("#criteria-row").hide();
-                rvbd.report.runFixedCriteriaReport();
-            } else if (rvbd.report.autoRun) { //Auto run report from bookmark
+            if (rvbd.report.autoRun) { //Auto run report from bookmark
                 $form.submit();
             }
         }
@@ -161,9 +145,14 @@ rvbd.report = {
     setSchedule: function () {
         var interval = rvbd.report.reloadMinutes * 60 * 1000;
 
+        if (rvbd.report.static) {
+           $("#criteria-row").hide();
+           rvbd.report.runFixedCriteriaReport();
+        } else {
         // trigger the reload, then schedule the interval from now
         rvbd.report.reloadAllWidgets();
         rvbd.report.intervalID = setInterval(rvbd.report.reloadAllWidgets, interval);
+        }
     },
 
     scheduleReloads: function (datetime) {
@@ -205,8 +194,7 @@ rvbd.report = {
         rvbd.report.disableReloadButton();
         rvbd.report.disablePrintButton();
 
-        if (rvbd.report.urlParams.static === "true") {
-            // If the static url param is used, load the fixed data
+        if (rvbd.report.static) {
             rvbd.report.runFixedCriteriaReport();
         } else {
             $.each(rvbd.report.widgets, function (i, w) {

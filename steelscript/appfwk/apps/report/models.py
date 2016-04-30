@@ -67,6 +67,8 @@ class Report(models.Model):
     reload_minutes = models.IntegerField(default=0)     # 0 means no reloads
     reload_offset = models.IntegerField(default=15*60)  # secs, default 15 min
     auto_run = models.BooleanField(default=False)
+    static = models.BooleanField(default=False)
+    live = models.BooleanField(default=False)
 
     @classmethod
     def create(cls, title, **kwargs):
@@ -101,6 +103,14 @@ class Report(models.Model):
             will only run the report once, versus the reload options which
             setup continuous report reloads.
 
+        :param bool static: Set to true to read data from WidgetDataCache.
+            To populate WidgetDataCache for static reports, run the report by
+            setting live=True in url.
+
+        :param bool live: Set to true to render a static report with criteria
+            fields and submit button, and also the status report will be run
+            by creating jobs instead of reading directly out of
+            WidgetDataCache.
         """
 
         logger.debug('Creating report %s' % title)
@@ -658,7 +668,7 @@ class WidgetDataCache(models.Model):
     created = models.DateTimeField()
 
     def save(self, *args, **kwargs):
-        ''' On save, update created timestamp '''
+        """ On save, update created timestamp """
         self.created = datetime.utcnow()
         return super(WidgetDataCache, self).save(*args, **kwargs)
 

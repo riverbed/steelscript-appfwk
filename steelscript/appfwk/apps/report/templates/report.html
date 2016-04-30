@@ -50,7 +50,7 @@
     <script type="text/javascript">
     {% block header_script %}
       rvbd.report.isEmbedded = false;
-      rvbd.report.embeddable_widgets = {% if user.is_authenticated %} true {% else %} false {% endif %}
+      rvbd.report.embeddable_widgets = {% if user.is_authenticated %} true {% else %} false {% endif %};
       rvbd.report.widgetsUrl = "{% url 'report-auto-view' report.namespace report.slug %}";
       rvbd.report.csrfToken = "{{ csrf_token }}";
       rvbd.report.weatherWidget = {
@@ -62,6 +62,8 @@
       rvbd.report.reloadMinutes = {{ report.reload_minutes }};
       rvbd.report.offsetSeconds = {{ report.reload_offset }};
       rvbd.report.autoRun = {% if report.auto_run and not form.errors %} true {% else %} false {% endif %};
+      rvbd.report.static = {% if report.static %} true {% else %} false {% endif %};
+      rvbd.report.live= {% if report.live%} true {% else %} false {% endif %};
       rvbd.report.expandTables = {% if expand_tables %} true {% else %} false {% endif %};
 
       // rvbd.report.debugUrl is used in rvbd-report.js to allow the user to download a zip
@@ -109,7 +111,8 @@
                 </h4>
             </div>
         {% endif %}
-    {% if not report.hide_criteria and report.reload_minutes == 0 %}
+    {% if not report.hide_criteria %}
+    {% if report.reload_minutes == 0 or report.live %}
     <div class="container-fluid">
       <div id="criteria-row" class="row-fluid">
         <div class="span12 widget-box">
@@ -188,6 +191,7 @@
         </div>
       </div>
     </div>
+    {% endif %}
     {% endif %}
 
     <div class="container-fluid">
