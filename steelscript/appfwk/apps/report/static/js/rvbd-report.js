@@ -145,11 +145,11 @@ rvbd.report = {
         var interval = rvbd.report.reloadMinutes * 60 * 1000;
 
         if (rvbd.report.static) {
-           rvbd.report.runFixedCriteriaReport();
+            rvbd.report.runFixedCriteriaReport();
         } else {
-        // trigger the reload, then schedule the interval from now
-        rvbd.report.reloadAllWidgets();
-        rvbd.report.intervalID = setInterval(rvbd.report.reloadAllWidgets, interval);
+            // trigger the reload, then schedule the interval from now
+            rvbd.report.reloadAllWidgets();
+            rvbd.report.intervalID = setInterval(rvbd.report.reloadAllWidgets, interval);
         }
     },
 
