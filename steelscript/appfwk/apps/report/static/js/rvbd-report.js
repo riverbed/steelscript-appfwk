@@ -146,7 +146,6 @@ rvbd.report = {
         var interval = rvbd.report.reloadMinutes * 60 * 1000;
 
         if (rvbd.report.static) {
-           $("#criteria-row").hide();
            rvbd.report.runFixedCriteriaReport();
         } else {
         // trigger the reload, then schedule the interval from now
