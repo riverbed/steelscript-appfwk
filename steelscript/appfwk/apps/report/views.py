@@ -497,16 +497,16 @@ class ReportAutoView(GenericReportView):
             # Build the primary key corresponding to static data for this
             # widget
             if report.static:
-                rw_id = namespace + report_slug + widget_def['widgetslug']
+                rw_id = '-'.join([namespace, report_slug,
+                                  widget_def['widgetslug']])
                 # Add cached widget data if available.
                 try:
                     data_cache = WidgetDataCache.objects.get(
                         report_widget_id=rw_id)
                     widget_def['data'] = str(data_cache.data)
                 except WidgetDataCache.DoesNotExist:
-                    raise Exception("No widget data cache available for"
-                                    " report %s widget %s"
-                                    % (report_slug, widget_slug))
+                    raise Exception("No widget data cache available with"
+                                    " id %s." % rw_id)
         report_def = self.report_def(widget_defs, now)
 
         return JsonResponse(report_def, safe=False)
@@ -1082,13 +1082,12 @@ geolocation documentation</a> for more information.'''
                                                slug=report_slug)
 
                     if data and report.static:
-                        rw_id = namespace + report_slug + widget_slug
+                        rw_id = '-'.join([namespace, report_slug,
+                                          widget_slug])
                         widget_data = WidgetDataCache(report_widget_id=rw_id,
                                                       data=json.dumps(data))
                         widget_data.save()
-                        logger.debug("Cached widget %s" % json.dumps(data))
-                    else:
-                        logger.debug("Unable to cache widget")
+                        logger.debug("Cached widget %s" % rw_id)
                     logger.debug("%s complete" % str(wjob))
 
             except:

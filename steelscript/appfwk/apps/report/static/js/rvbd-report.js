@@ -39,13 +39,13 @@ rvbd.report = {
 
         if (rvbd.report.isEmbedded) { // We already have the widget spec data, so launch right away
             rvbd.report.runFixedCriteriaReport();
-        } else if (rvbd.report.static && !rvbd.report.live) {
-                $("#criteria-row").hide();
-                rvbd.report.runFixedCriteriaReport();
-         } else if (rvbd.report.reloadMinutes > 0 && !rvbd.report.live) { // Auto-run report (updates at intervals)
+        } else if (rvbd.report.reloadMinutes > 0 && !rvbd.report.live) { // Auto-run report (updates at intervals)
                 rvbd.report.runFixedCriteriaReport();
                 rvbd.report.needs_reload_scheduled = true;
-       }
+        } else if (rvbd.report.static && !rvbd.report.live) {// Non-reloading static report
+                $("#criteria-row").hide();
+                rvbd.report.runFixedCriteriaReport();
+        }
         else if (typeof rvbd.report.printCriteria !== 'undefined') { // We're in print view, so launch right away
             rvbd.report.doRunFormReport(false);
         } else { // Standard report
