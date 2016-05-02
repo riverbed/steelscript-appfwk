@@ -45,8 +45,7 @@ rvbd.report = {
         } else if (rvbd.report.static && !rvbd.report.live) {// Non-reloading static report
                 $("#criteria-row").hide();
                 rvbd.report.runFixedCriteriaReport();
-        }
-        else if (typeof rvbd.report.printCriteria !== 'undefined') { // We're in print view, so launch right away
+        } else if (typeof rvbd.report.printCriteria !== 'undefined') { // We're in print view, so launch right away
             rvbd.report.doRunFormReport(false);
         } else { // Standard report
             var $form = $('#criteria-form');
