@@ -410,6 +410,7 @@ PCAP_SIZE_LIMIT = 10000000000
 REPORT_HISTORY_ENABLED = True
 
 # Hitcount parameters
-#  Any URL with a prefix in the following list (based on simple "startswith" comparison)
-#  will not have its hitcount incremented and will not be displayed on admin page.
+#  Any URL with a prefix in the following list (based on simple "startswith"
+#  comparison) will not have its hitcount incremented and will not be
+#  displayed on admin page.
 HITCOUNT_IGNORE_URLS = ['/admin/', '/accounts/', '/favicon.ico']

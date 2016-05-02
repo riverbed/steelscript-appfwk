@@ -13,7 +13,7 @@ from django.conf import settings
 # Helper function to determine whether URI should be ignored
 # based on configured settings (under appfwk project).
 # The comparison is a simple "startswith", so regexes are not supported.
-def is_ignored (hitcount):
+def is_ignored(hitcount):
     is_ignored = False
     
     for ignored_url in getattr(settings, 'HITCOUNT_IGNORE_URLS', []):
