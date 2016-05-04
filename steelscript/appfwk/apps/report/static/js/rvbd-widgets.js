@@ -692,4 +692,39 @@ rvbd.formatHealth = function(v) {
     return '<div class="' + v + '-circle"></div>';
 };
 
+/*
+To create a colored circle with optional text and a tooltip
+*/
+rvbd.formatHealthWithHover = function(v) {
+/*
+    Argument v is a ':' separated concatenation of 3 strings s1:s2:s3 where:
+
+    s1 is the color of the circle and is one of 'red','green','yellow','grey'.
+    s2 is a text that will appear next to the circle.
+    s3 is a text that will appear as a tooltip when hovering the mouse over the s1 circle.
+
+    A single string without ':' is treated as s1 only (no text no tooltip).
+    A string with only one ':' is treated as s1:s2 (no tooltip).
+    A s1::s3 string is a valid way of having a tooltip but no text.
+*/
+
+    var arr = v.split(':');
+    var color = arr[0];
+
+    var visible_text = '';
+    var tooltip_text = '';
+
+    if (arr.length > 1 && arr[1] != '') {
+        visible_text = '<div class="info">' + arr[1] + '</div>';
+    }
+
+    if (arr.length > 2 && arr[2] != '') {
+        tooltip_text = '<div class="tooltiptext">' + arr[2] + '</div>';
+    }
+
+    return '<div class="' + color + '-circle wide">' + tooltip_text + visible_text + '</div>'
+};
+
+
+
 })();

@@ -47,7 +47,8 @@ class BaseMetricSerializer(serializers.ModelSerializer):
         """
         Handle how incoming data should be mapped into a model instance.
         """
-        instance = super(BaseMetricSerializer, self).restore_object(attrs, instance=instance)
+        instance = (super(BaseMetricSerializer, self)
+                    .restore_object(attrs, instance=instance))
 
         if instance is not None:
             logger.debug('processing with instance method')
@@ -60,15 +61,8 @@ class BaseMetricSerializer(serializers.ModelSerializer):
 
 
 #
-# Custom Metrics - goes in plugin
+# Custom Metrics - Code below goes into plugin serializers.py
 #
-
-class NetworkMetricSerializer(BaseMetricSerializer):
-    class Meta:
-        model = NetworkMetric
-
-register_serializer(NetworkMetricSerializer)
-
 
 class ServicesMetricSerializer(BaseMetricSerializer):
 
@@ -86,3 +80,21 @@ class ServicesMetricDetailSerializer(BaseMetricSerializer):
         fields = ('name', 'override_value', 'affected_nodes')
 
 register_serializer(ServicesMetricDetailSerializer, method='GET')
+
+
+class NetworkMetricSerializer(BaseMetricSerializer):
+    class Meta:
+        model = NetworkMetric
+        fields = ('node_name', 'node_status', 'location',
+                  'parent_group', 'parent_status')
+
+register_serializer(NetworkMetricSerializer, method='POST')
+
+
+class NetworkMetricDetailSerializer(BaseMetricSerializer):
+    class Meta:
+        model = NetworkMetric
+        fields = ('location', 'parent_group',
+                  'parent_status', 'affected_nodes')
+
+register_serializer(NetworkMetricDetailSerializer, method='GET')

@@ -7,16 +7,22 @@
 
 from django.contrib import admin
 
-from steelscript.appfwk.apps.metrics.models import Metric, NetworkMetric, ServicesMetric, \
-    ServiceNode
+from steelscript.appfwk.apps.metrics.models import \
+    NetworkMetric, ServicesMetric, ServiceNode
 
 
-class MetricAdmin(admin.ModelAdmin):
-    list_display = ('name', 'value', 'override_value')
-
+#
+# Include in plugin admin.py
+#
 
 class NetworkMetricAdmin(admin.ModelAdmin):
-    list_display = ('name', 'value', 'override_value')
+    list_display = ('location', 'parent_group', 'parent_status',
+                    'override_value', 'affected_nodes')
+    fields = ('location', 'parent_group', 'parent_status', 'override_value')
+    exclude = ('name',)
+
+    def affected_nodes(self, obj):
+        return obj.affected_nodes.all()
 
 admin.site.register(NetworkMetric, NetworkMetricAdmin)
 

@@ -7,10 +7,10 @@
 
 import logging
 
-from django.http import HttpResponseRedirect, HttpResponse, Http404
+from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, views
-from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
+from rest_framework import views
+from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
@@ -26,6 +26,18 @@ class MetricDetail(views.APIView):
     """
     renderer_classes = (JSONRenderer,)
     permission_classes = (IsAdminUser,)
+
+    def get_kwargs(self, model, request):
+        """Return kwargs to use for finding specific model instance."""
+        # define the method of looking up the model instance
+        # default is to use name as primary key
+        if hasattr(model, 'unique_together'):
+            # but if the model identifies alternate keys, use those
+            fields = model.unique_together
+            get_kwargs = {f: request.DATA[f] for f in fields}
+        else:
+            get_kwargs = {'name': request.DATA['name']}
+        return get_kwargs
 
     def get(self, request, schema, metric_name):
         try:
@@ -44,6 +56,7 @@ class MetricDetail(views.APIView):
         logger.debug('received metric post')
         try:
             model = get_metric_map()[schema]
+            get_kwargs = self.get_kwargs(model, request)
             logger.debug('got model %s' % model)
             serializer_cls = find_serializer(model, method='POST')
             logger.debug('got serializer %s' % serializer_cls)
@@ -51,7 +64,7 @@ class MetricDetail(views.APIView):
             logger.error(e)
             raise Http404
 
-        metric = get_object_or_404(model, name=request.DATA['name'])
+        metric = get_object_or_404(model, **get_kwargs)
 
         serialized = serializer_cls(instance=metric, data=request.DATA,
                                     context=request.DATA)
