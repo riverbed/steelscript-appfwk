@@ -68,7 +68,6 @@ class Report(models.Model):
     reload_offset = models.IntegerField(default=15*60)  # secs, default 15 min
     auto_run = models.BooleanField(default=False)
     static = models.BooleanField(default=False)
-    live = models.BooleanField(default=False)
 
     @classmethod
     def create(cls, title, **kwargs):
@@ -107,10 +106,6 @@ class Report(models.Model):
             To populate WidgetDataCache for static reports, run the report by
             setting live=True in url.
 
-        :param bool live: Set to true to render a static report with criteria
-            fields and submit button, and also the status report will be run
-            by creating jobs instead of reading directly out of
-            WidgetDataCache.
         """
 
         logger.debug('Creating report %s' % title)

@@ -104,6 +104,7 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
     self.slug = slug;
     self.options = options;
     self.criteria = criteria;
+
     if (dataCache) {
       self.dataCache = JSON.parse(dataCache);
     }
@@ -117,7 +118,6 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
     $div.attr('id', 'chart_' + id)
         .addClass('widget blackbox span' + (isEmbedded ? '12' : options.width))
         .text("Widget " + id);
-
     if (options.height) {
         $div.height(options.height);
     }
@@ -130,6 +130,10 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
       // If we are not using the cached report, follow normal
       // post request sequence
       self.postRequest(criteria);
+    } else if (self.dataCache.status == 'error') {
+      // No Widget Cache data exists
+      self.displayError(self.dataCache);
+      self.status = 'error';
     } else {
       // If we are using the cached report, load the data immediately
       $(self.div).hideLoading();

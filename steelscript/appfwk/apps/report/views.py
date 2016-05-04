@@ -154,6 +154,10 @@ class GenericReportView(views.APIView):
         """ Update fields' initial values using bookmark. """
         request_data = request.GET.dict()
         override_msg = 'Setting criteria field %s to %s.'
+
+        # Initialize report.live as False
+        report.live = False
+
         for k, v in request_data.iteritems():
             if k == 'auto_run':
                 report.auto_run = (v.lower() == 'true')
@@ -503,10 +507,13 @@ class ReportAutoView(GenericReportView):
                 try:
                     data_cache = WidgetDataCache.objects.get(
                         report_widget_id=rw_id)
-                    widget_def['data'] = str(data_cache.data)
+                    widget_def['data'] = data_cache.data
                 except WidgetDataCache.DoesNotExist:
-                    raise Exception("No widget data cache available with"
-                                    " id %s." % rw_id)
+                    msg = "No widget data cache available with id %s." % rw_id
+                    resp = {'message': msg,
+                            'status': 'error',
+                            'exception': ''}
+                    widget_def['data'] = json.dumps(resp)
         report_def = self.report_def(widget_defs, now)
 
         return JsonResponse(report_def, safe=False)

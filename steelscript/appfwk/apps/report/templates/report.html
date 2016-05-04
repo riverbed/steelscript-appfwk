@@ -63,7 +63,7 @@
       rvbd.report.offsetSeconds = {{ report.reload_offset }};
       rvbd.report.autoRun = {% if report.auto_run and not form.errors %} true {% else %} false {% endif %};
       rvbd.report.static = {% if report.static %} true {% else %} false {% endif %};
-      rvbd.report.live= {% if report.live%} true {% else %} false {% endif %};
+      rvbd.report.live = {% if report.live %} true {% else %} false {% endif %};
       rvbd.report.expandTables = {% if expand_tables %} true {% else %} false {% endif %};
 
       // rvbd.report.debugUrl is used in rvbd-report.js to allow the user to download a zip
