@@ -102,6 +102,8 @@ http://pythonhosted.org/steelscript/
         # progressd
         'flask==0.10.1',
         'flask_restful==0.3.2',
+
+        'pinax-announcements>=2.0.3',
     ),
 
     'extras_require': {
