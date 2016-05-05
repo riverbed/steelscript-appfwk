@@ -12,10 +12,10 @@
 
 rvbd.widgets.yui3 = {};
 
-rvbd.widgets.yui3.YUIWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.yui3.YUIWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria, dataCache) {
     var self = this;
 
-    rvbd.widgets.Widget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria]);
+    rvbd.widgets.Widget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.yui3.YUIWidget.prototype = Object.create(rvbd.widgets.Widget.prototype);
 
@@ -118,10 +118,10 @@ $.extend(rvbd.widgets.yui3.YUIWidget.prototype, {
 });
 
 
-rvbd.widgets.yui3.TableWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.yui3.TableWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria, dataCache) {
     var self = this;
 
-    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria]);
+    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.yui3.TableWidget.prototype = Object.create(rvbd.widgets.yui3.YUIWidget.prototype);
 
@@ -171,10 +171,10 @@ $.extend(rvbd.widgets.yui3.TableWidget.prototype, {
 });
 
 
-rvbd.widgets.yui3.TimeSeriesWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.yui3.TimeSeriesWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria, dataCache) {
     var self = this;
 
-    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria]);
+    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.yui3.TimeSeriesWidget.prototype = Object.create(rvbd.widgets.yui3.YUIWidget.prototype);
 
@@ -220,10 +220,10 @@ $.extend(rvbd.widgets.yui3.TimeSeriesWidget.prototype, {
     }
 });
 
-rvbd.widgets.yui3.ChartWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.yui3.ChartWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria, dataCache) {
     var self = this;
 
-    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria]);
+    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.yui3.ChartWidget.prototype = Object.create(rvbd.widgets.yui3.YUIWidget.prototype);
 
@@ -265,10 +265,10 @@ $.extend(rvbd.widgets.yui3.ChartWidget.prototype, {
     }
 });
 
-rvbd.widgets.yui3.PieWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.yui3.PieWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria, dataCache) {
     var self = this;
 
-    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria]);
+    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.yui3.PieWidget.prototype = Object.create(rvbd.widgets.yui3.YUIWidget.prototype);
 
@@ -277,10 +277,10 @@ $.extend(rvbd.widgets.yui3.PieWidget.prototype, {
     widgetClass: 'Chart'
 });
 
-rvbd.widgets.yui3.CandleStickWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.yui3.CandleStickWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria, dataCache) {
     var self = this;
 
-    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria]);
+    rvbd.widgets.yui3.YUIWidget.apply(self, [postUrl, isEmbedded, div, id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.yui3.CandleStickWidget.prototype = Object.create(rvbd.widgets.yui3.YUIWidget.prototype);
 

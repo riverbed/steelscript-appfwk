@@ -39,9 +39,12 @@ rvbd.report = {
 
         if (rvbd.report.isEmbedded) { // We already have the widget spec data, so launch right away
             rvbd.report.runFixedCriteriaReport();
-        } else if (rvbd.report.reloadMinutes > 0) { // Auto-run report (updates at intervals)
-            rvbd.report.runFixedCriteriaReport();
-            rvbd.report.needs_reload_scheduled = true;
+        } else if (rvbd.report.reloadMinutes > 0 && !rvbd.report.live) { // Auto-run report (updates at intervals)
+                rvbd.report.runFixedCriteriaReport();
+                rvbd.report.needs_reload_scheduled = true;
+        } else if (rvbd.report.static && !rvbd.report.live) {// Non-reloading static report
+                $("#criteria-row").hide();
+                rvbd.report.runFixedCriteriaReport();
         } else if (typeof rvbd.report.printCriteria !== 'undefined') { // We're in print view, so launch right away
             rvbd.report.doRunFormReport(false);
         } else { // Standard report
@@ -129,7 +132,7 @@ rvbd.report = {
             success: function(data, textStatus, jqXHR) {
                 rvbd.report.renderWidgets(data);
             },
-            error: function(jqXHR, textStatus, errorThrown) { 
+            error: function(jqXHR, textStatus, errorThrown) {
                 rvbd.report.alertReportError(textStatus, errorThrown);
             }
         });
@@ -141,9 +144,13 @@ rvbd.report = {
     setSchedule: function () {
         var interval = rvbd.report.reloadMinutes * 60 * 1000;
 
-        // trigger the reload, then schedule the interval from now
-        rvbd.report.reloadAllWidgets();
-        rvbd.report.intervalID = setInterval(rvbd.report.reloadAllWidgets, interval);
+        if (rvbd.report.static) {
+            rvbd.report.runFixedCriteriaReport();
+        } else {
+            // trigger the reload, then schedule the interval from now
+            rvbd.report.reloadAllWidgets();
+            rvbd.report.intervalID = setInterval(rvbd.report.reloadAllWidgets, interval);
+        }
     },
 
     scheduleReloads: function (datetime) {
@@ -185,9 +192,13 @@ rvbd.report = {
         rvbd.report.disableReloadButton();
         rvbd.report.disablePrintButton();
 
-        $.each(rvbd.report.widgets, function (i, w) {
-            w.reloadWidget()
-        })
+        if (rvbd.report.static) {
+            rvbd.report.runFixedCriteriaReport();
+        } else {
+            $.each(rvbd.report.widgets, function (i, w) {
+                w.reloadWidget()
+            })
+        }
     },
 
     /**
@@ -391,7 +402,7 @@ rvbd.report = {
                 urls = {"postUrl": w.posturl, "updateUrl": w.updateurl};
 
             widget = new rvbd.widgets[widgetModule][widgetClass](urls, rvbd.report.isEmbedded, $div[0],
-                                                                 w.widgetid, w.widgetslug, opts, w.criteria);
+                                                                 w.widgetid, w.widgetslug, opts, w.criteria, w.data);
             rvbd.report.widgets.push(widget);
         });
 

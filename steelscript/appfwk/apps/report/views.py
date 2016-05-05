@@ -54,6 +54,7 @@ from steelscript.appfwk.apps.preferences.models import (SystemSettings,
                                                         AppfwkUser)
 from steelscript.appfwk.apps.report.models import (Report, Section, Widget,
                                                    WidgetJob, WidgetAuthToken,
+                                                   WidgetDataCache,
                                                    ReportHistory, ReportStatus)
 from steelscript.appfwk.apps.report.serializers import ReportSerializer, \
     WidgetSerializer
@@ -153,9 +154,18 @@ class GenericReportView(views.APIView):
         """ Update fields' initial values using bookmark. """
         request_data = request.GET.dict()
         override_msg = 'Setting criteria field %s to %s.'
+
+        # Initialize report.live as False
+        report.live = False
+
         for k, v in request_data.iteritems():
             if k == 'auto_run':
                 report.auto_run = (v.lower() == 'true')
+                continue
+
+            if k == 'live':
+                if report.static and v.lower() == 'true':
+                    report.live = True
                 continue
 
             field = fields.get(k, None)
@@ -383,6 +393,7 @@ class ReportView(GenericReportView):
             # construct report definition
             now = datetime.datetime.now(timezone)
             widgets = report.widget_definitions(form.as_text())
+
             report_def = self.report_def(widgets, now, formdata['debug'])
 
             logger.debug("Sending widget definitions for report %s: %s" %
@@ -473,7 +484,6 @@ class ReportAutoView(GenericReportView):
                 # only consider starttime if its paired with an endtime
                 if 'starttime' in criteria:
                     start = now
-
                     field = form.fields['starttime']
                     initial = field.widget.attrs.get('initial_time', None)
                     if initial:
@@ -488,6 +498,22 @@ class ReportAutoView(GenericReportView):
             widget_def = w.get_definition(criteria)
             widget_defs.append(widget_def)
 
+            # Build the primary key corresponding to static data for this
+            # widget
+            if report.static:
+                rw_id = '-'.join([namespace, report_slug,
+                                  widget_def['widgetslug']])
+                # Add cached widget data if available.
+                try:
+                    data_cache = WidgetDataCache.objects.get(
+                        report_widget_id=rw_id)
+                    widget_def['data'] = data_cache.data
+                except WidgetDataCache.DoesNotExist:
+                    msg = "No widget data cache available with id %s." % rw_id
+                    resp = {'message': msg,
+                            'status': 'error',
+                            'exception': ''}
+                    widget_def['data'] = json.dumps(resp)
         report_def = self.report_def(widget_defs, now)
 
         return JsonResponse(report_def, safe=False)
@@ -1055,6 +1081,20 @@ geolocation documentation</a> for more information.'''
                 else:
                     data = widget_func(widget, job, tabledata)
                     resp = job.json(data)
+                    # Cache data before sending it using the
+                    # report slug + widget slug as the primary key
+
+                    # check if the report is static
+                    report = get_object_or_404(Report, namespace=namespace,
+                                               slug=report_slug)
+
+                    if data and report.static:
+                        rw_id = '-'.join([namespace, report_slug,
+                                          widget_slug])
+                        widget_data = WidgetDataCache(report_widget_id=rw_id,
+                                                      data=json.dumps(data))
+                        widget_data.save()
+                        logger.debug("Cached widget %s" % rw_id)
                     logger.debug("%s complete" % str(wjob))
 
             except:

@@ -6,6 +6,7 @@
 
 
 import logging
+from datetime import datetime
 
 from django.conf import settings
 from django.db import models
@@ -66,6 +67,7 @@ class Report(models.Model):
     reload_minutes = models.IntegerField(default=0)     # 0 means no reloads
     reload_offset = models.IntegerField(default=15*60)  # secs, default 15 min
     auto_run = models.BooleanField(default=False)
+    static = models.BooleanField(default=False)
 
     @classmethod
     def create(cls, title, **kwargs):
@@ -99,6 +101,10 @@ class Report(models.Model):
         :param bool auto_run: Set to true to run report automatically.  This
             will only run the report once, versus the reload options which
             setup continuous report reloads.
+
+        :param bool static: Set to true to read data from WidgetDataCache.
+            To populate WidgetDataCache for static reports, run the report by
+            setting live=True in url.
 
         """
 
@@ -645,6 +651,21 @@ class Widget(models.Model):
                         fields[f.keyword] = f
 
         return fields
+
+
+class WidgetDataCache(models.Model):
+    """
+    Defines a cache of widget data for a static report. The primary key is
+    defined as <report_slug><widget_slug>
+    """
+    report_widget_id = models.CharField(max_length=500, primary_key=True)
+    data = models.TextField(blank=False)
+    created = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        """ On save, update created timestamp """
+        self.created = datetime.utcnow()
+        return super(WidgetDataCache, self).save(*args, **kwargs)
 
 
 class WidgetJob(models.Model):
