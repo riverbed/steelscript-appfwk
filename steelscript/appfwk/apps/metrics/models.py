@@ -110,7 +110,7 @@ class NodeBase(models.Model):
     STATUS_CHOICES = ('Up', 'Down')
 
     def __unicode__(self):
-        return "<ServiceNode %s>" % self.name
+        return "<%s %s>" % (self.__class__, self.name)
 
     def __repr__(self):
         return unicode(self)
@@ -186,7 +186,7 @@ class ServicesMetric(Metric):
 
 class NetworkNode(NodeBase):
     # link these nodes to NetworkMetric
-    service = models.ForeignKey('NetworkMetric', related_name='affected_nodes')
+    network = models.ForeignKey('NetworkMetric', related_name='affected_nodes')
 
 
 class NetworkMetric(Metric):
@@ -263,8 +263,8 @@ class NetworkMetric(Metric):
         new_node_name = data['node_name']
 
         # do we have this node recorded already?
-        if self.affected_nodes.filter(service=self, name=new_node_name):
-            node = self.affected_nodes.get(service=self, name=new_node_name)
+        if self.affected_nodes.filter(network=self, name=new_node_name):
+            node = self.affected_nodes.get(network=self, name=new_node_name)
 
             if data['node_status'].lower() == 'up':
                 node.delete()
@@ -281,7 +281,7 @@ class NetworkMetric(Metric):
                                'Service node %s, not previously recorded down'
                                % new_node_name)
             else:
-                new_node = NetworkNode(name=new_node_name, service=self)
+                new_node = NetworkNode(name=new_node_name, network=self)
                 new_node.save()
                 logger.info('Added new down Network node %s' % new_node)
                 self.parent_status = data['parent_status']

@@ -53,13 +53,11 @@ class MetricDetail(views.APIView):
         return Response(data)
 
     def post(self, request, schema):
-        logger.debug('received metric post')
+        logger.debug('Received metric POST for schema %s' % schema)
         try:
             model = get_metric_map()[schema]
             get_kwargs = self.get_kwargs(model, request)
-            logger.debug('got model %s' % model)
             serializer_cls = find_serializer(model, method='POST')
-            logger.debug('got serializer %s' % serializer_cls)
         except Exception as e:
             logger.error(e)
             raise Http404

@@ -8,18 +8,22 @@
 from django.contrib import admin
 
 from steelscript.appfwk.apps.metrics.models import \
-    NetworkMetric, ServicesMetric, ServiceNode
+    NetworkMetric, ServicesMetric, ServiceNode, NetworkNode
 
 
 #
 # Include in plugin admin.py
 #
+class NetworkNodeInline(admin.TabularInline):
+    model = NetworkNode
+    fields = ('name',)
+
 
 class NetworkMetricAdmin(admin.ModelAdmin):
     list_display = ('location', 'parent_group', 'parent_status',
                     'override_value', 'affected_nodes')
     fields = ('location', 'parent_group', 'parent_status', 'override_value')
-    exclude = ('name',)
+    inlines = (NetworkNodeInline,)
 
     def affected_nodes(self, obj):
         return obj.affected_nodes.all()

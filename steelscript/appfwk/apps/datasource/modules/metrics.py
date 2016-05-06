@@ -10,7 +10,7 @@ import logging
 from django.core.exceptions import ObjectDoesNotExist
 
 from steelscript.appfwk.apps.datasource.models import \
-    Column, Table, DatasourceTable, TableQueryBase
+    Column, DatasourceTable, TableQueryBase
 from steelscript.appfwk.apps.jobs import QueryError, QueryComplete
 from steelscript.appfwk.apps.metrics.models import get_metric_map
 
@@ -27,6 +27,12 @@ class MetricsTable(DatasourceTable):
 
     TABLE_OPTIONS = {'schema': None}
 
+    def post_process_table(self, field_options):
+        if self.options.schema is None:
+            raise AttributeError('Table %s missing option "schema" which '
+                                 'must be specified when creating a '
+                                 'MetricsTable.' % self.name)
+
 
 class MetricsQuery(TableQueryBase):
 
@@ -34,11 +40,6 @@ class MetricsQuery(TableQueryBase):
         # Collect all dependent tables
         options = self.table.options
 
-        if options.schema is None:
-            return QueryError('Metrics "schema" must be specified when '
-                              'creating table.')
-
-        #
         model = get_metric_map()[options.schema]
         df = model.objects.get_dataframe()
 
@@ -53,7 +54,7 @@ class MetricsQuery(TableQueryBase):
 
         for k in keys:
             try:
-                c = Column.objects.get(table=self.job.table, name=k)
+                Column.objects.get(table=self.job.table, name=k)
             except ObjectDoesNotExist:
                 Column.create(self.job.table, k, k.title(), datatype='string')
 
