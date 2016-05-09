@@ -1,4 +1,4 @@
-# Copyright (c) 2015 Riverbed Technology, Inc.
+# Copyright (c) 2016 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -14,7 +14,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
-from steelscript.appfwk.apps.metrics.models import get_metric_map
+from steelscript.appfwk.apps.metrics.models import get_schema_map
 from steelscript.appfwk.apps.metrics.serializers import find_serializer
 
 
@@ -41,7 +41,7 @@ class MetricDetail(views.APIView):
 
     def get(self, request, schema, metric_name):
         try:
-            model = get_metric_map()[schema]
+            model = get_schema_map()[schema]
             serializer_cls = find_serializer(model, method='GET')
         except Exception as e:
             logger.error(e)
@@ -55,7 +55,7 @@ class MetricDetail(views.APIView):
     def post(self, request, schema):
         logger.debug('Received metric POST for schema %s' % schema)
         try:
-            model = get_metric_map()[schema]
+            model = get_schema_map()[schema]
             get_kwargs = self.get_kwargs(model, request)
             serializer_cls = find_serializer(model, method='POST')
         except Exception as e:
