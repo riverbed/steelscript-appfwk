@@ -33,6 +33,7 @@ urlpatterns = patterns('',
     url(r'^logs/', include('steelscript.appfwk.apps.logviewer.urls')),
     url(r'^announcements/', include(
         'pinax.announcements.urls', namespace='pinax_announcements')),
+    url(r'^metrics/', include('steelscript.appfwk.apps.metrics.urls')),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

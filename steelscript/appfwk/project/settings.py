@@ -232,11 +232,13 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.alerting',
     'steelscript.appfwk.apps.jobs',
     'steelscript.appfwk.apps.logviewer',
+    'steelscript.appfwk.apps.metrics',
 
     # 'standard' plugins
     'steelscript.appfwk.apps.plugins.builtin.whois',
     'steelscript.appfwk.apps.plugins.builtin.solarwinds',
     'steelscript.appfwk.apps.plugins.builtin.sharepoint',
+    'steelscript.appfwk.apps.plugins.builtin.metrics_plugin',
 )
 
 ADMIN_TOOLS_MENU = 'steelscript.appfwk.project.menu.CustomMenu'
