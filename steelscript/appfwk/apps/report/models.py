@@ -567,6 +567,9 @@ class Widget(models.Model):
     # not globally unique, but should be sufficiently unique within a report
     slug = models.SlugField(max_length=100)
 
+    # widget to be stacked below the previous widget on the same row
+    stack_widget = models.BooleanField(default=False)
+
     objects = InheritanceManager()
 
     def __repr__(self):
@@ -616,6 +619,18 @@ class Widget(models.Model):
         if row is None:
             row = 1
             col = 1
+        elif self.stack_widget:
+            # This widget needs to be stacked below the previous widget
+            pre_w = self.section.report.widgets().order_by('-row', '-col')[0]
+            if pre_w.width != self.width:
+                raise ValueError("The stack widget with title '%s' should set "
+                                 "with width %s." % (self.title, pre_w.width))
+            elif pre_w.title.lower() == self.title.lower():
+                raise ValueError("The stack widget title '%s' is the same as "
+                                 "the previous widget, thus should be "
+                                 "changed." % self.title)
+            row = pre_w.row
+            col = pre_w.col
         else:
             widthsum = (self.section
                         .report.widgets()
@@ -627,6 +642,7 @@ class Widget(models.Model):
                 col = 1
             else:
                 col = width + 1
+
         self.row = row
         self.col = col
 
