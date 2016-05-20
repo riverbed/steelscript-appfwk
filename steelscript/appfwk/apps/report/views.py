@@ -442,7 +442,9 @@ class ReportAutoView(GenericReportView):
             )
             widgets = [w]
         else:
-            widgets = report.widgets().order_by('row', 'col')
+            # Add 'id' to order_by so that stacked widgets will return
+            # with the same order as created
+            widgets = report.widgets().order_by('row', 'col', 'id')
 
         # parse time and localize to user profile timezone
         timezone = get_timezone(request)
