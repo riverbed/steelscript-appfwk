@@ -28,9 +28,9 @@ TIME_FIELDS = ['_orig_duration', '_orig_endtime', '_orig_starttime',
 
 
 class TimeInterval(Interval):
-    def __init__(self, starttime, endtime):
-        self.start = force_to_utc(starttime)
-        self.end = force_to_utc(endtime)
+    def __init__(self, start, end):
+        self.start = force_to_utc(start)
+        self.end = force_to_utc(end)
 
     def localize_tz(self, tzinfo):
         self.start = self.start.astimezone(tzinfo)
