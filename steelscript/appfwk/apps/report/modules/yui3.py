@@ -24,7 +24,7 @@ def cleankey(s):
 class TableWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6,
-               cols=None, rows=1000, height=300):
+               cols=None, rows=1000, height=300, stack_widget=False):
         """Create a widget displaying data in a two dimensional table.
 
         :param int width: Width of the widget in columns (1-12, default 6)
@@ -32,11 +32,12 @@ class TableWidget(object):
         :param int rows: Number of rows to display (default 1000)
         :param list cols: List of columns by name to include.  If None,
             the default, include all data columns.
-
+        :param bool stack_widget: stack this widget below the previous one.
 
         """
         w = Widget(section=section, title=title, rows=rows, width=width,
-                   height=height, module=__name__, uiwidget=cls.__name__)
+                   height=height, module=__name__, uiwidget=cls.__name__,
+                   stack_widget=stack_widget)
         w.compute_row_col()
         w.options = JsonDict(columns=cols)
         w.save()
@@ -122,12 +123,14 @@ class TableWidget(object):
 
 class PieWidget(object):
     @classmethod
-    def create(cls, section, table, title, width=6, rows=10, height=300):
+    def create(cls, section, table, title, width=6, rows=10, height=300,
+               stack_widget=False):
         """Create a widget displaying data in a pie chart.
 
         :param int width: Width of the widget in columns (1-12, default 6)
         :param int height: Height of the widget in pixels (default 300)
         :param int rows: Number of rows to display (default 10)
+        :param bool stack_widget: stack this widget below the previous one.
 
         The labels are taken from the Table key column (the first key,
         if the table has multiple key columns defined).  The pie
@@ -135,7 +138,8 @@ class PieWidget(object):
 
         """
         w = Widget(section=section, title=title, rows=rows, width=width,
-                   height=height, module=__name__, uiwidget=cls.__name__)
+                   height=height, module=__name__, uiwidget=cls.__name__,
+                   stack_widget=stack_widget)
         w.compute_row_col()
         keycols = [col.name for col in table.get_columns()
                    if col.iskey is True]
@@ -196,7 +200,8 @@ class PieWidget(object):
 class TimeSeriesWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, height=300,
-               stacked=False, cols=None, altaxis=None, bar=False):
+               stacked=False, cols=None, altaxis=None, bar=False,
+               stack_widget=False):
         """Create a widget displaying time-series data in a line or bar chart
 
         :param int width: Width of the widget in columns (1-12, default 6)
@@ -207,6 +212,7 @@ class TimeSeriesWidget(object):
         :param list altaxis: List of columns to graph using the
             alternate Y-axis
         :param bool bar: If True, show time series in a bar chart.
+        :param bool stack_widget: stack this widget below the previous one.
 
         As an example, the following will graph four columns of data::
 
@@ -222,7 +228,8 @@ class TimeSeriesWidget(object):
         """
 
         w = Widget(section=section, title=title, width=width, height=height,
-                   module=__name__, uiwidget=cls.__name__)
+                   module=__name__, uiwidget=cls.__name__,
+                   stack_widget=stack_widget)
         w.compute_row_col()
         timecols = [col.name for col in table.get_columns()
                     if col.istime() or col.isdate()]
@@ -451,7 +458,8 @@ class TimeSeriesWidget(object):
 class ChartWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, rows=10, height=300,
-               keycols=None, valuecols=None, charttype='line', dynamic=False):
+               keycols=None, valuecols=None, charttype='line', dynamic=False,
+               stack_widget=False):
         """Create a widget displaying data as a chart.
 
         This class is typically not used directly, but via LineWidget
@@ -465,10 +473,12 @@ class ChartWidget(object):
         :param str charttype: Type of chart, defaults to 'line'.  This may be
            any YUI3 'type'
         :param bool dynamic: columns will be added later from criteria if True
+        :param bool stack_widget: stack this widget below the previous one.
 
         """
         w = Widget(section=section, title=title, rows=rows, width=width,
-                   height=height, module=__name__, uiwidget=cls.__name__)
+                   height=height, module=__name__, uiwidget=cls.__name__,
+                   stack_widget=stack_widget)
         w.compute_row_col()
         if keycols is None:
             keycols = [col.name for col in table.get_columns()
@@ -659,6 +669,7 @@ class BarWidget(ChartWidget):
         :param list valuecols: List of data columns to graph
         :param str charttype: Type of chart, defaults to 'line'.  This may be
            any YUI3 'type'
+        :param bool stack_widget: stack this widget below the previous one.
 
         """
         kwargs['rows'] = kwargs.get('rows', 10)
@@ -677,6 +688,7 @@ class LineWidget(ChartWidget):
         :param list valuecols: List of data columns to graph
         :param str charttype: Type of chart, defaults to 'line'.  This may be
            any YUI3 'type'
+        :param bool stack_widget: stack this widget below the previous one.
 
         """
         kwargs['rows'] = kwargs.get('rows', 0)
@@ -686,7 +698,8 @@ class LineWidget(ChartWidget):
 class CandleStickWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, height=300,
-               keycols=None, valuecols=None, charttype='candlestick'):
+               keycols=None, valuecols=None, charttype='candlestick',
+               stack_widget=False):
         """Create a widget displaying stock prices as a candle stick chart.
 
         :param int width: Width of the widget in columns (1-12, default 6)
@@ -694,11 +707,13 @@ class CandleStickWidget(object):
         :param list keycols: List of key column names to use for x-axis labels
         :param list valuecols: List of data columns to graph
         :param str charttype: Type of chart, defaults to 'candlestick'.
+        :param bool stack_widget: stack this widget below the previous one.
 
         The Y axis of this widget can't dynamically scale to different ranges.
         """
         w = Widget(section=section, title=title, width=width,
-                   height=height, module=__name__, uiwidget=cls.__name__)
+                   height=height, module=__name__, uiwidget=cls.__name__,
+                   stack_widget=stack_widget)
         w.compute_row_col()
         if keycols is None:
             keycols = [col.name for col in table.get_columns()
