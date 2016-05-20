@@ -365,15 +365,20 @@ class Command(BaseCommand):
                 s.headers.update({'Accept': 'application/json'})
                 s.verify = verify
 
+                title = None
+
                 r = s.get(baseurl)
                 results = r.json()
                 for r in results:
                     if slug in r.values():
                         title = r['title']
                         break
-                else:
-                    raise ValueError('No report found for slug %s namespace %s'
-                                     % (slug, namespace))
+
+                if title is None:
+                    msg = ('No report found for slug %s namespace %s'
+                           % (slug, namespace))
+                    logger.error(msg)
+                    raise ValueError(msg)
 
                 job_params = {
                     'func': run_report_via_rest,
@@ -382,7 +387,7 @@ class Command(BaseCommand):
                 }
             else:
                 raise ValueError('Invalid config, no "table-name" or '
-                                 '"report-name" specified')
+                                 '"report-slug"/"report-namespace" specified')
         else:
             job_params = {'func': run_table,
                           'args': ['table']}
