@@ -623,10 +623,7 @@ class Widget(models.Model):
             col = 1
         elif self.stack_widget:
             # This widget needs to be stacked below the previous widget
-            # Add 'id' to order in case the previous widget is already
-            # a stacked widget
-            pre_w = self.section.report.widgets().order_by('-row',
-                                                           '-col', '-id')[0]
+            pre_w = self.section.report.widgets().order_by('-row', '-col')[0]
             if pre_w.width != self.width:
                 raise ValueError("The stack widget with title '%s' should set "
                                  "with width %s." % (self.title, pre_w.width))
