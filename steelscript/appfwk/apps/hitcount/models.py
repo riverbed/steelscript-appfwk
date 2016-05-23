@@ -33,9 +33,24 @@ class HitcountManager(models.Manager):
         )
 
         if hitcount_tuple and not is_ignored(hitcount_tuple[0]):
-                hitcount_tuple[0].last_hit = now()
-                hitcount_tuple[0].hits += 1
-                hitcount_tuple[0].save()
+            hitcount = hitcount_tuple [0]
+            
+            # If this request comes from a cache,
+            # it may include a custom field: Obj-Cache-Hits.
+            # This field stores a temporary hit count (as string),
+            # which should be added to the running total.
+            cache_hits_str = request.META.get ('HTTP_OBJ_CACHE_HITS', '0')
+            try:
+                cache_hits = int (cache_hits_str)
+            except (TypeError, ValueError):
+                cache_hits = 0
+
+            hitcount_increment = cache_hits + 1
+
+            # Update hitcount object for this URI.
+            hitcount.last_hit = now()
+            hitcount.hits += hitcount_increment
+            hitcount.save()
 
 
 # Model that maps hits and visit time to unique URIs requested.
