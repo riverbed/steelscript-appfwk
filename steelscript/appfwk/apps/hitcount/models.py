@@ -33,15 +33,15 @@ class HitcountManager(models.Manager):
         )
 
         if hitcount_tuple and not is_ignored(hitcount_tuple[0]):
-            hitcount = hitcount_tuple [0]
-            
+            hitcount = hitcount_tuple[0]
+
             # If this request comes from a cache,
             # it may include a custom field: Obj-Cache-Hits.
             # This field stores a temporary hit count (as string),
             # which should be added to the running total.
-            cache_hits_str = request.META.get ('HTTP_OBJ_CACHE_HITS', '0')
+            cache_hits_str = request.META.get('HTTP_OBJ_CACHE_HITS', '0')
             try:
-                cache_hits = int (cache_hits_str)
+                cache_hits = int(cache_hits_str)
             except (TypeError, ValueError):
                 cache_hits = 0
 
