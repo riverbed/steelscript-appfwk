@@ -280,13 +280,14 @@ class ReportHistory(models.Model):
     user = models.CharField(max_length=50)
     criteria = PickledObjectField()
     run_count = models.IntegerField()
+    status_choices = ((ReportStatus.NEW, "New"),
+                      (ReportStatus.RUNNING, "Running"),
+                      (ReportStatus.COMPLETE, "Complete"),
+                      (ReportStatus.ERROR, "Error"))
 
     status = models.IntegerField(
         default=ReportStatus.NEW,
-        choices=((ReportStatus.NEW, "New"),
-                 (ReportStatus.RUNNING, "Running"),
-                 (ReportStatus.COMPLETE, "Complete"),
-                 (ReportStatus.ERROR, "Error")))
+        choices=status_choices )
 
     @classmethod
     def create(cls, **kwargs):
@@ -333,6 +334,25 @@ class ReportHistory(models.Model):
             with TransactionLock(self, '%s.update_status' % self):
                 self.status = status
                 self.save()
+
+    @property
+    def status_name(self):
+        return self.status_choices[self.status][1]
+
+    @property
+    def criteria_html(self):
+        # length of business_hours_weekends.
+        # current longest field
+        tr_line = '<tr><td><b>{0}</b>:&nbsp;</td><td>{1}</td></tr>'
+        cprops = self.criteria.keys()
+        cprops.sort()
+        rstr = '<table>'
+        for k in cprops:
+            rstr += tr_line.format(k,
+                                   self.criteria[k])
+        rstr += '</table>'
+        logger.debug("criteria_html: {0}".format(rstr))
+        return rstr
 
 
 @receiver(post_data_save, dispatch_uid='job_complete_receiver')

@@ -15,56 +15,66 @@
     <h3>Report History</h3>
 {% endblock %}
 
+{% block header %}
+    <script type="text/javascript">
+        $(document).ready( function() {
+            {% if history %}
+                YUI().use("datatable-sort", function(Y) {
+                    cols = [
+                            {key:"namespace", label:"Namespace", sortable:true},
+                            {key:"slug", label:"Report Slug", sortable:true},
+                            {key:"first_run", label:"First Run", sortable:true},
+                            {key:"last_run", label:"Last Run", sortable:true},
+                            {key:"status", label:"Status", sortable:true},
+                            {key:"user", label:"User", sortable:true},
+                            {key:"criteria", label:"Criteria",
+                             sortable:false, allowHTML:true},
+                            {key:"run_count", label:"Run Count", sortable:true},
+                            {key:"run", label:"Run",
+                             sortable:false, allowHTML:true,
+                             formatter:'<a href={value} class="btn btn-info" role="button">Run</a>'},
+
+                    ],
+                    data = [
+                        {% for record in history %}
+                            {namespace:"{{ record.namespace }}",
+                             slug:"{{ record.slug }}",
+                             first_run:"{{ record.first_run }}",
+                             last_run:"{{ record.last_run }}",
+                             status:"{{ record.status_name }}",
+                             user:"{{ record.user }}",
+                             criteria:"{{ record.criteria_html|safe }}",
+                             run_count:"{{ record.run_count }}",
+                             run:"{{ record.bookmark|safe }}",
+                             },
+                        {% endfor %}
+                    ],
+                    table = new Y.DataTable({
+                        columns: cols,
+                        data: data,
+                        summary: "Report History",
+                    }).render('#sort');
+                });
+            {% endif %}
+        });
+    </script>
+
+    <style type="text/css">
+        .form-inline input {
+            margin-bottom: 5px;
+        }
+    </style>
+
+{% endblock %}
+
 {% block content %}
-    <div class="container-fluid">
-        <table border="0" class="table table-bordered block-centered" style="max-width: 90%">
-            <thead>
-            <tr>
-                <th>Name Space</th>
-                <th>Report Slug</th>
-                <th>First Run</th>
-                <th>Last Run</th>
-                <th>Status</th>
-                <th>User</th>
-                <th>Criteria</th>
-                <th>Run Count</th>
-                <th>Run Report</th>
-            </tr>
-            </thead>
-            <tbody>
-                {% if not history %}
-                    <tr>
-                        <td colspan="9" style="text-align: center">No report has been run.</td>
-                    </tr>
-                {% endif %}
-                {% for record in history %}
-                    <tr>
-                        <td>{{ record.namespace }}</td>
-                        <td>{{ record.slug }}</td>
-                        <td>{{ record.first_run }}</td>
-                        <td>{{ record.last_run }}</td>
-                        {% if record.status == status.NEW %}
-                            <td>New</td>
-                        {% elif record.status == status.RUNNING %}
-                            <td>Running</td>
-                        {% elif record.status == status.COMPLETE %}
-                            <td>Complete</td>
-                        {% elif record.status == status.ERROR %}
-                            <td>Error</td>
-                        {% endif %}
-                        <td>{{ record.user }}</td>
-                        <td>{% for k, v in record.criteria.iteritems %}
-                            <li>{{ k }} : {{ v }}</li>
-                            {% endfor %}
-                        </td>
-                        <td>{{ record.run_count }}</td>
-                        <td><a href={{ record.bookmark }} class="btn btn-info" role="button">Run</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% if history %}
+        <div id="results-container" class="container-fluid">
+            <div id="sort" class="row-fluid yui3-skin-sam" align="center">
+            </div>
+        </div>
+    {% endif %}
+    <P></P>
     <script type="text/javascript">
         (function refresh() {
              setTimeout(function() {
