@@ -287,7 +287,7 @@ class ReportHistory(models.Model):
 
     status = models.IntegerField(
         default=ReportStatus.NEW,
-        choices=status_choices )
+        choices=status_choices)
 
     @classmethod
     def create(cls, **kwargs):
