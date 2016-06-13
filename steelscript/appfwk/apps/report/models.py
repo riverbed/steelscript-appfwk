@@ -17,6 +17,7 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.core.urlresolvers import reverse
 from django.utils.datastructures import SortedDict
+from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 from model_utils.managers import InheritanceManager
 from steelscript.appfwk.apps.jobs.models import Job
@@ -280,6 +281,7 @@ class ReportHistory(models.Model):
     user = models.CharField(max_length=50)
     criteria = PickledObjectField()
     run_count = models.IntegerField()
+
     status_choices = ((ReportStatus.NEW, "New"),
                       (ReportStatus.RUNNING, "Running"),
                       (ReportStatus.COMPLETE, "Complete"),
@@ -334,6 +336,18 @@ class ReportHistory(models.Model):
             with TransactionLock(self, '%s.update_status' % self):
                 self.status = status
                 self.save()
+
+    def format_ts(self, ts):
+        ltime = timezone.localtime(ts)
+        return ltime.strftime("%Y/%m/%d %H:%M:%S")
+
+    @property
+    def format_last_run(self):
+        return self.format_ts(self.last_run)
+
+    @property
+    def format_first_run(self):
+        return self.format_ts(self.first_run)
 
     @property
     def status_name(self):

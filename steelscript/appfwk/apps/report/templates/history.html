@@ -39,8 +39,8 @@
                         {% for record in history %}
                             {namespace:"{{ record.namespace }}",
                              slug:"{{ record.slug }}",
-                             first_run:"{{ record.first_run }}",
-                             last_run:"{{ record.last_run }}",
+                             first_run:"{{ record.format_first_run }}",
+                             last_run:"{{ record.format_last_run }}",
                              status:"{{ record.status_name }}",
                              user:"{{ record.user }}",
                              criteria:"{{ record.criteria_html|safe }}",
@@ -70,18 +70,50 @@
 {% block content %}
     {% if history %}
         <div id="results-container" class="container-fluid">
+            <div class="block-centered" style="text-align:center">
+                <div class="btn-group" id="toggle_event_editing">
+                  <button type="button" class="btn btn-info refresh_active">Refresh ON</button>
+                  <button type="button" class="btn btn-default refresh_inactive">Refresh OFF</button>
+                </div>
+            </div>
             <div id="sort" class="row-fluid yui3-skin-sam" align="center">
             </div>
         </div>
     {% endif %}
-    <P></P>
     <script type="text/javascript">
-        (function refresh() {
-             setTimeout(function() {
-                  location.reload();
-                  }, 30000);
-              }
-        )();
+        // from http://stackoverflow.com/questions/21315840/\
+        // adding-start-stop-functionality-to-auto-refresh-code
+        // toggle button from example @ http://jsfiddle.net/hmgyu371/
+        var defaultTimeout = 60000;
+        var myRefreshTimeout;
+
+
+        // Function to refresh the page at specified interval.
+        function startRefresh(refreshPeriod) {
+            myRefreshTimeout = setTimeout("window.location.reload();",refreshPeriod);
+            console.log("Starting auto refresh with " + defaultTimeout + " timeout.");
+        }
+
+        /** Function to stop refreshing the page. **/
+        function stopRefresh() {
+            clearTimeout(myRefreshTimeout);
+            window.location.hash = 'stop'
+            console.log("Stopping page auto refresh.");
+
+        }
+
+        $('#toggle_event_editing button').click(function(){
+            if($(this).hasClass('refresh_active') || $(this).hasClass('refresh_inactive')){
+                stopRefresh();
+            }else{
+                startRefresh(defaultTimeout);
+            }
+        /* reverse refresh status */
+        $('#toggle_event_editing button').eq(0).toggleClass('null_refresh_inactive refresh_active btn-default btn-info');
+        $('#toggle_event_editing button').eq(1).toggleClass('refresh_inactive null_refresh_active btn-info btn-default');
+        });
+
+        startRefresh(defaultTimeout);
     </script>
 {% endblock %}
 
