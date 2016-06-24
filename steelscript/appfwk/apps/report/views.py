@@ -400,7 +400,7 @@ class ReportView(GenericReportView):
                          (report_slug, report_def))
 
             if settings.REPORT_HISTORY_ENABLED:
-                create_report_history(request, report)
+                create_report_history(request, report, widgets)
 
             return JsonResponse(report_def, safe=False)
         else:
@@ -546,14 +546,15 @@ class ReportPrintView(GenericReportView):
         return self.render_html(report, request, namespace, report_slug, True)
 
 
-def create_report_history(request, report):
+def create_report_history(request, report, widgets):
     """Create a report history object.
 
     :param request: request object
     :param report: Report object
+    :param widgets: List of widget definitions
     """
 
-    # create the form to derive criteria
+    # create the form to derive criteria for bookmark only
     # the form in the calling context can not be used
     # because it does not include hidden fields
     fields_by_section = report.collect_fields_by_section()
@@ -602,17 +603,48 @@ def create_report_history(request, report):
 
     last_run = datetime.datetime.now(timezone)
 
+    # iterate over the passed in widget definitions and use those
+    # to calculate the actual job handles
+    # since these will mimic what gets used to create the actual jobs,
+    # the criteria will match more closely than using the report-level
+    # criteria data
     handles = []
-    for widget in report.widgets():
-        form_criteria = form.criteria()
-        widget_table = widget.table()
-        form_criteria = form_criteria.build_for_table(widget_table)
-        try:
-            form_criteria.compute_times()
-        except ValueError:
-            pass
+    for widget in widgets:
+        wobj = Widget.objects.get(
+            slug=widget['widgetslug'],
+            section__in=Section.objects.filter(report=report)
+        )
 
-        handles.append(Job._compute_handle(widget_table, form_criteria))
+        fields = wobj.collect_fields()
+        form = TableFieldForm(fields, use_widgets=False,
+                              hidden_fields=report.hidden_fields,
+                              include_hidden=True,
+                              data=widget['criteria'], files=request.FILES)
+
+        if form.is_valid():
+            # parse time and localize to user profile timezone
+            timezone = get_timezone(request)
+            form.apply_timezone(timezone)
+
+            form_criteria = form.criteria()
+            widget_table = wobj.table()
+            form_criteria = form_criteria.build_for_table(widget_table)
+            try:
+                form_criteria.compute_times()
+            except ValueError:
+                pass
+
+            handle = Job._compute_handle(widget_table, form_criteria)
+            logger.debug('ReportHistory: adding handle %s for widget_table %s'
+                         % (handle, widget_table))
+            handles.append(handle)
+
+        else:
+            # log error, but don't worry about it for adding to RH
+            logger.warning("Error while calculating job handle for Widget %s, "
+                           "internal criteria form is invalid: %s" %
+                           (wobj, form.errors.as_text()))
+
     job_handles = ','.join(handles)
 
     if request.user.is_authenticated():
