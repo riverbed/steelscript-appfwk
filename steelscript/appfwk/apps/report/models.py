@@ -325,8 +325,8 @@ class ReportHistory(models.Model):
             return
 
     def __unicode__(self):
-        return ("<Report History %s %s/%s %s>"
-                % (self.id, self.namespace, self.slug, self.bookmark))
+        return ("<Report History %s %s/%s>"
+                % (self.id, self.namespace, self.slug))
 
     def __repr__(self):
         return unicode(self)
@@ -365,7 +365,7 @@ class ReportHistory(models.Model):
             rstr += tr_line.format(k,
                                    self.criteria[k])
         rstr += '</table>'
-        logger.debug("criteria_html: {0}".format(rstr))
+        # logger.debug("criteria_html: {0}".format(rstr))
         return rstr
 
 
@@ -388,16 +388,24 @@ def update_report_history_status_on_complete(sender, **kwargs):
         job_handles__contains=sender.handle).exclude(
         status__in=[ReportStatus.ERROR, ReportStatus.COMPLETE])
 
+    logger.debug('Report history objects found with Sender handle %s: %s' %
+                 (sender.handle, rhs))
+
     for rh in rhs:
         jobs = Job.objects.filter(handle__in=rh.job_handles.split(','))
 
+        logger.debug('Jobs found for ReportHistory %s: %s' % (rh, jobs))
+
         if any([job.status == Job.ERROR for job in jobs]):
+            logger.debug('Updating status of ReportHistory %s to ERROR' % rh)
             rh.update_status(ReportStatus.ERROR)
 
         elif any([job.status == Job.RUNNING for job in jobs]):
+            logger.debug('Updating status of ReportHistory %s to RUNNING' % rh)
             rh.update_status(ReportStatus.RUNNING)
 
         elif jobs and all([job.status == Job.COMPLETE for job in jobs]):
+            logger.debug('Updating status of ReportHistory %s to COMPLETE' % rh)
             rh.update_status(ReportStatus.COMPLETE)
 
 
@@ -416,6 +424,7 @@ def update_report_history_status_on_error(sender, **kwargs):
         status__in=[ReportStatus.ERROR, ReportStatus.COMPLETE])
 
     for rh in rhs:
+        logger.debug('Updating status of ReportHistory %s to ERROR' % rh)
         rh.update_status(ReportStatus.ERROR)
 
 
