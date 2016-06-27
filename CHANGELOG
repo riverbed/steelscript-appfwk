@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+[1.1]
+ * Criteria overrides via URL parameters.
+ * Report Bookmarking
+ * Enhanced auto reload reports
+ * REST interface updates
+ * Web UI changes and fixes
+ * Web UI - Report history added
+ * Web UI - Add guest read only access
+ * Web UI - Report level submenus.
+ * Dramatically improved system reliability
+ * Reliability - cache improvements.
+ * Reliability - Race condition checks.
+ * Reliability - Database lock prevention.
+ * Metric datasource added.
+ * Metrics  DS - Support for push and pull outside data sources
+ * Stacked widget support added to model.
+ * Add static (Database based) reports.
+ * Add support for banners and system wide announcements.
+ * Added weather overlay
+
 [1.0]
  * Refactor Jobs to use different task models: celery, sync, and async
    * Job methods now return QueryComplete, QueryContinue, or QueryError's
