@@ -9,8 +9,8 @@
 
 rvbd.widgets.maps = {};
 
-rvbd.widgets.maps.MapWidget = function (postUrl, isEmbedded, div, id, slug, options, criteria) {
-    rvbd.widgets.Widget.apply(this, [postUrl, isEmbedded, div, id, slug, options, criteria]);
+rvbd.widgets.maps.MapWidget = function (postUrl, isEmbedded, div, id, slug, options, criteria, dataCache) {
+    rvbd.widgets.Widget.apply(this, [postUrl, isEmbedded, div, id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.maps.MapWidget.prototype = Object.create(rvbd.widgets.Widget.prototype)
 
@@ -38,8 +38,17 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data)
 
     L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', {
         subdomains: ['otile1', 'otile2', 'otile3', 'otile4'],
-        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Tiles Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">',        
+        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Tiles Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">',
     }).addTo(map);
+
+    // If we have the weather layer enabled
+    if (rvbd.report.weatherWidget.enabled) {
+        // Add a URL parameter which will invalidate the image cache every 15 minutes
+        rvbd.report.weatherWidget.url = appendCurrentTimeUrlParam(rvbd.report.weatherWidget.url, rvbd.report.weatherWidget.timeout);
+        // Then add our layer to the map
+        L.tileLayer(rvbd.report.weatherWidget.url).addTo(map);
+    }
+
 
     if (data.minbounds) {
         bounds = new L.LatLngBounds(
@@ -56,7 +65,10 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data)
         bounds.extend(c.center)
 
         valStr = (c.formatter ? rvbd.formatters[c.formatter](c.value, 2)
-                              : c.value) + c.units;
+                              : c.value);
+        if (c.units) {
+            valStr = valStr + ' ' + c.units;
+        }
 
         title = c.title + '\n' + valStr;
 

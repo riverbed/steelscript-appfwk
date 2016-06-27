@@ -13,8 +13,19 @@
               <li class="dropdown active">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown"> Reports <b class="caret"></b></a>
                 <ul class="dropdown-menu">
-                  {% for d in reports %}
-                  <li><a href="{% url 'report-view' d.namespace d.slug %}">{{ d.title }}</a></li>
+                  {% for ns in reports %}
+                      {% if ns|length == 2 %}
+                          <li class="dropdown-submenu">
+                              <a tabindex="-1" href="#"><b>{{ ns.0|lower }}</b></a>
+                              <ul class="dropdown-menu">
+                                  {% for r in ns.1 %}
+                                      <li><a href="{% url 'report-view' r.namespace r.slug %}">{{ r.title }}</a></li>
+                                  {% endfor %}
+                              </ul>
+                          </li>
+                      {% else %}
+                          <li><a href="{% url 'report-view' ns.namespace ns.slug %}">{{ ns.title }}</a></li>
+                      {% endif %}
                   {% endfor %}
                 </ul>
               </li>
@@ -23,9 +34,11 @@
                     <a href="{% url 'report-view-root' %}"> Reports </a>
                 </li>
               {% endif %}
+              {% if user.is_authenticated %}
               <li class="dropdown active">
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown"> Help <b class="caret"></b></a>
                   <ul class="dropdown-menu">
+                      <li><a href="/help/about">About App Framework</a></li>
                       <li><a href="/help/netprofiler">NetProfiler Columns</a></li>
                       <li><a href="/help/netshark">NetShark Columns</a></li>
                       <li class="divider"></li>
@@ -35,6 +48,7 @@
                       <li><a href="https://support.riverbed.com/apis/steelscript/appfwk/overview.html">Docs: SteelScript App Framework</a></li>
                   </ul>
               </li>
+              {% endif %}
               {% if developer and user.is_superuser %}
               <li class="dropdown active">
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown"> Developer <b class="caret"></b></a>
@@ -58,7 +72,13 @@
 
         {% block login %}
                 <small id="report-datetime" class="text-info pull-right">{% now "jS F Y H:i:s" %}</small><br>
-                <small class="text-info pull-right"><span id="report-timezone"><a id='update-tz' href='/preferences/user/?next={{ request.path }}'>{{ TIME_ZONE }}</a></span></small>
+                <small class="text-info pull-right"><span id="report-timezone">
+                    {% if user.is_authenticated %}
+                        <a id='update-tz' href='/preferences/user/?next={{ request.path }}'>{{ TIME_ZONE }}</a>
+                    {% else %}
+                        {{ TIME_ZONE }}
+                    {% endif %}
+                </span></small>
         {% endblock %}
 
 {% block content %}{% endblock %}

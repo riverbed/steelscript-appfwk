@@ -94,7 +94,7 @@ rvbd.formatters = {
 
 rvbd.widgets = {};
 
-rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteria) {
+rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteria, dataCache) {
     var self = this;
 
     self.postUrl = urls.postUrl;
@@ -105,7 +105,12 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
     self.options = options;
     self.criteria = criteria;
 
+    if (dataCache) {
+      self.dataCache = JSON.parse(dataCache);
+    }
+
     self.status = 'running';
+    self.asyncID = null;
     self.lastUpdate = {};     // object datetime/timezone of last update
 
     var $div = $(div);
@@ -113,7 +118,6 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
     $div.attr('id', 'chart_' + id)
         .addClass('widget blackbox span' + (isEmbedded ? '12' : options.width))
         .text("Widget " + id);
-
     if (options.height) {
         $div.height(options.height);
     }
@@ -122,7 +126,20 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
         .showLoading()
         .setLoading(0);
 
-    self.postRequest(criteria);
+    if (!self.dataCache) {
+      // If we are not using the cached report, follow normal
+      // post request sequence
+      self.postRequest(criteria);
+    } else if (self.dataCache.status == 'error') {
+      // No Widget Cache data exists
+      self.displayError(self.dataCache);
+      self.status = 'error';
+    } else {
+      // If we are using the cached report, load the data immediately
+      $(self.div).hideLoading();
+      self.render(self.dataCache);
+      self.status = 'complete';
+    }
 };
 
 rvbd.widgets.Widget.prototype = {
@@ -137,7 +154,7 @@ rvbd.widgets.Widget.prototype = {
             data: {criteria: JSON.stringify(criteria)},
             success: function (data, textStatus) {
                 self.jobUrl = data.joburl;
-                setTimeout(function () {
+                self.asyncID = setTimeout(function () {
                     self.getData(criteria);
                 }, 1000);
             },
@@ -181,7 +198,7 @@ rvbd.widgets.Widget.prototype = {
                 break;
             default:
                 $(self.div).setLoading(response.progress);
-                setTimeout(function() {
+                self.asyncID = setTimeout(function() {
                     self.getData(criteria, self.processResponse);
                 }, 1000);
         }
@@ -199,7 +216,7 @@ rvbd.widgets.Widget.prototype = {
             data: {criteria: JSON.stringify(criteria)},
             success: function (data, textStatus) {
                 self.jobUrl = data.joburl;
-                setTimeout(function () {
+                self.asyncID = setTimeout(function () {
                     self.getDataAsync(criteria);
                 }, 1000);
             },
@@ -240,7 +257,7 @@ rvbd.widgets.Widget.prototype = {
                 self.processResponse(criteria, response, textStatus)
                 break;
             default:
-                setTimeout(function() {
+                self.asyncID = setTimeout(function() {
                     self.getDataAsync(criteria);
                 }, 1000);
         }
@@ -271,9 +288,25 @@ rvbd.widgets.Widget.prototype = {
         });
     },
 
+    cancelAsync: function() {
+        var self = this;
+
+        // cancel any pending async operations
+        if (self.asyncID != null) {
+            console.log('Cancelling async for id ' + self.asyncID);
+            clearTimeout(self.asyncID);
+            self.asyncID = null;
+        }
+    },
+
     reloadWidget: function() {
         // update whole widget with latest information
         var self = this;
+
+        // avoid multiple request threads
+        if (self.status == 'running') {
+            self.cancelAsync();
+        }
 
         self.status = 'running';
 
@@ -352,7 +385,8 @@ rvbd.widgets.Widget.prototype = {
         var menuItems = [];
 
         // Don't include the embed option when already embedded!
-        if (!rvbd.report.isEmbedded) {
+        // or if not explicitly asked for
+        if (!rvbd.report.isEmbedded && rvbd.report.embeddable_widgets) {
             menuItems.push('<a tabindex="-1" class="get-embed" href="#">Embed This Widget...</a>');
         }
 
@@ -636,8 +670,8 @@ rvbd.widgets.Widget.prototype = {
 
 rvbd.widgets.raw = {};
 
-rvbd.widgets.raw.TableWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
-    rvbd.widgets.Widget.apply(this, [postUrl, isEmbedded, div, id, slug, options, criteria]);
+rvbd.widgets.raw.TableWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria, dataCache) {
+    rvbd.widgets.Widget.apply(this, [postUrl, isEmbedded, div, id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.raw.TableWidget.prototype = Object.create(rvbd.widgets.Widget.prototype);
 
@@ -673,5 +707,40 @@ rvbd.widgets.raw.TableWidget.prototype.render = function(data) {
 rvbd.formatHealth = function(v) {
     return '<div class="' + v + '-circle"></div>';
 };
+
+/*
+To create a colored circle with optional text and a tooltip
+*/
+rvbd.formatHealthWithHover = function(v) {
+/*
+    Argument v is a ':' separated concatenation of 3 strings s1:s2:s3 where:
+
+    s1 is the color of the circle and is one of 'red','green','yellow','grey'.
+    s2 is a text that will appear next to the circle.
+    s3 is a text that will appear as a tooltip when hovering the mouse over the s1 circle.
+
+    A single string without ':' is treated as s1 only (no text no tooltip).
+    A string with only one ':' is treated as s1:s2 (no tooltip).
+    A s1::s3 string is a valid way of having a tooltip but no text.
+*/
+
+    var arr = v.split(':');
+    var color = arr[0];
+
+    var visible_text = '';
+    var tooltip_text = '';
+
+    if (arr.length > 1 && arr[1] != '') {
+        visible_text = '<div class="info">' + arr[1] + '</div>';
+    }
+
+    if (arr.length > 2 && arr[2] != '') {
+        tooltip_text = '<div class="tooltiptext">' + arr[2] + '</div>';
+    }
+
+    return '<div class="' + color + '-circle wide">' + tooltip_text + visible_text + '</div>'
+};
+
+
 
 })();

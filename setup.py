@@ -8,11 +8,10 @@ import os
 import itertools
 
 try:
-    from setuptools import setup, find_packages, Command
+    from setuptools import setup, find_packages
     packagedata = True
 except ImportError:
     from distutils.core import setup
-    from distutils.cmd import Command
     packagedata = False
 
     def find_packages(where='steelscript', exclude=None):
@@ -74,8 +73,9 @@ http://pythonhosted.org/steelscript/
 
     'install_requires': (
         'Django>=1.7,<1.8',
-        'steelscript>=0.9.5',
-        'steelscript.netprofiler>=0.9.4',
+        'steelscript>=1.1',
+        'steelscript.netprofiler>=1.1',
+        'steelscript.netshark>=1.1',
 
         'djangorestframework==2.3.13',
         'djangorestframework-csv==1.3.3',
@@ -103,6 +103,8 @@ http://pythonhosted.org/steelscript/
         # progressd
         'flask==0.10.1',
         'flask_restful==0.3.2',
+
+        'pinax-announcements>=2.0.3',
     ),
 
     'extras_require': {

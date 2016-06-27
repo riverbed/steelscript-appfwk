@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2015 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% block title %}App Framework: Report History{% endblock %}
+
+{% block header_row %}
+    <h3>Report History</h3>
+{% endblock %}
+
+{% block header %}
+    <script type="text/javascript">
+        $(document).ready( function() {
+            {% if history %}
+                YUI().use("datatable-sort", function(Y) {
+                    cols = [
+                            {key:"namespace", label:"Namespace", sortable:true},
+                            {key:"slug", label:"Report Slug", sortable:true},
+                            {key:"first_run", label:"First Run", sortable:true},
+                            {key:"last_run", label:"Last Run", sortable:true},
+                            {key:"status", label:"Status", sortable:true},
+                            {key:"user", label:"User", sortable:true},
+                            {key:"criteria", label:"Criteria",
+                             sortable:false, allowHTML:true},
+                            {key:"run_count", label:"Run Count", sortable:true},
+                            {key:"run", label:"Run",
+                             sortable:false, allowHTML:true,
+                             formatter:'<a href={value} class="btn btn-info" role="button">Run</a>'},
+
+                    ],
+                    data = [
+                        {% for record in history %}
+                            {namespace:"{{ record.namespace }}",
+                             slug:"{{ record.slug }}",
+                             first_run:"{{ record.format_first_run }}",
+                             last_run:"{{ record.format_last_run }}",
+                             status:"{{ record.status_name }}",
+                             user:"{{ record.user }}",
+                             criteria:"{{ record.criteria_html|safe }}",
+                             run_count:"{{ record.run_count }}",
+                             run:"{{ record.bookmark|safe }}",
+                             },
+                        {% endfor %}
+                    ],
+                    table = new Y.DataTable({
+                        columns: cols,
+                        data: data,
+                        summary: "Report History",
+                    }).render('#sort');
+                });
+            {% endif %}
+        });
+    </script>
+
+    <style type="text/css">
+        .form-inline input {
+            margin-bottom: 5px;
+        }
+    </style>
+
+{% endblock %}
+
+{% block content %}
+    {% if history %}
+        <div id="results-container" class="container-fluid">
+            <div class="block-centered" style="text-align:center">
+                <div class="btn-group" id="toggle_event_editing">
+                  <button type="button" class="btn btn-info refresh_active">Refresh ON</button>
+                  <button type="button" class="btn btn-default refresh_inactive">Refresh OFF</button>
+                </div>
+            </div>
+            <div id="sort" class="row-fluid yui3-skin-sam" align="center">
+            </div>
+        </div>
+    {% endif %}
+    <script type="text/javascript">
+        // from http://stackoverflow.com/questions/21315840/\
+        // adding-start-stop-functionality-to-auto-refresh-code
+        // toggle button from example @ http://jsfiddle.net/hmgyu371/
+        var defaultTimeout = 60000;
+        var myRefreshTimeout;
+
+
+        // Function to refresh the page at specified interval.
+        function startRefresh(refreshPeriod) {
+            myRefreshTimeout = setTimeout("window.location.reload();",refreshPeriod);
+            console.log("Starting auto refresh with " + defaultTimeout + " timeout.");
+        }
+
+        /** Function to stop refreshing the page. **/
+        function stopRefresh() {
+            clearTimeout(myRefreshTimeout);
+            window.location.hash = 'stop'
+            console.log("Stopping page auto refresh.");
+
+        }
+
+        $('#toggle_event_editing button').click(function(){
+            if($(this).hasClass('refresh_active') || $(this).hasClass('refresh_inactive')){
+                stopRefresh();
+            }else{
+                startRefresh(defaultTimeout);
+            }
+        /* reverse refresh status */
+        $('#toggle_event_editing button').eq(0).toggleClass('null_refresh_inactive refresh_active btn-default btn-info');
+        $('#toggle_event_editing button').eq(1).toggleClass('refresh_inactive null_refresh_active btn-info btn-default');
+        });
+
+        startRefresh(defaultTimeout);
+    </script>
+{% endblock %}
+

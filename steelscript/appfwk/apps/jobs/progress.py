@@ -4,6 +4,7 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+import time
 import logging
 
 from django.conf import settings
@@ -25,11 +26,20 @@ class ProgressDaemon(object):
         try:
             return self.conn.json_request(method, url, **kwargs)
         except ConnectionError:
-            raise RvbdException(
-                "Error connecting to appfwk service 'progressd': "
-                "try restarting the service (sudo service progressd restart) "
-                "or contact your administrator for assistance."
-            )
+            # In case progressd is restarting due to daily logrotate
+            # resending the request after 10 seconds
+            logger.warning("Waiting %s seconds before reconnecting progressd"
+                           % settings.PROGRESSD_CONN_TIMEOUT)
+            time.sleep(settings.PROGRESSD_CONN_TIMEOUT)
+            try:
+                return self.conn.json_request(method, url, **kwargs)
+            except ConnectionError:
+                raise RvbdException(
+                    "Error connecting to appfwk service 'progressd': "
+                    "try restarting the service "
+                    "(sudo service progressd restart) "
+                    "or contact your administrator for assistance."
+                )
 
     def get(self, id_, attr=None):
         r = self._request('GET', '/jobs/items/%d/' % id_)

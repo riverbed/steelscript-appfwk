@@ -8,6 +8,8 @@ import re
 import os
 import sys
 import cgi
+import math
+import time
 import json
 import uuid
 import shutil
@@ -32,8 +34,8 @@ from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 
 from rest_framework import generics, views
-from rest_framework.decorators import api_view
-from rest_framework.permissions import IsAdminUser
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
@@ -42,7 +44,7 @@ from rest_framework.authentication import (SessionAuthentication,
 from steelscript.appfwk.apps.jobs.models import Job
 
 from steelscript.common.timeutils import round_time, timedelta_total_seconds, \
-    parse_timedelta
+    parse_timedelta, sec_string_to_datetime, datetime_to_seconds
 from steelscript.commands.steel import shell, ShellFailed
 from steelscript.appfwk.apps.datasource.serializers import TableSerializer
 from steelscript.appfwk.apps.datasource.forms import TableFieldForm
@@ -51,7 +53,9 @@ from steelscript.appfwk.apps.geolocation.models import Location, LocationIP
 from steelscript.appfwk.apps.preferences.models import (SystemSettings,
                                                         AppfwkUser)
 from steelscript.appfwk.apps.report.models import (Report, Section, Widget,
-                                                   WidgetJob, WidgetAuthToken)
+                                                   WidgetJob, WidgetAuthToken,
+                                                   WidgetDataCache,
+                                                   ReportHistory, ReportStatus)
 from steelscript.appfwk.apps.report.serializers import ReportSerializer, \
     WidgetSerializer
 from steelscript.appfwk.apps.report.utils import create_debug_zipfile
@@ -63,7 +67,8 @@ from steelscript.appfwk.project.middleware import URLTokenAuthentication
 logger = logging.getLogger(__name__)
 
 
-@api_view(['GET'])
+@api_view(('GET',))
+@permission_classes((IsAdminUser,))
 def reload_config(request, namespace=None, report_slug=None):
     """ Reload all reports or one specific report
     """
@@ -114,6 +119,13 @@ def rm_file(filepath):
         pass
 
 
+def get_timezone(request):
+        if request.user.is_authenticated():
+            return pytz.timezone(request.user.timezone)
+        else:
+            return pytz.timezone(settings.GUEST_USER_TIME_ZONE)
+
+
 class GenericReportView(views.APIView):
 
     def get_media_params(self, request):
@@ -133,12 +145,76 @@ class GenericReportView(views.APIView):
         }
         return {'meta': meta, 'widgets': widgets}
 
+    def is_field_cls(self, field, cls_name):
+        """Determine if a field is of a certain field class."""
+        return (field.field_cls and
+                field.field_cls.__name__ == cls_name)
+
+    def update_criteria_from_bookmark(self, report, request, fields):
+        """ Update fields' initial values using bookmark. """
+        request_data = request.GET.dict()
+        override_msg = 'Setting criteria field %s to %s.'
+
+        # Initialize report.live as False
+        report.live = False
+
+        for k, v in request_data.iteritems():
+            if k == 'auto_run':
+                report.auto_run = (v.lower() == 'true')
+                continue
+
+            if k == 'live':
+                if report.static and v.lower() == 'true':
+                    report.live = True
+                continue
+
+            field = fields.get(k, None)
+            if field is None:
+                logger.warning("Keyword %s in bookmark does not match any "
+                               "criteria field." % k)
+                continue
+
+            if self.is_field_cls(field, 'DateTimeField'):
+                # Only accepts epoch seconds
+                if not v.isdigit():
+                    field.error_msg = ("%s '%s' is invalid." % (k, v))
+                    continue
+
+                # Needs to set delta derived from ceiling of current time
+                # Otherwise the resulting timestamp would advance 1 sec
+                # vs the original timestamp from bookmark
+                delta = int(math.ceil(time.time())) - int(v)
+                if delta < 0:
+                    field.error_msg = ("%s %s is later than current time."
+                                       % (k, v))
+                    continue
+
+                dt_utc = sec_string_to_datetime(int(v))
+                tz = get_timezone(request)
+                dt_local = dt_utc.astimezone(tz)
+
+                logger.debug(override_msg % (k, dt_local))
+                # Setting initial date as 'mm/dd/yy'
+                field.field_kwargs['widget_attrs']['initial_date'] = \
+                    dt_local.strftime('%m/%d/%Y')
+                # Setting initial time as 'hh:mm:ss'
+                field.field_kwargs['widget_attrs']['initial_time'] = \
+                    dt_local.strftime('%H:%M:%S')
+
+            elif self.is_field_cls(field, 'BooleanField'):
+                logger.debug(override_msg % (k, v.lower() == 'true'))
+                field.initial = (v.lower() == 'true')
+
+            else:
+                logger.debug(override_msg % (k, v))
+                field.initial = v
+
     def render_html(self, report, request, namespace, report_slug, isprint):
         """ Render HTML response
         """
-        logging.debug('Received request for report page: %s' % report_slug)
+        logger.debug('Received request for report page: %s' % report_slug)
 
-        if not request.user.profile_seen:
+        if request.user.is_authenticated() and not request.user.profile_seen:
             # only redirect if first login
             return HttpResponseRedirect(reverse('preferences')+'?next=/report')
 
@@ -163,7 +239,7 @@ class GenericReportView(views.APIView):
         if missing_devices:
             missing_devices = ', '.join(list(missing_devices))
 
-        if not request.user.profile_seen:
+        if request.user.is_authenticated() and not request.user.profile_seen:
             # only redirect if first login
             return HttpResponseRedirect(reverse('preferences')+'?next=/report')
 
@@ -181,6 +257,9 @@ class GenericReportView(views.APIView):
         # Merge fields into a single dict for use by the Django Form # logic
         all_fields = SortedDict()
         [all_fields.update(c) for c in fields_by_section.values()]
+
+        self.update_criteria_from_bookmark(report, request, all_fields)
+
         form = TableFieldForm(all_fields,
                               hidden_fields=report.hidden_fields,
                               initial=form_init)
@@ -212,6 +291,8 @@ class GenericReportView(views.APIView):
              'developer': system_settings.developer,
              'maps_version': system_settings.maps_version,
              'maps_api_key': system_settings.maps_api_key,
+             'weather_enabled': system_settings.weather_enabled,
+             'weather_url': system_settings.weather_url,
              'endtime': 'endtime' in form.fields,
              'form': form,
              'section_map': section_map,
@@ -299,7 +380,7 @@ class ReportView(GenericReportView):
             logger.debug('Form cleaned data: %s' % formdata)
 
             # parse time and localize to user profile timezone
-            timezone = pytz.timezone(request.user.timezone)
+            timezone = get_timezone(request)
             form.apply_timezone(timezone)
 
             if formdata['debug']:
@@ -312,10 +393,14 @@ class ReportView(GenericReportView):
             # construct report definition
             now = datetime.datetime.now(timezone)
             widgets = report.widget_definitions(form.as_text())
+
             report_def = self.report_def(widgets, now, formdata['debug'])
 
             logger.debug("Sending widget definitions for report %s: %s" %
                          (report_slug, report_def))
+
+            if settings.REPORT_HISTORY_ENABLED:
+                create_report_history(request, report, widgets)
 
             return JsonResponse(report_def, safe=False)
         else:
@@ -357,22 +442,25 @@ class ReportAutoView(GenericReportView):
             )
             widgets = [w]
         else:
-            widgets = report.widgets().order_by('row', 'col')
+            # Add 'id' to order_by so that stacked widgets will return
+            # with the same order as created
+            widgets = report.widgets().order_by('row', 'col', 'id')
 
         # parse time and localize to user profile timezone
-        timezone = pytz.timezone(request.user.timezone)
+        timezone = get_timezone(request)
         now = datetime.datetime.now(timezone)
 
         # pin the endtime to a round interval if we are set to
         # reload periodically
         minutes = report.reload_minutes
+        offset = report.reload_offset
         if minutes:
             # avoid case of long duration reloads to have large reload gap
             # e.g. 24-hour report will consider 12:15 am or later a valid time
             # to roll-over the time time values, rather than waiting
             # until 12:00 pm
             trimmed = round_time(dt=now, round_to=60*minutes, trim=True)
-            if now - trimmed > datetime.timedelta(minutes=15):
+            if now - trimmed > datetime.timedelta(seconds=offset):
                 now = trimmed
             else:
                 now = round_time(dt=now, round_to=60*minutes)
@@ -398,7 +486,6 @@ class ReportAutoView(GenericReportView):
                 # only consider starttime if its paired with an endtime
                 if 'starttime' in criteria:
                     start = now
-
                     field = form.fields['starttime']
                     initial = field.widget.attrs.get('initial_time', None)
                     if initial:
@@ -413,6 +500,22 @@ class ReportAutoView(GenericReportView):
             widget_def = w.get_definition(criteria)
             widget_defs.append(widget_def)
 
+            # Build the primary key corresponding to static data for this
+            # widget
+            if report.static:
+                rw_id = '-'.join([namespace, report_slug,
+                                  widget_def['widgetslug']])
+                # Add cached widget data if available.
+                try:
+                    data_cache = WidgetDataCache.objects.get(
+                        report_widget_id=rw_id)
+                    widget_def['data'] = data_cache.data
+                except WidgetDataCache.DoesNotExist:
+                    msg = "No widget data cache available with id %s." % rw_id
+                    resp = {'message': msg,
+                            'status': 'error',
+                            'exception': ''}
+                    widget_def['data'] = json.dumps(resp)
         report_def = self.report_def(widget_defs, now)
 
         return JsonResponse(report_def, safe=False)
@@ -441,6 +544,137 @@ class ReportPrintView(GenericReportView):
             raise Http404
 
         return self.render_html(report, request, namespace, report_slug, True)
+
+
+def create_report_history(request, report, widgets):
+    """Create a report history object.
+
+    :param request: request object
+    :param report: Report object
+    :param widgets: List of widget definitions
+    """
+
+    # create the form to derive criteria for bookmark only
+    # the form in the calling context can not be used
+    # because it does not include hidden fields
+    fields_by_section = report.collect_fields_by_section()
+    all_fields = SortedDict()
+    [all_fields.update(c) for c in fields_by_section.values()]
+
+    form = TableFieldForm(all_fields,
+                          hidden_fields=report.hidden_fields,
+                          include_hidden=True,
+                          data=request.POST,
+                          files=request.FILES)
+
+    # parse time and localize to user profile timezone
+    timezone = get_timezone(request)
+    form.apply_timezone(timezone)
+
+    form_data = form.cleaned_data
+
+    url = request._request.path + '?'
+
+    # form_data contains fields that don't belong to url
+    # e.g. ignore_cache, debug
+    # thus use compute_field_precedence method to filter those
+    table_fields = {k: form_data[k] for k in form.compute_field_precedence()}
+
+    # Convert field values into strings suitable for bookmark
+    def _get_url_fields(flds):
+        for k, v in flds.iteritems():
+            if k in ['starttime', 'endtime']:
+                yield (k, str(datetime_to_seconds(v)))
+            elif k in ['duration', 'resolution']:
+                try:
+                    yield (k, str(int(timedelta_total_seconds(v))))
+                except AttributeError:
+                    # v is of special value, not a string of some duration
+                    yield (k, v.replace(' ', '+'))
+            else:
+                # use + as encoded white space
+                yield (k, str(v).replace(' ', '+'))
+        yield ('auto_run', 'true')
+
+    url_fields = ['='.join([k, v]) for k, v in _get_url_fields(table_fields)]
+
+    # Form the bookmark link
+    url += '&'.join(url_fields)
+
+    last_run = datetime.datetime.now(timezone)
+
+    # iterate over the passed in widget definitions and use those
+    # to calculate the actual job handles
+    # since these will mimic what gets used to create the actual jobs,
+    # the criteria will match more closely than using the report-level
+    # criteria data
+    handles = []
+    for widget in widgets:
+        wobj = Widget.objects.get(
+            slug=widget['widgetslug'],
+            section__in=Section.objects.filter(report=report)
+        )
+
+        fields = wobj.collect_fields()
+        form = TableFieldForm(fields, use_widgets=False,
+                              hidden_fields=report.hidden_fields,
+                              include_hidden=True,
+                              data=widget['criteria'], files=request.FILES)
+
+        if form.is_valid():
+            # parse time and localize to user profile timezone
+            timezone = get_timezone(request)
+            form.apply_timezone(timezone)
+
+            form_criteria = form.criteria()
+            widget_table = wobj.table()
+            form_criteria = form_criteria.build_for_table(widget_table)
+            try:
+                form_criteria.compute_times()
+            except ValueError:
+                pass
+
+            handle = Job._compute_handle(widget_table, form_criteria)
+            logger.debug('ReportHistory: adding handle %s for widget_table %s'
+                         % (handle, widget_table))
+            handles.append(handle)
+
+        else:
+            # log error, but don't worry about it for adding to RH
+            logger.warning("Error while calculating job handle for Widget %s, "
+                           "internal criteria form is invalid: %s" %
+                           (wobj, form.errors.as_text()))
+
+    job_handles = ','.join(handles)
+
+    if request.user.is_authenticated():
+        user = request.user.username
+    else:
+        user = settings.GUEST_USER_NAME
+
+    logger.debug('Creating ReportHistory for user %s at URL %s' % (user, url))
+
+    ReportHistory.create(namespace=report.namespace,
+                         slug=report.slug,
+                         bookmark=url,
+                         first_run=last_run,
+                         last_run=last_run,
+                         job_handles=job_handles,
+                         user=user,
+                         criteria=table_fields,
+                         run_count=1)
+
+
+class ReportHistoryView(views.APIView):
+    """ Display a list of report history. """
+
+    renderer_classes = (TemplateHTMLRenderer, )
+    permission_classes = (IsAuthenticated, )   # no guests
+
+    def get(self, request):
+        return Response({'history': ReportHistory.objects.order_by('-last_run'),
+                         'status': ReportStatus},
+                        template_name='history.html')
 
 
 class ReportEditor(views.APIView):
@@ -780,7 +1014,7 @@ class WidgetJobsList(views.APIView):
             logger.debug('Form cleaned data: %s' % formdata)
 
             # parse time and localize to user profile timezone
-            timezone = pytz.timezone(request.user.timezone)
+            timezone = get_timezone(request)
             form.apply_timezone(timezone)
 
             try:
@@ -881,6 +1115,20 @@ geolocation documentation</a> for more information.'''
                 else:
                     data = widget_func(widget, job, tabledata)
                     resp = job.json(data)
+                    # Cache data before sending it using the
+                    # report slug + widget slug as the primary key
+
+                    # check if the report is static
+                    report = get_object_or_404(Report, namespace=namespace,
+                                               slug=report_slug)
+
+                    if data and report.static:
+                        rw_id = '-'.join([namespace, report_slug,
+                                          widget_slug])
+                        widget_data = WidgetDataCache(report_widget_id=rw_id,
+                                                      data=json.dumps(data))
+                        widget_data.save()
+                        logger.debug("Cached widget %s" % rw_id)
                     logger.debug("%s complete" % str(wjob))
 
             except:

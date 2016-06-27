@@ -4,6 +4,7 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+from urlparse import urlparse
 
 from django import forms
 from django.contrib.auth import get_user_model
@@ -70,9 +71,12 @@ class SystemSettingsForm(forms.ModelForm):
     class Meta:
         model = SystemSettings
         fields = ('ignore_cache', 'developer', 'maps_version',
-                  'maps_api_key', 'global_error_handler')
+                  'maps_api_key', 'global_error_handler',
+                  'weather_enabled', 'weather_url')
         widgets = {'maps_version': forms.HiddenInput(),
-                   'maps_api_key': forms.HiddenInput()}
+                   'maps_api_key': forms.HiddenInput(),
+                   'weather_enabled': forms.HiddenInput(),
+                   'weather_url': forms.HiddenInput()}
 
     def clean(self):
         # check for API key if maps are either FREE or BUSINESS
@@ -87,5 +91,31 @@ class SystemSettingsForm(forms.ModelForm):
                 msg = u'Usage of Business version of Google Maps requires API Key'
             self._errors['maps_api_key'] = self.error_class([msg])
             del cleaned_data['maps_api_key']
+
+        # Check if maps are disabled but weather is enabled
+        if not api_key and version == 'DISABLED':
+            msg = u'Weather layers cannot be enabled while maps are disabled'
+            self._errors['weather_enabled'] = self.error_class([msg])
+            del cleaned_data['weather_enabled']
+
+        # Get our weather related variables
+        weather_enabled = cleaned_data.get('weather_enabled')
+        weather_url = cleaned_data.get('weather_url')
+        # Check if weather is enabled
+        if weather_enabled:
+            # Validate that the weather url is valid
+            parsed = urlparse(weather_url)
+            if not all([parsed.scheme, parsed.netloc]):
+                msg = u'URL must resemble: http://example.com/{x}/{y}/{z}'
+                self._errors['weather_url'] = self.error_class([msg])
+                del cleaned_data['weather_url']
+            else:
+                # Validate that the weather url contains {x}, {y}, and {z}
+                coordinates = ['{x}', '{y}', '{z}']
+                if not all(coordinate in weather_url
+                           for coordinate in coordinates):
+                    msg = u'Weather URL must contain {x} {y} and {z}'
+                    self._errors['weather_url'] = self.error_class([msg])
+                    del cleaned_data['weather_url']
 
         return cleaned_data

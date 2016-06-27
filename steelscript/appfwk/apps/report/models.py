@@ -6,6 +6,7 @@
 
 
 import logging
+from datetime import datetime
 
 from django.conf import settings
 from django.db import models
@@ -16,6 +17,7 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.core.urlresolvers import reverse
 from django.utils.datastructures import SortedDict
+from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 from model_utils.managers import InheritanceManager
 from steelscript.appfwk.apps.jobs.models import Job
@@ -27,6 +29,11 @@ from steelscript.appfwk.apps.datasource.models import Table, TableField
 from steelscript.appfwk.libs.fields import \
     PickledObjectField, SeparatedValuesField
 from steelscript.appfwk.apps.preferences.models import AppfwkUser
+from steelscript.appfwk.apps.jobs.models import TransactionLock
+
+from steelscript.appfwk.apps.alerting.models import (post_data_save,
+                                                     error_signal)
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,7 +65,10 @@ class Report(models.Model):
     # create an 'auto-load'-type report which uses default criteria
     # values only, and optionally set a refresh timer
     hide_criteria = models.BooleanField(default=False)
-    reload_minutes = models.IntegerField(default=0)  # 0 means no reloads
+    reload_minutes = models.IntegerField(default=0)     # 0 means no reloads
+    reload_offset = models.IntegerField(default=15*60)  # secs, default 15 min
+    auto_run = models.BooleanField(default=False)
+    static = models.BooleanField(default=False)
 
     @classmethod
     def create(cls, title, **kwargs):
@@ -79,6 +89,23 @@ class Report(models.Model):
         :param bool hide_criteria: Set to true to hide criteria and run on load
         :param int reload_minutes: If non-zero, report will be reloaded
             automatically at the given duration in minutes
+        :param bool reload_offset: In seconds, the amount of time to consider
+            a reload interval to have passed.  This avoids waiting until
+            half of the reload interval before turning over to next interval.
+            This also affects how the report gets reloaded in the browser,
+            if this offset value is smaller than the interval, it will be used
+            to delay the report reloads.
+            For example, given ``reload_minutes`` of ``1`` and
+            ``reload_offset`` of ``10``, the browser will reload all the
+            widgets every minute at 10 seconds past the minute.
+
+        :param bool auto_run: Set to true to run report automatically.  This
+            will only run the report once, versus the reload options which
+            setup continuous report reloads.
+
+        :param bool static: Set to true to read data from WidgetDataCache.
+            To populate WidgetDataCache for static reports, run the report by
+            setting live=True in url.
 
         """
 
@@ -227,11 +254,178 @@ class Report(models.Model):
         """
         definitions = []
 
-        for w in self.widgets().order_by('row', 'col'):
+        # Add 'id' to order by so that stacked widgets will
+        # return with the same order as created
+        for w in self.widgets().order_by('row', 'col', 'id'):
             widget_def = w.get_definition(criteria)
             definitions.append(widget_def)
 
         return definitions
+
+
+class ReportStatus(object):
+    NEW = 0
+    RUNNING = 1
+    COMPLETE = 2
+    ERROR = 3
+
+
+class ReportHistory(models.Model):
+    """ Define a record history of running report."""
+    namespace = models.CharField(max_length=50)
+    slug = models.CharField(max_length=50)
+    bookmark = models.CharField(max_length=400)
+    first_run = models.DateTimeField()
+    last_run = models.DateTimeField()
+    job_handles = models.TextField()
+    user = models.CharField(max_length=50)
+    criteria = PickledObjectField()
+    run_count = models.IntegerField()
+
+    status_choices = ((ReportStatus.NEW, "New"),
+                      (ReportStatus.RUNNING, "Running"),
+                      (ReportStatus.COMPLETE, "Complete"),
+                      (ReportStatus.ERROR, "Error"))
+
+    status = models.IntegerField(
+        default=ReportStatus.NEW,
+        choices=status_choices)
+
+    @classmethod
+    def create(cls, **kwargs):
+        """ Create a new report history object and save it to database.
+        :param str namespace: name of one set of report slugs
+        :param str slug: the slug of the report
+        :param str bookmark: the bookmark link of the report
+        :param datetime last_run: Time when the report with the same criteria
+          ran at the first time
+        :param datetime last_run: Time when the report with the same criteria
+          ran last time
+        :param str job_handles: comma separated job handle strings of the
+          report
+        :param str user: name of the user who ran the report
+        :param dict criteria: criteria fields that the report is running with
+        :param int run_count: the number of times the report has run with the
+          same criteria
+        :return: the created report history object
+        """
+        job_handles = kwargs.get('job_handles')
+        try:
+            rh_obj = cls.objects.get(job_handles=job_handles)
+        except ObjectDoesNotExist:
+            rh_obj = cls(**kwargs)
+            rh_obj.save()
+        else:
+            with TransactionLock(rh_obj, '%s_create' % rh_obj):
+                rh_obj.status = ReportStatus.NEW
+                rh_obj.last_run = kwargs.get('last_run')
+                rh_obj.run_count += 1
+                rh_obj.save()
+        finally:
+            return
+
+    def __unicode__(self):
+        return ("<Report History %s %s/%s>"
+                % (self.id, self.namespace, self.slug))
+
+    def __repr__(self):
+        return unicode(self)
+
+    def update_status(self, status):
+        if self.status != status:
+            with TransactionLock(self, '%s.update_status' % self):
+                self.status = status
+                self.save()
+
+    def format_ts(self, ts):
+        ltime = timezone.localtime(ts)
+        return ltime.strftime("%Y/%m/%d %H:%M:%S")
+
+    @property
+    def format_last_run(self):
+        return self.format_ts(self.last_run)
+
+    @property
+    def format_first_run(self):
+        return self.format_ts(self.first_run)
+
+    @property
+    def status_name(self):
+        return self.status_choices[self.status][1]
+
+    @property
+    def criteria_html(self):
+        # length of business_hours_weekends.
+        # current longest field
+        tr_line = '<tr><td><b>{0}</b>:&nbsp;</td><td>{1}</td></tr>'
+        cprops = self.criteria.keys()
+        cprops.sort()
+        rstr = '<table>'
+        for k in cprops:
+            rstr += tr_line.format(k,
+                                   self.criteria[k])
+        rstr += '</table>'
+        # logger.debug("criteria_html: {0}".format(rstr))
+        return rstr
+
+
+@receiver(post_data_save, dispatch_uid='job_complete_receiver')
+def update_report_history_status_on_complete(sender, **kwargs):
+    """ Update the status of the report history that shares the same job handle
+    with the just completed job.
+
+    If one widget job's status is ERROR, then update the status of the report
+    history as ERROR; if one report job's status is running, then update the
+    status of the report history as RUNNING; if all jobs' status are COMPLETE,
+    then update the status of the report history as COMPLETE.
+
+    :param sender: job object that just completed
+    """
+    if not settings.REPORT_HISTORY_ENABLED:
+        return
+
+    rhs = ReportHistory.objects.filter(
+        job_handles__contains=sender.handle).exclude(
+        status__in=[ReportStatus.ERROR, ReportStatus.COMPLETE])
+
+    logger.debug('Report history objects found with Sender handle %s: %s' %
+                 (sender.handle, rhs))
+
+    for rh in rhs:
+        jobs = Job.objects.filter(handle__in=rh.job_handles.split(','))
+
+        logger.debug('Jobs found for ReportHistory %s: %s' % (rh, jobs))
+
+        if any([job.status == Job.ERROR for job in jobs]):
+            logger.debug('Updating status of ReportHistory %s to ERROR' % rh)
+            rh.update_status(ReportStatus.ERROR)
+
+        elif any([job.status == Job.RUNNING for job in jobs]):
+            logger.debug('Updating status of ReportHistory %s to RUNNING' % rh)
+            rh.update_status(ReportStatus.RUNNING)
+
+        elif jobs and all([job.status == Job.COMPLETE for job in jobs]):
+            logger.debug('Updating status of ReportHistory %s to COMPLETE' % rh)
+            rh.update_status(ReportStatus.COMPLETE)
+
+
+@receiver(error_signal, dispatch_uid='job_error_receiver')
+def update_report_history_status_on_error(sender, **kwargs):
+    """ Set Error status for the report history that shares the same job handle
+    with the just erred job.
+
+    :param sender: job object that just erred
+    """
+    if not settings.REPORT_HISTORY_ENABLED:
+        return
+
+    rhs = ReportHistory.objects.filter(
+        job_handles__contains=sender.handle).exclude(
+        status__in=[ReportStatus.ERROR, ReportStatus.COMPLETE])
+
+    for rh in rhs:
+        logger.debug('Updating status of ReportHistory %s to ERROR' % rh)
+        rh.update_status(ReportStatus.ERROR)
 
 
 class Section(models.Model):
@@ -418,6 +612,9 @@ class Widget(models.Model):
     # not globally unique, but should be sufficiently unique within a report
     slug = models.SlugField(max_length=100)
 
+    # widget to be stacked below the previous widget on the same row
+    stack_widget = models.BooleanField(default=False)
+
     objects = InheritanceManager()
 
     def __repr__(self):
@@ -467,6 +664,18 @@ class Widget(models.Model):
         if row is None:
             row = 1
             col = 1
+        elif self.stack_widget:
+            # This widget needs to be stacked below the previous widget
+            pre_w = self.section.report.widgets().order_by('-row', '-col')[0]
+            if pre_w.width != self.width:
+                raise ValueError("The stack widget with title '%s' should set "
+                                 "with width %s." % (self.title, pre_w.width))
+            elif pre_w.title.lower() == self.title.lower():
+                raise ValueError("The stack widget title '%s' is the same as "
+                                 "the previous widget, thus should be "
+                                 "changed." % self.title)
+            row = pre_w.row
+            col = pre_w.col
         else:
             widthsum = (self.section
                         .report.widgets()
@@ -478,6 +687,7 @@ class Widget(models.Model):
                 col = 1
             else:
                 col = width + 1
+
         self.row = row
         self.col = col
 
@@ -502,6 +712,21 @@ class Widget(models.Model):
                         fields[f.keyword] = f
 
         return fields
+
+
+class WidgetDataCache(models.Model):
+    """
+    Defines a cache of widget data for a static report. The primary key is
+    defined as <report_slug><widget_slug>
+    """
+    report_widget_id = models.CharField(max_length=500, primary_key=True)
+    data = models.TextField(blank=False)
+    created = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        """ On save, update created timestamp """
+        self.created = datetime.utcnow()
+        return super(WidgetDataCache, self).save(*args, **kwargs)
 
 
 class WidgetJob(models.Model):

@@ -171,7 +171,6 @@ class FileSelectField(forms.Field):
             return data
 
         elif isinstance(self.widget, FileInput):
-
             # UploadedFile objects should have name and size attributes.
             try:
                 file_name = data.name
@@ -186,12 +185,19 @@ class FileSelectField(forms.Field):
             # temporary file and return the path for use in JSON
             # consumers of this file will need to clean them up
             # TODO this will be replaced by the File Storage App
-            newtemp = tempfile.NamedTemporaryFile(delete=False)
-            data.seek(0)
-            shutil.copyfileobj(data, newtemp)
-            data.close()
-            newtemp.close()
-            return newtemp.name
+            try:
+                newtemp = tempfile.NamedTemporaryFile(delete=False)
+                data.seek(0)
+                shutil.copyfileobj(data, newtemp)
+                data.close()
+                newtemp.close()
+                return newtemp.name
+            except ValueError:
+                # if the file has already been processed, a ValueError
+                # gets raised when trying to access a closed file.
+                # instead, just return the original file name since that's
+                # what is important from a criteria standpoint
+                return file_name
         else:
             raise ValidationError('Unsupported widget source: %s' %
                                   str(self.widget))
@@ -301,7 +307,8 @@ class DurationField(forms.ChoiceField):
 
         kwargs['choices'] = choices
         if not initial_valid:
-            raise KeyError('Initial duration is invalid: %s' % initial)
+            self.error_msg = ('Invalid initial %s : %s. '
+                              % (kwargs['label'], initial))
 
         super(DurationField, self).__init__(initial=initial, **kwargs)
 
@@ -320,6 +327,34 @@ class DurationField(forms.ChoiceField):
 
     def validate(self, value):
         pass
+
+
+class IDChoiceField(forms.ChoiceField):
+    """Choice field that checks if the initial value is a valid ID."""
+    def __init__(self, **kwargs):
+        initial = kwargs.get('initial', None)
+        if initial:
+            # choices are lists as [(choice_id, choice_name),...]
+            res = filter(lambda x: x[0] == initial, kwargs['choices'])
+            if not res:
+                self.error_msg = ("No %s found with ID %s."
+                                  % (kwargs['label'], initial))
+                kwargs.pop('initial')
+        super(IDChoiceField, self).__init__(**kwargs)
+
+
+class IntegerIDChoiceField(IDChoiceField):
+    """Choice field that checks if the initial value is a valid integer ID."""
+    def __init__(self, **kwargs):
+        initial = kwargs.pop('initial', None)
+        if initial:
+            if initial.isdigit():
+                kwargs['initial'] = int(initial)
+            else:
+                self.error_msg = ("%s id '%s' is invalid."
+                                  % (kwargs['label'], initial))
+
+        super(IntegerIDChoiceField, self).__init__(**kwargs)
 
 
 def fields_add_time_selection(obj, show_duration=True, initial_duration=None,
@@ -442,6 +477,10 @@ class TableFieldForm(forms.Form):
             # Already added this field
             return
 
+        # Print error message if it exists in field object
+        if hasattr(tablefield, 'error_msg'):
+            self.add_field_error(field_id, tablefield.error_msg)
+
         field_cls = tablefield.field_cls or forms.CharField
 
         if tablefield.field_kwargs is not None:
@@ -473,6 +512,8 @@ class TableFieldForm(forms.Form):
 
         field = field_cls(**fkwargs)
         self.fields[field_id] = field
+        if hasattr(field, 'error_msg'):
+            self.add_field_error(field_id, field.error_msg)
 
         if self.data is not None and field_id not in self.data:
 
@@ -489,6 +530,9 @@ class TableFieldForm(forms.Form):
 
         f = field_cls(**fkwargs)
         self.fields[field_id] = f
+        if hasattr(f, 'error_msg'):
+            self.add_field_error(field_id, f.error_msg)
+
         f.widget.attrs.update({'onchange': 'rvbd.report.criteriaChanged()'})
         if widget_attrs:
             f.widget.attrs.update(widget_attrs)

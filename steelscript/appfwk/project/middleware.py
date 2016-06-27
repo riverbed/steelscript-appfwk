@@ -121,7 +121,7 @@ class URLTokenAuthentication(authentication.BaseAuthentication):
         '^(?P<namespace>[0-9_a-zA-Z]+)/(?P<report_slug>[0-9_a-zA-Z]+)/widgets/'
         """
 
-        return resolve(request.path).url_name == 'report-widgets'
+        return resolve(request.path).url_name == 'report-auto-view'
 
     def authenticate(self, request):
         if (self._is_embed_widget_url(request) and
@@ -132,8 +132,14 @@ class URLTokenAuthentication(authentication.BaseAuthentication):
               self._token_in_header(request)):
             token = request.META.get(self.TOKEN_KEY_HEADER)
 
-        else:
+        elif (self._is_embed_widget_url(request) or
+              not settings.GUEST_USER_ENABLED):
+            # no token provided, and guest access not allowed
             raise exceptions.AuthenticationFailed('No valid token')
+
+        else:
+            # no token and guest access enabled
+            return None
 
         try:
             token_obj = WidgetAuthToken.objects.get(token=token)

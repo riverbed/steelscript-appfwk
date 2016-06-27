@@ -138,3 +138,72 @@ input[type="file"] {
   border-radius: 50%;
   background: radial-gradient(#eee, #eee, #333);
 }
+
+/* add this class to make the circles a bit bigger */
+.wide
+{
+    width: 15px;
+    height: 15px;
+    line-height:13px;
+}
+
+/* Add support for tooltips */
+.yellow-circle:hover .tooltiptext {
+    visibility: visible;
+}
+
+.green-circle:hover .tooltiptext {
+    visibility: visible;
+}
+
+.red-circle:hover .tooltiptext {
+    visibility: visible;
+}
+
+.gray-circle:hover .tooltiptext {
+    visibility: visible;
+}
+
+.tooltiptext
+{
+    visibility: hidden;
+    height: auto;
+    width: auto;
+    background-color: rgba(128,128,128,1);
+    position: absolute;
+    padding: 10px;
+    color: white;
+    border-radius: 10px;
+
+    margin-left:25px;
+    margin-bottom:10px;
+
+    line-height: 125%;
+
+    z-index:1;
+}
+
+.tooltiptext:after {
+    position: absolute;
+    border-left: solid transparent 10px;
+    border-right: solid transparent 10px;
+    border-top: solid rgb(128,128,128) 10px;
+
+    content: " ";
+    top: 0;
+
+    width: 0;
+    height: 0;
+    left: 3px;
+    margin-left: -13px;
+}
+
+.info
+{
+   position: absolute;
+   font-size: 13px;
+   font-weight: bold;
+   color: black;
+   margin-left: 20px;
+   margin-top: 0px;
+}

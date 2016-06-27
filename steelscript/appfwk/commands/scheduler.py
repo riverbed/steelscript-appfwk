@@ -9,7 +9,7 @@
 """
 scheduler.py
 
-Command script to run schduled table jobs according to
+Command script to run scheduled table jobs according to
 defined configuration.
 
 The config file uses the ConfigParser format. For example:
@@ -41,6 +41,8 @@ The config file uses the ConfigParser format. For example:
     interval_minutes=15
     ; offsets can be used to run reports further in the past
     offset=1min
+    ; if needed you can specify which timezone the endtime should be in
+    timezone=US/Eastern
 
 Each section name (the line with sourrounding brackets) will
 translate into a scheduled job name.  The key-value pairs include
@@ -55,10 +57,11 @@ import os
 import re
 import sys
 import time
+import json
 import signal
 import logging
 import datetime
-from urlparse import urljoin
+from urlparse import urljoin, urlsplit
 from ConfigParser import SafeConfigParser
 
 try:
@@ -69,9 +72,10 @@ except ImportError:
     sys.exit(1)
 
 import pytz
-import requests
+import pandas
 
 from steelscript.common import timeutils
+from steelscript.common.connection import Connection
 from steelscript.commands.steel import (BaseCommand, shell, console,
                                         MainFailed, ShellFailed)
 
@@ -83,13 +87,20 @@ def process_criteria(kws):
     """Process criteria options into separate dict."""
     # get runtime parameters
     interval = kws.pop('interval')
+    timezone = kws.pop('timezone', None)
+    if timezone:
+        tz = pytz.timezone(timezone)
+    else:
+        logger.info('No timezone specified, using UTC.')
+        tz = pytz.UTC
 
     if interval['offset'] > datetime.timedelta(0):
         # round now to nearest whole second
-        now = datetime.datetime.now(pytz.UTC)
+        now = datetime.datetime.now(tz)
         roundnow = timeutils.round_time(now, round_to=1)
 
         endtime = roundnow - interval['offset']
+        endtime = endtime.isoformat()
         logger.debug('Setting end time to %s (via offset: %s)' %
                      (endtime, interval['offset']))
     else:
@@ -150,16 +161,13 @@ def get_auth(authfile):
         return tuple(f.readline().strip().split(':'))
 
 
-def run_table_via_rest(url, authfile, verify, **kwargs):
+def run_table_via_rest(host, url, authfile, verify, **kwargs):
     criteria, options = process_criteria(kwargs)
 
-    s = requests.session()
-    s.auth = get_auth(authfile)
-    s.headers.update({'Accept': 'application/json'})
-    s.verify = verify
+    conn = Connection(host, auth=get_auth(authfile), verify=verify)
 
     logger.debug('POSTing new job with criteria: %s' % criteria)
-    r = s.post(url, data=criteria)
+    r = conn.request('POST', url, body=criteria)
     if r.ok:
         logger.debug('Job creation successful.')
     else:
@@ -177,7 +185,7 @@ def run_table_via_rest(url, authfile, verify, **kwargs):
         start = now()
 
         while (now() - start) < timeout:
-            status = s.get(url)
+            status = conn.request('GET', url)
 
             if status.json()['status'] == 3:
                 logger.debug("Table completed successfully.")
@@ -198,16 +206,67 @@ def run_table_via_rest(url, authfile, verify, **kwargs):
             logger.warning("Timed out waiting for table to complete,"
                            "url is: %s" % url)
         elif not error:
-            # get data and write as CSV
-            data = s.get(urljoin(url, 'data/'))
-            d = data.json()['data']
+            # get data, load into DataFrame, and write as CSV
+            data = conn.json_request('GET', urljoin(url, 'data/'))
+            df = pandas.DataFrame(data)
+            df.index.name = 'index'
+
             with open(options['output-file'], 'a') as f:
-                for row in d:
-                    f.write(','.join(str(x) for x in row))
-                    f.write('\n')
+                f.write(df.to_csv())
     else:
         # we aren't interested in results
         pass
+
+
+def run_report_via_rest(host, slug, namespace,
+                        title, authfile, verify, **kwargs):
+    """Mimic the front-end javascript to run a whole report.
+
+    This also has the added benefit of adding an entry to Report History, and
+    adding the resulting data to the Widget Cache if those functions
+    are enabled.
+    """
+
+    report_url = '/report/%s/%s/' % (namespace, slug)
+    post_header = {'Content-Type': 'application/x-www-form-urlencoded'}
+
+    criteria, options = process_criteria(kwargs)
+
+    # since we are posting in place of a criteria form, we need to split time
+    endtime = criteria.pop('endtime')
+    endtime_date, endtime_time = endtime.split('T')
+    criteria['endtime_0'] = endtime_date
+    criteria['endtime_1'] = endtime_time
+
+    conn = Connection(host, auth=get_auth(authfile), verify=verify)
+
+    logger.debug('Posting report criteria for report %s: %s' %
+                 (title, criteria))
+    r = conn.request('POST', report_url, extra_headers=post_header,
+                     body=criteria)
+
+    if r.ok and 'widgets' in r.json():
+        logger.debug('Got widgets for Report url %s' % report_url)
+    else:
+        logger.error('Error getting Widgets for Report url %s. Aborting.'
+                     % report_url)
+        return
+
+    jobs = []
+
+    # create the widget jobs for each widget found
+    for w in r.json()['widgets']:
+        data = {'criteria': json.dumps(w['criteria'])}
+
+        w_response = conn.request('POST', w['posturl'],
+                                  extra_headers=post_header, body=data)
+        jobs.append(w_response.json()['joburl'])
+
+    # do initial status check to make sure things are moving
+    for j in jobs:
+        data = conn.request('GET', j)
+        if data.ok:
+            logger.debug('Successfully retrieved job status for %s' % j)
 
 
 class Command(BaseCommand):
@@ -258,39 +317,82 @@ class Command(BaseCommand):
         # possibly direct API calls, or REST calls against running server
 
         if self.options.rest_server:
-            # find id of table-name
-            name = kwargs['table-name']
-            baseurl = self.options.rest_server + '/data/tables/'
-            verify = not self.options.insecure
+            if 'table-name' in kwargs:
+                # find id of table-name
+                name = kwargs['table-name']
+                baseurl = '/data/tables/'
+                verify = not self.options.insecure
 
-            s = requests.session()
-            s.auth = get_auth(self.options.authfile)
-            s.headers.update({'Accept': 'application/json'})
-            s.verify = verify
+                conn = Connection(self.options.rest_server,
+                                  auth=get_auth(self.options.authfile),
+                                  verify=verify)
 
-            tableid = None
-            url = baseurl
-            while tableid is None:
-                r = s.get(url)
-                results = r.json()['results']
-                ids = [t['id'] for t in results if t['name'] == name]
-                if len(ids) > 1:
-                    msg = 'Multiple tables found for name %s: %s' % (name, ids)
+                tableurl = None
+                url = baseurl
+                logger.debug('Getting available tables from server ...')
+                while tableurl is None:
+                    r = conn.json_request('GET', url)
+                    results = r['results']
+                    urls = [t['url'] for t in results if t['name'] == name]
+                    if len(urls) > 1:
+                        msg = ('ERROR: Multiple tables found for name %s: %s' %
+                               (name, urls))
+                        logger.debug(msg)
+                        raise ValueError(msg)
+                    elif len(urls) == 1:
+                        # parse out just the path component of the url
+                        logger.debug('Found table url: %s' % urls)
+                        fullurl = urljoin(urls[0], 'jobs/')
+                        tableurl = urlsplit(fullurl).path
+                    else:
+                        url = r['next']
+                        if url is None:
+                            msg = ('ERROR: No table found for "%s"' % name)
+                            logger.debug(msg)
+                            raise ValueError(msg)
+
+                job_params = {
+                    'func': run_table_via_rest,
+                    'args': [self.options.rest_server, tableurl,
+                             self.options.authfile, verify]
+                }
+            elif 'report-slug' in kwargs:
+                # find id of report
+                slug = kwargs['report-slug']
+                namespace = kwargs['report-namespace']
+                baseurl = urljoin(self.options.rest_server, '/report/')
+                verify = not self.options.insecure
+
+                conn = Connection(self.options.rest_server,
+                                  auth=get_auth(self.options.authfile),
+                                  verify=verify)
+                title = None
+
+                logger.debug('Getting available reports from server ...')
+                r = conn.json_request('GET', baseurl)
+                for report in r:
+                    if slug in report.values():
+                        title = report['title']
+                        break
+
+                if title is None:
+                    msg = ('No report found for slug %s namespace %s'
+                           % (slug, namespace))
+                    logger.error(msg)
                     raise ValueError(msg)
-                elif len(ids) == 1:
-                    tableid = ids[0]
-                else:
-                    url = r.json()['next']
-                    if url is None:
-                        raise ValueError('No table found for name %s' % (name))
 
-            tableurl = urljoin(baseurl, str(tableid) + '/jobs/')
-
-            job_params = {'func': run_table_via_rest,
-                          'args': [tableurl, self.options.authfile, verify]}
+                job_params = {
+                    'func': run_report_via_rest,
+                    'args': [self.options.rest_server, slug,
+                             namespace, title, self.options.authfile, verify]
+                }
+            else:
+                raise ValueError('Invalid config, no "table-name" or '
+                                 '"report-slug"/"report-namespace" specified')
         else:
             job_params = {'func': run_table,
                           'args': ['table']}
+        logger.debug('Calculated job params: %s' % job_params)
         return job_params
 
     def parse_config(self, job_config):
@@ -337,10 +439,11 @@ class Command(BaseCommand):
 
             # this gives the latest rounded time in the past
             # so we add interval to it to get a future run time
-            total_offset = timeutils.timedelta_total_seconds(delta + offset)
+            delta_secs = timeutils.timedelta_total_seconds(delta)
             next_run_time = timeutils.round_time(now,
-                                                 round_to=total_offset,
+                                                 round_to=delta_secs,
                                                  trim=True)
+
             next_run_time += (delta + offset)
 
             logger.debug('Setting next run time to %s (delta: %s, offset: %s)'

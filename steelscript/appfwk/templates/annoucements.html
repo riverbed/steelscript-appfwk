@@ -13,7 +13,7 @@
 
 <div class="announcements">
     {% for announcement in announcements_list %}
-        <div id="id_announcement_{{ forloop.counter }}" class="alert alert-block">
+        <div id="id_announcement_{{ forloop.counter }}" class="alert alert-block alert-error">
             {% if announcement.dismiss_url %}
                 <button href="#" onclick="dismiss_announcement('{{ announcement.dismiss_url }}', 'id_announcement_{{ forloop.counter }}')" data-dismiss="alert" class="close">
                     &times;

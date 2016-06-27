@@ -279,6 +279,56 @@ class FocusedAnalysisQuery(AnalysisQuery):
         return QueryComplete(jobs['job'].data())
 
 
+class PivotTable(AnalysisTable):
+    class Meta:
+        proxy = True
+
+    TABLE_OPTIONS = {
+         'pivot_index': 'time',
+         'pivot_column': None,
+         'pivot_value': None,
+         'pivot_datatype': 'float',
+         'pivot_column_prefix': '',
+     }
+
+    _query_class = 'PivotQuery'
+
+
+class PivotQuery(AnalysisQuery):
+
+    def analyze(self, jobs):
+        """ Pivot data results from jobs """
+
+        df = jobs.values()[0].data()
+
+        if (self.table.options.pivot_column is None or
+                self.table.options.pivot_value is None):
+            msg = ('Both "pivot_column" and "pivot_value" options need '
+                   'to be specified for PivotTables.')
+            logger.error(msg)
+            return QueryError(msg)
+
+        pivot = df.pivot(index=self.table.options.pivot_index,
+                         columns=self.table.options.pivot_column,
+                         values=self.table.options.pivot_value).reset_index()
+
+        # since numeric values may now be columns, change them to strings
+        # for proper pattern matching downstream
+        pivot.rename(columns=lambda x: str(x), inplace=True)
+
+        col_names = [x for x in pivot.columns]
+        cur_cols = [c.name for c in self.job.get_columns(synthetic=False)]
+
+        for c in col_names:
+            if c not in cur_cols:
+                label = self.table.options.pivot_column_prefix + c
+                Column.create(self.job.table, name=c, label=label,
+                              ephemeral=self.job,
+                              datatype=self.table.options.pivot_datatype)
+
+        return QueryComplete(pivot)
+
+
 class CriteriaTable(DatasourceTable):
     class Meta:
         proxy = True

@@ -56,6 +56,15 @@ LOCAL_APPS = (
 )
 INSTALLED_APPS += LOCAL_APPS
 
+# Optionally enable Guest read-only access to reports
+GUEST_USER_ENABLED = False
+GUEST_USER_TIME_ZONE = 'US/Eastern'
+
+if GUEST_USER_ENABLED:
+    # adjust authentication parameters
+    REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = ['rest_framework.permissions.AllowAny']
+    REST_FRAMEWORK.pop('EXCEPTION_HANDLER')
+
 # Configure database for development or production.
 
 DATABASES = {

@@ -9,8 +9,8 @@
 
 rvbd.widgets.maps = {};
 
-rvbd.widgets.maps.MapWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria) {
-    rvbd.widgets.Widget.apply(this, [postUrl, isEmbedded, div, id, slug, options, criteria]);
+rvbd.widgets.maps.MapWidget = function(postUrl, isEmbedded, div, id, slug, options, criteria, dataCache) {
+    rvbd.widgets.Widget.apply(this, [postUrl, isEmbedded, div, id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.maps.MapWidget.prototype = Object.create(rvbd.widgets.Widget.prototype)
 
@@ -50,7 +50,11 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data) {
         bounds.extend(c.center)
 
         valStr = (c.formatter ? rvbd.formatters[c.formatter](c.value, 2)
-                              : c.value) + c.units;
+                              : c.value);
+        if (c.units) {
+            valStr = valStr + ' ' + c.units;
+        }
+
         title = c.title + '\n' + valStr;
 
 
@@ -70,4 +74,20 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data) {
         });
     });
     map.fitBounds(bounds);
+
+    // Insert the weather layer
+    if (rvbd.report.weatherWidget.enabled) {
+        // Add a URL parameter which will invalidate the image cache every 15 minutes
+        rvbd.report.weatherWidget.url = appendCurrentTimeUrlParam(rvbd.report.weatherWidget.url, rvbd.report.weatherWidget.timeout);
+        var myMapType = new google.maps.ImageMapType({
+            getTileUrl: function(coord, zoom) {
+                return rvbd.report.weatherWidget.url.replace('{x}', coord.x).replace('{y}', coord.y).replace('{z}', zoom)
+            },
+            maxZoom: 9,
+            minZoom: 0,
+            name: 'mymaptype'
+        });
+    }
+
+    map.overlayMapTypes.insertAt(0, myMapType);
 }

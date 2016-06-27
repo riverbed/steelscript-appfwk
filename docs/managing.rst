@@ -257,7 +257,7 @@ details on configuration under this approach can be found within the
 `mod_wsgi documentation <https://code.google.com/p/modwsgi/wiki/InstallationInstructions>`_.
 
 The nginx configuration primarily provides static media delivery and routes
-requests to a WSGI server such as `gunicorn <gunicorn.org>`_.  gunicorn's
+requests to a WSGI server such as `gunicorn <http://gunicorn.org>`_.  gunicorn's
 `deployment page <http://gunicorn.org/#deployment>`_ has more detailed guidelines
 that may be helpful.
 

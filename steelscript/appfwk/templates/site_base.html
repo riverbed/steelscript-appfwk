@@ -45,6 +45,9 @@
                                   <li><a href="{% url 'system_settings' %}"><i class="icon-list"></i> System Settings</a></li>
                                   <li><a href="{% url 'device-list' %}"><i class="icon-pencil"></i> Edit Devices</a></li>
                                   <li><a href="{% url 'plugins-list' %}"><i class="icon-resize-small"></i> Edit Plugins</a></li>
+                                  {% if report_history_enabled %}
+                                  <li><a href="{% url 'report-history' %}"><i class="icon-resize-small"></i> Report History</a></li>
+                                  {% endif %}
                                   <li><a href="/admin"><i class="icon-wrench"></i> Admin Panel</a></li>
                                   <li class="divider"></li>
                                   {% if report %}
@@ -60,6 +63,17 @@
                           </ul>
                       </div>
                   </li>
+                  {% elif guest_enabled and guest_show_button %}
+                  <li class="active">
+                      <div class="btn-group pull-right">
+                          <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
+                              <i class="icon-edit icon-white"></i> Guest <span class="caret"></span>
+                          </a>
+                          <ul class="dropdown-menu">
+                              <li><a href="/accounts/login/"><i class="icon-user"></i> Login</a></li>
+                          </ul>
+                      </div>
+                  </li>
                   {% endif %}
               {% endblock %}
             </ul>
@@ -68,15 +82,12 @@
       </div>
     </div>
 
-    {% comment %}
-    XXX comment out until updated django-annoucements available
-    {% load announcements_tags %}
+    {% load pinax_announcements_tags %}
     {% announcements as announcements_list %}
 
     {% if announcements_list %}
         {% include "annoucements.html" %}
     {% endif %}
-    {% endcomment %}
 
     {% block login_row %}
     <div class="container-fluid">

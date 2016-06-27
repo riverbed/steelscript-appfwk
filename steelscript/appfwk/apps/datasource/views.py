@@ -98,7 +98,7 @@ class TableJobList(APIView):
         # data needs to be not-None or form will be created as unbound
         data = self.request.POST or {}
         form = TableFieldForm(all_fields, use_widgets=False,
-                              data=data)
+                              include_hidden=True, data=data)
         if form.is_valid(check_unknown=True):
             criteria = form.criteria()
         else:

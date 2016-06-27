@@ -23,6 +23,7 @@ rvbd.report = {
     launchingPrintWindow: false,
 
     intervalID: 0,              // ID to manage scheduled reports
+    needs_reload_scheduled: false,
     reportHasRendered: false,
 
     /**
@@ -38,9 +39,12 @@ rvbd.report = {
 
         if (rvbd.report.isEmbedded) { // We already have the widget spec data, so launch right away
             rvbd.report.runFixedCriteriaReport();
-        } else if (rvbd.report.reloadMinutes > 0) { // Auto-run report (updates at intervals)
-            rvbd.report.runFixedCriteriaReport();
-            rvbd.report.intervalID = setInterval(rvbd.report.reloadAllWidgets, rvbd.report.reloadMinutes * 60 * 1000);
+        } else if (rvbd.report.reloadMinutes > 0 && !rvbd.report.live) { // Auto-run report (updates at intervals)
+                rvbd.report.runFixedCriteriaReport();
+                rvbd.report.needs_reload_scheduled = true;
+        } else if (rvbd.report.static && !rvbd.report.live) {// Non-reloading static report
+                $("#criteria-row").hide();
+                rvbd.report.runFixedCriteriaReport();
         } else if (typeof rvbd.report.printCriteria !== 'undefined') { // We're in print view, so launch right away
             rvbd.report.doRunFormReport(false);
         } else { // Standard report
@@ -69,6 +73,10 @@ rvbd.report = {
             $('#menu-run').click(function() { $form.submit(); });
 
             $("#criteria").on('hidden', rvbd.report.doRunFormReport);
+
+            if (rvbd.report.autoRun) { //Auto run report from bookmark
+                $form.submit();
+            }
         }
     },
 
@@ -124,10 +132,57 @@ rvbd.report = {
             success: function(data, textStatus, jqXHR) {
                 rvbd.report.renderWidgets(data);
             },
-            error: function(jqXHR, textStatus, errorThrown) { 
+            error: function(jqXHR, textStatus, errorThrown) {
                 rvbd.report.alertReportError(textStatus, errorThrown);
             }
         });
+    },
+
+    /**
+     * Schedule the time for auto-reloads based on given offset
+     */
+    setSchedule: function () {
+        var interval = rvbd.report.reloadMinutes * 60 * 1000;
+
+        if (rvbd.report.static) {
+            rvbd.report.runFixedCriteriaReport();
+        } else {
+            // trigger the reload, then schedule the interval from now
+            rvbd.report.reloadAllWidgets();
+            rvbd.report.intervalID = setInterval(rvbd.report.reloadAllWidgets, interval);
+        }
+    },
+
+    scheduleReloads: function (datetime) {
+        var interval = rvbd.report.reloadMinutes * 60 * 1000;
+        var offset = rvbd.report.offsetSeconds * 1000;
+
+        if (offset == 0 || offset > interval) {
+            // we can just setInterval, no need to be precise
+            rvbd.report.intervalID = setInterval(rvbd.report.reloadAllWidgets, interval);
+        } else {
+            // need to set a timeout to align with offset then set the interval
+            // assumes string datetime similar to:
+            // "20th November 15:34:23"
+            var date_parts = datetime.split(' '),
+                time_parts = date_parts[3].split(':'),
+                now = new Date(Date.now()),
+                report_date,
+                next_date;
+
+            // construct date object from report datetime
+            report_date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), time_parts[0], time_parts[1]);
+
+            // add the interval and offset for next time to run report
+            next_date = new Date(report_date.getTime() + interval + offset);
+
+            // now set a timeout to run report and setInterval
+            setTimeout(function () {
+                rvbd.report.setSchedule();
+            }, next_date - now);
+        }
+
+        rvbd.report.needs_reload_scheduled = false;
     },
 
     /**
@@ -137,9 +192,13 @@ rvbd.report = {
         rvbd.report.disableReloadButton();
         rvbd.report.disablePrintButton();
 
-        $.each(rvbd.report.widgets, function (i, w) {
-            w.reloadWidget()
-        })
+        if (rvbd.report.static) {
+            rvbd.report.runFixedCriteriaReport();
+        } else {
+            $.each(rvbd.report.widgets, function (i, w) {
+                w.reloadWidget()
+            })
+        }
     },
 
     /**
@@ -291,6 +350,10 @@ rvbd.report = {
 
         rvbd.report.updateReportDateTime(reportMeta.datetime, reportMeta.timezone);
 
+        if (rvbd.report.needs_reload_scheduled == true) {
+            rvbd.report.scheduleReloads(reportMeta.datetime);
+        }
+
         $report.empty();
 
         if (!rvbd.report.isEmbedded) { // Full report
@@ -339,15 +402,15 @@ rvbd.report = {
                 urls = {"postUrl": w.posturl, "updateUrl": w.updateurl};
 
             widget = new rvbd.widgets[widgetModule][widgetClass](urls, rvbd.report.isEmbedded, $div[0],
-                                                                 w.widgetid, w.widgetslug, opts, w.criteria);
+                                                                 w.widgetid, w.widgetslug, opts, w.criteria, w.data);
             rvbd.report.widgets.push(widget);
         });
 
         if (!rvbd.report.reportHasRendered) { // If first time rendering the report, attach widgetDoneLoading handler
             rvbd.report.reportHasRendered = true;
 
-            $(document).on('widgetDoneLoading', function(e, widget) {
-                rvbd.report.handleReportLoadedIfNeeded(widget);
+            $(document).on('widgetDoneLoading', function(e, widget_) {
+                rvbd.report.handleReportLoadedIfNeeded(widget_);
             });
         }
     },
@@ -362,7 +425,6 @@ rvbd.report = {
         $.each(rvbd.report.widgets, function(i, w) {
             if (w.status === 'running') {
                 widgetsRunning = true;
-                return;
             }
         });
 

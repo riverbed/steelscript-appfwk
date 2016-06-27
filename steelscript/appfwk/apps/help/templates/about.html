@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2015 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% block title %}About App Framework{% endblock %}
+
+
+{% block header_row %}
+    <h3>About Application Framework</h3>
+{% endblock %}
+
+{% block content %}
+
+    <div class="container-fluid">
+    <div class="row-fluid">
+    <div class="span12">
+    {% if sys_info %}
+      <div class="container-fluid">
+        <table border="0" class="table table-bordered block-centered" style="max-width: 100%">
+            <tbody>
+               {% for k, v in sys_info.items %}
+                 <tr>
+                     <td>{{ k }}</td>
+                     <td>{{ v }}</td>
+                 </tr>
+               {% endfor %}
+            </tbody>
+        </table>
+      </div>
+    {% endif %}
+
+    <h4 class="container-fluid">Installed SteelScript Packages</h4>
+    {% for title, data in dicts.items %}
+      {% if 'packages' in title or 'REST' in title %}
+        <h5 class="container-fluid">{{ title }}</h5>
+      {% else %}
+        <h4 class="container-fluid">{{ title }}</h4>
+      {% endif %}
+      <div class="container-fluid">
+        <table border="0" class="table table-bordered block-centered" style="max-width: 100%">
+            <tbody>
+                {% if data %}
+                  {% for k, v in data.items %}
+                    <tr>
+                        <td>{{ k }}</td>
+                        <td>{{ v }}</td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr><td>None</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+      </div>
+    {% endfor %}
+
+    {% for title, data in lists.items %}
+    <h4 class="container-fluid">{{ title }}</h4>
+    <div class="container-fluid">
+        <table border="0" class="table table-bordered block-centered" style="max-width: 100%">
+            <tbody>
+                {% for v in data %}
+                    <tr>
+                        <td>{{ v }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+    </div>
+    </div>
+    </div>
+{% endblock %}
+
+
+
