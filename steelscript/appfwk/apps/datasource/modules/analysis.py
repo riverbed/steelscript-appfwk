@@ -308,9 +308,15 @@ class PivotQuery(AnalysisQuery):
             logger.error(msg)
             return QueryError(msg)
 
-        pivot = df.pivot(index=self.table.options.pivot_index,
-                         columns=self.table.options.pivot_column,
-                         values=self.table.options.pivot_value).reset_index()
+        try:
+            pivot = df.pivot(index=self.table.options.pivot_index,
+                             columns=self.table.options.pivot_column,
+                             values=self.table.options.pivot_value).reset_index()
+        except:
+            msg = ('Jobs data does not support pivot table creation in '
+                   'PivotQuery.analyze(). Data was: {0}'.format(df))
+            logger.error(msg)
+            return QueryComplete(df)
 
         # since numeric values may now be columns, change them to strings
         # for proper pattern matching downstream
@@ -327,6 +333,58 @@ class PivotQuery(AnalysisQuery):
                               datatype=self.table.options.pivot_datatype)
 
         return QueryComplete(pivot)
+
+
+class ResampleTable(AnalysisTable):
+    class Meta:
+        proxy = True
+
+    TABLE_OPTIONS = {
+         'resample_column': 'time',
+         'resample_interval': '60s',
+         'resample_operation': 'sum'
+     }
+
+    _query_class = 'ResampleQuery'
+
+
+class ResampleQuery(AnalysisQuery):
+
+    def analyze(self, jobs):
+        """ Pivot data results from jobs """
+        job = jobs.values()[0]
+
+        rs = self.table.options.resample_interval
+        try:
+            rs = '{0}s'.format(int(job.criteria.resample_interval))
+        except:
+            logger.debug(
+                "{0}: resample_interval ({2}) not set or valid in "
+                "job criteria {1}".format(self, job.criteria, rs))
+
+            job.criteria.resample_interval = u'{0}'.format(rs.split('s')[0])
+
+        df = job.data()
+        rs_df = resample(df, self.table.options.resample_column,
+                             rs,
+                             self.table.options.resample_operation)
+        try:
+            curcols = [c.name for c in self.job.get_columns(synthetic=False)]
+            jcols = [c.name for c in job.get_columns(synthetic=False)]
+            for c in jcols:
+                if c not in curcols:
+                    # Default data type is float.
+                    Column.create(self.job.table,
+                                  name=c,
+                                  label=c,
+                                  ephemeral=self.job)
+
+        except:
+            msg = ('recolumn during resample failed on '
+                   'datatable. Data was: {0}'.format(df))
+            return QueryError(msg)
+
+        return QueryComplete(rs_df)
 
 
 class CriteriaTable(DatasourceTable):
@@ -370,5 +428,6 @@ def resample(df, timecol, interval, how):
     if isinstance(interval, timedelta):
         interval = '%ss' % (timedelta_total_seconds(parse_timedelta(interval)))
 
-    df = df.resample(interval, how=how).reset_index()
+    df = df.resample(interval, how=how)
+    df.reset_index(inplace=True)
     return df
