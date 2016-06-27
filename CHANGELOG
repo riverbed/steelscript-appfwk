@@ -20,6 +20,8 @@ CHANGELOG
  * Add static (Database based) reports.
  * Add support for banners and system wide announcements.
  * Added weather overlay
+ * Update scheduler to support running complete reports
+ * Fix github issue #1
 
 [1.0]
  * Refactor Jobs to use different task models: celery, sync, and async
