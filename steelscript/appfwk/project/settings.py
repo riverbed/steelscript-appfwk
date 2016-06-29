@@ -179,6 +179,9 @@ MIDDLEWARE_CLASSES = (
     'steelscript.appfwk.apps.report.middleware.exceptions.ReloadExceptionHandler',
     'steelscript.appfwk.apps.report.middleware.timezones.TimezoneMiddleware',
     #'project.middleware.LoginRequiredMiddleware',
+
+    # hitcount
+    'steelscript.appfwk.apps.hitcount.middleware.CounterMiddleware',
 )
 
 ROOT_URLCONF = 'steelscript.appfwk.project.urls'
@@ -233,6 +236,7 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.jobs',
     'steelscript.appfwk.apps.logviewer',
     'steelscript.appfwk.apps.metrics',
+    'steelscript.appfwk.apps.hitcount',
 
     # 'standard' plugins
     'steelscript.appfwk.apps.plugins.builtin.whois',
@@ -407,3 +411,8 @@ PCAP_SIZE_LIMIT = 10000000000
 # Create report history
 REPORT_HISTORY_ENABLED = True
 
+# Hitcount parameters
+#  Any URL with a prefix in the following list (based on simple "startswith"
+#  comparison) will not have its hitcount incremented and will not be
+#  displayed on admin page.
+HITCOUNT_IGNORE_URLS = ['/admin/', '/accounts/', '/favicon.ico']
