@@ -17,6 +17,8 @@ from steelscript.common.timeutils import \
 from steelscript.appfwk.apps.datasource.models import \
     DatasourceTable, DatasourceQuery, Column, Table
 from steelscript.appfwk.libs.fields import Function
+from steelscript.appfwk.apps.datasource.models import \
+    TableField
 
 
 logger = logging.getLogger(__name__)
@@ -347,6 +349,22 @@ class ResampleTable(AnalysisTable):
 
     _query_class = 'ResampleQuery'
 
+    def fields_add_sample(self, keyword='resample_interval',
+                          initial='60'):
+
+
+        field = TableField(keyword=keyword,
+                           label='MPLS Resample Seconds',
+                           help_text='Number of seconds to sample data over.',
+                           initial=initial,
+                           required=False)
+        field.save()
+        self.fields.add(field)
+
+
+    def post_process_table(self, field_options):
+        super(self.__class__, self).post_process_table(field_options)
+        self.fields_add_sample()
 
 class ResampleQuery(AnalysisQuery):
 
