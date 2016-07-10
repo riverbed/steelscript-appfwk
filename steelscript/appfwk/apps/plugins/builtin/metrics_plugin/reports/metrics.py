@@ -14,7 +14,7 @@ from steelscript.appfwk.apps.datasource.modules.metrics import MetricsTable
 # Metrics Report
 #
 
-report = Report.create("Metrics Example", position=9)
+report = Report.create("Metrics Example", position=12)
 report.add_section()
 
 # ServicesMetrics
