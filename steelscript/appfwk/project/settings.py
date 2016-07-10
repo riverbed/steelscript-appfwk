@@ -412,7 +412,9 @@ PCAP_SIZE_LIMIT = 10000000000
 REPORT_HISTORY_ENABLED = True
 
 # Hitcount parameters
-#  Any URL with a prefix in the following list (based on simple "startswith"
-#  comparison) will not have its hitcount incremented and will not be
-#  displayed on admin page.
-HITCOUNT_IGNORE_URLS = ['/admin/', '/accounts/', '/favicon.ico']
+#  Visted URLs in the following list (based on regular expression
+#  search, see https://docs.python.org/2/library/re.html) will be ignored, and
+#  will not be displayed on admin page.
+HITCOUNT_IGNORE_URLS = [
+    '/admin/', '/accounts/', '/favicon.ico', r'/report/.*/jobs/[0-9]+/'
+]
