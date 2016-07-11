@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+[1.1.1]
+ * Add Hitcount app
+ * Minor bug fixes
+
 [1.1]
  * Criteria overrides via URL parameters.
  * Report Bookmarking
