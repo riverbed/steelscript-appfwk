@@ -65,7 +65,8 @@ class MapWidgetOptions(JsonDict):
                 'longitude': None,
                 'label': None,
                 'value': None,
-                'min_bounds': None}
+                'min_bounds': None,
+                'url': None}
     _required = ['value']
 
 
@@ -73,7 +74,7 @@ class MapWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, height=300,
                lat_col=None, long_col=None, val_col=None, label_col=None,
-               min_bounds=None):
+               url_col=None, min_bounds=None):
         """Create a widget displaying data overlayed on a map.
 
         :param int width: Width of the widget in columns (1-12, default 6)
@@ -85,11 +86,14 @@ class MapWidget(object):
             attribute 'iskey' will be used as the means for
             determining where to plot.
 
-        :param str/col val_column: the data column to graph, defaults to
+        :param str/col val_col: the data column to graph, defaults to
             the first non-key column found assigned to the table.
 
-        :param str/col name_column: column to use for marker labels
+        :param str/col label_col: column to use for marker labels
             when when defining lat/long columns.
+
+        :param str url_col: column to use for URL to redirect to when marker
+            gets cliecked.
 
         :param tuple min_bounds: tuple of (lat, lng) points
             representing the minimum extents that the map should
@@ -132,7 +136,8 @@ class MapWidget(object):
 
         w.options = MapWidgetOptions(key=keycol, latitude=lat_col,
                                      longitude=long_col, value=val_col,
-                                     label=label_col, min_bounds=min_bounds)
+                                     label=label_col, url=url_col,
+                                     min_bounds=min_bounds)
         w.save()
         w.tables.add(table)
 
@@ -157,6 +162,7 @@ class MapWidget(object):
         longcol = None
         valuecol = None
         labelcol = None
+        urlcol = None
         for i, c in enumerate(columns):
             if c.name == widget.options.key:
                 keycol = ColInfo(c, i)
@@ -168,10 +174,12 @@ class MapWidget(object):
                 valuecol = ColInfo(c, i)
             elif c.name == widget.options.label:
                 labelcol = ColInfo(c, i)
+            elif c.name == widget.options.url:
+                urlcol = ColInfo(c, i)
 
         # Array of circle objects for each data row
         Circle = namedtuple('Circle',
-                            ['title', 'lat', 'long', 'value', 'size',
+                            ['title', 'lat', 'long', 'value', 'size', 'url',
                              'units', 'formatter'])
         circles = []
 
@@ -233,7 +241,8 @@ class MapWidget(object):
                                         value=val,
                                         size=marker_size,
                                         units=valuecol.col.units_str(),
-                                        formatter=formatter)
+                                        formatter=formatter,
+                                        url=rawrow[urlcol.dataindex])
                         circles.append(circle)
                 else:
                     # use lat/long columns instead of lookups
@@ -247,7 +256,8 @@ class MapWidget(object):
                                     value=val,
                                     size=marker_size,
                                     units=valuecol.col.units_str(),
-                                    formatter=formatter)
+                                    formatter=formatter,
+                                    url=rawrow[urlcol.dataindex])
                     circles.append(circle)
 
         else:

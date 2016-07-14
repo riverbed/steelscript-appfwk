@@ -57,9 +57,9 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data) {
 
         title = c.title + '\n' + valStr;
 
-
-        marker = new google.maps.Marker({
+        var marker = new google.maps.Marker({
             position: c.center,
+            url: (c.url ? c.url : ''),
             map: map,
             title: title,
             icon: {
@@ -72,6 +72,12 @@ rvbd.widgets.maps.MapWidget.prototype.render = function(data) {
                 fillColor: "red"
             }
         });
+        
+        if (c.url) {
+            google.maps.event.addListener(marker, 'click', function() {
+                window.location.href = marker.url;
+            })
+        }
     });
     map.fitBounds(bounds);
 
