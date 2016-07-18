@@ -74,12 +74,20 @@ class DateWidget(forms.DateInput):
             if m:
                 secs = timedelta_total_seconds(parse_timedelta(m.group(1)))
                 initial_date = (
-                    "d = new Date(); d.setSeconds(d.getSeconds()-%d);" \
-                    % secs)
+                    "d = new Date(); d.setSeconds(d.getSeconds()-%d);" % secs
+                )
             else:
                 initial_date = "d = '%s';" % initial_date
         else:
             initial_date = "d = new Date();"
+
+        round_initial = attrs.get('round_initial', None)
+        if round_initial:
+            js = (' p = %d*1000; '
+                  'd = new Date(Math.floor(d.getTime() / p) * p);'
+                  % round_initial)
+            initial_date += js
+
         msg = '''
         {0} <span id="datenow_{name}" class="icon-calendar" title="Set date to today"> </span>
         <script type="text/javascript">
@@ -122,12 +130,32 @@ class TimeWidget(forms.TimeInput):
                 initial_time = "d = '%s';" % initial_time
         else:
             initial_time = "d = new Date();"
+
+        round_initial = attrs.get('round_initial', None)
+        if round_initial:
+            js = (' p = %d*1000; '
+                  'd = new Date(Math.floor(d.getTime() / p) * p);'
+                  % round_initial)
+            initial_time += js
+
+            # only pin manually entered times if we are rounding above a minute
+            if round_initial >= 60:
+                step = int(round_initial) / 60
+                force_round_time = 'true'
+            else:
+                step = 15
+                force_round_time = 'false'
+        else:
+            step = 15
+            force_round_time = 'false'
+
         msg = '''
         {0} <span id="timenow_{name}" class="icon-time" title="Set time/date to now"> </span>
         <script type="text/javascript">
               $("#id_{name}").timepicker({{
-                 step: 15,
+                 step: {step},
                  scrollDefaultNow:true,
+                 forceRoundTime: {force_round_time},
                  timeFormat:"g:i:s a"
               }});
               $("#timenow_{name}").click(function() {{
@@ -137,10 +165,10 @@ class TimeWidget(forms.TimeInput):
               $("#id_{name}").timepicker("setTime", d);
         </script>
         '''
-        #'$("#id_{name}").timepicker("setTime", new Date());'
         return msg.format(
             super(TimeWidget, self).render(name, value, attrs),
-            name=name, initial_time=initial_time
+            name=name, initial_time=initial_time, step=step,
+            force_round_time=force_round_time
         )
 
 
@@ -358,11 +386,13 @@ class IntegerIDChoiceField(IDChoiceField):
 
 
 def fields_add_time_selection(obj, show_duration=True, initial_duration=None,
-                              durations=None, show_start=False,
+                              durations=None,
+                              show_start=False,
                               initial_start_time='now-1h',
-                              initial_start_date='now-1h', show_end=True,
+                              initial_start_date='now-1h',
+                              show_end=True,
                               initial_end_time='now-0',
-                              initial_end_date='now-0',
+                              round_initial=0,  # seconds to round initial time
                               special_values=None):
 
     if show_start:
@@ -373,7 +403,8 @@ def fields_add_time_selection(obj, show_duration=True, initial_duration=None,
                                'widget': ReportSplitDateTimeWidget,
                                'widget_attrs': {
                                    'initial_time': initial_start_time,
-                                   'initial_date': initial_start_date
+                                   'initial_date': initial_start_date,
+                                   'round_initial': round_initial
                                }
                            },
                            required=False)
@@ -388,7 +419,8 @@ def fields_add_time_selection(obj, show_duration=True, initial_duration=None,
                                'widget': ReportSplitDateTimeWidget,
                                'widget_attrs': {
                                    'initial_time': initial_end_time,
-                                   'initial_date': initial_end_date
+                                   'initial_date': initial_start_date,
+                                   'round_initial': round_initial
                                }
                            },
                            required=False)
