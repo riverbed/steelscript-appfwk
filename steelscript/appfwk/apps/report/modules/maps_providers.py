@@ -20,6 +20,7 @@ def google_postprocess(data):
             'title': c.title,
             'value': c.value,
             'units': c.units,
+            'url': c.url,
             'formatter': c.formatter
         }
         circles.append(circle)
@@ -47,6 +48,7 @@ def openstreetmaps_postprocess(data):
 
             'value': c.value,
             'units': c.units,
+            'url': c.url,
             'formatter': c.formatter
         }
         circles.append(circle)

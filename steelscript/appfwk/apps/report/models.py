@@ -601,6 +601,8 @@ class Widget(models.Model):
     row = models.IntegerField()
     col = models.IntegerField()
     width = models.IntegerField(default=1)
+
+    # setting height of 0 will let widget box auto-size to resulting data
     height = models.IntegerField(default=300)
     rows = models.IntegerField(default=-1)
     options = PickledObjectField()
@@ -722,6 +724,11 @@ class WidgetDataCache(models.Model):
     report_widget_id = models.CharField(max_length=500, primary_key=True)
     data = models.TextField(blank=False)
     created = models.DateTimeField()
+
+    def __unicode__(self):
+        return "<WidgetDataCache %s/%s/%s>" % (self.id,
+                                               self.report_widget_id[:10],
+                                               self.created)
 
     def save(self, *args, **kwargs):
         """ On save, update created timestamp """
