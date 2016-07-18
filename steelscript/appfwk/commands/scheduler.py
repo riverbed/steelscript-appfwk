@@ -161,6 +161,65 @@ def get_auth(authfile):
         return tuple(f.readline().strip().split(':'))
 
 
+def wait_for_complete(conn, interval, timeout, urls, output_filenames=None):
+    """Cycle through URLs searching for status results.
+
+    Optionally write data out to file when completed.
+
+    :param conn: Connection object
+    :param interval: how often to check for data
+    :param timeout: how long to wait overall, before giving up
+    :param urls: list of urls to check
+    :param output_filenames: optional list of filenames to append resulting
+        data which correlate to each url passed in.
+    """
+    complete = {k: False for k in urls}
+    error = {k: False for k in urls}
+
+    now = datetime.datetime.now
+    start = now()
+    while (now() - start) < timeout:
+        for url in urls:
+            if not complete[url]:
+                status = conn.request('GET', url)
+
+                if status.json()['status'] == 3:
+                    logger.debug("URL %s completed successfully." % url)
+                    complete[url] = True
+                    continue
+
+                elif status.json()['status'] == 4:
+                    logger.error('URL %s reported error in processing: %s' %
+                                 (url, status.json()))
+                    complete[url] = True
+                    error[url] = True
+                    continue
+
+                logger.debug('URL %s not yet complete, sleeping' % url)
+
+        if all(complete.values()):
+            break
+
+        time.sleep(interval)
+
+    if not all(complete.values()):
+        logger.warning("Timed out waiting for URLs to complete: %s"
+                       % [k for k, v in complete.iteritems() if v is False])
+
+    elif not all(error.values()):
+        if output_filenames:
+            for fname, url in zip(output_filenames, urls):
+                logger.debug('Writing data to %s' % fname)
+
+                # get data, load into DataFrame, and write as CSV
+                data = conn.json_request('GET', urljoin(url, 'data/'))
+                df = pandas.DataFrame(data)
+                df.index.name = 'index'
+
+                with open(fname, 'a') as f:
+                    f.write(df.to_csv())
+
+
 def run_table_via_rest(host, url, authfile, verify, **kwargs):
     criteria, options = process_criteria(kwargs)
 
@@ -179,40 +238,8 @@ def run_table_via_rest(host, url, authfile, verify, **kwargs):
         timeout = options['delta']
         interval = 1
 
-        complete = False
-        error = False
-        now = datetime.datetime.now
-        start = now()
-
-        while (now() - start) < timeout:
-            status = conn.request('GET', url)
-
-            if status.json()['status'] == 3:
-                logger.debug("Table completed successfully.")
-                complete = True
-                break
-
-            if status.json()['status'] == 4:
-                logger.error('Table reported error in processing: %s' %
-                             status.json())
-                complete = True
-                error = True
-                break
-
-            logger.debug("Table not yet complete, sleeping for 1 second.")
-            time.sleep(interval)
-
-        if not complete:
-            logger.warning("Timed out waiting for table to complete,"
-                           "url is: %s" % url)
-        elif not error:
-            # get data, load into DataFrame, and write as CSV
-            data = conn.json_request('GET', urljoin(url, 'data/'))
-            df = pandas.DataFrame(data)
-            df.index.name = 'index'
-
-            with open(options['output-file'], 'a') as f:
-                f.write(df.to_csv())
+        wait_for_complete(conn, interval, timeout,
+                          [url], [options['output-file']])
     else:
         # we aren't interested in results
         pass
@@ -262,11 +289,11 @@ def run_report_via_rest(host, slug, namespace,
                                   extra_headers=post_header, body=data)
         jobs.append(w_response.json()['joburl'])
 
-    # do initial status check to make sure things are moving
-    for j in jobs:
-        data = conn.request('GET', j)
-        if data.ok:
-            logger.debug('Successfully retrieved job status for %s' % j)
+    # check until all jobs are done
+    timeout = options['delta']
+    interval = 1
+
+    wait_for_complete(conn, interval, timeout, jobs)
 
 
 class Command(BaseCommand):
