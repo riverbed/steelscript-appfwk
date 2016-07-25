@@ -735,7 +735,7 @@ rvbd.formatHealthWithHover = function(v) {
     }
 
     if (arr.length > 2 && arr[2] != '') {
-        tooltip_text = '<div class="tooltiptext">' + arr[2] + '</div>';
+        tooltip_text = '<a class="tooltiptext left" href="#"><span class="txt">' + arr[2] + '</span></a>';
     }
 
     return '<div class="' + color + '-circle wide">' + tooltip_text + visible_text + '</div>'
