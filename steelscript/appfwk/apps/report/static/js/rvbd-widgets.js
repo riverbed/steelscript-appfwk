@@ -393,9 +393,12 @@ rvbd.widgets.Widget.prototype = {
         menuItems.push(
             '<a tabindex="0" id="' + self.id + '_export_widget_csv" class="export_widget_csv" href="#">Export CSV (Table Data)...</a>'
         );
-        menuItems.push(
-            '<a tabindex="1" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
-        );
+        // only include widget criteria if we have developer mode set
+        if (rvbd.report.developer) {
+            menuItems.push(
+                '<a tabindex="1" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
+            );
+        }
 
         var $menuContainer = $('<div></div>')
                 .attr('id', 'reports-dropdown')
@@ -735,7 +738,7 @@ rvbd.formatHealthWithHover = function(v) {
     }
 
     if (arr.length > 2 && arr[2] != '') {
-        tooltip_text = '<div class="tooltiptext">' + arr[2] + '</div>';
+        tooltip_text = '<a class="tooltiptext left" href="#"><span class="txt">' + arr[2] + '</span></a>';
     }
 
     return '<div class="' + color + '-circle wide">' + tooltip_text + visible_text + '</div>'

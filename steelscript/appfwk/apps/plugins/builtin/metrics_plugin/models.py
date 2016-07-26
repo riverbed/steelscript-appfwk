@@ -130,7 +130,7 @@ class ServicesMetric(Metric):
     def _get_dataframe(cls):
         """Return a dataframe of table data, used by datasource query."""
 
-        metrics = ServicesMetric.objects.all()
+        metrics = ServicesMetric.objects.all().order_by('id')
 
         columns = ('name', 'status_text')
 
@@ -226,12 +226,15 @@ class NetworkMetric(Metric):
         new_node_name = data['node_name']
 
         # do we have this node recorded already?
-        if self.affected_nodes.filter(network=self, name=new_node_name):
+        nodes = self.affected_nodes.filter(network=self, name=new_node_name)
+        if nodes:
             node = self.affected_nodes.get(network=self, name=new_node_name)
 
             if data['node_status'].lower() == 'up':
+                # if this was the last node, consider us operational
+                if len(self.affected_nodes.all()) == 1:
+                    self.parent_status = 'Operational'
                 node.delete()
-                self.parent_status = data['parent_status']
             else:
                 # we've already logged this node being down
                 logger.warning('Received metric update for Service node %s, '
@@ -247,13 +250,23 @@ class NetworkMetric(Metric):
                 new_node = NetworkNode(name=new_node_name, network=self)
                 new_node.save()
                 logger.info('Added new down Network node %s' % new_node)
-                self.parent_status = data['parent_status']
+
+                if len(self.affected_nodes.all()) > 2:
+                    # always go highest status when more than 3 nodes down
+                    self.parent_status = STATUS_CHOICES[-1]
+                else:
+                    # Only update status if new status is higher
+                    for status in STATUS_CHOICES[::-1]:
+                        if self.parent_status == status:
+                            break
+                        elif data['parent_status'] == status:
+                            self.parent_status = data['parent_status']
 
     @classmethod
     def _get_dataframe(cls):
         """Return a dataframe of table data, used by datasource query."""
 
-        metrics = NetworkMetric.objects.all()
+        metrics = NetworkMetric.objects.all().order_by('id')
 
         columns = ('location', 'parent_group', 'status_text')
         data = [(m.location,

@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+[1.2.1]
+ * Enhanced tooltips
+ * Remove "Show Widget Criteria" item unless developer mode enabled
+ * Minor bug fixes
+
 [1.2]
  * Maps markers can now have URLs associated with them when clicked
  * Add support for time fields to auto-round to certain intervals

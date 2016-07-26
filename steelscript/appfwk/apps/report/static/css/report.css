@@ -164,40 +164,6 @@ input[type="file"] {
     visibility: visible;
 }
 
-.tooltiptext
-{
-    visibility: hidden;
-    height: auto;
-    width: auto;
-    background-color: rgba(128,128,128,1);
-    position: absolute;
-    padding: 10px;
-    color: white;
-    border-radius: 10px;
-
-    margin-left:25px;
-    margin-bottom:10px;
-
-    line-height: 125%;
-
-    z-index:1;
-}
-
-.tooltiptext:after {
-    position: absolute;
-    border-left: solid transparent 10px;
-    border-right: solid transparent 10px;
-    border-top: solid rgb(128,128,128) 10px;
-
-    content: " ";
-    top: 0;
-
-    width: 0;
-    height: 0;
-    left: 3px;
-    margin-left: -13px;
-}
-
 .info
 {
    position: absolute;
@@ -205,5 +171,102 @@ input[type="file"] {
    font-weight: bold;
    color: black;
    margin-left: 20px;
-   margin-top: 0px;
+   /*margin-top: 0;*/
+   margin-top: -13px;
+}
+
+/*
+Inspired by Inspirational Pixels here:
+http://inspirationalpixels.com/tutorials/tooltips-in-pure-htmlcss
+*/
+.tooltiptext {
+    width:10px;
+    height:10px;
+    display:inline-block;
+    position:relative;
+    border-radius:1000px;
+    border:1px solid transparent;
+}
+
+.tooltiptext:hover .txt {
+    display:inline-block;
+}
+
+.tooltiptext .txt {
+    display:none;
+    padding: 5px 10px;
+    position:absolute;
+    line-height:150%;
+    border-radius:3px;
+    font-size:12px;
+    font-weight:normal;
+    text-shadow:-1px 1px 0px rgba(0,0,0,0.2);
+    background:rgba(0,0,0,0.75);
+    color:#fff;
+    z-index:1000;
+}
+
+.tooltiptext .txt:before {
+    width:0px;
+    padding:0px;
+    position:absolute;
+    content:'';
+}
+
+/* Top */
+.tooltiptext.top .txt {
+    bottom:20px;
+    left:-10px;
+}
+
+.tooltiptext.top .txt:before {
+    bottom:-5px;
+    left:10px;
+    border-left:5px solid transparent;
+    border-right:5px solid transparent;
+    border-top:5px solid rgba(0,0,0,0.75);
+}
+
+/* Right */
+.tooltiptext.right .txt {
+    top:-10px;
+    left:20px;
+}
+
+.tooltiptext.right .txt:before {
+    top:10px;
+    left:-5px;
+    border-top:5px solid transparent;
+    border-bottom:5px solid transparent;
+    border-right:5px solid rgba(0,0,0,0.75);
+}
+
+/* Bottom */
+.tooltiptext.bottom .txt {
+    top:20px;
+    left:-10px;
+}
+
+.tooltiptext.bottom .txt:before {
+    top:-5px;
+    left:10px;
+    bottom:auto;
+    border-left:5px solid transparent;
+    border-right:5px solid transparent;
+    border-bottom:5px solid rgba(0,0,0,0.75);
+}
+
+/* Left */
+.tooltiptext.left .txt {
+    top:-10px;
+    right:20px;
+}
+
+.tooltiptext.left .txt:before {
+    top:10px;
+    right:-5px;
+    bottom:auto;
+    border-top:5px solid transparent;
+    border-bottom:5px solid transparent;
+    border-left:5px solid rgba(0,0,0,0.75);
 }

@@ -235,6 +235,8 @@ class MapWidget(object):
 
                     if geo:
                         # Found a match, create a Circle
+                        url = rawrow[urlcol.dataindex] if urlcol else None
+
                         circle = Circle(title=geo.name,
                                         lat=geo.latitude,
                                         long=geo.longitude,
@@ -242,13 +244,14 @@ class MapWidget(object):
                                         size=marker_size,
                                         units=valuecol.col.units_str(),
                                         formatter=formatter,
-                                        url=rawrow[urlcol.dataindex])
+                                        url=url)
                         circles.append(circle)
                 else:
                     # use lat/long columns instead of lookups
                     lat = rawrow[latcol.dataindex]
                     long = rawrow[longcol.dataindex]
                     title = rawrow[labelcol.dataindex] if labelcol else val
+                    url = rawrow[urlcol.dataindex] if urlcol else None
 
                     circle = Circle(title=title,
                                     lat=lat,
@@ -257,7 +260,7 @@ class MapWidget(object):
                                     size=marker_size,
                                     units=valuecol.col.units_str(),
                                     formatter=formatter,
-                                    url=rawrow[urlcol.dataindex])
+                                    url=url)
                     circles.append(circle)
 
         else:
