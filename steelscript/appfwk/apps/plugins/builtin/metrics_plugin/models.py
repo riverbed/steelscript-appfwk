@@ -130,7 +130,7 @@ class ServicesMetric(Metric):
     def _get_dataframe(cls):
         """Return a dataframe of table data, used by datasource query."""
 
-        metrics = ServicesMetric.objects.all()
+        metrics = ServicesMetric.objects.all().order_by('id')
 
         columns = ('name', 'status_text')
 
@@ -266,7 +266,7 @@ class NetworkMetric(Metric):
     def _get_dataframe(cls):
         """Return a dataframe of table data, used by datasource query."""
 
-        metrics = NetworkMetric.objects.all()
+        metrics = NetworkMetric.objects.all().order_by('id')
 
         columns = ('location', 'parent_group', 'status_text')
         data = [(m.location,

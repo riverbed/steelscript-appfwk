@@ -70,6 +70,9 @@
       // of the debug information if rvbd_debug is set to true.
       rvbd.report.debugUrl = "{% url 'steelscript.appfwk.apps.report.views.download_debug' %}";
 
+      // turn on different features if developer mode enabled
+      rvbd.report.developer = {% if developer %}true{% else %}false{% endif %};
+
       $(rvbd.report.start);
 
       function appendCurrentTimeUrlParam(uri, timeoutValue) {

@@ -393,9 +393,12 @@ rvbd.widgets.Widget.prototype = {
         menuItems.push(
             '<a tabindex="0" id="' + self.id + '_export_widget_csv" class="export_widget_csv" href="#">Export CSV (Table Data)...</a>'
         );
-        menuItems.push(
-            '<a tabindex="1" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
-        );
+        // only include widget criteria if we have developer mode set
+        if (rvbd.report.developer) {
+            menuItems.push(
+                '<a tabindex="1" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
+            );
+        }
 
         var $menuContainer = $('<div></div>')
                 .attr('id', 'reports-dropdown')
