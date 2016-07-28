@@ -310,15 +310,9 @@ class PivotQuery(AnalysisQuery):
             logger.error(msg)
             return QueryError(msg)
 
-        try:
-            pivot = df.pivot(index=self.table.options.pivot_index,
-                             columns=self.table.options.pivot_column,
-                             values=self.table.options.pivot_value).reset_index()
-        except:
-            msg = ('Jobs data does not support pivot table creation in '
-                   'PivotQuery.analyze(). Data was: {0}'.format(df))
-            logger.error(msg)
-            return QueryComplete(df)
+        pivot = df.pivot(index=self.table.options.pivot_index,
+                         columns=self.table.options.pivot_column,
+                         values=self.table.options.pivot_value).reset_index()
 
         # since numeric values may now be columns, change them to strings
         # for proper pattern matching downstream
@@ -350,11 +344,11 @@ class ResampleTable(AnalysisTable):
     _query_class = 'ResampleQuery'
 
     def fields_add_sample(self, keyword='resample_interval',
-                          initial='60'):
+                          initial='60s'):
 
 
         field = TableField(keyword=keyword,
-                           label='MPLS Resample Seconds',
+                           label='Resample Seconds',
                            help_text='Number of seconds to sample data over.',
                            initial=initial,
                            required=False)
@@ -364,7 +358,7 @@ class ResampleTable(AnalysisTable):
 
     def post_process_table(self, field_options):
         super(self.__class__, self).post_process_table(field_options)
-        self.fields_add_sample()
+        self.fields_add_sample(initial=self.options.resample_interval)
 
 class ResampleQuery(AnalysisQuery):
 
@@ -375,7 +369,7 @@ class ResampleQuery(AnalysisQuery):
         rs = self.table.options.resample_interval
         try:
             rs = '{0}s'.format(int(job.criteria.resample_interval))
-        except:
+        except ValueError:
             logger.debug(
                 "{0}: resample_interval ({2}) not set or valid in "
                 "job criteria {1}".format(self, job.criteria, rs))
@@ -386,21 +380,16 @@ class ResampleQuery(AnalysisQuery):
         rs_df = resample(df, self.table.options.resample_column,
                              rs,
                              self.table.options.resample_operation)
-        try:
-            curcols = [c.name for c in self.job.get_columns(synthetic=False)]
-            jcols = [c.name for c in job.get_columns(synthetic=False)]
-            for c in jcols:
-                if c not in curcols:
-                    # Default data type is float.
-                    Column.create(self.job.table,
-                                  name=c,
-                                  label=c,
-                                  ephemeral=self.job)
 
-        except:
-            msg = ('recolumn during resample failed on '
-                   'datatable. Data was: {0}'.format(df))
-            return QueryError(msg)
+        curcols = [c.name for c in self.job.get_columns(synthetic=False)]
+        jcols = [c.name for c in job.get_columns(synthetic=False)]
+        for c in jcols:
+            if c not in curcols:
+                # Default data type is float.
+                Column.create(self.job.table,
+                              name=c,
+                              label=c,
+                              ephemeral=self.job)
 
         return QueryComplete(rs_df)
 
