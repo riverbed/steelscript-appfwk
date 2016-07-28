@@ -2,7 +2,9 @@ CHANGELOG
 =========
 
 [1.2.1]
- * Enhanced tooltips
+ * Enhanced RYG tooltips
+ * Make time series tooltips shift left to make right-side data
+   more easily viewable
  * Remove "Show Widget Criteria" item unless developer mode enabled
  * Minor bug fixes
 
