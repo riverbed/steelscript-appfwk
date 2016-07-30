@@ -204,6 +204,13 @@ $.extend(rvbd.widgets.yui3.TimeSeriesWidget.prototype, {
         data.tooltip = {};
         data.tooltip.setTextFunction = function(textField, val) {
             textField.setHTML(val);
+            // the following will pick up all tooltips in page
+            //var tt = $('.yui3-chart-tooltip');
+
+            // instead, we find the one associated with the current field
+            // then get its width and set the margin accordingly
+            var width = $('#' + textField["_node"].id).width();
+            textField.setStyle('margin-left', '-' + width + 'px');
         };
 
         data.tooltip.markerLabelFunction = function(cat, val, idx, s, sidx) {
