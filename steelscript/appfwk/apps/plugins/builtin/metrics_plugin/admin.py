@@ -23,6 +23,7 @@ class NetworkMetricAdmin(admin.ModelAdmin):
                     'override_value', 'affected_nodes')
     fields = ('location', 'parent_group', 'parent_status', 'override_value')
     inlines = (NetworkNodeInline,)
+    ordering = ('id', )
 
     def affected_nodes(self, obj):
         return obj.affected_nodes.all()
@@ -38,6 +39,7 @@ class ServiceNodeInline(admin.TabularInline):
 class ServicesMetricAdmin(admin.ModelAdmin):
     list_display = ('name', 'value', 'override_value', 'affected_nodes')
     inlines = (ServiceNodeInline,)
+    ordering = ('id', )
 
     def affected_nodes(self, obj):
         return obj.affected_nodes.all()
