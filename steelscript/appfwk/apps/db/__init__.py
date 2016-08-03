@@ -5,7 +5,7 @@
 # as set forth in the License.
 
 
-from steelscript.appfwk.project import settings
+from django.conf import settings
 from models import ExistingIntervals
 
 if (not hasattr(settings, 'DB_SOLUTION')):

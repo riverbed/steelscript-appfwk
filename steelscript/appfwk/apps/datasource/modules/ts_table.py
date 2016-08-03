@@ -268,7 +268,7 @@ class TimeSeriesQuery(AnalysisQuery):
         # Only update existing intervals if writing to db succeeds
         obj.save()
 
-        # Immediately reading from db after writing results
+        # Immediately reading from db after writing results can result in
         # non-correct data, thus stitching the data frames together
         total_df = pandas.concat(dfs_from_db + dfs_from_jobs,
                                  ignore_index=True)
