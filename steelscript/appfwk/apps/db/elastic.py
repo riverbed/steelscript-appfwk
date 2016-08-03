@@ -4,9 +4,7 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-import time
 import logging
-import pandas as pd
 
 from collections import namedtuple
 
@@ -38,11 +36,15 @@ class ElasticSearch(object):
                     "_source": df.iloc[i].to_dict()}
                    for i in xrange(len(df))]
 
-        helpers.bulk(self.client, actions=actions)
-        logger.debug("Wrote %s records from %s to %s into elasticsearch."
-                     % (len(df), df[timecol].min(), df[timecol].max()))
-        # Wait a second to give elasticsearch time to commit writting results
-        time.sleep(1)
+        logger.debug("Writing %s records from %s to %s into db. Index: %s, "
+                     "doc_type: %s."
+                     % (len(df), df[timecol].min(), df[timecol].max(),
+                        index, doctype))
+
+        written, errors = helpers.bulk(self.client, actions=actions,
+                                       stats_only=True)
+        logger.debug("Successfully wrote %s records, %s errors." % (written,
+                                                                    errors))
         return
 
     def search(self, index, doc_type, col_filters=None):
@@ -60,4 +62,4 @@ class ElasticSearch(object):
 
         logger.debug("Search returned %s records from elasticsearch."
                      % len(results))
-        return pd.DataFrame([res._d_ for res in results])
+        return [res.to_dict() for res in results]

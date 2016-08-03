@@ -16,11 +16,11 @@ class IntervalsAdmin(admin.ModelAdmin):
 
     def existing_intervals(self, obj):
 
-        l = []
+        intervals = []
         for interval in obj.intervals:
             interval.localize_tz(obj.tzinfo)
-            l.append(str(interval))
-        return '<br>'.join(l)
+            intervals.append(str(interval))
+        return '<br>'.join(intervals)
 
     existing_intervals.allow_tags = True
 

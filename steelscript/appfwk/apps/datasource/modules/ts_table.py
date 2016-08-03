@@ -19,12 +19,14 @@ from steelscript.appfwk.apps.db import storage, ColumnFilter, \
 from steelscript.common.interval import Interval, IntervalList
 from steelscript.appfwk.apps.datasource.models import Column
 from steelscript.common.timeutils import round_time, timedelta_total_seconds,\
-    force_to_utc
+    force_to_utc, TimeParser
 
 logger = logging.getLogger(__name__)
 
 TIME_FIELDS = ['_orig_duration', '_orig_endtime', '_orig_starttime',
                'duration', 'endtime', 'starttime']
+
+tp = TimeParser()
 
 
 class TimeInterval(Interval):
@@ -66,7 +68,7 @@ class TimeSeriesQuery(AnalysisQuery):
 
     def _calc_handle(self):
         """ Compute the handle corresponding to the table object
-        and the criteria fields, exluding fiels such as 'endtime',
+        and the criteria fields, excluding fields such as 'endtime',
         'starttime' and 'duration'.
 
         :return: the hash hex string.
@@ -153,25 +155,31 @@ class TimeSeriesQuery(AnalysisQuery):
 
         return starttime, endtime, resolution
 
-    def query(self):
+    def query(self, starttime, endtime):
         col_filters = [ColumnFilter(
                        query_type='range',
-                       query={self.time_col: {'gte': self.query_interval.start,
-                                              'lte': self.query_interval.end}
+                       query={self.time_col: {'gte': starttime,
+                                              'lte': endtime}
                               })]
 
         res = storage.search(index=self.ds_table.namespace,
                              doc_type=self.handle,
                              col_filters=col_filters)
 
-        if res.empty:
-            return None
-        else:
-            return res.sort(self.time_col)
+        # res is a list of dicts, each dict represents one record/doc
+        # The time filed is of format "YYYY/MM/DDTHH:MM:SS"
+        # Need to convert it to datetime filed
+        for rec in res:
+            rec[self.time_col] = \
+                force_to_utc(tp.parse(rec[self.time_col].replace('T', ' ')))
+
+        res = pandas.DataFrame(res)
+
+        return res.sort(self.time_col) if not res.empty else None
 
     def _converge_adjacent(self, intervals):
 
-        l = []
+        itvs = []
         current_interval = None
         for interval in intervals:
             if current_interval is None:
@@ -180,10 +188,10 @@ class TimeSeriesQuery(AnalysisQuery):
                 current_interval = TimeInterval(current_interval.start,
                                                 interval.end)
             else:
-                l.append(current_interval)
+                itvs.append(current_interval)
                 current_interval = interval
-        l.append(current_interval)
-        return IntervalList(l)
+        itvs.append(current_interval)
+        return IntervalList(itvs)
 
     def analyze(self, jobs=None):
 
@@ -197,7 +205,8 @@ class TimeSeriesQuery(AnalysisQuery):
 
             if self.query_interval in existing_intervals:
                 # Search DB for the queried data
-                return QueryComplete(self.query())
+                return QueryComplete(self.query(self.query_interval.start,
+                                                self.query_interval.end))
 
         intervals_to_call = self._check_intervals(
             self.query_interval - existing_intervals)
@@ -215,12 +224,17 @@ class TimeSeriesQuery(AnalysisQuery):
         return QueryContinue(self.collect, jobs=dep_jobs)
 
     def collect(self, jobs=None):
-        dfs = []
+        dfs_from_jobs, dfs_from_db = [], []
 
         objs = ExistingIntervals.objects.filter(table_handle=self.handle)
 
         if objs:
             obj = objs[0]
+
+            # Query for the intervals already in db
+            itvs_in_db = self.query_interval.intersection(obj.intervals)
+            dfs_from_db = [self.query(itv.start, itv.end)
+                           for itv in itvs_in_db]
         else:
             obj = ExistingIntervals(plugin=self.ds_table.namespace,
                                     table=self.ds_table.name,
@@ -232,20 +246,19 @@ class TimeSeriesQuery(AnalysisQuery):
             df = job.data()
             if df is None:
                 continue
-            dfs.append(df)
+            dfs_from_jobs.append(df)
 
             obj.intervals += \
                 TimeInterval(df[self.time_col].min().to_datetime(),
                              df[self.time_col].max().to_datetime())
 
-        if not dfs:
+        if not dfs_from_jobs:
             return QueryComplete(None)
-
-        df = pandas.concat(dfs, ignore_index=True)
 
         storage.write(index=self.ds_table.namespace,
                       doctype=self.handle,
-                      data_frame=df,
+                      data_frame=pandas.concat(dfs_from_jobs,
+                                               ignore_index=True),
                       timecol=self.time_col)
 
         obj.intervals = self._converge_adjacent(obj.intervals)
@@ -255,6 +268,8 @@ class TimeSeriesQuery(AnalysisQuery):
         # Only update existing intervals if writing to db succeeds
         obj.save()
 
-        # Instead of stitching data using data frame
-        # Read DB for the original request URL
-        return QueryComplete(self.query())
+        # Immediately reading from db after writing results
+        # non-correct data, thus stitching the data frames together
+        total_df = pandas.concat(dfs_from_db + dfs_from_jobs,
+                                 ignore_index=True)
+        return QueryComplete(total_df.sort(self.time_col).drop_duplicates())
