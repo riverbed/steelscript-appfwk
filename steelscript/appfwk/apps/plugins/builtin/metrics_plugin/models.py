@@ -279,7 +279,16 @@ class NetworkMetric(Metric):
                        columns='parent_group',
                        values='status_text').reset_index()
 
-        return pdf
+        # let's sort according to id in pivot table
+        # ref http://stackoverflow.com/a/36965438/2157429
+        df['order'] = df.index
+        seq = df[['location', 'order']].to_dict(orient='records')
+        ordering = {d['location']: d['order'] for d in seq}
+
+        idx = pdf['location'].map(ordering).sort(inplace=False).index
+        xdf = pdf.reindex(idx)
+
+        return xdf
 
 # get serializers registered with plugin models
 import serializers
