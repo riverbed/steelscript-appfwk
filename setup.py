@@ -94,13 +94,14 @@ http://pythonhosted.org/steelscript/
 
         'ansi2html>=1.0.6',
         'django-ace==1.0.2',
-        'apscheduler>=3.0',
+        'apscheduler==3.0.6',
 
         'celery>=3.1',
         'django-celery==3.1.16',
         'redis==2.10.3',
 
         # progressd
+        'reschema==0.5'
         'flask==0.10.1',
         'flask_restful==0.3.2',
 
