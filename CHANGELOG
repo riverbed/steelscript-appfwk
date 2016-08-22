@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+[1.2.2]
+ * Handle non-local timezones more cleanly
+ * Fix missing requirements versions
+
 [1.2.1]
  * Enhanced RYG tooltips
  * Make time series tooltips shift left to make right-side data

@@ -75,10 +75,12 @@
                 <small class="text-info pull-right"><span id="report-timezone">
                     {% if user.is_authenticated %}
                         <a id='update-tz' href='/preferences/user/?next={{ request.path }}'>{{ TIME_ZONE }}</a>
+
                     {% else %}
                         {{ TIME_ZONE }}
                     {% endif %}
-                </span></small>
+                </span>
+                (<span id="tz">{% now "O" %}</span>)</small>
         {% endblock %}
 
 {% block content %}{% endblock %}

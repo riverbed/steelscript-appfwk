@@ -19,6 +19,17 @@ if (typeof Object.create !== 'function') {
 // Riverbed namespace object (used in all Riverbed JS files)
 rvbd = {};
 
+rvbd.timeutil = {
+    // ref: http://stackoverflow.com/a/14006555/2157429
+    createDateAsUTC: function(date) {
+        return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()));
+    },
+
+    convertDateToUTC: function(date) {
+        return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds());
+    }
+};
+
 rvbd.modal = {
     html: function(heading, body, cancelButtonTxt, okButtonTxt, customClass) {
         if (typeof customClass === 'undefined') {

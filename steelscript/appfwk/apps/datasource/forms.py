@@ -15,6 +15,7 @@ from collections import deque
 import logging
 
 import dateutil
+from django.utils import timezone
 from django import forms
 from django.forms.util import from_current_timezone, ErrorDict
 from django.core.files.uploadedfile import UploadedFile
@@ -162,6 +163,11 @@ class TimeWidget(forms.TimeInput):
                  $("#id_{name}").timepicker("setTime", new Date());
               }});
               {initial_time}
+
+              // align to timezone
+              var offset = ($('#tz').html()/100)*60*60*1000;
+              d = rvbd.timeutil.convertDateToUTC(d);
+              d.setTime(d.getTime() + offset);
               $("#id_{name}").timepicker("setTime", d);
         </script>
         '''
