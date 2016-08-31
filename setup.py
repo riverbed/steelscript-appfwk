@@ -101,7 +101,7 @@ http://pythonhosted.org/steelscript/
         'redis==2.10.3',
 
         # progressd
-        'reschema==0.5'
+        'reschema==0.5',
         'flask==0.10.1',
         'flask_restful==0.3.2',
 
