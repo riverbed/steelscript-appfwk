@@ -346,7 +346,6 @@ class ResampleTable(AnalysisTable):
     def fields_add_sample(self, keyword='resample_interval',
                           initial='60s'):
 
-
         field = TableField(keyword=keyword,
                            label='Resample Seconds',
                            help_text='Number of seconds to sample data over.',
@@ -355,10 +354,10 @@ class ResampleTable(AnalysisTable):
         field.save()
         self.fields.add(field)
 
-
     def post_process_table(self, field_options):
         super(self.__class__, self).post_process_table(field_options)
         self.fields_add_sample(initial=self.options.resample_interval)
+
 
 class ResampleQuery(AnalysisQuery):
 
@@ -377,9 +376,10 @@ class ResampleQuery(AnalysisQuery):
             job.criteria.resample_interval = u'{0}'.format(rs.split('s')[0])
 
         df = job.data()
-        rs_df = resample(df, self.table.options.resample_column,
-                             rs,
-                             self.table.options.resample_operation)
+        rs_df = resample(df,
+                         self.table.options.resample_column,
+                         rs,
+                         self.table.options.resample_operation)
 
         curcols = [c.name for c in self.job.get_columns(synthetic=False)]
         jcols = [c.name for c in job.get_columns(synthetic=False)]
