@@ -369,7 +369,7 @@ class ResampleQuery(AnalysisQuery):
         try:
             rs = '{0}s'.format(int(job.criteria.resample_interval))
         except ValueError:
-            logger.debug(
+            logger.warning(
                 "{0}: resample_interval ({2}) not set or valid in "
                 "job criteria {1}".format(self, job.criteria, rs))
 
