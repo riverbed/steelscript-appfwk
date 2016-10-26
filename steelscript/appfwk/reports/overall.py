@@ -6,8 +6,9 @@
 
 
 from steelscript.appfwk.apps.report.models import Report
-import steelscript.appfwk.apps.report.modules.yui3 as yui3
 import steelscript.appfwk.apps.report.modules.maps as maps
+import steelscript.appfwk.apps.report.modules.c3 as c3
+import steelscript.appfwk.apps.report.modules.tables as tables
 
 from steelscript.netprofiler.appfwk.datasources.netprofiler import (NetProfilerGroupbyTable,
                                                                     NetProfilerTimeSeriesTable)
@@ -37,7 +38,8 @@ p.add_column('server_delay', label='Srv Delay',  units='ms')
 # Adding a widget using the Report object will apply them
 # to the last defined Section, here that will be 'Locations'
 report.add_widget(maps.MapWidget, p, "Response Time", width=6, height=300)
-report.add_widget(yui3.TableWidget, p, "Locations by Response Time", width=6)
+report.add_widget(tables.TableWidget, p, "Locations by Response Time", width=6,
+                  info=False, paging=False, searching=False)
 
 # Define a Overall TimeSeries showing Avg Bytes/s
 report.add_section('NetProfiler Overall',
@@ -48,7 +50,8 @@ p = NetProfilerTimeSeriesTable.create('ts1', duration=1440, resolution='15min')
 p.add_column('time', label='Time', datatype='time', iskey=True)
 p.add_column('avg_bytes', label='Avg Bytes/s', units='B/s')
 
-report.add_widget(yui3.TimeSeriesWidget, p, "NetProfiler Overall Traffic", width=6)
+report.add_widget(c3.TimeSeriesWidget, p,
+                  "NetProfiler Overall Traffic", width=6)
 
 # NetShark Time Series
 section = report.add_section('NetShark Traffic',
@@ -63,6 +66,6 @@ shark.add_column('generic_bits', label='bits', iskey=False,
                  extractor='generic.bits', operation='sum', units='b')
 
 # Widgets can also be added to Section objects explicitly
-section.add_widget(yui3.TimeSeriesWidget, shark,
+section.add_widget(c3.TimeSeriesWidget, shark,
                    'Overall Bandwidth (Bits) at (1-second resolution)',
                    width=6)
