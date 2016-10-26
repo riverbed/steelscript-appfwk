@@ -115,21 +115,39 @@ STATIC_URL = '/static/'
 OFFLINE_JS = False
 
 JS_VERSIONS = {
-    'jquery': '1.9.1',
+    'jquery': '1.12.4',
     'jqueryui': '1.10.2',
     'jqueryform': '3.32',
     'yui': '3.17.2',
+    'c3': '0.4.11',
+    'd3': '3.5.17',
+    'pivottable': '2.1.0',
+    'datatables': '1.10.12',
 }
 
 # Format: (url, dirname). If dirname is None, "steel appfwk mkproject" will
 # install the file directly into the offline JS dir. Otherwise, it will treat
 # the file as a zip or tar archive and extract it into that subdirectory.
+JS_FILES = [
+    ("https://cdnjs.cloudflare.com/ajax/libs/jquery/{0}/jquery.min.js".format(JS_VERSIONS['jquery']), None),
+    ("https://cdnjs.cloudflare.com/ajax/libs/jqueryui/{0}/jquery-ui.min.js".format(JS_VERSIONS['jqueryui']), None),
+    ("https://cdnjs.cloudflare.com/ajax/libs/jquery.form/{0}/jquery.form.js".format(JS_VERSIONS['jqueryform']), None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js', None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js', None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.1.0/pivot.min.js', None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/jquery.dataTables.min.js', None),
+]
+
 OFFLINE_JS_FILES = [
-    ("http://ajax.googleapis.com/ajax/libs/jquery/{0}/jquery.min.js".format(JS_VERSIONS['jquery']), None),
-    ("http://ajax.googleapis.com/ajax/libs/jquery/{0}/jquery.min.map".format(JS_VERSIONS['jquery']), None),
+    ("https://cdnjs.cloudflare.com/ajax/libs/jquery/{0}/jquery.min.map".format(JS_VERSIONS['jquery']), None),
     ("https://jqueryui.com/resources/download/jquery-ui-{0}.zip".format(JS_VERSIONS['jqueryui']), "jquery-ui"),
-    ("http://cdnjs.cloudflare.com/ajax/libs/jquery.form/{0}/jquery.form.js".format(JS_VERSIONS['jqueryform']), None),
     ("http://yui.zenfs.com/releases/yui3/yui_{0}.zip".format(JS_VERSIONS['yui']), "yui"),
+]
+
+CSS_FILES = [
+    ('https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.10/c3.min.css', None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.1.0/pivot.min.css', None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/css/jquery.dataTables.min.css', None),
 ]
 
 

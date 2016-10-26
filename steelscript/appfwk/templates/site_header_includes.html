@@ -9,10 +9,17 @@
     <link href="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.css" rel="stylesheet"/>
     <link href="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.css" rel="stylesheet"/>
 
+
     {% if offline_js %}
+        {% comment %}
+        NEED FIX HERE
+        {% endcomment %}
     <link href="{{ STATIC_URL }}jquery-ui/themes/base/jquery-ui.css" rel="stylesheet"/>
     {% else %}
     <link href="//code.jquery.com/ui/{{ js_versions.jqueryui }}/themes/smoothness/jquery-ui.css" rel="stylesheet"/>
+        {% for css in css_files %}
+        <link href="{{ css.0 }}" rel="stylesheet"/>
+        {% endfor %}
     {% endif %}
 
     <script type="text/javascript" src="{{ STATIC_URL }}js/portal.js"></script>
@@ -22,10 +29,14 @@
     <script type="text/javascript" src="{{ STATIC_URL }}jquery-ui/ui/minified/jquery-ui.min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}jquery.form.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}yui/build/yui/yui-min.js"></script>
+        {% comment %}
+        NEED FIX HERE
+        {% endcomment %}
     {% else %}
-    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/{{ js_versions.jquery }}/jquery.min.js"></script>
-    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/{{ js_versions.jqueryui }}/jquery-ui.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.form/{{ js_versions.jqueryform }}/jquery.form.js"></script>
+        {% for js in js_files %}
+            <!-- comment here -->
+            <script type="text/javascript" src="{{ js.0 }}"></script>
+        {% endfor %}
     {% comment %}
     need to call yui-s separately since it seems to be less efficient
     with the network requests than the regular unsecured site - four combo
