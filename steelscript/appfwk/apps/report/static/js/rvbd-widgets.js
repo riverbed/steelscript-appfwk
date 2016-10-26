@@ -120,6 +120,9 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
         .text("Widget " + id);
     if (options.height) {
         $div.height(options.height);
+    } else {
+        // add temporary height to widget
+        $div.height(90);
     }
 
     $div.html("<p>Loading...</p>")
@@ -188,6 +191,9 @@ rvbd.widgets.Widget.prototype = {
             case 3: // Complete
                 $(self.div).hideLoading();
                 self.render(response.data);
+                if (!self.options.height) {
+                    $(self.div).height('auto');
+                }
                 self.status = 'complete';
                 $(document).trigger('widgetDoneLoading', [self]);
                 break;
