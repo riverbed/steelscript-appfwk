@@ -239,7 +239,7 @@ class TimeAxis(object):
         t = best[2](t0)
         ticks = [t]
         while t < t1:
-            t = t + best[0]*multiple
+            t = t + best[0] * multiple
             ticks.append(t)
 
         self.ticks = ticks

@@ -100,7 +100,7 @@ class BaseTableWidget(object):
 class TableWidget(BaseTableWidget):
     @classmethod
     def create(cls, section, table, title, width=6, height=300, rows=1000,
-               cols=None, info=True, paging=True, row_chooser=True,
+               cols=None, info=True, paging=False, row_chooser=False,
                searching=True):
         """Create a widget displaying data in a pivot table.
 
@@ -140,6 +140,13 @@ class TableWidget(BaseTableWidget):
         options['scrollY'] = True
         if not options['paging']:
             options['lengthChange'] = False
+
+        # if widget height was set to 0, reset some options to take
+        # advantage of the non-fixed height
+        if widget.height == 0:
+            options['lengthChange'] = True
+            options['scrollY'] = False
+            options['paging'] = True
 
         # reformat columns
         cols = [{'data': c['key'],
