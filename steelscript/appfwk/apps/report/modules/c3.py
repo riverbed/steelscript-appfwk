@@ -24,7 +24,7 @@ def cleankey(s):
 class TimeSeriesWidget(object):
     @classmethod
     def create(cls, section, table, title, width=6, height=300,
-               keycols=None, valuecols='*', stacked=False):
+               keycols=None, valuecols='*', altaxis=None, stacked=False):
         """Create a widget displaying data as a chart.
 
         This class is typically not used directly, but via LineWidget
@@ -34,6 +34,8 @@ class TimeSeriesWidget(object):
         :param int height: Height of the widget in pixels (default 300)
         :param list keycols: List of key column names to use for x-axis labels
         :param list valuecols: List of data columns to graph
+        :param list altaxis: List of columns to graph using the
+            alternate Y-axis
         :param str stacked: True if stacked chart, defaults to False.
 
         """
@@ -49,7 +51,7 @@ class TimeSeriesWidget(object):
 
         w.options = JsonDict(dict={'keycols': keycols,
                                    'columns': valuecols,
-                                   'axes': None,
+                                   'altaxis': altaxis,
                                    'stacked': stacked})
         w.save()
         w.tables.add(table)
@@ -77,6 +79,12 @@ class TimeSeriesWidget(object):
             # The value columns - one set of bars for each
             cols = [c for c in all_cols if c.name in widget.options.columns]
 
+        if widget.options.altaxis:
+            altcols = [c.name for c in all_cols if
+                       c.name in widget.options.altaxis]
+        else:
+            altcols = []
+
         # Map of column info by column name
         colmap = {}
 
@@ -99,7 +107,7 @@ class TimeSeriesWidget(object):
             colmap[c.name] = ci
 
         # Array of data.  First row is the column labels
-        rows = [[c.col.label for c in colmap.values()]]
+        rows = [[c.col.name for c in colmap.values()]]
 
         t0 = None
         t1 = None
@@ -151,6 +159,8 @@ class TimeSeriesWidget(object):
         data = {
             'chartTitle': widget.title.format(**job.actual_criteria),
             'rows': rows,
+            'names': {c.col.name: c.col.label for c in colmap.values()},
+            'altaxis': {c: 'y2' for c in altcols} or None,
             'tickFormat': timeaxis.best[1],
             'tickValues': tickvalues,
             'type': 'line'

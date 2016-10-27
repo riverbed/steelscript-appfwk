@@ -164,7 +164,10 @@ class PivotTableWidget(BaseTableWidget):
         """Create a widget displaying data in a pivot table.
 
         :param int width: Width of the widget in columns (1-12, default 6)
-        :param int height: Height of the widget in pixels (default 300)
+        :param int height: Height of the widget in pixels (default 300).
+            For this interactive widget, the best option is `0` - this
+            will make the widget size dynamic as new pivots are chosen.  Any
+            other height will result in scrolling withing the widget pane.
         :param int rows: Number of rows to display (default 1000)
         :param list cols: List of columns by name to include.  If None,
             the default, include all data columns.

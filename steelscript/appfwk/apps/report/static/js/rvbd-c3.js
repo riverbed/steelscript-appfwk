@@ -55,12 +55,11 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
     render: function(data) {
         var self = this;
         self.data = data;
-        var chartdef = data.chartDef;
 
         self.titleMsg = data['chartTitle'];
         self.buildInnerLayout();
 
-        var $content = $(self.content)
+        var $content = $(self.content);
         self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
                                   parseInt($content.css('margin-right'), 10);
         self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
@@ -70,16 +69,17 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
         var height = ($(self.outerContainer).height() - self.contentExtraHeight -
                       self.titleHeight);
 
-        var content = c3.generate({
+        var chartdef = {
             bindto: '#' + $(self.content).attr('id'),
             size: {
                 height: height
             },
             data: {
                 rows: data.rows,
+                names: data.names,
                 type: data.type,
                 groups: data.groups,
-                x: 'Time',
+                x: 'time',
                 xFormat: '%Y-%m-%d %H:%M:%S',
                 xLocaltime: false
             },
@@ -87,7 +87,7 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
                 position: 'inset'
             },
             point: {
-                r: 1
+                r: 2
             },
             axis: {
                 x: {
@@ -109,7 +109,16 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
                     value: function (value, ratio, id) { return d3.format('.3s')(value); }
                 }
             }
-        });
+        };
+
+        if (data.altaxis) {
+            chartdef.data.axes = data.altaxis;
+            chartdef.axis.y2 = {
+                show: true
+            };
+        }
+
+        c3.generate(chartdef);
 
     }
 });
