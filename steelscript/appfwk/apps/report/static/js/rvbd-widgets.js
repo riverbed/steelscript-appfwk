@@ -404,6 +404,9 @@ rvbd.widgets.Widget.prototype = {
             menuItems.push(
                 '<a tabindex="1" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
             );
+            menuItems.push(
+                '<a tabindex="0" id="' + self.id + '_export_widget_json" class="export_widget_json" href="#">Export JSON ...</a>'
+            );
         }
 
         var $menuContainer = $('<div></div>')
@@ -440,12 +443,23 @@ rvbd.widgets.Widget.prototype = {
                       .appendTo($(self.title));
 
         $menuContainer.find('.export_widget_csv').click($.proxy(self.onCsvExport, self));
+        $menuContainer.find('.export_widget_json').click($.proxy(self.onJSONExport, self));
 
         $(self.title).find('.get-embed').click($.proxy(self.embedModal, self));
         $(self.title).find('.show_criteria').click($.proxy(self.showCriteriaModal, self));
     },
 
+    onJSONExport: function() {
+        var self = this;
+        self.onExport('json');
+    },
+
     onCsvExport: function() {
+        var self = this;
+        self.onExport('csv');
+    },
+
+    onExport: function(exportType) {
         var self = this;
 
         $.ajax({
@@ -454,22 +468,22 @@ rvbd.widgets.Widget.prototype = {
             url: self.postUrl,
             data: { criteria: JSON.stringify(self.criteria) },
             success: function(data, textStatus, jqXHR) {
-                self.checkCsvExportStatus(data.joburl);
+                self.checkExportStatus(data.joburl, exportType);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 var alertBody = ("The server returned the following HTTP error: <pre>" +
                                  + errorThrown + '</pre>');
-                rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { })
+                rvbd.modal.alert("Export Error", alertBody, "OK", function() { })
             }
         });
     },
 
-    checkCsvExportStatus: function(csvJobUrl) {
+    checkExportStatus: function(jobUrl, exportType) {
         var self = this;
 
         $.ajax({
             dataType: "json",
-            url: csvJobUrl + 'status/',
+            url: jobUrl + 'status/',
             data: null,
             success: function(data, textStatus) {
                 switch (data.status) {
@@ -478,23 +492,23 @@ rvbd.widgets.Widget.prototype = {
                         // remove spaces and special chars from widget title
                         var fname = self.titleMsg.replace(/\W/g, '');
                         // Should trigger file download
-                        window.location = origin + '/jobs/' + data.id + '/data/csv/?filename=' + fname;
+                        window.location = origin + '/jobs/' + data.id + '/data/' + exportType + '/?filename=' + fname;
                         break;
                     case 4: // Error
                         var alertBody = ('The server returned the following error: <pre>' +
                                          data['message'] + '</pre>');
-                        rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { });
+                        rvbd.modal.alert("Export Error", alertBody, "OK", function() { });
                         break;
                     default: // Loading
-                        setTimeout(function() { self.checkCsvExportStatus(csvJobUrl); }, 200);
+                        setTimeout(function() { self.checkExportStatus(jobUrl, exportType); }, 200);
                 }
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                console.log('Error when checking csv status');
+                console.log('Error when checking export status');
 
                 var alertBody = ('The server returned the following HTTP error: <pre>' + textStatus +
                                  ': ' + errorThrown + '</pre>');
-                rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { });
+                rvbd.modal.alert("Export Error", alertBody, "OK", function() { });
             }
         });
     },
