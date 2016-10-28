@@ -123,4 +123,60 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
     }
 });
 
+/**
+ * PieWidget -- does a generic bar chart
+ *
+ */
+
+rvbd.widgets.c3.PieWidget = function(postUrl, isEmbedded, div,
+                                            id, slug, options, criteria) {
+    var self = this;
+
+    rvbd.widgets.c3.C3Widget.apply(self, [postUrl, isEmbedded, div,
+        id, slug, options, criteria]);
+};
+rvbd.widgets.c3.PieWidget.prototype =
+    Object.create(rvbd.widgets.c3.C3Widget.prototype);
+
+$.extend(rvbd.widgets.c3.PieWidget.prototype, {
+    render: function(data) {
+        var self = this;
+        self.data = data;
+
+        self.titleMsg = data['chartTitle'];
+        self.buildInnerLayout();
+
+        var $content = $(self.content);
+        self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
+            parseInt($content.css('margin-right'), 10);
+        self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
+            parseInt($content.css('margin-bottom'), 10);
+        self.titleHeight = $(self.title).outerHeight();
+
+        var height = ($(self.outerContainer).height() - self.contentExtraHeight - self.titleHeight);
+
+        var chartdef = {
+            bindto: '#' + $(self.content).attr('id'),
+            size: {
+                height: height
+            },
+            data: {
+                columns: data.rows,
+                //names: data.names,
+                type: data.type,
+                //groups: data.groups,
+                //x: 'time',
+                //xFormat: '%Y-%m-%d %H:%M:%S',
+                //xLocaltime: false
+            },
+            legend: {
+                position: 'inset'
+            },
+        };
+
+        c3.generate(chartdef);
+
+    }
+});
+
 })();

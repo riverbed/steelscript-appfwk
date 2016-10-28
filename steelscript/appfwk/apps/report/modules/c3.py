@@ -21,7 +21,32 @@ def cleankey(s):
     return re.sub('[:. ]', '_', s)
 
 
-class TimeSeriesWidget(object):
+class BaseWidget(object):
+    @classmethod
+    def _create(cls, section, table, title, width=6, height=300, rows=-1):
+        w = Widget(section=section, title=title, width=width, rows=rows,
+                   height=height, module=__name__, uiwidget=cls.__name__)
+        w.compute_row_col()
+        return w
+
+    @classmethod
+    def calculate_keycol(cls, table, keycols):
+        if keycols is None:
+            keycols = [col.name for col in table.get_columns()
+                       if col.iskey is True]
+        if len(keycols) == 0:
+            raise ValueError("Table %s does not have any key columns defined" %
+                             str(table))
+        return keycols
+
+    @classmethod
+    def add_options(cls, widget, options, table):
+        widget.options = JsonDict(options)
+        widget.save()
+        widget.tables.add(table)
+
+
+class TimeSeriesWidget(BaseWidget):
     @classmethod
     def create(cls, section, table, title, width=6, height=300,
                keycols=None, valuecols='*', altaxis=None, stacked=False):
@@ -39,22 +64,15 @@ class TimeSeriesWidget(object):
         :param str stacked: True if stacked chart, defaults to False.
 
         """
-        w = Widget(section=section, title=title, width=width,
-                   height=height, module=__name__, uiwidget=cls.__name__)
-        w.compute_row_col()
-        if keycols is None:
-            keycols = [col.name for col in table.get_columns()
-                       if col.iskey is True]
-        if len(keycols) == 0:
-            raise ValueError("Table %s does not have any key columns defined" %
-                             str(table))
+        w = cls._create(section, table, title, width, height)
 
-        w.options = JsonDict(dict={'keycols': keycols,
-                                   'columns': valuecols,
-                                   'altaxis': altaxis,
-                                   'stacked': stacked})
-        w.save()
-        w.tables.add(table)
+        keycols = cls.calculate_keycol(table, keycols)
+
+        options = {'keycols': keycols,
+                   'columns': valuecols,
+                   'altaxis': altaxis,
+                   'stacked': stacked}
+        cls.add_options(w, options, table)
 
     @classmethod
     def process(cls, widget, job, data):
@@ -131,27 +149,6 @@ class TimeSeriesWidget(object):
 
             rows.append(row)
 
-        # chartdef = {
-        #     data: {
-        #         json: [ { k1: 1, v1: 2, v2: 'baz'},
-        #                 { k1: 1, v1: 2, v2: 'baz'},
-        #                 ... ],
-        #         keys: { x: 'k1',
-        #                 values: ['v1', 'v2'] },
-        #         xFormat: '%Y-%m-%d'
-        #     },
-        #     axis: {
-        #         x: {
-        #             type: 'timeseries',
-        #             localtime: true,
-        #             tick: {
-        #                 format: "%H:%M:%S",
-        #                 values: ['2015-07-05 13:20:00', '2015-07-05 13:25:00',
-        #                          '2015-07-05 13:30:00', '2015-07-05 13:35:00']
-        #             }
-        #         }
-        #     }
-        #
         timeaxis = TimeAxis([t0, t1])
         timeaxis.compute()
         tickvalues = [c3datefmt(d) for d in timeaxis.ticks]
@@ -170,6 +167,62 @@ class TimeSeriesWidget(object):
             data['groups'] = [[c.col.label for c in colmap.values()
                                if not c.col.iskey]]
             data['type'] = 'area'
+
+        return data
+
+
+class PieWidget(BaseWidget):
+    @classmethod
+    def create(cls, section, table, title, width=6, rows=10, height=300):
+        """Create a widget displaying data in a pie chart.
+
+        :param int width: Width of the widget in columns (1-12, default 6)
+        :param int height: Height of the widget in pixels (default 300)
+        :param int rows: Number of rows to display as pie slices (default 10)
+
+        The labels are taken from the Table key column (the first key,
+        if the table has multiple key columns defined).  The pie
+        widget values are taken from the sort column.
+
+        """
+        w = cls._create(section, table, title, width, height, rows)
+
+        keycols = cls.calculate_keycol(table, keycols=None)
+
+        if table.sortcols is None:
+            raise ValueError("Table %s does not have a sort column defined" %
+                             str(table))
+
+        options = {'key': keycols[0],
+                   'value': table.sortcols[0]}
+        cls.add_options(w, options, table)
+
+    @classmethod
+    def process(cls, widget, job, data):
+        columns = job.get_columns()
+
+        col_names = [c.name for c in columns]
+
+        catcol = [c for c in columns if c.name == widget.options.key][0]
+        col = [c for c in columns if c.name == widget.options.value][0]
+
+        # For each slice, catcol will be the label, col will be the value
+        rows = []
+
+        if len(data) > 0:
+            for rawrow in data:
+                row = dict(zip(col_names, rawrow))
+                r = [row[catcol.name], row[col.name]]
+                rows.append(r)
+        else:
+            # create a "full" pie to show something
+            rows = [[1, 1]]
+
+        data = {
+            'chartTitle': widget.title.format(**job.actual_criteria),
+            'rows': rows,
+            'type': 'pie',
+        }
 
         return data
 
