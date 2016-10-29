@@ -402,10 +402,13 @@ rvbd.widgets.Widget.prototype = {
         // only include widget criteria if we have developer mode set
         if (rvbd.report.developer) {
             menuItems.push(
-                '<a tabindex="1" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
+                '<a tabindex="1" id="' + self.id + '_export_widget_json" class="export_widget_json" href="#">Export JSON (Table Data)...</a>'
             );
             menuItems.push(
-                '<a tabindex="0" id="' + self.id + '_export_widget_json" class="export_widget_json" href="#">Export JSON ...</a>'
+                '<a tabindex="2" id="' + self.id + '_show_widget_data" class="show_widget_data" href="#">Show Widget Data ...</a>'
+            );
+            menuItems.push(
+                '<a tabindex="3" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
             );
         }
 
@@ -444,9 +447,11 @@ rvbd.widgets.Widget.prototype = {
 
         $menuContainer.find('.export_widget_csv').click($.proxy(self.onCsvExport, self));
         $menuContainer.find('.export_widget_json').click($.proxy(self.onJSONExport, self));
+        //$menuContainer.find('.export_widget_data').click($.proxy(self.onDataExport, self));
 
         $(self.title).find('.get-embed').click($.proxy(self.embedModal, self));
         $(self.title).find('.show_criteria').click($.proxy(self.showCriteriaModal, self));
+        $(self.title).find('.show_widget_data').click($.proxy(self.showWidgetDataModal, self));
     },
 
     onJSONExport: function() {
@@ -689,6 +694,24 @@ rvbd.widgets.Widget.prototype = {
 
         rvbd.modal.alert(title, body, "OK", function() { })
     },
+
+    /**
+     * Display dialog with widget's data
+     */
+    showWidgetDataModal: function() {
+        var self = this;
+        var body;
+        try {
+            body = $('<pre></pre>').html(JSON.stringify(self.data, null, 2));
+        } catch (e) {
+            // yui3 data objects get polluted with lots of circular references
+            console.log('error stringifying circular ref, just showing data');
+            body = $('<pre></pre>').html(JSON.stringify(self.data.dataProvider, null, 2));
+        }
+        var title = self.titleMsg + ' JSON Data';
+
+        rvbd.modal.alert(title, body, "OK", function() { })
+    }
 };
 
 rvbd.widgets.raw = {};
