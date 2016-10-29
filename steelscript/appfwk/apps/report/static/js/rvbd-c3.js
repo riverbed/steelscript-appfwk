@@ -75,12 +75,15 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
                 height: height
             },
             data: {
-                rows: data.rows,
+                //rows: data.rows,
+                json: data.json,
+                keys: {x: data.key,
+                       value: data.values},
                 names: data.names,
                 type: data.type,
-                groups: data.groups,
                 x: 'time',
-                xFormat: '%Y-%m-%d %H:%M:%S',
+                // "2016-10-28T18:49:24.000Z"
+                xFormat: '%Y-%m-%dT%H:%M:%S.%LZ',
                 xLocaltime: false
             },
             legend: {
@@ -105,7 +108,7 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
             },
             tooltip: {
                 format: {
-                    title: function (x) { return d3.time.format('%Y-%m-%d %H:%M:%S')(x); },
+                    title: function (x) { return d3.time.format('%Y-%m-%d ' + data.tickFormat)(x); },
                     value: function (value, ratio, id) { return d3.format('.3s')(value); }
                 }
             }
@@ -124,7 +127,7 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
 });
 
 /**
- * PieWidget -- does a generic bar chart
+ * PieWidget
  *
  */
 
@@ -173,6 +176,80 @@ $.extend(rvbd.widgets.c3.PieWidget.prototype, {
                 position: 'inset'
             },
         };
+
+        c3.generate(chartdef);
+
+    }
+});
+
+
+/**
+ * ChartWidget - can be either bar or line widget types
+ *
+ */
+
+rvbd.widgets.c3.ChartWidget = function(postUrl, isEmbedded, div,
+                                            id, slug, options, criteria) {
+    var self = this;
+
+    rvbd.widgets.c3.C3Widget.apply(self, [postUrl, isEmbedded, div,
+        id, slug, options, criteria]);
+};
+rvbd.widgets.c3.ChartWidget.prototype =
+    Object.create(rvbd.widgets.c3.C3Widget.prototype);
+
+$.extend(rvbd.widgets.c3.ChartWidget.prototype, {
+    render: function(data) {
+        var self = this;
+        self.data = data;
+
+        self.titleMsg = data['chartTitle'];
+        self.buildInnerLayout();
+
+        var $content = $(self.content);
+        self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
+            parseInt($content.css('margin-right'), 10);
+        self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
+            parseInt($content.css('margin-bottom'), 10);
+        self.titleHeight = $(self.title).outerHeight();
+
+        var height = ($(self.outerContainer).height() - self.contentExtraHeight - self.titleHeight);
+
+        var chartdef = {
+            bindto: '#' + $(self.content).attr('id'),
+            size: {
+                height: height
+            },
+            data: {
+                json: data.rows,
+                type: data.type,
+                keys: {
+                    x: data.keyname,
+                    value: data.values
+                }
+            },
+            legend: {
+                position: 'inset'
+            },
+            axis: {
+                x: {
+                    type: 'category',
+                    // negative rotated text doesn't automatically resize yet
+                    // https://github.com/c3js/c3/issues/1511
+                    //tick: {
+                    //    rotate: -60
+                    //}
+                }
+            }
+        };
+
+        if (data.type == 'bar') {
+            chartdef.bar = {
+                width: {
+                    ratio: 0.5
+                }
+            }
+        }
 
         c3.generate(chartdef);
 

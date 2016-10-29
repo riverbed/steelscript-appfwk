@@ -6,11 +6,13 @@
 
 
 import re
+import json
 import logging
 from datetime import datetime, timedelta
+
+import pandas
 from dateutil.relativedelta import relativedelta
 
-from steelscript.common.datastructures import JsonDict
 from steelscript.appfwk.apps.report.models import Widget
 from steelscript.common.timeutils import force_to_utc
 
@@ -23,13 +25,6 @@ def cleankey(s):
 
 class BaseWidget(object):
     @classmethod
-    def _create(cls, section, table, title, width=6, height=300, rows=-1):
-        w = Widget(section=section, title=title, width=width, rows=rows,
-                   height=height, module=__name__, uiwidget=cls.__name__)
-        w.compute_row_col()
-        return w
-
-    @classmethod
     def calculate_keycol(cls, table, keycols):
         if keycols is None:
             keycols = [col.name for col in table.get_columns()
@@ -39,17 +34,12 @@ class BaseWidget(object):
                              str(table))
         return keycols
 
-    @classmethod
-    def add_options(cls, widget, options, table):
-        widget.options = JsonDict(options)
-        widget.save()
-        widget.tables.add(table)
-
 
 class TimeSeriesWidget(BaseWidget):
     @classmethod
     def create(cls, section, table, title, width=6, height=300,
-               keycols=None, valuecols='*', altaxis=None, stacked=False):
+               keycols=None, valuecols='*', altaxis=None, stacked=False,
+               stack_widget=False):
         """Create a widget displaying data as a chart.
 
         This class is typically not used directly, but via LineWidget
@@ -61,18 +51,21 @@ class TimeSeriesWidget(BaseWidget):
         :param list valuecols: List of data columns to graph
         :param list altaxis: List of columns to graph using the
             alternate Y-axis
-        :param str stacked: True if stacked chart, defaults to False.
+        :param str stacked: True for stacked line chart, defaults to False.
+        :param bool stack_widget: stack this widget below the previous one.
 
         """
-        w = cls._create(section, table, title, width, height)
-
         keycols = cls.calculate_keycol(table, keycols)
 
         options = {'keycols': keycols,
                    'columns': valuecols,
                    'altaxis': altaxis,
                    'stacked': stacked}
-        cls.add_options(w, options, table)
+
+        Widget.create(section=section, table=table, title=title,
+                      width=width, rows=-1, height=height,
+                      module=__name__, uiwidget=cls.__name__,
+                      options=options, stack_widget=stack_widget)
 
     @classmethod
     def process(cls, widget, job, data):
@@ -83,11 +76,14 @@ class TimeSeriesWidget(BaseWidget):
                 self.formatter = fmt
 
         all_cols = job.get_columns()
+        col_names = [c.name for c in all_cols]
 
         # The category "key" column -- this is the column shown along the
         # bottom of the bar widget
         keycols = [c for c in all_cols if c.name in widget.options.keycols]
         catname = '-'.join([k.name for k in keycols])
+
+        timecol = [c for c in keycols if c.istime()][0]
 
         # columns of '*' is a special case, just use all
         # defined columns other than time
@@ -124,38 +120,26 @@ class TimeSeriesWidget(BaseWidget):
             ci = ColInfo(c, i, fmt)
             colmap[c.name] = ci
 
-        # Array of data.  First row is the column labels
-        rows = [[c.col.name for c in colmap.values()]]
-
-        t0 = None
-        t1 = None
-
         def c3datefmt(d):
-            return force_to_utc(d).strftime('%Y-%m-%d %H:%M:%S')
+            return '%s.%s' % (force_to_utc(d).strftime('%Y-%m-%dT%H:%M:%S'),
+                              "%03dZ" % int(d.microsecond / 1000))
 
-        for rawrow in data:
-            row = []
-
-            for c in colmap.values():
-                v = rawrow[c.dataindex]
-                if c.col.istime():
-                    if not t0 or v < t0:
-                        t0 = v
-                    if not t1 or v > t1:
-                        t1 = v
-                    v = c3datefmt(v)
-
-                row.append(v)
-
-            rows.append(row)
+        df = pandas.DataFrame(data, columns=col_names)
+        t0 = df[timecol.name].min()
+        t1 = df[timecol.name].max()
 
         timeaxis = TimeAxis([t0, t1])
         timeaxis.compute()
+
         tickvalues = [c3datefmt(d) for d in timeaxis.ticks]
+
+        rows = json.loads(df.to_json(orient='records', date_format='iso', date_unit='ms'))
 
         data = {
             'chartTitle': widget.title.format(**job.actual_criteria),
-            'rows': rows,
+            'json': rows,
+            'key': catname,
+            'values': [c.name for c in cols],
             'names': {c.col.name: c.col.label for c in colmap.values()},
             'altaxis': {c: 'y2' for c in altcols} or None,
             'tickFormat': timeaxis.best[1],
@@ -173,20 +157,20 @@ class TimeSeriesWidget(BaseWidget):
 
 class PieWidget(BaseWidget):
     @classmethod
-    def create(cls, section, table, title, width=6, rows=10, height=300):
+    def create(cls, section, table, title, width=6, rows=10, height=300,
+               stack_widget=False):
         """Create a widget displaying data in a pie chart.
 
         :param int width: Width of the widget in columns (1-12, default 6)
         :param int height: Height of the widget in pixels (default 300)
         :param int rows: Number of rows to display as pie slices (default 10)
+        :param bool stack_widget: stack this widget below the previous one.
 
         The labels are taken from the Table key column (the first key,
         if the table has multiple key columns defined).  The pie
         widget values are taken from the sort column.
 
         """
-        w = cls._create(section, table, title, width, height, rows)
-
         keycols = cls.calculate_keycol(table, keycols=None)
 
         if table.sortcols is None:
@@ -195,7 +179,11 @@ class PieWidget(BaseWidget):
 
         options = {'key': keycols[0],
                    'value': table.sortcols[0]}
-        cls.add_options(w, options, table)
+
+        Widget.create(section=section, table=table, title=title,
+                      width=width, rows=rows, height=height,
+                      module=__name__, uiwidget=cls.__name__,
+                      options=options, stack_widget=stack_widget)
 
     @classmethod
     def process(cls, widget, job, data):
@@ -227,9 +215,136 @@ class PieWidget(BaseWidget):
         return data
 
 
+class ChartWidget(BaseWidget):
+    @classmethod
+    def create(cls, section, table, title, width=6, rows=10, height=300,
+               keycols=None, valuecols=None, charttype='line', dynamic=False,
+               **kwargs):
+        """Create a widget displaying data as a chart.
+
+        This class is typically not used directly, but via LineWidget
+        or BarWidget subclasses
+
+        :param int width: Width of the widget in columns (1-12, default 6)
+        :param int height: Height of the widget in pixels (default 300)
+        :param int rows: Number of rows to display (default 10)
+        :param list keycols: List of key column names to use for x-axis labels
+        :param list valuecols: List of data columns to graph
+        :param str charttype: Type of chart, defaults to 'line'.  This may be
+           any C3 'type'
+        :param bool dynamic: columns will be added later from criteria if True
+
+        """
+        keycols = cls.calculate_keycol(table, keycols=None)
+
+        if table.sortcols is None:
+            raise ValueError("Table %s does not have a sort column defined" %
+                             str(table))
+
+        if valuecols is None:
+            valuecols = [col.name for col in table.get_columns()
+                         if col.iskey is False]
+
+        options = {'keycols': keycols,
+                   'columns': valuecols,
+                   'axes': None,
+                   'charttype': charttype,
+                   'dynamic': dynamic}
+
+        Widget.create(section=section, table=table, title=title,
+                      width=width, rows=rows, height=height,
+                      module=__name__, uiwidget=cls.__name__,
+                      options=options, **kwargs)
+
+    @classmethod
+    def process(cls, widget, job, data):
+        all_cols = job.get_columns()
+
+        # The category "key" column -- this is the column shown along the
+        # bottom of the bar widget
+        keycols = [c for c in all_cols if c.name in widget.options.keycols]
+
+        # columns of '*' is a special case, just use all
+        # defined columns other than time
+        if widget.options.columns == '*' or widget.options.dynamic:
+            cols = [c for c in all_cols if not c.iskey]
+        else:
+            # The value columns - one set of bars for each
+            cols = [c for c in all_cols if c.name in widget.options.columns]
+
+        # create composite name for key label
+        keyname = '-'.join([k.name for k in keycols])
+
+        # For each slice, keyname will be the label
+        rows = []
+
+        for rawrow in data:
+            row = dict(zip([c.name for c in all_cols], rawrow))
+
+            # populate values first
+            r = {c.name: row[c.name] for c in cols}
+
+            # now add the key
+            key = '-'.join([row[k.name] for k in keycols])
+            r[keyname] = key
+
+            rows.append(r)
+
+        data = {
+            'chartTitle': widget.title.format(**job.actual_criteria),
+            'rows': rows,
+            'keyname': keyname,
+            'values': [c.name for c in cols],
+            'type': widget.options.charttype,
+        }
+
+        return data
+
+
+class BarWidget(ChartWidget):
+    @classmethod
+    def create(cls, *args, **kwargs):
+        """Create a widget displaying data as a bar chart.
+
+        :param int width: Width of the widget in columns (1-12, default 6)
+        :param int height: Height of the widget in pixels (default 300)
+        :param int rows: Number of rows to display (default 10)
+        :param list keycols: List of key column names to use for x-axis labels
+        :param list valuecols: List of data columns to graph
+        :param str charttype: Type of chart, defaults to 'line'.  This may be
+           any YUI3 'type'
+        :param bool stack_widget: stack this widget below the previous one.
+
+        """
+        kwargs['rows'] = kwargs.get('rows', 10)
+        return ChartWidget.create(*args, charttype='bar', **kwargs)
+
+
+class LineWidget(ChartWidget):
+    @classmethod
+    def create(cls, *args, **kwargs):
+        """Create a widget displaying data as a line chart.
+
+        :param int width: Width of the widget in columns (1-12, default 6)
+        :param int height: Height of the widget in pixels (default 300)
+        :param int rows: Number of rows to display (default 10)
+        :param list keycols: List of key column names to use for x-axis labels
+        :param list valuecols: List of data columns to graph
+        :param str charttype: Type of chart, defaults to 'line'.  This may be
+           any YUI3 'type'
+        :param bool stack_widget: stack this widget below the previous one.
+
+        """
+        kwargs['rows'] = kwargs.get('rows', 0)
+        return ChartWidget.create(*args, charttype='line', **kwargs)
+
+
 class TimeAxis(object):
 
     INTERVALS = [
+        [timedelta(milliseconds=1), '%H:%M:%S.%L',
+         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute, d.second, d.microsecond, tzinfo=d.tzinfo),
+         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute, d.second, d.microsecond, tzinfo=d.tzinfo) + timedelta(milliseconds=1)],
         [timedelta(seconds=1), '%H:%M:%S',
          lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute, d.second, tzinfo=d.tzinfo),
          lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute, d.second, tzinfo=d.tzinfo) + timedelta(seconds=1)],
@@ -241,7 +356,7 @@ class TimeAxis(object):
          lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%5, tzinfo=d.tzinfo) + timedelta(minutes=5)],
         [timedelta(minutes=10), '%H:%M',
          lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%10, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%10, tzinfo=d.tzinfo) + timedelta(minutes=5)],
+         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%10, tzinfo=d.tzinfo) + timedelta(minutes=10)],
         [timedelta(minutes=15), '%H:%M',
          lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%15, tzinfo=d.tzinfo),
          lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%15, tzinfo=d.tzinfo) + timedelta(minutes=15)],

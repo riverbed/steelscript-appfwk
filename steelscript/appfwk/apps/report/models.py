@@ -600,7 +600,7 @@ class Widget(models.Model):
     title = models.CharField(max_length=100)
     row = models.IntegerField()
     col = models.IntegerField()
-    width = models.IntegerField(default=1)
+    width = models.IntegerField(default=6)
 
     # setting height of 0 will let widget box auto-size to resulting data
     height = models.IntegerField(default=300)
@@ -628,6 +628,24 @@ class Widget(models.Model):
     def save(self, *args, **kwargs):
         self.slug = '%s-%d-%d' % (slugify(self.title), self.row, self.col)
         super(Widget, self).save(*args, **kwargs)
+
+    @classmethod
+    def create(cls, *args, **kwargs):
+        options = kwargs.pop('options', None)
+        table = kwargs.pop('table', None)
+
+        w = Widget(*args, **kwargs)
+        w.compute_row_col()
+
+        if options:
+            w.options = JsonDict(options)
+
+        w.save()
+
+        if table:
+            w.tables.add(table)
+
+        return w
 
     def get_definition(self, criteria):
         """Get dict of widget attributes for sending via JSON."""
