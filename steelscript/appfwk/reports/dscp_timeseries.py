@@ -7,7 +7,8 @@
 
 from steelscript.appfwk.apps.datasource.models import TableField
 from steelscript.appfwk.apps.report.models import Report
-import steelscript.appfwk.apps.report.modules.yui3 as yui3
+import steelscript.appfwk.apps.report.modules.c3 as c3
+import steelscript.appfwk.apps.report.modules.tables as tables
 
 from steelscript.netprofiler.appfwk.datasources.netprofiler import \
     NetProfilerTimeSeriesTable, NetProfilerGroupbyTable, NetProfilerTable
@@ -44,7 +45,7 @@ p.add_column('time', 'Time', datatype='time', iskey=True)
 p.add_column('in_avg_util', 'Avg Inbound Util %', units='B/s')
 p.add_column('out_avg_util', 'Avg Outbound Util %', units='B/s')
 
-report.add_widget(yui3.TimeSeriesWidget, p, "{interface} - Overall Utilization", width=12)
+report.add_widget(c3.TimeSeriesWidget, p, "{interface} - Overall Utilization", width=12)
 
 # Define a Overall TimeSeries showing In/Out Totals
 p = NetProfilerTimeSeriesTable.create('qos-overall-total',
@@ -55,7 +56,7 @@ p.add_column('time', 'Time', datatype='time', iskey=True)
 p.add_column('in_total_bytes', 'Total Inbound Bytes', units='B/s')
 p.add_column('out_total_bytes', 'Total Outbound Bytes', units='B/s')
 
-report.add_widget(yui3.TimeSeriesWidget, p, "Overall In/Out Totals",
+report.add_widget(c3.TimeSeriesWidget, p, "Overall In/Out Totals",
                   width=6)
 
 # Define a Overall TimeSeries showing In/Out Totals
@@ -67,7 +68,7 @@ p.add_column('time', 'Time', datatype='time', iskey=True)
 p.add_column('in_avg_bytes', 'Avg Inbound B/s', units='B/s')
 p.add_column('out_avg_bytes', 'Avg Outbound B/s', units='B/s')
 
-report.add_widget(yui3.TimeSeriesWidget, p,
+report.add_widget(c3.TimeSeriesWidget, p,
                   "Overall In/Out Avg BW ", width=6)
 
 #
@@ -112,7 +113,7 @@ for direction in ['inbound', 'outbound']:
     p.add_column('avg_util', 'Avg Util', units='pct')
     p.add_column('peak_util', 'Peak Util', units='pct')
 
-    report.add_widget(yui3.TableWidget, p,
+    report.add_widget(tables.TableWidget, p,
                       "%s Traffic by DSCP" % direction.capitalize(), width=6)
 
 #
@@ -150,6 +151,6 @@ for i, dscp in enumerate(['AF11', 'EF', 'Default']):
         p.add_column('avg_bytes', 'Avg Bytes/s', units='B/s')
 
         report.add_widget(
-            yui3.TimeSeriesWidget, p,
+            c3.TimeSeriesWidget, p,
             "%s - %s Avg BW" % (dscp, direction.capitalize()),
             width=6)

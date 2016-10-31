@@ -101,7 +101,7 @@ class TableWidget(BaseTableWidget):
     @classmethod
     def create(cls, section, table, title, width=6, height=300, rows=1000,
                cols=None, info=True, paging=False, row_chooser=False,
-               searching=True):
+               searching=False):
         """Create a widget displaying data in a pivot table.
 
         :param int width: Width of the widget in columns (1-12, default 6)
