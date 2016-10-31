@@ -8,7 +8,6 @@
 import re
 import logging
 
-from steelscript.common.datastructures import JsonDict
 from steelscript.appfwk.apps.report.models import Widget
 from steelscript.common import timeutils
 
@@ -101,7 +100,7 @@ class TableWidget(BaseTableWidget):
     @classmethod
     def create(cls, section, table, title, width=6, height=300, rows=1000,
                cols=None, info=True, paging=False, row_chooser=False,
-               searching=False):
+               searching=False, stack_widget=False):
         """Create a widget displaying data in a pivot table.
 
         :param int width: Width of the widget in columns (1-12, default 6)
@@ -118,18 +117,19 @@ class TableWidget(BaseTableWidget):
         :param bool row_chooser: Optionally choose how many rows to display.
             Will be disabled if paging option is disabled.
         :param bool searching: Optionally display search box at top.
+        :param bool stack_widget: stack this widget below the previous one.
 
         """
-        w = Widget(section=section, title=title, rows=rows, width=width,
-                   height=height, module=__name__, uiwidget=cls.__name__)
-        w.compute_row_col()
-        w.options = JsonDict(columns=cols,
-                             info=info,
-                             paging=paging,
-                             row_chooser=row_chooser,
-                             searching=searching)
-        w.save()
-        w.tables.add(table)
+        options = {'columns': cols,
+                   'info': info,
+                   'paging': paging,
+                   'row_chooser': row_chooser,
+                   'searching': searching}
+
+        Widget.create(section=section, table=table, title=title,
+                      rows=rows, width=width, height=height,
+                      module=__name__, uiwidget=cls.__name__,
+                      options=options, stack_widget=stack_widget)
 
     @classmethod
     def process(cls, widget, job, data):
@@ -160,7 +160,7 @@ class TableWidget(BaseTableWidget):
 class PivotTableWidget(BaseTableWidget):
     @classmethod
     def create(cls, section, table, title, width=6, height=300,
-               cols=None, rows=1000):
+               cols=None, rows=1000, stack_widget=False):
         """Create a widget displaying data in a pivot table.
 
         :param int width: Width of the widget in columns (1-12, default 6)
@@ -171,14 +171,15 @@ class PivotTableWidget(BaseTableWidget):
         :param int rows: Number of rows to display (default 1000)
         :param list cols: List of columns by name to include.  If None,
             the default, include all data columns.
+        :param bool stack_widget: stack this widget below the previous one.
 
         """
-        w = Widget(section=section, title=title, rows=rows, width=width,
-                   height=height, module=__name__, uiwidget=cls.__name__)
-        w.compute_row_col()
-        w.options = JsonDict(columns=cols)
-        w.save()
-        w.tables.add(table)
+        options = {'columns': cols}
+
+        Widget.create(section=section, table=table, title=title,
+                      rows=rows, width=width, height=height,
+                      module=__name__, uiwidget=cls.__name__,
+                      options=options, stack_widget=stack_widget)
 
     @classmethod
     def process(cls, widget, job, data):
