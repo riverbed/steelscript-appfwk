@@ -74,7 +74,7 @@ rvbd.report = {
             });
             $('#menu-run').click(function() { $form.submit(); });
 
-            $("#criteria").on('hidden', rvbd.report.doRunFormReport);
+            $("#criteria").on('hide.bs.collapse', rvbd.report.doRunFormReport);
 
             if (rvbd.report.autoRun) { //Auto run report from bookmark
                 $form.submit();
@@ -233,24 +233,24 @@ rvbd.report = {
     },
 
     enablePrintButton: function() {
-        $('<a id="print-report" class="icon-print" href="#" title="Print this report"></a>')
+        $('<a id="print-report" class="glyphicon glyphicon-print" href="#" title="Print this report"></a>')
              .click(rvbd.report.launchPrintWindow)
              .replaceAll('#print-report');
     },
 
     disablePrintButton: function() {
-        $('<span id="print-report" class="icon-print" title="Print this report (run report to enable)"></span>')
+        $('<span id="print-report" class="glyphicon glyphicon-print" title="Print this report (run report to enable)"></span>')
              .replaceAll('#print-report');
     },
 
     enableReloadButton: function() {
-        $('<a id="reload-report" class="icon-refresh" href="#" title="Reload all widgets in report"></a>')
+        $('<a id="reload-report" class="glyphicon glyphicon-refresh" href="#" title="Reload all widgets in report"></a>')
             .click(rvbd.report.reloadAllWidgets)
             .replaceAll('#reload-report');
     },
 
     disableReloadButton: function() {
-        $('<span id="reload-report" class="icon-refresh" title="Reload all widgets in this report"></span>')
+        $('<span id="reload-report" class="glyphicon glyphicon-refresh" title="Reload all widgets in this report"></span>')
             .replaceAll('#reload-report');
     },
 
@@ -387,7 +387,7 @@ rvbd.report = {
         $.each(widgetsToRender, function(i, w) {
             if (w.row !== rownum) { // If we're at a new row number, create a new row element
                 $row = $('<div></div>')
-                    .addClass('row-fluid');
+                    .addClass('row');
                 rownum = w.row;
             }
 

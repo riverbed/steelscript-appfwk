@@ -15,7 +15,7 @@
 
 .blackbox
 {
-  border: solid 1px black;
+  /*border: solid 1px black;*/
   margin-bottom: 10px;
 }
 
@@ -53,6 +53,12 @@
   max-width: 230px;
 }
 
+.form-control-inline {
+    min-width: 0;
+    width: auto;
+    display: inline;
+}
+
 .widget-box
 {
   border: solid 1px black;
@@ -69,7 +75,7 @@
 
 .widget-content
 {
-  border-top: solid 1px black;
+  /*border-top: solid 1px black;*/
   padding: 5px;
 }
 
@@ -122,5 +128,57 @@ ul#messages li {
 ul#messages li a {
     float: right;
     color: #693;
+}
+
+/*
+ * sub-menu support for Bootstrap 3
+ * http://stackoverflow.com/a/18024991/2157429
+ */
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu > .dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: -6px;
+    margin-left: -1px;
+    -webkit-border-radius: 0 6px 6px 6px;
+    -moz-border-radius: 0 6px 6px 6px;
+    border-radius: 0 6px 6px 6px;
+}
+
+.dropdown-submenu:hover > .dropdown-menu {
+    display: block;
+}
+
+.dropdown-submenu > a:after {
+    display: block;
+    content: " ";
+    float: right;
+    width: 0;
+    height: 0;
+    border-color: transparent;
+    border-style: solid;
+    border-width: 5px 0 5px 5px;
+    border-left-color: #cccccc;
+    margin-top: 5px;
+    margin-right: -10px;
+}
+
+.dropdown-submenu:hover > a:after {
+    border-left-color: #ffffff;
+}
+
+.dropdown-submenu.pull-left {
+    float: none;
+}
+
+.dropdown-submenu.pull-left > .dropdown-menu {
+    left: -100%;
+    margin-left: 10px;
+    -webkit-border-radius: 6px 0 6px 6px;
+    -moz-border-radius: 6px 0 6px 6px;
+    border-radius: 6px 0 6px 6px;
 }
 

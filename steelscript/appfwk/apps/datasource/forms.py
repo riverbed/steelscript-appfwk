@@ -23,6 +23,7 @@ from django.core import validators
 from django.core.exceptions import ValidationError
 from django.forms.widgets import FileInput, TextInput
 from django.forms import widgets
+from django.utils.safestring import mark_safe
 from steelscript.common.timeutils import \
     (parse_timedelta, timedelta_total_seconds, timedelta_str)
 
@@ -90,7 +91,10 @@ class DateWidget(forms.DateInput):
             initial_date += js
 
         msg = '''
-        {0} <span id="datenow_{name}" class="icon-calendar" title="Set date to today"> </span>
+        <span class="input-group-addon">
+          <span id="datenow_{name}" class="glyphicon glyphicon-calendar" title="Set date to today"> </span>
+        </span>
+        {0}
         <script type="text/javascript">
               $("#id_{name}").datepicker({{
                  format: "mm/dd/YY",
@@ -151,7 +155,10 @@ class TimeWidget(forms.TimeInput):
             force_round_time = 'false'
 
         msg = '''
-        {0} <span id="timenow_{name}" class="icon-time" title="Set time/date to now"> </span>
+        <span class="input-group-addon">
+          <span id="timenow_{name}" class="glyphicon glyphicon-time" title="Set time/date to now"> </span>
+        </span>
+        {0}
         <script type="text/javascript">
               $("#id_{name}").timepicker({{
                  step: {step},
@@ -185,6 +192,15 @@ class ReportSplitDateTimeWidget(forms.SplitDateTimeWidget):
         # Note that we're calling MultiWidget, not SplitDateTimeWidget, because
         # we want to define widgets.
         forms.MultiWidget.__init__(self, split_widgets, attrs)
+
+    def render(self, *args, **kwargs):
+        # wrap the two widgets inside an input-group for bootstrap-3 forms
+        output = super(ReportSplitDateTimeWidget, self).render(*args, **kwargs)
+        return mark_safe("""<div class="input-group">
+        %s
+        </div>
+        """ % output)
+
 
 
 class ReportSplitDateWidget(forms.SplitDateTimeWidget):

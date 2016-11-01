@@ -11,6 +11,7 @@
 
 {% load tz %}
 {% load url from future %}
+{% load add_attrs %}
 
 {% block header %}
     <link href="{{ STATIC_URL }}css/report.css" rel="stylesheet"/>
@@ -120,22 +121,23 @@
     {% if not report.hide_criteria %}
     {% if report.reload_minutes == 0 or report.live %}
     <div class="container-fluid">
-      <div id="criteria-row" class="row-fluid">
-        <div class="span12 widget-box">
+      <div id="criteria-row" class="row">
+        <div class="col-md-12">
           <div class="widget-title">
             <a data-toggle="collapse" data-target="#criteria" href="#">
               Criteria
             </a>
           </div>
 
-          <div id="criteria" class="collapse in">
+          <div id="criteria" class="criteria collapse in">
             <div class="widget-content">
+                <div class="col-md-offset-1 col-md-8">
                 <form class="form-horizontal" action="{% url 'report-view' report.namespace report.slug %}" method="post" id="criteria-form"
                         {% if form.is_multipart %}enctype="multipart/form-data"{% endif %} target="_blank">
+                    <fieldset>
                     {% csrf_token %}
                     <input type="hidden" id="id_expand_tables" name="expand_tables">
-                    <fieldset>
-                        <div id="form-error-info" class="text-error"></div>
+                        <div id="form-error-info" class="text-danger"></div>
 
                         {% if form.errors %}
                             <p class="text-error">Please correct the errors below.</p>
@@ -149,21 +151,19 @@
                                 <div class="criteria-group-contents">
                                     {% for field in form.visible_fields %}
                                         {% if field.name in s.parameters %}
-                                            <div class="control-group">
-                                                <div class="control-label">
-                                                    {{ field.label_tag }}
+                                            <div class="form-group">
+                                                <label for="{{ field.auto_id }}" class="col-xs-3 control-label"> {{ field.label_tag }} </label>
+                                                <div class="col-xs-8">
+                                                {{ field|addcss:"form-control" }}
                                                 </div>
-                                                <div class="controls">
-                                                    <span id='{{ field.auto_id }}-span'>{{ field }}</span>
-                                                    {% if field.errors %}
-                                                        {% for err in field.errors %}
-                                                            <p class="text-error">{{ err }}</p>
-                                                        {% endfor %}
-                                                    {% endif %}
-                                                    {% if field.help_text %}
-                                                        <span class="icon-info-sign" title="{{ field.help_text }}"></span>
-                                                    {% endif %}
-                                                </div>
+                                                {% if field.errors %}
+                                                    {% for err in field.errors %}
+                                                        <p class="text-error">{{ err }}</p>
+                                                    {% endfor %}
+                                                {% endif %}
+                                                {% if field.help_text %}
+                                                    <span class="glyphicon glyphicon-info-sign" title="{{ field.help_text }}"></span>
+                                                {% endif %}
                                             </div>
                                         {% endif %}
                                     {% endfor %}
@@ -175,7 +175,8 @@
                         {% endfor %}
                     </fieldset>
               </form>
-              <p></p>
+              </div>
+              <div class="criteria col-md-offset-3 col-md-8">
               {% if not missing_devices %}
                   <div class="btn-group dropup">
                       <button id="button-run" class="btn btn-primary">Run</button>
@@ -192,6 +193,7 @@
                       </ul>
                   </div>
               {% endif  %}
+              </div>
             </div>
           </div>
         </div>
@@ -201,8 +203,8 @@
     {% endif %}
 
     <div class="container-fluid">
-      <div class="row-fluid">
-        <div class="span12 widget-box">
+      <div class="row">
+        <div class="col-md-12">
           <div class="widget-title report-title">
               {% if report.hide_criteria %}
                 <a data-toggle="collapse" data-target="#report-container" href="#">&nbsp;</a>

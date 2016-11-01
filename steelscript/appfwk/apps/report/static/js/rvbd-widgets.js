@@ -115,7 +115,7 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
     var $div = $(div);
 
     $div.attr('id', 'chart_' + id)
-        .addClass('widget blackbox span' + (isEmbedded ? '12' : options.width))
+        .addClass('widget blackbox col-md-' + (isEmbedded ? '12' : options.width))
         .text("Widget " + id);
     if (options.height) {
         $div.height(options.height);
@@ -124,7 +124,7 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
         $div.height(90);
     }
 
-    $div.html("<p>Loading...</p>")
+    $div.html("<p></p>")
         .showLoading()
         .setLoading(0);
 
@@ -422,7 +422,8 @@ rvbd.widgets.Widget.prototype = {
                     'data-toggle': 'dropdown'
                 }),
             $menuIcon = $('<span></span>')
-                .addClass('icon-chevron-down'),
+                .addClass('glyphicon')
+                .addClass('glyphicon-chevron-down'),
             $menu = $('<ul></ul>')
                 .addClass('dropdown-menu widget-dropdown-menu')
                 .attr({
