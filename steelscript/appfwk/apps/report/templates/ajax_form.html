@@ -6,11 +6,13 @@
 # as set forth in the License.
 -->
 
+{% load add_attrs %}
+
 <form id="{{ ajaxform.id }}" action="{{ ajaxform.action }}" method="{{ ajaxform.method }}" class="form-horizontal">
     {% csrf_token %}
     {% if ajaxform.non_field_errors %}
         {% for err in ajaxform.non_field_errors %}
-            <p class="text-error">{{ err }}</p>
+            <p class="text-danger">{{ err }}</p>
         {% endfor %}
     {% endif %}
     <fieldset>
@@ -18,15 +20,13 @@
             {{ hidden }}
         {% endfor %}
         {% for field in ajaxform.visible_fields %}
-            <div class="control-group">
-                <div class="control-label">
-                    {{ field.label_tag }}
-                </div>
-                <div class="controls">
-                    {{ field }}
+            <div class="form-group">
+                <label for="{{ field.auto_id }}" class="col-xs-2 control-label"> {{ field.label_tag }}</label>
+                <div class="col-xs-8">
+                    {{ field|addcss:"form-control" }}
                     {% if field.errors %}
                         {% for err in field.errors %}
-                            <p class="text-error">{{ err }}</p>
+                            <p class="text-danger">{{ err }}</p>
                         {% endfor %}
                     {% endif %}
                 </div>

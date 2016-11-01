@@ -81,13 +81,13 @@ span#reload-report {
     opacity: 0.4;
 }
 
-.modal-content { /* All modal content divs hidden initially */
-    display: none;
-}
+/*.modal-content { !* All modal content divs hidden initially *!*/
+    /*display: none;*/
+/*}*/
 
-.modal .modal-content { /* But shown if they're inside a modal */
-    display: block;
-}
+/*.modal .modal-content { !* But shown if they're inside a modal *!*/
+    /*display: block;*/
+/*}*/
 
 /* Inputs for embed widget dimensions */
 #embed-widget-width, #embed-widget-height {

@@ -37,14 +37,16 @@ rvbd.modal = {
         }
 
         var modalHtml =
-            '<div class="modal hide fade ' + customClass + '" id="test_id">' +
+            '<div class="modal fade ' + customClass + '" id="test_id">' +
+                '<div class="modal-dialog">' +
+                '<div class="modal-content">' +
                 '<div class="modal-header">' +
                     '<a class="close" data-dismiss="modal">&times;</a>' +
                     '<h3>' + heading +'</h3>' +
                 '</div>' +
                 '<div id="modalBody" class="modal-body"></div>';
         // if we don't include cancelButtonTxt then don't draw cancel button
-        if( cancelButtonTxt ){
+        if ( cancelButtonTxt ){
             modalHtml +=
                 '<div class="modal-footer">' +
                     '<a href="#" id="cancelButton" class="btn" data-dismiss="modal">' +
@@ -54,20 +56,23 @@ rvbd.modal = {
                       okButtonTxt +
                     '</a>' +
                 '</div>' +
+                '</div>' +
+                '</div>' +
               '</div>';
-        }else{
+        } else {
             modalHtml +=
                 '<div class="modal-footer">' +
                     '<a href="#" id="okButton" class="btn btn-primary">' +
                       okButtonTxt +
                     '</a>' +
                 '</div>' +
+                '</div>' +
+                '</div>' +
               '</div>';
         }
 
         if (typeof body === 'string') {
             $body = $('<div></div>')
-                .addClass('modal-content')
                 .html(body);
         } else { // Assume DOM element
             $body = $(body);
