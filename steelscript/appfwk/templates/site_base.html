@@ -13,64 +13,64 @@
 
   </head>
   <body>
-    <div class="navbar navbar-inverse ">
-      <div class="navbar-inner">
-        <div class="container">
-          {% block brand_logo %}
-          <a class="brand" style="vertical-align: bottom;padding-top: 8px;" href="/" alt="Riverbed"><img src='{{ STATIC_URL }}images/riverbed_r_small.png' style="height: 18px; width: 18px; max-width:None;"> SteelScript </a>
-          {% endblock %}
-          <div class="nav-collapse collapse">
-            <ul class="nav">
+  <nav class="navbar navbar-inverse ">
+        <div class="container-fluid">
+          <div class="navbar-header">
+              <a class="navbar-brand" style="vertical-align: bottom;" href="/">
+                  <img src="{{ STATIC_URL }}images/riverbed_r_small.png" style="display: inline; height: 18px; width: 18px; max-width:None;" alt="Riverbed">
+                  SteelScript
+              </a>
+          </div>
+          <div class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
               {% block navbar_left %}
               {% endblock %}
 
               {% block extra_nav_left %}
               {% endblock %}
             </ul>
-            <ul class="nav pull-right">
+            <ul class="nav navbar-nav navbar-right">
               {% block extra_nav_right %}
               {% endblock %}
 
               {% block navbar_right %}
                   {% if user.is_authenticated %}
-                  <li class="active">
-                      <div class="btn-group pull-right">
-                          <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
-                              <i class="icon-edit icon-white"></i> {{ user.username }} <span class="caret"></span>
-                          </a>
+                  <li>
+                          <button class="btn btn-primary navbar-btn dropdown-toggle" data-toggle="dropdown" href="#">
+                              <i class="glyphicon glyphicon-edit"></i> {{ user.username }} <span class="caret"></span>
+                          </button>
                           <ul class="dropdown-menu">
-                              <li><a href="{% url 'preferences' %}"><i class="icon-list"></i> Preferences</a></li>
+                              <li><a href="{% url 'preferences' %}"><i class="glyphicon glyphicon-list"></i> Preferences</a></li>
                               {% if user.is_superuser %}
                                   <li class="divider"></li>
-                                  <li><a href="{% url 'system_settings' %}"><i class="icon-list"></i> System Settings</a></li>
-                                  <li><a href="{% url 'device-list' %}"><i class="icon-pencil"></i> Edit Devices</a></li>
-                                  <li><a href="{% url 'plugins-list' %}"><i class="icon-resize-small"></i> Edit Plugins</a></li>
+                                  <li><a href="{% url 'system_settings' %}"><i class="glyphicon glyphicon-list"></i> System Settings</a></li>
+                                  <li><a href="{% url 'device-list' %}"><i class="glyphicon glyphicon-pencil"></i> Edit Devices</a></li>
+                                  <li><a href="{% url 'plugins-list' %}"><i class="glyphicon glyphicon-resize-small"></i> Edit Plugins</a></li>
                                   {% if report_history_enabled %}
-                                  <li><a href="{% url 'report-history' %}"><i class="icon-resize-small"></i> Report History</a></li>
+                                  <li><a href="{% url 'report-history' %}"><i class="glyphicon glyphicon-resize-small"></i> Report History</a></li>
                                   {% endif %}
-                                  <li><a href="/admin"><i class="icon-wrench"></i> Admin Panel</a></li>
+                                  <li><a href="/admin"><i class="glyphicon glyphicon-wrench"></i> Admin Panel</a></li>
                                   <li class="divider"></li>
                                   {% if report %}
-                                      <li><a href="{% url 'report-editor' report.namespace report.slug %}"><i class="icon-edit"></i> Edit Report</a></li>
+                                      <li><a href="{% url 'report-editor' report.namespace report.slug %}"><i class="glyphicon glyphicon-edit"></i> Edit Report</a></li>
                                   {% endif %}
                                   {% if reports and 'report' in request.path %}
-                                      <li><a href="#" onClick="rvbd.modal.reloading('reload', false)"><i class="icon-repeat"></i> Reload This Report</a></li>
+                                      <li><a href="#" onclick="rvbd.modal.reloading('reload', false)"><i class="glyphicon glyphicon-repeat"></i> Reload This Report</a></li>
                                   {% endif %}
-                                  <li><a href="#" onClick="rvbd.modal.reloading('{% url 'reload-all' %}', true)"><i class="icon-retweet"></i> Reload All Reports</a></li>
+                                  <li><a href="#" onclick="rvbd.modal.reloading('{% url 'reload-all' %}', true)"><i class="glyphicon glyphicon-retweet"></i> Reload All Reports</a></li>
                               {% endif %}
                               <li class="divider"></li>
-                              <li><a href="/accounts/logout/"><i class="icon-off"></i> Logout</a></li>
+                              <li><a href="/accounts/logout/"><i class="glyphicon glyphicon-off"></i> Logout</a></li>
                           </ul>
-                      </div>
                   </li>
                   {% elif guest_enabled and guest_show_button %}
                   <li class="active">
-                      <div class="btn-group pull-right">
-                          <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
-                              <i class="icon-edit icon-white"></i> Guest <span class="caret"></span>
+                      <div class="btn-group navbar-right">
+                          <a class="btn btn-primary navbar-btn dropdown-toggle" data-toggle="dropdown" href="#">
+                              <i class="glyphicon glyphicon-edit"></i> Guest <span class="caret"></span>
                           </a>
                           <ul class="dropdown-menu">
-                              <li><a href="/accounts/login/"><i class="icon-user"></i> Login</a></li>
+                              <li><a href="/accounts/login/"><i class="glyphicon glyphicon-user"></i> Login</a></li>
                           </ul>
                       </div>
                   </li>
@@ -79,8 +79,7 @@
             </ul>
           </div><!--/.nav-collapse -->
         </div>
-      </div>
-    </div>
+    </nav>
 
     {% load pinax_announcements_tags %}
     {% announcements as announcements_list %}
@@ -91,12 +90,12 @@
 
     {% block login_row %}
     <div class="container-fluid">
-      <div class="row-fluid">
-        <div class="span6">
+      <div class="row">
+        <div class="col-md-6">
           {% block header_row %}{% endblock %}
         </div>
-        <div class="span6">
-            <div class="pull-right" style="margin: 10px 0">
+        <div class="col-md-6">
+            <div class="navbar-right" style="margin: 10px 0">
                 {% block login %}
                 {% endblock %}
             </div>
@@ -114,7 +113,7 @@
     </ul>
 
     {% block content %}{% endblock %}
-    <div class="container-fluid">
+    <div class="container">
         <div class="row block-centered" style="text-align: center">
             <small>Powered by </small><a style="vertical-align: bottom;padding-top: 8px;" href="http://www.riverbed.com" alt="Riverbed"><img src='{{ STATIC_URL }}images/riverbed-logo.png' style="max-width:None;"></a>
         </div>
