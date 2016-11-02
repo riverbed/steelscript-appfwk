@@ -98,11 +98,27 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
 
     self.postUrl = urls.postUrl;
     self.updateUrl = urls.updateUrl;
-    self.div = div;
     self.id = id;
     self.slug = slug;
     self.options = options;
     self.criteria = criteria;
+
+    var $div = $(div);
+
+    // with bootstrap 3 - the col-md-* widgets have padding so any borders
+    // show up outside of actual content.  here we create an inner div to
+    // apply our borders against and write our content into
+    $div.attr('id', 'outer_chart_' + id)
+        .addClass('widget col-md-' + (isEmbedded ? '12' : options.width));
+
+    self.widgetbox = $('<div></div>')
+        .attr('id', 'chart_' + id)
+        .addClass('widget-box')
+        .text("Widget " + id)
+        .appendTo($div);
+
+    self.div = self.widgetbox;
+    $div = self.div;
 
     if (dataCache) {
       self.dataCache = JSON.parse(dataCache);
@@ -112,11 +128,6 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
     self.asyncID = null;
     self.lastUpdate = {};     // object datetime/timezone of last update
 
-    var $div = $(div);
-
-    $div.attr('id', 'chart_' + id)
-        .addClass('widget blackbox col-md-' + (isEmbedded ? '12' : options.width))
-        .text("Widget " + id);
     if (options.height) {
         $div.height(options.height);
     } else {
@@ -124,7 +135,7 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
         $div.height(90);
     }
 
-    $div.html("<p></p>")
+    $div.html("<span></span>")
         .showLoading()
         .setLoading(0);
 
@@ -412,8 +423,8 @@ rvbd.widgets.Widget.prototype = {
         }
 
         var $menuContainer = $('<div></div>')
-                .attr('id', 'reports-dropdown')
-                .addClass('dropdown'),
+                .attr('id', 'widget-menu-container-' + self.id)
+                .addClass('dropdown widget-menu-container'),
             $menuButton = $('<a></a>')
                 .attr('id', self.id + '_menu')
                 .addClass('dropdown-toggle widget-dropdown-toggle')

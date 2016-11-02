@@ -5,6 +5,17 @@
   padding-top: 0px;
  }
 
+/* used for Criteria and Report header row */
+.section-title
+{
+    font-size: 110%;
+    font-weight: bold;
+    padding: 5px;
+    /*background-color: #F0F0F0;*/
+    margin-bottom: 10px;
+    border-bottom: solid 1px #d2d2d2
+}
+
 .criteria {
     margin-bottom: 10px;
 }
@@ -22,11 +33,40 @@
 .duration { width: 100px; }
 .filterexpr { width: 300px; }
 
-#reports-dropdown {
+.loading-indicator-overlay {
+    background-color: white;
+}
+
+.widget-box
+{
+    margin-bottom: 10px;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(63, 63, 68, 0.1);
+}
+
+.widget-title
+{
+    /*font-size: 110%;*/
+    font-weight: bold;
+    padding: 5px;
+    /*background-color: #F0F0F0;*/
+    margin-bottom: 10px;
+}
+
+.widget-content
+{
+    /*border-top: solid 1px black;*/
+}
+
+.widget-menu-container {
     position: relative;
-    float: right;
-    top: 0px;
-    height: 26px;
+    display: inline;
+    /*float: right;*/
+    /*top: 0px;*/
+    /*height: 26px;*/
+    padding-left: 10px;
+    font-size: .8em;
 }
 
 .widget-dropdown-menu {
@@ -41,6 +81,7 @@
 
 .widget-error {
     font-size: 13px;
+    padding: 5px;
 }
 
 .wid-outer-container {

@@ -5,7 +5,6 @@
 
     {% block site_header %}
 {#    <link href="{{ STATIC_URL }}bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen, print"/>#}
-    <link href="{{ STATIC_URL }}css/main.css" rel="stylesheet"/>
     <link href="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.css" rel="stylesheet"/>
 {#    <link href="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.css" rel="stylesheet"/>#}
 
@@ -48,6 +47,9 @@
     <script type="text/javascript" src="http://yui.yahooapis.com/{{ js_versions.yui }}/build/yui/yui-min.js"></script>
     {% endif %}
     {% endif %}
+
+    <link href="{{ STATIC_URL }}css/main.css" rel="stylesheet"/>
+
     {% endblock %}
 
 {#    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>#}

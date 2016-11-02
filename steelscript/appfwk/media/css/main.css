@@ -13,6 +13,10 @@
   { page-break-inside: avoid; }
 }
 
+body {
+  background-color: #f7f7f8;
+}
+
 .blackbox
 {
   /*border: solid 1px black;*/
@@ -57,26 +61,6 @@
     min-width: 0;
     width: auto;
     display: inline;
-}
-
-.widget-box
-{
-  border: solid 1px black;
-  margin-bottom: 10px;
-}
-
-.widget-title
-{
-  font-size: 110%;
-  font-weight: bold;
-  padding: 5px;
-  background-color: #F0F0F0;
-}
-
-.widget-content
-{
-  /*border-top: solid 1px black;*/
-  padding: 5px;
 }
 
 .block-centered

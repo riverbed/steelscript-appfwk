@@ -14,9 +14,9 @@
 {% load add_attrs %}
 
 {% block header %}
+    <link href="{{ STATIC_URL }}showLoading/css/showLoading.css" rel="stylesheet"/>
     <link href="{{ STATIC_URL }}css/report.css" rel="stylesheet"/>
 
-    <link href="{{ STATIC_URL }}showLoading/css/showLoading.css" rel="stylesheet"/>
     <script type="text/javascript" src="{{ STATIC_URL }}showLoading/js/jquery.showLoading.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.min.js"></script>
 
@@ -123,7 +123,7 @@
     <div class="container-fluid">
       <div id="criteria-row" class="row">
         <div class="col-md-12">
-          <div class="widget-title">
+          <div class="section-title">
             <a data-toggle="collapse" data-target="#criteria" href="#">
               Criteria
             </a>
@@ -205,7 +205,7 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col-md-12">
-          <div class="widget-title report-title">
+          <div class="section-title report-title">
               {% if report.hide_criteria %}
                 <a data-toggle="collapse" data-target="#report-container" href="#">&nbsp;</a>
               {% else %}
