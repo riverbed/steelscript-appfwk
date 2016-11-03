@@ -260,7 +260,7 @@ class BarWidget(ChartWidget):
         :param list keycols: List of key column names to use for x-axis labels
         :param list valuecols: List of data columns to graph
         :param str charttype: Type of chart, defaults to 'line'.  This may be
-           any YUI3 'type'
+           any C3 'type'
         :param bool stack_widget: stack this widget below the previous one.
 
         """
@@ -279,7 +279,7 @@ class LineWidget(ChartWidget):
         :param list keycols: List of key column names to use for x-axis labels
         :param list valuecols: List of data columns to graph
         :param str charttype: Type of chart, defaults to 'line'.  This may be
-           any YUI3 'type'
+           any C3 'type'
         :param bool stack_widget: stack this widget below the previous one.
 
         """
@@ -288,6 +288,21 @@ class LineWidget(ChartWidget):
 
 
 class TimeAxis(object):
+    """Make reasonable ticks for arbitrary time intervals.
+
+    For various sets of start and end times, this class will try to determine
+    appropriate values to display on an X-Axis.
+
+    The INTERVALS list contains
+    a timedelta, format string, then two lambda functions to evaluate a length
+    of time.  The class gets initialized with two times - t0 and t1 plus some
+    optional limits on how many ticks to solve for.
+
+    When calculating the ticks, each item in INTERVALS gets evaluated against
+    t0/t1 until an appropriate time range gets found then reasonable multiples
+    are determined within that boundary and returned.
+
+    """
 
     INTERVALS = [
         [timedelta(milliseconds=1), '%H:%M:%S.%L',

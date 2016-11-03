@@ -59,7 +59,7 @@ $.extend(rvbd.widgets.tables.DataTableWidget.prototype, {
         self.onRender();
     },
 
-    /* Called immediately after render after the YUI widget is created. */
+    /* Called immediately after render after the widget is created. */
     onRender: function() {
         // Behavior implemented in subclasses
     },
