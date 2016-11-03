@@ -5,8 +5,10 @@
 # as set forth in the License.
 
 
+import re
 import logging
 from datetime import datetime
+from collections import OrderedDict
 
 from django.conf import settings
 from django.db import models
@@ -795,7 +797,126 @@ def _widgetjob_delete(sender, instance, **kwargs):
         logger.info('Job not found for instance %s, ignoring.' % instance)
 
 
-class Axes:
+class UIWidgetHelper(object):
+    """Helper class for ui-module widget classes to use."""
+
+    def __init__(self, widget, job):
+        self.widget = widget
+        self.job = job
+
+        # properties
+        self._colmap = None
+        self._all_cols = None
+        self._keycols = None
+        self._valcols = None
+
+    @staticmethod
+    def clean_key(s):
+        # remove unwanted characters from string `s`
+        return re.sub('[:. ]', '_', s)
+
+    class ColInfo:
+        def __init__(self, col, dataindex, axis, fmt=None, allow_html=False):
+            self.col = col
+            self.key = UIWidgetHelper.clean_key(col.name)
+            self.label = col.label
+            self.dataindex = dataindex
+            self.axis = axis
+            self.formatter = fmt
+            self.allow_html = allow_html
+            self.sortable = True
+            self.istime = col.istime()
+            self.isdate = col.isdate()
+
+        def to_json(self, *keys):
+            # return a dict object with just the requested keys
+            return {k: getattr(self, k) for k in keys}
+
+    @property
+    def all_cols(self):
+        if self._all_cols:
+            return self._all_cols
+
+        self._all_cols = self.job.get_columns()
+        return self._all_cols
+
+    @property
+    def col_names(self):
+        return [c.name for c in self.all_cols]
+
+    @property
+    def keycols(self):
+        if self._keycols:
+            return self._keycols
+
+        kcols = getattr(self.widget.options, 'keycols', None)
+        if kcols:
+            self._keycols = [c for c in self.all_cols if c.name in kcols]
+        else:
+            self._keycols = [c for c in self.all_cols if c.iskey]
+        return self._keycols
+
+    @property
+    def valcols(self):
+        if self._valcols:
+            return self._valcols
+
+        wcols = getattr(self.widget.options, 'columns', None)
+
+        # handle deprecated * option for all columns
+        if wcols == '*':
+            wcols = None
+
+        if wcols:
+            self._valcols = [c for c in self.all_cols
+                             if c.name in wcols]
+        else:
+            # just use all defined columns other than time
+            self._valcols = [c for c in self.all_cols if not c.iskey]
+
+        return self._valcols
+
+    @property
+    def colmap(self):
+        if self._colmap:
+            return self._colmap
+
+        # Map of column info by column name
+        colmap = OrderedDict()
+        fmt = None
+        html = False
+
+        # Build up the colmap
+        for i, c in enumerate(self.all_cols):
+            if c not in self.keycols and c not in self.valcols:
+                continue
+
+            if c.formatter:
+                fmt = c.formatter
+                html = True
+            elif c.isnumeric():
+                if c.units == c.UNITS_PCT:
+                    fmt = 'formatPct'
+                else:
+                    if c.datatype == c.DATATYPE_FLOAT:
+                        fmt = 'formatMetric'
+                    elif c.datatype == c.DATATYPE_INTEGER:
+                        fmt = 'formatIntegerMetric'
+            elif c.istime():
+                fmt = 'formatTime'
+            elif c.isdate():
+                fmt = 'formatDate'
+            elif c.datatype == c.DATATYPE_HTML:
+                html = True
+
+            ci = self.ColInfo(c, i, axis=None, fmt=fmt, allow_html=html)
+            colmap[c.name] = ci
+
+        self._colmap = colmap
+        return self.colmap
+
+
+class Axes(object):
     def __init__(self, definition):
         self.definition = definition
 

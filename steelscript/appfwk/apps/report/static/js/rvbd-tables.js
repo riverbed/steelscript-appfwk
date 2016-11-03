@@ -1,10 +1,9 @@
 /**
- # Copyright (c) 2013 Riverbed Technology, Inc.
+ # Copyright (c) 2016 Riverbed Technology, Inc.
  #
- # This software is licensed under the terms and conditions of the
- # MIT License set forth at:
- #   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").
- # This software is distributed "AS IS" as set forth in the License.
+ # This software is licensed under the terms and conditions of the MIT License
+ # accompanying the software ("License").  This software is distributed "AS IS"
+ # as set forth in the License.
  */
 
 (function() {
@@ -27,19 +26,35 @@ rvbd.widgets.tables.DataTableWidget = function(postUrl, isEmbedded, div,
 rvbd.widgets.tables.DataTableWidget.prototype = Object.create(rvbd.widgets.Widget.prototype);
 
 $.extend(rvbd.widgets.tables.DataTableWidget.prototype, {
+    prepareData: function(data) {
+        $.each(data.columns, function(i, c) {
+            var formatter;
+            if (c.formatter) {
+                if (c.formatter in rvbd.formatters) {
+                    formatter = rvbd.formatters[c.formatter];
+                } else {
+                    formatter = eval(c.formatter);
+                }
+                // DataTables uses the 'render' attr for formatters
+                c.render = (function(key, formatter) {
+                    return function(data, type, row) {
+                        return formatter(data);
+                    }
+                })(c.key, formatter);
+            }
+        });
+
+        return data;
+    },
+
     render: function(data) {
         var self = this;
-        self.data = data;
 
         self.titleMsg = data['chartTitle'];
         self.buildInnerLayout();
 
-        var $content = $(self.content);
-        self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
-                                  parseInt($content.css('margin-right'), 10);
-        self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
-                                  parseInt($content.css('margin-bottom'), 10);
-        self.titleHeight = $(self.title).outerHeight();
+        data = self.prepareData(data);
+        self.data = data;
 
         self.onRender();
     },

@@ -45,7 +45,8 @@ p.add_column('time', 'Time', datatype='time', iskey=True)
 p.add_column('in_avg_util', 'Avg Inbound Util %', units='B/s')
 p.add_column('out_avg_util', 'Avg Outbound Util %', units='B/s')
 
-report.add_widget(c3.TimeSeriesWidget, p, "{interface} - Overall Utilization", width=12)
+report.add_widget(c3.TimeSeriesWidget, p, "{interface} - Overall Utilization",
+                  width=12)
 
 # Define a Overall TimeSeries showing In/Out Totals
 p = NetProfilerTimeSeriesTable.create('qos-overall-total',
@@ -140,8 +141,11 @@ for i, dscp in enumerate(['AF11', 'EF', 'Default']):
 
         NetProfilerTable.extend_filterexpr(
             section, keyword='interface_filterexpr',
-            template=('set any [%s interface {interface}] with set any [dscp %s]' %
-                      (direction, dscp)))
+            template=(
+                'set any [%s interface {interface}] with set any [dscp %s]' %
+                (direction, dscp)
+            )
+        )
 
         p = NetProfilerTimeSeriesTable.create('qos-%d-%s' % (i, direction),
                                               duration=15, resolution=60,

@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2016 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
@@ -8,88 +8,47 @@
 import re
 import logging
 
-from steelscript.appfwk.apps.report.models import Widget
+from steelscript.appfwk.apps.report.models import Widget, UIWidgetHelper
 from steelscript.common import timeutils
 
 logger = logging.getLogger(__name__)
 
 
-def cleankey(s):
+def clean_key(s):
+    # remove unwanted characters from string `s`
     return re.sub('[:. ]', '_', s)
 
 
 class BaseTableWidget(object):
     @classmethod
     def base_process(cls, widget, job, data):
-        class ColInfo:
-            def __init__(self, col, dataindex, istime=False, isdate=False):
-                self.col = col
-                self.key = cleankey(col.name)
-                self.dataindex = dataindex
-                self.istime = istime
-                self.isdate = isdate
-        w_keys = []     # Widget column keys in order that matches data
-        colinfo = {}    # Map of ColInfo by key
-        w_columns = []  # Widget column definitions
-
-        for i, wc in enumerate(job.get_columns()):
-            if (widget.options.columns is not None and
-                    wc.name not in widget.options.columns):
-                continue
-
-            ci = ColInfo(wc, i, wc.istime(), wc.isdate())
-            colinfo[ci.key] = ci
-            w_keys.append(ci.key)
-
-        # Widget column definitions, make sure this is in the order
-        # defined by the widget.options.columns, if specified
-        for key in (widget.options.columns or w_keys):
-            ci = colinfo[key]
-            w_column = {'key': ci.key, 'label': ci.col.label, "sortable": True}
-
-            if ci.col.formatter:
-                w_column['formatter'] = ci.col.formatter
-                w_column['allowHTML'] = True
-            elif ci.col.isnumeric():
-                if ci.col.units == ci.col.UNITS_PCT:
-                    w_column['formatter'] = 'formatPct'
-                else:
-                    if ci.col.datatype == ci.col.DATATYPE_FLOAT:
-                        w_column['formatter'] = 'formatMetric'
-                    elif ci.col.datatype == ci.col.DATATYPE_INTEGER:
-                        w_column['formatter'] = 'formatIntegerMetric'
-            elif ci.col.istime():
-                w_column['formatter'] = 'formatTime'
-            elif ci.col.isdate():
-                w_column['formatter'] = 'formatDate'
-            elif ci.col.datatype == ci.col.DATATYPE_HTML:
-                w_column['allowHTML'] = True
-
-            w_columns.append(w_column)
+        helper = UIWidgetHelper(widget, job)
 
         rows = []
 
         for rawrow in data:
             row = {}
 
-            for key in w_keys:
-                ci = colinfo[key]
-                if colinfo[key].istime or colinfo[key].isdate:
-                    t = rawrow[ci.dataindex]
+            for key in helper.colmap.values():
+                if key.istime or key.isdate:
+                    t = rawrow[key.dataindex]
                     try:
                         val = timeutils.datetime_to_microseconds(t) / 1000
                     except AttributeError:
                         val = t * 1000
                 else:
-                    val = rawrow[ci.dataindex]
-
-                row[key] = val
-
+                    val = rawrow[key.dataindex]
+                row[key.key] = val
             rows.append(row)
+
+        column_defs = [
+            c.to_json('key', 'label', 'sortable', 'formatter', 'allow_html')
+            for c in helper.colmap.values()
+        ]
 
         data = {
             "chartTitle": widget.title.format(**job.actual_criteria),
-            "columns": w_columns,
+            "columns": column_defs,
             "data": rows
         }
 
@@ -150,7 +109,8 @@ class TableWidget(BaseTableWidget):
 
         # reformat columns
         cols = [{'data': c['key'],
-                 'title': c['label']} for c in data['columns']]
+                 'title': c['label'],
+                 'formatter': c['formatter']} for c in data['columns']]
 
         data['columns'] = cols
         data['options'] = options

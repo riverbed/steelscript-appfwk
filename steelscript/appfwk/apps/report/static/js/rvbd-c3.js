@@ -1,10 +1,9 @@
 /**
- # Copyright (c) 2013 Riverbed Technology, Inc.
+ # Copyright (c) 2016 Riverbed Technology, Inc.
  #
- # This software is licensed under the terms and conditions of the
- # MIT License set forth at:
- #   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").
- # This software is distributed "AS IS" as set forth in the License.
+ # This software is licensed under the terms and conditions of the MIT License
+ # accompanying the software ("License").  This software is distributed "AS IS"
+ # as set forth in the License.
  */
 
 (function() {
@@ -13,14 +12,14 @@
 rvbd.widgets.c3 = {};
 
 rvbd.widgets.c3.C3Widget = function(postUrl, isEmbedded, div,
-                                    id, slug, options, criteria) {
+                                    id, slug, options, criteria, dataCache) {
     var self = this;
 
     var ct = $(window);
     ct.resize(function() { self.onResize(); });
 
     rvbd.widgets.Widget.apply(self, [postUrl, isEmbedded, div,
-                                     id, slug, options, criteria]);
+                                     id, slug, options, criteria, dataCache]);
 };
 
 /* C3 Widget base class */
@@ -28,12 +27,11 @@ rvbd.widgets.c3.C3Widget.prototype = Object.create(rvbd.widgets.Widget.prototype
 
 $.extend(rvbd.widgets.c3.C3Widget.prototype, {
 
-    /* Called when the YUI widget is resized (or created) */
+    /* Called when the widget is resized (or created) */
     onResize: function() {
         var self = this;
         self.render(self.data);
-    },
-
+    }
 });
 
 /**
@@ -42,11 +40,11 @@ $.extend(rvbd.widgets.c3.C3Widget.prototype, {
  */
 
 rvbd.widgets.c3.TimeSeriesWidget = function(postUrl, isEmbedded, div,
-                                       id, slug, options, criteria) {
+                                            id, slug, options, criteria, dataCache) {
     var self = this;
 
     rvbd.widgets.c3.C3Widget.apply(self, [postUrl, isEmbedded, div,
-                                          id, slug, options, criteria]);
+                                          id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.c3.TimeSeriesWidget.prototype =
         Object.create(rvbd.widgets.c3.C3Widget.prototype);
@@ -59,13 +57,6 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
         self.titleMsg = data['chartTitle'];
         self.buildInnerLayout();
 
-        var $content = $(self.content);
-        self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
-                                  parseInt($content.css('margin-right'), 10);
-        self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
-                                  parseInt($content.css('margin-bottom'), 10);
-        self.titleHeight = $(self.title).outerHeight();
-
         var height = ($(self.outerContainer).height() - self.contentExtraHeight -
                       self.titleHeight);
 
@@ -75,7 +66,6 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
                 height: height
             },
             data: {
-                //rows: data.rows,
                 json: data.json,
                 keys: {x: data.key,
                        value: data.values},
@@ -122,7 +112,6 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
         }
 
         c3.generate(chartdef);
-
     }
 });
 
@@ -132,11 +121,11 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
  */
 
 rvbd.widgets.c3.PieWidget = function(postUrl, isEmbedded, div,
-                                            id, slug, options, criteria) {
+                                     id, slug, options, criteria, dataCache) {
     var self = this;
 
     rvbd.widgets.c3.C3Widget.apply(self, [postUrl, isEmbedded, div,
-        id, slug, options, criteria]);
+                                          id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.c3.PieWidget.prototype =
     Object.create(rvbd.widgets.c3.C3Widget.prototype);
@@ -149,13 +138,6 @@ $.extend(rvbd.widgets.c3.PieWidget.prototype, {
         self.titleMsg = data['chartTitle'];
         self.buildInnerLayout();
 
-        var $content = $(self.content);
-        self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
-            parseInt($content.css('margin-right'), 10);
-        self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
-            parseInt($content.css('margin-bottom'), 10);
-        self.titleHeight = $(self.title).outerHeight();
-
         var height = ($(self.outerContainer).height() - self.contentExtraHeight - self.titleHeight);
 
         var chartdef = {
@@ -165,12 +147,7 @@ $.extend(rvbd.widgets.c3.PieWidget.prototype, {
             },
             data: {
                 columns: data.rows,
-                //names: data.names,
                 type: data.type,
-                //groups: data.groups,
-                //x: 'time',
-                //xFormat: '%Y-%m-%d %H:%M:%S',
-                //xLocaltime: false
             },
             legend: {
                 position: 'inset'
@@ -178,7 +155,6 @@ $.extend(rvbd.widgets.c3.PieWidget.prototype, {
         };
 
         c3.generate(chartdef);
-
     }
 });
 
@@ -189,11 +165,11 @@ $.extend(rvbd.widgets.c3.PieWidget.prototype, {
  */
 
 rvbd.widgets.c3.ChartWidget = function(postUrl, isEmbedded, div,
-                                            id, slug, options, criteria) {
+                                       id, slug, options, criteria, dataCache) {
     var self = this;
 
     rvbd.widgets.c3.C3Widget.apply(self, [postUrl, isEmbedded, div,
-        id, slug, options, criteria]);
+                                          id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.c3.ChartWidget.prototype =
     Object.create(rvbd.widgets.c3.C3Widget.prototype);
@@ -205,13 +181,6 @@ $.extend(rvbd.widgets.c3.ChartWidget.prototype, {
 
         self.titleMsg = data['chartTitle'];
         self.buildInnerLayout();
-
-        var $content = $(self.content);
-        self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
-            parseInt($content.css('margin-right'), 10);
-        self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
-            parseInt($content.css('margin-bottom'), 10);
-        self.titleHeight = $(self.title).outerHeight();
 
         var height = ($(self.outerContainer).height() - self.contentExtraHeight - self.titleHeight);
 
@@ -252,7 +221,6 @@ $.extend(rvbd.widgets.c3.ChartWidget.prototype, {
         }
 
         c3.generate(chartdef);
-
     }
 });
 

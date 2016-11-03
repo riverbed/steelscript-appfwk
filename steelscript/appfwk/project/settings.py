@@ -129,25 +129,38 @@ JS_VERSIONS = {
 # install the file directly into the offline JS dir. Otherwise, it will treat
 # the file as a zip or tar archive and extract it into that subdirectory.
 JS_FILES = [
-    ("https://cdnjs.cloudflare.com/ajax/libs/jquery/{0}/jquery.min.js".format(JS_VERSIONS['jquery']), None),
-    ("https://cdnjs.cloudflare.com/ajax/libs/jqueryui/{0}/jquery-ui.min.js".format(JS_VERSIONS['jqueryui']), None),
-    ("https://cdnjs.cloudflare.com/ajax/libs/jquery.form/{0}/jquery.form.js".format(JS_VERSIONS['jqueryform']), None),
-    ('https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js', None),
-    ('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js', None),
-    ('https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.1.0/pivot.min.js', None),
-    ('https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/jquery.dataTables.min.js', None),
+    ("https://cdnjs.cloudflare.com/ajax/libs/jquery/{0}/jquery.min.js"
+        .format(JS_VERSIONS['jquery']), None),
+    ("https://cdnjs.cloudflare.com/ajax/libs/jqueryui/{0}/jquery-ui.min.js"
+        .format(JS_VERSIONS['jqueryui']), None),
+    ("https://cdnjs.cloudflare.com/ajax/libs/jquery.form/{0}/jquery.form.js"
+        .format(JS_VERSIONS['jqueryform']), None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/c3/{0}/c3.min.js'
+        .format(JS_VERSIONS['c3']), None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/d3/{0}/d3.min.js'
+        .format(JS_VERSIONS['d3']), None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/pivottable/{0}/pivot.min.js'
+        .format(JS_VERSIONS['pivottable']), None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/datatables/{0}/js/jquery.dataTables.min.js'
+        .format(JS_VERSIONS['datatables']), None),
 ]
 
 OFFLINE_JS_FILES = [
-    ("https://cdnjs.cloudflare.com/ajax/libs/jquery/{0}/jquery.min.map".format(JS_VERSIONS['jquery']), None),
-    ("https://jqueryui.com/resources/download/jquery-ui-{0}.zip".format(JS_VERSIONS['jqueryui']), "jquery-ui"),
-    ("http://yui.zenfs.com/releases/yui3/yui_{0}.zip".format(JS_VERSIONS['yui']), "yui"),
+    ("https://cdnjs.cloudflare.com/ajax/libs/jquery/{0}/jquery.min.map"
+        .format(JS_VERSIONS['jquery']), None),
+    ("https://jqueryui.com/resources/download/jquery-ui-{0}.zip"
+        .format(JS_VERSIONS['jqueryui']), "jquery-ui"),
+    ("http://yui.zenfs.com/releases/yui3/yui_{0}.zip"
+        .format(JS_VERSIONS['yui']), "yui"),
 ]
 
 CSS_FILES = [
-    ('https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.10/c3.min.css', None),
-    ('https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.1.0/pivot.min.css', None),
-    ('https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/css/jquery.dataTables.min.css', None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/c3/{0}/c3.min.css'
+        .format(JS_VERSIONS['c3']), None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/pivottable/{0}/pivot.min.css'
+        .format(JS_VERSIONS['pivottable']), None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/datatables/{0}/css/jquery.dataTables.min.css'
+        .format(JS_VERSIONS['datatables']), None),
 ]
 
 

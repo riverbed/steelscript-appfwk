@@ -1,11 +1,10 @@
-# Copyright (c) 2014 Riverbed Technology, Inc.
+# Copyright (c) 2016 Riverbed Technology, Inc.
 #
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
 
-import re
 import json
 import logging
 from datetime import datetime, timedelta
@@ -13,14 +12,10 @@ from datetime import datetime, timedelta
 import pandas
 from dateutil.relativedelta import relativedelta
 
-from steelscript.appfwk.apps.report.models import Widget
+from steelscript.appfwk.apps.report.models import Widget, UIWidgetHelper
 from steelscript.common.timeutils import force_to_utc
 
 logger = logging.getLogger(__name__)
-
-
-def cleankey(s):
-    return re.sub('[:. ]', '_', s)
 
 
 class BaseWidget(object):
@@ -38,12 +33,9 @@ class BaseWidget(object):
 class TimeSeriesWidget(BaseWidget):
     @classmethod
     def create(cls, section, table, title, width=6, height=300,
-               keycols=None, valuecols='*', altaxis=None, stacked=False,
-               stack_widget=False):
+               keycols=None, valuecols=None, altaxis=None, bar=False,
+               stacked=False, stack_widget=False):
         """Create a widget displaying data as a chart.
-
-        This class is typically not used directly, but via LineWidget
-        or BarWidget subclasses
 
         :param int width: Width of the widget in columns (1-12, default 6)
         :param int height: Height of the widget in pixels (default 300)
@@ -51,8 +43,11 @@ class TimeSeriesWidget(BaseWidget):
         :param list valuecols: List of data columns to graph
         :param list altaxis: List of columns to graph using the
             alternate Y-axis
-        :param str stacked: True for stacked line chart, defaults to False.
-        :param bool stack_widget: stack this widget below the previous one.
+        :param bool bar: If True, show time series in a bar chart.  Can
+          be combined with ``stacked`` to show as stacked bar chart rather
+          than stacked area chart
+        :param str stacked: True for stacked line chart, defaults to False
+        :param bool stack_widget: stack this widget below the previous one
 
         """
         keycols = cls.calculate_keycol(table, keycols)
@@ -60,6 +55,7 @@ class TimeSeriesWidget(BaseWidget):
         options = {'keycols': keycols,
                    'columns': valuecols,
                    'altaxis': altaxis,
+                   'bar': bar,
                    'stacked': stacked}
 
         Widget.create(section=section, table=table, title=title,
@@ -69,62 +65,22 @@ class TimeSeriesWidget(BaseWidget):
 
     @classmethod
     def process(cls, widget, job, data):
-        class ColInfo:
-            def __init__(self, col, dataindex, fmt):
-                self.col = col
-                self.dataindex = dataindex
-                self.formatter = fmt
+        helper = UIWidgetHelper(widget, job)
 
-        all_cols = job.get_columns()
-        col_names = [c.name for c in all_cols]
-
-        # The category "key" column -- this is the column shown along the
-        # bottom of the bar widget
-        keycols = [c for c in all_cols if c.name in widget.options.keycols]
-        catname = '-'.join([k.name for k in keycols])
-
-        timecol = [c for c in keycols if c.istime()][0]
-
-        # columns of '*' is a special case, just use all
-        # defined columns other than time
-        if widget.options.columns == '*':
-            cols = [c for c in all_cols if not c.iskey]
-        else:
-            # The value columns - one set of bars for each
-            cols = [c for c in all_cols if c.name in widget.options.columns]
+        catname = '-'.join([k.name for k in helper.keycols])
+        timecol = [c for c in helper.keycols if c.istime()][0]
 
         if widget.options.altaxis:
-            altcols = [c.name for c in all_cols if
+            altcols = [c.name for c in helper.all_cols if
                        c.name in widget.options.altaxis]
         else:
             altcols = []
-
-        # Map of column info by column name
-        colmap = {}
-
-        # Build up the colmap
-        for i, c in enumerate(all_cols):
-            if c not in keycols and c not in cols:
-                continue
-            if c.isnumeric():
-                if c.units == c.UNITS_PCT:
-                    fmt = 'formatPct'
-                else:
-                    if c.datatype == c.DATATYPE_FLOAT:
-                        fmt = 'formatMetric'
-                    elif c.datatype == c.DATATYPE_INTEGER:
-                        fmt = 'formatIntegerMetric'
-            elif c.istime():
-                fmt = 'formatTime'
-
-            ci = ColInfo(c, i, fmt)
-            colmap[c.name] = ci
 
         def c3datefmt(d):
             return '%s.%s' % (force_to_utc(d).strftime('%Y-%m-%dT%H:%M:%S'),
                               "%03dZ" % int(d.microsecond / 1000))
 
-        df = pandas.DataFrame(data, columns=col_names)
+        df = pandas.DataFrame(data, columns=helper.col_names)
         t0 = df[timecol.name].min()
         t1 = df[timecol.name].max()
 
@@ -133,14 +89,16 @@ class TimeSeriesWidget(BaseWidget):
 
         tickvalues = [c3datefmt(d) for d in timeaxis.ticks]
 
-        rows = json.loads(df.to_json(orient='records', date_format='iso', date_unit='ms'))
+        rows = json.loads(
+            df.to_json(orient='records', date_format='iso', date_unit='ms')
+        )
 
         data = {
             'chartTitle': widget.title.format(**job.actual_criteria),
             'json': rows,
             'key': catname,
-            'values': [c.name for c in cols],
-            'names': {c.col.name: c.col.label for c in colmap.values()},
+            'values': [c.name for c in helper.valcols],
+            'names': {c.col.name: c.col.label for c in helper.colmap.values()},
             'altaxis': {c: 'y2' for c in altcols} or None,
             'tickFormat': timeaxis.best[1],
             'tickValues': tickvalues,
@@ -148,9 +106,13 @@ class TimeSeriesWidget(BaseWidget):
         }
 
         if widget.options.stacked:
-            data['groups'] = [[c.col.label for c in colmap.values()
+            data['groups'] = [[c.col.label for c in helper.colmap.values()
                                if not c.col.iskey]]
             data['type'] = 'area'
+
+        if widget.options.bar:
+            # can override 'area' type, or just be used as a plain bar display
+            data['type'] = 'bar'
 
         return data
 
@@ -197,7 +159,7 @@ class PieWidget(BaseWidget):
         # For each slice, catcol will be the label, col will be the value
         rows = []
 
-        if len(data) > 0:
+        if data:
             for rawrow in data:
                 row = dict(zip(col_names, rawrow))
                 r = [row[catcol.name], row[col.name]]
@@ -218,7 +180,7 @@ class PieWidget(BaseWidget):
 class ChartWidget(BaseWidget):
     @classmethod
     def create(cls, section, table, title, width=6, rows=10, height=300,
-               keycols=None, valuecols=None, charttype='line', dynamic=False,
+               keycols=None, valuecols=None, charttype='line',
                **kwargs):
         """Create a widget displaying data as a chart.
 
@@ -229,10 +191,9 @@ class ChartWidget(BaseWidget):
         :param int height: Height of the widget in pixels (default 300)
         :param int rows: Number of rows to display (default 10)
         :param list keycols: List of key column names to use for x-axis labels
-        :param list valuecols: List of data columns to graph
+        :param list valuecols: Optional list of data columns to graph
         :param str charttype: Type of chart, defaults to 'line'.  This may be
            any C3 'type'
-        :param bool dynamic: columns will be added later from criteria if True
 
         """
         keycols = cls.calculate_keycol(table, keycols=None)
@@ -248,8 +209,7 @@ class ChartWidget(BaseWidget):
         options = {'keycols': keycols,
                    'columns': valuecols,
                    'axes': None,
-                   'charttype': charttype,
-                   'dynamic': dynamic}
+                   'charttype': charttype}
 
         Widget.create(section=section, table=table, title=title,
                       width=width, rows=rows, height=height,
@@ -258,34 +218,22 @@ class ChartWidget(BaseWidget):
 
     @classmethod
     def process(cls, widget, job, data):
-        all_cols = job.get_columns()
-
-        # The category "key" column -- this is the column shown along the
-        # bottom of the bar widget
-        keycols = [c for c in all_cols if c.name in widget.options.keycols]
-
-        # columns of '*' is a special case, just use all
-        # defined columns other than time
-        if widget.options.columns == '*' or widget.options.dynamic:
-            cols = [c for c in all_cols if not c.iskey]
-        else:
-            # The value columns - one set of bars for each
-            cols = [c for c in all_cols if c.name in widget.options.columns]
+        helper = UIWidgetHelper(widget, job)
 
         # create composite name for key label
-        keyname = '-'.join([k.name for k in keycols])
+        keyname = '-'.join([k.name for k in helper.keycols])
 
         # For each slice, keyname will be the label
         rows = []
 
         for rawrow in data:
-            row = dict(zip([c.name for c in all_cols], rawrow))
+            row = dict(zip([c.name for c in helper.all_cols], rawrow))
 
             # populate values first
-            r = {c.name: row[c.name] for c in cols}
+            r = {c.name: row[c.name] for c in helper.valcols}
 
             # now add the key
-            key = '-'.join([row[k.name] for k in keycols])
+            key = '-'.join([row[k.name] for k in helper.keycols])
             r[keyname] = key
 
             rows.append(r)
@@ -294,7 +242,7 @@ class ChartWidget(BaseWidget):
             'chartTitle': widget.title.format(**job.actual_criteria),
             'rows': rows,
             'keyname': keyname,
-            'values': [c.name for c in cols],
+            'values': [c.name for c in helper.valcols],
             'type': widget.options.charttype,
         }
 
