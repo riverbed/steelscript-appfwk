@@ -18,6 +18,8 @@ def appfwk_vars(request):
         'offline_js': settings.OFFLINE_JS,
         'appfwk_version': settings.VERSION,
         'js_versions': settings.JS_VERSIONS,
+        'js_files': settings.JS_FILES,
+        'css_files': settings.CSS_FILES,
         'developer': SystemSettings.get_system_settings().developer,
         'guest_enabled': settings.GUEST_USER_ENABLED,
         'guest_show_button': settings.GUEST_SHOW_BUTTON,

@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 #
 TIMEZONE_CHOICES = zip(pytz.common_timezones, pytz.common_timezones)
 
-MAPS_VERSIONS = ('DISABLED',            # Google Maps Versions
-                 'DEVELOPER',
+MAPS_VERSIONS = ('DISABLED',
+                 'DEVELOPER',           # Google Maps Versions
                  'FREE',
                  'BUSINESS',
                  'OPEN_STREET_MAPS',    # Open Street Maps

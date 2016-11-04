@@ -1,10 +1,9 @@
 /**
- # Copyright (c) 2013 Riverbed Technology, Inc.
+ # Copyright (c) 2016 Riverbed Technology, Inc.
  #
- # This software is licensed under the terms and conditions of the
- # MIT License set forth at:
- #   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").
- # This software is distributed "AS IS" as set forth in the License.
+ # This software is licensed under the terms and conditions of the MIT License
+ # accompanying the software ("License").  This software is distributed "AS IS"
+ # as set forth in the License.
  */
 
 (function() {
@@ -120,6 +119,9 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
         .text("Widget " + id);
     if (options.height) {
         $div.height(options.height);
+    } else {
+        // add temporary height to widget
+        $div.height(90);
     }
 
     $div.html("<p>Loading...</p>")
@@ -188,6 +190,9 @@ rvbd.widgets.Widget.prototype = {
             case 3: // Complete
                 $(self.div).hideLoading();
                 self.render(response.data);
+                if (!self.options.height) {
+                    $(self.div).height('auto');
+                }
                 self.status = 'complete';
                 $(document).trigger('widgetDoneLoading', [self]);
                 break;
@@ -396,7 +401,13 @@ rvbd.widgets.Widget.prototype = {
         // only include widget criteria if we have developer mode set
         if (rvbd.report.developer) {
             menuItems.push(
-                '<a tabindex="1" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
+                '<a tabindex="1" id="' + self.id + '_export_widget_json" class="export_widget_json" href="#">Export JSON (Table Data)...</a>'
+            );
+            menuItems.push(
+                '<a tabindex="2" id="' + self.id + '_show_widget_data" class="show_widget_data" href="#">Show Widget Data ...</a>'
+            );
+            menuItems.push(
+                '<a tabindex="3" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
             );
         }
 
@@ -434,12 +445,25 @@ rvbd.widgets.Widget.prototype = {
                       .appendTo($(self.title));
 
         $menuContainer.find('.export_widget_csv').click($.proxy(self.onCsvExport, self));
+        $menuContainer.find('.export_widget_json').click($.proxy(self.onJSONExport, self));
+        //$menuContainer.find('.export_widget_data').click($.proxy(self.onDataExport, self));
 
         $(self.title).find('.get-embed').click($.proxy(self.embedModal, self));
         $(self.title).find('.show_criteria').click($.proxy(self.showCriteriaModal, self));
+        $(self.title).find('.show_widget_data').click($.proxy(self.showWidgetDataModal, self));
+    },
+
+    onJSONExport: function() {
+        var self = this;
+        self.onExport('json');
     },
 
     onCsvExport: function() {
+        var self = this;
+        self.onExport('csv');
+    },
+
+    onExport: function(exportType) {
         var self = this;
 
         $.ajax({
@@ -448,22 +472,22 @@ rvbd.widgets.Widget.prototype = {
             url: self.postUrl,
             data: { criteria: JSON.stringify(self.criteria) },
             success: function(data, textStatus, jqXHR) {
-                self.checkCsvExportStatus(data.joburl);
+                self.checkExportStatus(data.joburl, exportType);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 var alertBody = ("The server returned the following HTTP error: <pre>" +
                                  + errorThrown + '</pre>');
-                rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { })
+                rvbd.modal.alert("Export Error", alertBody, "OK", function() { })
             }
         });
     },
 
-    checkCsvExportStatus: function(csvJobUrl) {
+    checkExportStatus: function(jobUrl, exportType) {
         var self = this;
 
         $.ajax({
             dataType: "json",
-            url: csvJobUrl + 'status/',
+            url: jobUrl + 'status/',
             data: null,
             success: function(data, textStatus) {
                 switch (data.status) {
@@ -472,23 +496,23 @@ rvbd.widgets.Widget.prototype = {
                         // remove spaces and special chars from widget title
                         var fname = self.titleMsg.replace(/\W/g, '');
                         // Should trigger file download
-                        window.location = origin + '/jobs/' + data.id + '/data/csv/?filename=' + fname;
+                        window.location = origin + '/jobs/' + data.id + '/data/' + exportType + '/?filename=' + fname;
                         break;
                     case 4: // Error
                         var alertBody = ('The server returned the following error: <pre>' +
                                          data['message'] + '</pre>');
-                        rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { });
+                        rvbd.modal.alert("Export Error", alertBody, "OK", function() { });
                         break;
                     default: // Loading
-                        setTimeout(function() { self.checkCsvExportStatus(csvJobUrl); }, 200);
+                        setTimeout(function() { self.checkExportStatus(jobUrl, exportType); }, 200);
                 }
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                console.log('Error when checking csv status');
+                console.log('Error when checking export status');
 
                 var alertBody = ('The server returned the following HTTP error: <pre>' + textStatus +
                                  ': ' + errorThrown + '</pre>');
-                rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { });
+                rvbd.modal.alert("Export Error", alertBody, "OK", function() { });
             }
         });
     },
@@ -522,6 +546,13 @@ rvbd.widgets.Widget.prototype = {
 
         $div.empty()
             .append(self.outerContainer);
+
+        var $content = $(self.content);
+        self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
+                                  parseInt($content.css('margin-right'), 10);
+        self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
+                                  parseInt($content.css('margin-bottom'), 10);
+        self.titleHeight = $(self.title).outerHeight();
     },
 
     /**
@@ -669,6 +700,24 @@ rvbd.widgets.Widget.prototype = {
 
         rvbd.modal.alert(title, body, "OK", function() { })
     },
+
+    /**
+     * Display dialog with widget's data
+     */
+    showWidgetDataModal: function() {
+        var self = this;
+        var body;
+        try {
+            body = $('<pre></pre>').html(JSON.stringify(self.data, null, 2));
+        } catch (e) {
+            // yui3 data objects get polluted with lots of circular references
+            console.log('error stringifying circular ref, just showing data');
+            body = $('<pre></pre>').html(JSON.stringify(self.data.dataProvider, null, 2));
+        }
+        var title = self.titleMsg + ' JSON Data';
+
+        rvbd.modal.alert(title, body, "OK", function() { })
+    }
 };
 
 rvbd.widgets.raw = {};
