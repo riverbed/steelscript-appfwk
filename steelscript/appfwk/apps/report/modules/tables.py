@@ -29,16 +29,16 @@ class BaseTableWidget(object):
         for rawrow in data:
             row = {}
 
-            for key in helper.colmap.values():
-                if key.istime or key.isdate:
-                    t = rawrow[key.dataindex]
+            for col in helper.colmap.values():
+                if col.istime or col.isdate:
+                    t = rawrow[col.dataindex]
                     try:
                         val = timeutils.datetime_to_microseconds(t) / 1000
                     except AttributeError:
                         val = t * 1000
                 else:
-                    val = rawrow[key.dataindex]
-                row[key.key] = val
+                    val = rawrow[col.dataindex]
+                row[col.key] = val
             rows.append(row)
 
         column_defs = [

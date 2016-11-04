@@ -208,7 +208,6 @@ class ChartWidget(BaseWidget):
 
         options = {'keycols': keycols,
                    'columns': valuecols,
-                   'axes': None,
                    'charttype': charttype}
 
         Widget.create(section=section, table=table, title=title,
@@ -243,6 +242,7 @@ class ChartWidget(BaseWidget):
             'rows': rows,
             'keyname': keyname,
             'values': [c.name for c in helper.valcols],
+            'names': {c.col.name: c.col.label for c in helper.colmap.values()},
             'type': widget.options.charttype,
         }
 

@@ -871,7 +871,7 @@ class UIWidgetHelper(object):
             self._valcols = [c for c in self.all_cols
                              if c.name in wcols]
         else:
-            # just use all defined columns other than time
+            # just use all defined columns other than time/key columns
             self._valcols = [c for c in self.all_cols if not c.iskey]
 
         return self._valcols
@@ -913,7 +913,7 @@ class UIWidgetHelper(object):
             colmap[c.name] = ci
 
         self._colmap = colmap
-        return self.colmap
+        return self._colmap
 
 
 class Axes(object):

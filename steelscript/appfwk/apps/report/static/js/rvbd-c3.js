@@ -192,13 +192,19 @@ $.extend(rvbd.widgets.c3.ChartWidget.prototype, {
             data: {
                 json: data.rows,
                 type: data.type,
+                names: data.names,
                 keys: {
                     x: data.keyname,
                     value: data.values
                 }
             },
             legend: {
-                position: 'inset'
+                position: 'inset',
+                inset: {
+                    anchor: 'top-right',
+                    x: 20,
+                    y: 10
+                }
             },
             axis: {
                 x: {
