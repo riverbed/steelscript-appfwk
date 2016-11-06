@@ -49,6 +49,7 @@ $.extend(rvbd.widgets.tables.DataTableWidget.prototype, {
 
     render: function(data) {
         var self = this;
+        self.data = data;
 
         self.titleMsg = data['chartTitle'];
         self.buildInnerLayout();

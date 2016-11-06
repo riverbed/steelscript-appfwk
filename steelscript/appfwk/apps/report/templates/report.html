@@ -131,7 +131,7 @@
 
           <div id="criteria" class="criteria collapse in">
             <div class="widget-content">
-                <div class="col-md-offset-1 col-md-8">
+                <div class="col-md-8">
                 <form class="form-horizontal" action="{% url 'report-view' report.namespace report.slug %}" method="post" id="criteria-form"
                         {% if form.is_multipart %}enctype="multipart/form-data"{% endif %} target="_blank">
                     <fieldset>
@@ -176,7 +176,7 @@
                     </fieldset>
               </form>
               </div>
-              <div class="criteria col-md-offset-3 col-md-8">
+              <div class="criteria col-md-offset-2 col-md-8">
               {% if not missing_devices %}
                   <div class="btn-group dropup">
                       <button id="button-run" class="btn btn-primary">Run</button>
@@ -211,8 +211,8 @@
               {% else %}
                 <a data-toggle="collapse" data-target="#report-container" href="#"> Report </a>
               {% endif %}
-              <span id="print-report" class="icon-print pull-right" title="Print this report (run report to enable)"></span>
-              <span id="reload-report" class="icon-refresh pull-right" title="Reload all widgets in this report"></span>
+              <span id="print-report" class="glyphicon glyphicon-print pull-right" title="Print this report (run report to enable)"></span>
+              <span id="reload-report" class="glyphicon glyphicon-refresh pull-right" title="Reload all widgets in this report"></span>
           </div>
           <div class="collapse in" id="report-container">
             <div class="widget-content collapse in" id="report">

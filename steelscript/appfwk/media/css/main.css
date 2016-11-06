@@ -83,6 +83,33 @@ body {
     color: #b4b4b4;
 }
 
+/* center all the modals */
+
+.modal {
+  text-align: center;
+}
+
+@media screen and (min-width: 768px) {
+  .modal:before {
+    display: inline-block;
+    vertical-align: middle;
+    content: " ";
+    height: 100%;
+  }
+}
+
+.modal-dialog {
+  display: inline-block;
+  text-align: left;
+  vertical-align: middle;
+}
+
+/* scroll inside big modals */
+.modal-body pre {
+    max-height: 500px;
+    overflow: auto;
+}
+
 /* MAPS */
 
 #map_canvas img { max-width: none; }

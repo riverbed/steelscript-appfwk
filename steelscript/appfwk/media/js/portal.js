@@ -32,29 +32,31 @@ rvbd.timeutil = {
 
 rvbd.modal = {
     html: function(heading, body, cancelButtonTxt, okButtonTxt, customClass) {
+        var modalHtml, $body, $modal;
+
         if (typeof customClass === 'undefined') {
             customClass = '';
         }
 
-        var modalHtml =
-            '<div class="modal fade ' + customClass + '" id="test_id">' +
+        modalHtml =
+            '<div class="modal fade ' + customClass + '" tabindex="-1" id="test_id">' +
                 '<div class="modal-dialog">' +
                 '<div class="modal-content">' +
                 '<div class="modal-header">' +
-                    '<a class="close" data-dismiss="modal">&times;</a>' +
-                    '<h3>' + heading +'</h3>' +
+                    '<button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>' +
+                    '<h3 class="modal-title">' + heading +'</h3>' +
                 '</div>' +
                 '<div id="modalBody" class="modal-body"></div>';
         // if we don't include cancelButtonTxt then don't draw cancel button
         if ( cancelButtonTxt ){
             modalHtml +=
                 '<div class="modal-footer">' +
-                    '<a href="#" id="cancelButton" class="btn" data-dismiss="modal">' +
+                    '<button type="button" class="btn btn-default" id="cancelButton" data-dismiss="modal">' +
                       cancelButtonTxt +
-                    '</a>' +
-                    '<a href="#" id="okButton" class="btn btn-primary">' +
+                    '</button>' +
+                    '<button class="btn btn-primary" id="okButton">' +
                       okButtonTxt +
-                    '</a>' +
+                    '</button>' +
                 '</div>' +
                 '</div>' +
                 '</div>' +
@@ -62,9 +64,9 @@ rvbd.modal = {
         } else {
             modalHtml +=
                 '<div class="modal-footer">' +
-                    '<a href="#" id="okButton" class="btn btn-primary">' +
+                    '<button class="btn btn-primary" id="okButton">' +
                       okButtonTxt +
-                    '</a>' +
+                    '</button>' +
                 '</div>' +
                 '</div>' +
                 '</div>' +
@@ -72,8 +74,7 @@ rvbd.modal = {
         }
 
         if (typeof body === 'string') {
-            $body = $('<div></div>')
-                .html(body);
+            $body = $('<div></div>').html(body);
         } else { // Assume DOM element
             $body = $(body);
         }
@@ -102,7 +103,7 @@ rvbd.modal = {
 
 
         modal.modal('show');
-        modal.on('hidden', function() {
+        modal.on('hidden.bs.modal', function() {
             $(this).remove();
         });
     },
@@ -116,10 +117,10 @@ rvbd.modal = {
           return false;
         });
 
-        modal.on('shown', function(){
+        modal.on('shown.bs.modal', function(){
             shownCallback();
         });
-        modal.on('hidden', function() {
+        modal.on('hidden.bs.modal', function() {
             $(this).remove();
         });
         modal.modal('show');
@@ -138,7 +139,7 @@ rvbd.modal = {
         var modal = rvbd.modal.html(heading, formHtml, cancelButtonTxt, okButtonTxt, customClass);
 
         // need to destroy modal so handlers can be reapplied when next shown
-        modal.on('hidden', function () {
+        modal.on('hidden.bs.modal', function () {
             $(".modal").remove();
         });
 
@@ -180,7 +181,7 @@ rvbd.modal = {
 
         applyHandlers();
 
-        modal.on('shown', function () {
+        modal.on('shown.bs.modal', function () {
             $('input:visible:first', this).focus();
         });
 
@@ -189,7 +190,9 @@ rvbd.modal = {
 
     loading: function(heading, text) {
         var confirmModal =
-          $('<div class="modal hide fade">' +
+          $('<div class="modal fade" tabindex="-1">' +
+              '<div class="modal-dialog">' +
+              '<div class="modal-content">' +
               '<div class="modal-header">' +
                 '<h3>' + heading +'</h3>' +
               '</div>' +
@@ -201,8 +204,7 @@ rvbd.modal = {
                 '</p>' +
               '</div>' +
 
-              '<div class="modal-footer">' +
-                '&nbsp;' +
+              '</div>' +
               '</div>' +
             '</div>');
 
@@ -210,6 +212,8 @@ rvbd.modal = {
     },
 
     reloading: function(url, allReports) {
+        var modal;
+
         if (allReports) {
             modal = rvbd.modal.loading('Reloading All Reports', 'Please wait ...');
         } else {
