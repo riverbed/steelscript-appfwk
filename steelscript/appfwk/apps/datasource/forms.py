@@ -202,7 +202,6 @@ class ReportSplitDateTimeWidget(forms.SplitDateTimeWidget):
         """ % output)
 
 
-
 class ReportSplitDateWidget(forms.SplitDateTimeWidget):
     """A DateWidget using overridden Report widgets."""
     def __init__(self, attrs=None):
