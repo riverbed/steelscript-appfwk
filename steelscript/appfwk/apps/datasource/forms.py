@@ -197,6 +197,10 @@ class ReportSplitDateWidget(forms.SplitDateTimeWidget):
 
 
 class FileSelectField(forms.Field):
+
+    # This class does not need a js onchange handler.
+    bypass_change_handler = True
+
     def to_python(self, data):
         if data in validators.EMPTY_VALUES:
             return None
@@ -571,7 +575,13 @@ class TableFieldForm(forms.Form):
         if hasattr(f, 'error_msg'):
             self.add_field_error(field_id, f.error_msg)
 
-        f.widget.attrs.update({'onchange': 'rvbd.report.criteriaChanged()'})
+        if hasattr(f, 'bypass_change_handler') and f.bypass_change_handler:
+            # Skip adding a change handler for classes that don't need it.
+            pass
+        else:
+            f.widget.attrs.update(
+                {'onchange': 'rvbd.report.criteriaChanged()'})
+
         if widget_attrs:
             f.widget.attrs.update(widget_attrs)
 
