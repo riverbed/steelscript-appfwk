@@ -30,31 +30,9 @@ body {
   max-width: 500px;
 }
 
-.login-box .span9
-{
-  text-align: center;
-  margin-top: 5px;
-  margin-bottom: 5px;
-}
-
-.login-box .span3
-{
-  text-align: right;
-  padding-top: 4px;
-  margin-top: 5px;
-  margin-bottom: 5px;
-}
-
-.login-box .span12
-{
-  text-align: center;
-  padding: 10px;
-}
-
-.login-box .input-large
-{
-  width:100%;
-  max-width: 230px;
+.login-box .form-control {
+    width: 200px;
+    max-width: 230px;
 }
 
 .form-control-inline {
@@ -63,6 +41,11 @@ body {
     display: inline;
 }
 
+input[type="checkbox"] {
+    box-shadow: none;
+    -webkit-box-shadow: none;
+
+}
 .block-centered
 {
     margin-left: auto !important;

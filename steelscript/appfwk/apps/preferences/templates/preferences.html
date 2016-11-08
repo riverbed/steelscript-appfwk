@@ -22,9 +22,9 @@
     <div class="container">
       <div class="row">
         <div class="center-block">
-            <div class="control-group" style="text-align: center;">
+            <div class="block-centered" style="text-align: center;">
                 <a href="{% url 'django.contrib.auth.views.password_change' %}">
-                    Change User Password
+                    <button class="btn btn-primary">Change User Password</button>
                 </a>
             </div>
             <form class="form-horizontal" action="" method="POST">
@@ -35,7 +35,7 @@
               {% for field in form.visible_fields %}
                 <div class="form-group{% if field.errors %} error{% endif %}">
                   <label for="{{ field.auto_id }}" class="col-xs-5 control-label"> {{ field.label_tag }}</label>
-                  <div class="col-md-4">
+                  <div class="col-xs-4">
                     {{ field|addcss:"form-control" }}
                     {% if field.errors %}
                         <span class="help-inline">

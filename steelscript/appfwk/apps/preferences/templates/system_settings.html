@@ -169,7 +169,7 @@
               {% for field in form.visible_fields %}
                 <div class="form-group{% if field.errors %} error{% endif %}">
                   <label class="col-xs-4 control-label" for="{{field.auto_id}}">
-                      {{field.label_tag}}:
+                      {{field.label_tag}}
                   </label>
                   <div class="col-xs-8">
                     {{ field|addcss:"form-control" }}
@@ -186,20 +186,24 @@
                 </div>
               {% endfor %}
 
-              <div class="form-group">
-                <label class="control-label" for="mapsEnable">
-                    Enable Map Widgets:
-                </label>
-                <div class="controls">
-                    <input id="mapsEnable" type="checkbox">
+              <div class="form-group well">
+                <div class="row">
+                    <label class="col-xs-4 control-label" for="mapsEnable">
+                        Enable Map Widgets:
+                    </label>
+                    <div class="col-xs-8">
+                        <input id="mapsEnable" class="form-control" type="checkbox">
+                    </div>
                 </div>
-                <div id="mapsDiv" style="border: 1px solid #bbb; padding: 5px;margin-top:5px;display: none;">
+
+                <div class="row">
+                <div id="mapsDiv" class="col-xs-offset-1" style="display: none;">
 
                    <label class="radio">
                      <input type="radio" name="optionMapsVersion" id="mapsVersionOSM" value="OPEN_STREET_MAPS">
                      OpenStreetMap
                    </label>
-                   <div id="osmDiv" style="border: 1px solid #bbb; padding: 5px;margin-top:5px;display: none;">
+                   <div id="osmDiv" style="display: none;">
                      <p>See the <a href="https://support.riverbed.com/apis/steelscript/appfwk/configuration.html?highlight=openstreetmap#system-settings">docs</a> for additional details on using OpenStreetMap.</p>
                    </div>
 
@@ -207,7 +211,7 @@
                      <input type="radio" name="optionMapsVersion" id="mapsVersionGoogle" value="GOOGLE">
                      Google Maps
                    </label>
-                   <div id="googleDiv" style="border: 1px solid #bbb; padding: 5px;margin-top:5px;display: none;">
+                   <div id="googleDiv" class="col-xs-offset-1" style="display: none;">
                        <p>Please select your method for accessing the Google Maps/Google Earth API (see the <a href="https://support.riverbed.com/apis/steelscript/appfwk/configuration.html?highlight=openstreetmap#system-settings">docs</a> for details):</p>
                        <label class="radio">
                          <input type="radio" name="optionGoogleMapsVersion" id="mapsVersionFree" value="FREE">
@@ -219,7 +223,7 @@
                        </label>
                        <input id="id_maps_api_key_input" type="text" style="width: 95%;" placeholder="Text input">
                        {% if form.maps_api_key.errors %}
-                           <p class="text-error">{% for err in form.maps_api_key.errors %}{{ err }}{% endfor %}</p>
+                           <p class="text-danger">{% for err in form.maps_api_key.errors %}{{ err }}{% endfor %}</p>
                        {% endif %}
                    </div>
 
@@ -231,16 +235,21 @@
                    -->
 
                 </div>
+                </div>
               </div>
 
-              <div class="control-group">
-                <label class="control-label" for="weather-enable">
+              <div class="form-group well">
+              <div class="row">
+                <label class="col-xs-4 control-label" for="weather-enable">
                     Enable Weather Overlay:
                 </label>
-                <div class="controls">
-                    <input id="weather-enable" type="checkbox">
+                <div class="col-xs-8">
+                    <input id="weather-enable" class="form-control" type="checkbox">
                 </div>
-                <div id="weatherOverlayDiv" style="display: none;border: 1px solid #bbb; padding: 5px;margin-top:5px;">
+              </div>
+
+              <div class="row">
+                <div id="weatherOverlayDiv" class="col-xs-offset-1" style="display: none">
                    <p>
                    <b>Weather Tile URL</b>
                      URLs must contain X, Y, and Z coordinates in the following format:
@@ -252,17 +261,19 @@
                    <input id="weather-tile-url" type="text" style="width: 95%; margin-bottom:10px;" placeholder="Example URL: http://site.domain/api_key/tiles/{z}/{x}/{y}">
                    <br>
                    {% if form.weather_enabled.errors %}
-                       <p class="text-error">{% for err in form.weather_enabled.errors %}{{ err }}{% endfor %}</p>
+                       <p class="text-danger">{% for err in form.weather_enabled.errors %}{{ err }}{% endfor %}</p>
                    {% endif %}
                    {% if form.weather_url.errors %}
-                       <p class="text-error">{% for err in form.weather_url.errors %}{{ err }}{% endfor %}</p>
+                       <p class="text-danger">{% for err in form.weather_url.errors %}{{ err }}{% endfor %}</p>
                    {% endif %}
                 </div>
+              </div>
               </div>
 
               <div style="text-align: center;">
                   <input class="btn btn-primary" type="submit" value="Save" />
               </div>
+
           </form>
         </div>
       </div>

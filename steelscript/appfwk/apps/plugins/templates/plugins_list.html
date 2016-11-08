@@ -31,18 +31,19 @@
         }
         var heading = "Update " + pluginName + " Reports";
         var question =
-                '<div class"row">' +
-            '<label class="checkbox">' +
-            '<input type="checkbox" id="col-reports-id" ' +
-            'onclick="toggleOverwrite()"> Collect Reports' +
-            '</label>' +
-            '<label class="checkbox" style="margin-left:2em;">' +
-            '<input type="checkbox" id="col-overwrite-id"  disabled> ' +
-            'and Overwrite Reports' +
-            '</label>' +
-            '<label class="checkbox">' +
-                '<input type="checkbox" id="reload-reports-id"> Reload Reports' +
-            '</label>' +
+            '<div class"row">' +
+                '<div class="col-xs-offset-1">' +
+                    '<label class="checkbox">' +
+                        '<input type="checkbox" id="col-reports-id" onclick="toggleOverwrite()"> Collect Reports' +
+                    '</label>' +
+                    '<label class="checkbox" style="margin-left:2em;">' +
+                    '<input type="checkbox" id="col-overwrite-id"  disabled> ' +
+                    'and Overwrite Reports' +
+                    '</label>' +
+                    '<label class="checkbox">' +
+                        '<input type="checkbox" id="reload-reports-id"> Reload Reports' +
+                    '</label>' +
+                '</div>' +
             '</div>';
         var okButtonTxt = 'Go!';
         var cancelButtonTxt = 'Cancel';

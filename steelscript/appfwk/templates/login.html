@@ -15,45 +15,30 @@
 
 {% block content %}
 
-<div class="container-fluid">
-    <div class="row-fluid">
+<div class="container">
         <div class="login-box block-centered">
             <form class="form-horizontal well" method="post" action="{% url 'django.contrib.auth.views.login' %}">
                 {% csrf_token %}
-                <fieldset>
-                    <legend>Welcome To SteelScript Application Framework</legend>
-                    <div class="row-fluid">
-                        <div class="span3">
-                            <label>Username:</label>
-                        </div>
-                        <div class="span9">
-                            <input id="id_username" name="username" type="text" placeholder="type your username" class="input-large">
-                        </div>
-                    </div>
+                    <legend>Welcome To<br>SteelScript Application Framework</legend>
 
-                    <div class="row-fluid">
-                        <div class="span3">
-                            <label>Password:</label>
-                        </div>
-                        <div class="span9">
-                            <input id="id_password" name="password" type="password" placeholder="type your password" class="input-large">
-                        </div>
-                        {% if form.errors %}
-                            <p class="text-error text-center">Your username and/or password didn't match. Please try again.</p>
-                        {% endif %}
-                    </div>
+                    <label for="id_username" class="sr-only" id="label_username">Username</label>
+                    <input id="id_username" name="username" type="text" placeholder="Username" class="form-control block-centered">
 
-                    <div class="row-fluid">
-                        <div class="span12">
+                    <label for="id_password" class="sr-only" id="label_password">Password</label>
+                    <input id="id_password" name="password" type="password" placeholder="Password" class="form-control block-centered">
+                    {% if form.errors %}
+                        <p class="text-danger text-center">Your username and/or password didn't match. Please try again.</p>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-xs-12">
                             <button type="submit" id="submit" class="btn btn-primary button-loading" data-loading-text="Loading...">Sign in</button>
                         </div>
                     </div>
-                </fieldset>
 
                 <input type="hidden" name="next" value="{{ next }}" />
             </form>
         </div>
-    </div>
 </div>
 
 <script type="text/javascript">document.getElementById("id_username").focus();</script>
