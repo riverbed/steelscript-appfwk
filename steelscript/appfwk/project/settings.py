@@ -137,9 +137,7 @@ JS_FILES = [
     ("https://cdnjs.cloudflare.com/ajax/libs/jquery.form/{0}/jquery.form.js"
         .format(JS_VERSIONS['jqueryform']), None),
 
-    #("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/js/bootstrap.min.js"
-    #    .format(JS_VERSIONS['bootstrap']), None),
-    ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/js/bootstrap.js"
+    ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/js/bootstrap.min.js"
         .format(JS_VERSIONS['bootstrap']), None),
 
     ('https://cdnjs.cloudflare.com/ajax/libs/c3/{0}/c3.min.js'
@@ -162,11 +160,9 @@ OFFLINE_JS_FILES = [
 ]
 
 CSS_FILES = [
-    #("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/css/bootstrap.min.css".format(JS_VERSIONS['bootstrap']), None),
-    #("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/css/bootstrap-theme.min.css".format(JS_VERSIONS['bootstrap']), None),
-    ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/css/bootstrap.css"
+    ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/css/bootstrap.min.css"
         .format(JS_VERSIONS['bootstrap']), None),
-    ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/css/bootstrap-theme.css"
+    ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/css/bootstrap-theme.min.css"
         .format(JS_VERSIONS['bootstrap']), None),
 
     ('https://cdnjs.cloudflare.com/ajax/libs/c3/{0}/c3.min.css'

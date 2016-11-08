@@ -4,10 +4,7 @@
     {% endcomment %}
 
     {% block site_header %}
-{#    <link href="{{ STATIC_URL }}bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen, print"/>#}
     <link href="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.css" rel="stylesheet"/>
-{#    <link href="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.css" rel="stylesheet"/>#}
-
 
     {% if offline_js %}
         {% comment %}
@@ -51,6 +48,3 @@
     <link href="{{ STATIC_URL }}css/main.css" rel="stylesheet"/>
 
     {% endblock %}
-
-{#    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>#}
-{#    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.js"></script>#}

@@ -97,7 +97,7 @@
     </script>
 {% endblock %}
 
-{% block header_row %}<h2>{{ report.title }}</h2>{% endblock %}
+{% block header_row %}<h2 class="report-title">{{ report.title }}</h2>{% endblock %}
 
 {% block content %}
     {% if report.description %}
@@ -122,7 +122,7 @@
     {% if report.reload_minutes == 0 or report.live %}
     <div class="container-fluid">
       <div id="criteria-row" class="row">
-        <div class="col-md-12">
+        <div class="col-xs-12">
           <div class="section-title">
             <a data-toggle="collapse" data-target="#criteria" href="#">
               Criteria
@@ -131,7 +131,7 @@
 
           <div id="criteria" class="criteria collapse in">
             <div class="widget-content">
-                <div class="col-md-8">
+                <div class="col-xs-8">
                 <form class="form-horizontal" action="{% url 'report-view' report.namespace report.slug %}" method="post" id="criteria-form"
                         {% if form.is_multipart %}enctype="multipart/form-data"{% endif %} target="_blank">
                     <fieldset>
@@ -176,7 +176,7 @@
                     </fieldset>
               </form>
               </div>
-              <div class="criteria col-md-offset-2 col-md-8">
+              <div class="criteria col-xs-offset-2 col-xs-8">
               {% if not missing_devices %}
                   <div class="btn-group dropup">
                       <button id="button-run" class="btn btn-primary">Run</button>
@@ -204,7 +204,7 @@
 
     <div class="container-fluid">
       <div class="row">
-        <div class="col-md-12">
+        <div class="col-xs-12">
           <div class="section-title report-title">
               {% if report.hide_criteria %}
                 <a data-toggle="collapse" data-target="#report-container" href="#">&nbsp;</a>
