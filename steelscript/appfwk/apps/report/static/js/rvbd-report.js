@@ -387,7 +387,8 @@ rvbd.report = {
         $.each(widgetsToRender, function(i, w) {
             if (w.row !== rownum) { // If we're at a new row number, create a new row element
                 $row = $('<div></div>')
-                    .addClass('row');
+                    .addClass('row')
+                    .addClass('sortable');  // mark contents as sortable
                 rownum = w.row;
             }
 
@@ -442,8 +443,16 @@ rvbd.report = {
             // update datetime with meta from this last widget update
             // only updates from widget reloads
             if (widget.lastUpdate) {
-                rvbd.report.updateReportDateTime(widget.lastUpdate.datetime, widget.lastUpdate.timezone);
+                rvbd.report.updateReportDateTime(widget.lastUpdate.datetime,
+                                                 widget.lastUpdate.timezone);
             }
+
+            // apply sortable to widgets
+            $('.sortable').sortable({
+                connectWith: ".sortable",
+                handle: ".widget-title",
+                cursor: "move"
+            });
 
             rvbd.report.enablePrintButton();
             rvbd.report.enableReloadButton();
