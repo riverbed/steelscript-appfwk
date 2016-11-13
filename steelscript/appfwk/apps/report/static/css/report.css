@@ -122,12 +122,20 @@
     margin-left: 4px;
 }
 
-/* When the print and reload report icons are span (rather than a link), gray it out */
-span#print-report {
+/* When the print and reload report icons are disabled, gray it out */
+span#print-report.enabled {
+    color: #337ab7;
+}
+
+span#reload-report.enabled {
+    color: #337ab7;
+}
+
+span#print-report.disabled {
     opacity: 0.4;
 }
 
-span#reload-report {
+span#reload-report.disabled {
     opacity: 0.4;
 }
 

@@ -12,14 +12,14 @@
 rvbd.widgets.tables = {};
 
 rvbd.widgets.tables.DataTableWidget = function(postUrl, isEmbedded, div,
-                                    id, slug, options, criteria) {
+                                               id, slug, options, criteria, dataCache) {
     var self = this;
 
     var ct = $(window);
     ct.resize(function() { self.onResize(); });
 
     rvbd.widgets.Widget.apply(self, [postUrl, isEmbedded, div,
-                                     id, slug, options, criteria]);
+                                     id, slug, options, criteria, dataCache]);
 };
 
 /* Pivot Widget base class */
@@ -84,11 +84,11 @@ $.extend(rvbd.widgets.tables.DataTableWidget.prototype, {
  */
 
 rvbd.widgets.tables.TableWidget = function(postUrl, isEmbedded, div,
-                                       id, slug, options, criteria) {
+                                           id, slug, options, criteria, dataCache) {
     var self = this;
 
     rvbd.widgets.tables.DataTableWidget.apply(self, [postUrl, isEmbedded, div,
-                                          id, slug, options, criteria]);
+                                              id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.tables.TableWidget.prototype = Object.create(rvbd.widgets.tables.DataTableWidget.prototype);
 
@@ -132,6 +132,9 @@ $.extend(rvbd.widgets.tables.TableWidget.prototype, {
             paging: options.paging,
             scrollY: options.scrollY,
             searching: options.searching,
+            // we get our data ordered already from the server side
+            // don't apply any ordering within the widget init
+            order: []
         });
     }
 });
@@ -143,11 +146,11 @@ $.extend(rvbd.widgets.tables.TableWidget.prototype, {
  */
 
 rvbd.widgets.tables.PivotTableWidget = function(postUrl, isEmbedded, div,
-                                           id, slug, options, criteria) {
+                                                id, slug, options, criteria, dataCache) {
     var self = this;
 
     rvbd.widgets.tables.DataTableWidget.apply(self, [postUrl, isEmbedded, div,
-        id, slug, options, criteria]);
+                                                     id, slug, options, criteria, dataCache]);
 };
 rvbd.widgets.tables.PivotTableWidget.prototype = Object.create(rvbd.widgets.tables.DataTableWidget.prototype);
 

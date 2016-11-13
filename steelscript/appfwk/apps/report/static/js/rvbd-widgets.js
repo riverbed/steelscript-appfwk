@@ -121,7 +121,11 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
     $div = self.div;
 
     if (dataCache) {
-      self.dataCache = JSON.parse(dataCache);
+        if (typeof dataCache === "string") {
+            self.dataCache = JSON.parse(dataCache);
+        } else {
+            self.dataCache = dataCache;
+        }
     }
 
     self.status = 'running';
@@ -143,7 +147,7 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
       // If we are not using the cached report, follow normal
       // post request sequence
       self.postRequest(criteria);
-    } else if (self.dataCache.status == 'error') {
+    } else if (self.dataCache.status == 4) {  // error status == 4
       // No Widget Cache data exists
       self.displayError(self.dataCache);
       self.status = 'error';
@@ -200,6 +204,10 @@ rvbd.widgets.Widget.prototype = {
         switch (response.status) {
             case 3: // Complete
                 $(self.div).hideLoading();
+
+                // store original response data as JSON
+                self.dataCache = JSON.stringify(response.data);
+
                 self.render(response.data);
                 if (!self.options.height) {
                     $(self.div).height('auto');
@@ -208,6 +216,9 @@ rvbd.widgets.Widget.prototype = {
                 $(document).trigger('widgetDoneLoading', [self]);
                 break;
             case 4: // Error
+                // store error response data as JSON
+                self.dataCache = JSON.stringify(response);
+
                 self.displayError(response);
                 self.status = 'error';
                 $(document).trigger('widgetDoneLoading', [self]);
@@ -372,7 +383,7 @@ rvbd.widgets.Widget.prototype = {
         var $error = $('<div></div>')
             .addClass('widget-error')
             .append("Internal server error:<br>")
-            .append($shortMessage)
+            .append($shortMessage);
 
         if (isException) {
             $error.append('<br>')

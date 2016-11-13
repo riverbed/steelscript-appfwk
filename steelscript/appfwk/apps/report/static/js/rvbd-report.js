@@ -26,6 +26,62 @@ rvbd.report = {
     reportHasRendered: false,
 
     /**
+     * HTML5 local storage and history methods
+     */
+    supports_history_api: function() {
+        return !!(window.history && history.pushState);
+    },
+
+    getLocalStorage: function(key) {
+        var data = window.localStorage.getItem(key);
+        if (!data) {
+            return;
+        }
+        return JSON.parse(data);
+    },
+
+    setLocalStorage: function(key, value) {
+        // don't overwrite an existing key
+        var data = window.localStorage.getItem(key);
+        if (!data) {
+            window.localStorage.setItem(key, JSON.stringify(value));
+        }
+    },
+
+    saveState: function(hash, data) {
+        // add location hash and corresponding local storage
+        if (rvbd.report.supports_history_api()) {
+            rvbd.report.setLocalStorage(hash, data);
+            history.pushState(null, window.document.title, '#!' + hash)
+        }
+    },
+
+    loadState: function() {
+        // load state from hash in URL
+        if (rvbd.report.supports_history_api()) {
+            var hash = location.hash.replace('#!', '');
+            var data = rvbd.report.getLocalStorage(hash);
+
+            if (data) {
+                rvbd.report.runRequested = false;
+                $("#criteria").collapse('hide'); // self.doRunReport() triggers on this element being hidden
+
+                // empty and show the report view
+                $("#report").empty().show();
+                $("#report-container").collapse('show');
+
+                rvbd.report.renderWidgets(data);
+                rvbd.report.updateReportDateTime(data.meta.lastUpdate.datetime,
+                                                 data.meta.lastUpdate.timezone);
+
+                rvbd.report.enablePrintButton();
+                rvbd.report.enableReloadButton();
+            }
+        }
+    },
+
+
+    /**
      * Called after DOM load to set up and launch report (or embedded widget).
      */
     start: function() {
@@ -78,7 +134,25 @@ rvbd.report = {
 
             if (rvbd.report.autoRun) { //Auto run report from bookmark
                 $form.submit();
+            } else {
+                // load from state if we aren't autorun on initial load
+                rvbd.report.loadState();
             }
+
+            // add handler when navigation happens to refresh state
+            window.addEventListener('popstate', function(event) {
+                console.log('popstate fired!');
+                if (location.href.endsWith("#")) {
+                    console.log('ignoring, url ends with #');
+                    // ignore it
+                } else if (location.hash.replace('#!', '') == "") {
+                    // reset view
+                    $('#report-container').collapse('hide');
+                    $('#criteria').collapse('show');
+                } else {
+                    rvbd.report.loadState();
+                }
+            });
         }
     },
 
@@ -233,24 +307,24 @@ rvbd.report = {
     },
 
     enablePrintButton: function() {
-        $('<a id="print-report" class="glyphicon glyphicon-print" href="#" title="Print this report"></a>')
+        $('<span id="print-report" class="glyphicon glyphicon-print enabled" href="#" title="Print this report"></span>')
              .click(rvbd.report.launchPrintWindow)
              .replaceAll('#print-report');
     },
 
     disablePrintButton: function() {
-        $('<span id="print-report" class="glyphicon glyphicon-print" title="Print this report (run report to enable)"></span>')
+        $('<span id="print-report" class="glyphicon glyphicon-print disabled" title="Print this report (run report to enable)"></span>')
              .replaceAll('#print-report');
     },
 
     enableReloadButton: function() {
-        $('<a id="reload-report" class="glyphicon glyphicon-refresh" href="#" title="Reload all widgets in report"></a>')
+        $('<span id="reload-report" class="glyphicon glyphicon-refresh enabled" href="#" title="Reload all widgets in report"></span>')
             .click(rvbd.report.reloadAllWidgets)
             .replaceAll('#reload-report');
     },
 
     disableReloadButton: function() {
-        $('<span id="reload-report" class="glyphicon glyphicon-refresh" title="Reload all widgets in this report"></span>')
+        $('<span id="reload-report" class="glyphicon glyphicon-refresh disabled" title="Reload all widgets in this report"></span>')
             .replaceAll('#reload-report');
     },
 
@@ -348,6 +422,9 @@ rvbd.report = {
             widgets = definition.widgets,
             widgetsToRender;
 
+        // lets store some data
+        rvbd.report.meta = reportMeta;
+
         $('#id_debug').val(rvbd.report.debugFlag ? 'on' : '');
         rvbd.report.debug = reportMeta.debug;
 
@@ -400,13 +477,15 @@ rvbd.report = {
             opts = w.options || {};
             opts.height = w.height;
             opts.width = w.width;
+            opts.row = w.row;     // store for later
+            opts.widgettype = w.widgettype;
 
             var widgetModule = w.widgettype[0],
                 widgetClass = w.widgettype[1],
                 urls = {"postUrl": w.posturl, "updateUrl": w.updateurl};
 
             widget = new rvbd.widgets[widgetModule][widgetClass](urls, rvbd.report.isEmbedded, $div[0],
-                                                                 w.widgetid, w.widgetslug, opts, w.criteria, w.data);
+                                                                 w.widgetid, w.widgetslug, opts, w.criteria, w.dataCache);
             rvbd.report.widgets.push(widget);
         });
 
@@ -445,6 +524,7 @@ rvbd.report = {
             if (widget.lastUpdate) {
                 rvbd.report.updateReportDateTime(widget.lastUpdate.datetime,
                                                  widget.lastUpdate.timezone);
+                rvbd.report.meta.lastUpdate = widget.lastUpdate;
             }
 
             // apply sortable to widgets
@@ -456,6 +536,36 @@ rvbd.report = {
 
             rvbd.report.enablePrintButton();
             rvbd.report.enableReloadButton();
+
+            //
+            // setup and save state for history
+            //
+            var key = new Date().getTime();
+            var saveobj = {
+                meta: rvbd.report.meta,
+                widgets: []
+            };
+
+            // re-create the definition objects for rendering and include
+            // dataCache as the data we already retrieved for each widget
+            $.each(rvbd.report.widgets, function(i, widget) {
+                var w = {
+                    posturl: widget.postUrl,
+                    updateurl: widget.updateUrl,
+                    widgettype: widget.options.widgettype,
+                    widgetid: widget.id,
+                    widgetslug: widget.slug,
+                    options: widget.options,
+                    height: widget.options.height,
+                    width: widget.options.width,
+                    criteria: widget.criteria,
+                    row: widget.options.row,
+                    dataCache: widget.dataCache
+                };
+                saveobj.widgets.push(w);
+            });
+
+            rvbd.report.saveState(key, saveobj);
         }
     }
 };
