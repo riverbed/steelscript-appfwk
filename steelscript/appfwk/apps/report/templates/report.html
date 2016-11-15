@@ -107,7 +107,7 @@
     {% endif %}
         {% if missing_devices %}
             <div class="block-centered" style="text-align: center">
-                <h4 class="text-error">
+                <h4 class="text-danger">
                     {% if is_superuser %}
                         This report requires the following devices to be added or enabled: '{{ missing_devices }}'.
                         Please visit <a href="{%  url 'device-list' %}">Devices</a>.

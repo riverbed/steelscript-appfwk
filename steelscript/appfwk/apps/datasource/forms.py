@@ -210,6 +210,14 @@ class ReportSplitDateWidget(forms.SplitDateTimeWidget):
         # Using MultiWidget can render the widget correctly
         forms.MultiWidget.__init__(self, [DateWidget], attrs)
 
+    def render(self, *args, **kwargs):
+        # wrap the two widgets inside an input-group for bootstrap-3 forms
+        output = super(ReportSplitDateWidget, self).render(*args, **kwargs)
+        return mark_safe("""<div class="input-group">
+        %s
+        </div>
+        """ % output)
+
 
 class FileSelectField(forms.Field):
     def to_python(self, data):

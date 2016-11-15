@@ -11,6 +11,8 @@
 {
   div
   { page-break-inside: avoid; }
+  .container
+  { width: auto; }
 }
 
 body {

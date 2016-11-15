@@ -22,10 +22,15 @@
     <div class="container">
       <div class="row">
         <div class="center-block">
-            <div class="block-centered" style="text-align: center;">
-                <a href="{% url 'django.contrib.auth.views.password_change' %}">
-                    <button class="btn btn-primary">Change User Password</button>
-                </a>
+            <div class="form-horizontal form-group">
+                <label for="id_password" class="col-xs-5 control-label">
+                    <label for="id_password">Password:</label>
+                </label>
+                <div class="col-xs-4" style="padding-bottom: 10px;">
+                    <a href="{% url 'django.contrib.auth.views.password_change' %}">
+                        <button id="id_password" class="btn btn-primary">Change User Password</button>
+                    </a>
+                </div>
             </div>
             <form class="form-horizontal" action="" method="POST">
               {% csrf_token %}
