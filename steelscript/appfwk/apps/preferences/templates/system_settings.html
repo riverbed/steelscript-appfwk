@@ -70,7 +70,10 @@
                         $('#weather-enable').click();
                     $('#weather-enable').attr("disabled", true);
                 } else {
-                    $('#id_maps_version').val('DEVELOPER');
+                    $('#id_maps_version').val('FREE');
+                    $('#osmDiv').hide();
+                    $('#googleDiv').show();
+                    $('#mapsVersionGoogle').prop('checked', true);
                     if(!$('#weather-enable').is(':checked'))
                         $('#weather-enable').click();
                     $('#weather-enable').attr("disabled", false);

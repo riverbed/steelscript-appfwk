@@ -37,7 +37,7 @@ p.add_column('server_delay', label='Srv Delay',  units='ms')
 
 # Adding a widget using the Report object will apply them
 # to the last defined Section, here that will be 'Locations'
-report.add_widget(maps.MapWidget, p, "Response Time", width=6, height=300)
+report.add_widget(c3.BarWidget, p, "Response Time", width=6, height=300)
 report.add_widget(tables.TableWidget, p, "Locations by Response Time", width=6,
                   info=False, paging=False, searching=False)
 

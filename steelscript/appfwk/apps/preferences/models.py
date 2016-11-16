@@ -114,7 +114,7 @@ class SystemSettings(models.Model):
         max_length=30,
         verbose_name='Maps Version',
         choices=MAPS_VERSION_CHOICES,
-        default='OPEN_STREET_MAPS'
+        default='DISABLED'
     )
     maps_api_key = models.CharField(
         max_length=100,
