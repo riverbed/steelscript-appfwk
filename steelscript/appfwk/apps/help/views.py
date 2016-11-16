@@ -5,6 +5,7 @@
 # as set forth in the License.
 
 import os
+import sys
 import ast
 import operator
 import logging
@@ -55,10 +56,25 @@ class SteelAbout(views.APIView):
 
     def _get_stdout(self):
         """Get the output of command `steel about`."""
-        p = subprocess.Popen(['/home/vagrant/virtualenv/bin/steel',
-                              'about', '-v'],
-                             stdout=subprocess.PIPE)
+        # find the executable
+        steel = None
 
+        if sys.prefix:
+            ptest = os.path.join(sys.prefix, 'bin', 'steel')
+            if os.path.exists(ptest):
+                steel = ptest
+        else:
+            syspath = os.getenv('PATH').split(':')
+            for path in syspath:
+                if os.path.isdir(path) and 'steel' in os.listdir(path):
+                    steel = os.path.join(path, 'steel')
+                    break
+
+        if steel is None:
+            logger.error('"steel" command not found, searched the following '
+                         'locations: %s, %s' % (sys.prefix, os.getenv('PATH')))
+
+        p = subprocess.Popen([steel, 'about', '-v'], stdout=subprocess.PIPE)
         return p.communicate()[0]
 
     def _to_python(self, data):
