@@ -10,6 +10,7 @@
 {% endblock %}
 
 {% load url from future %}
+{% load add_attrs %}
 
 {% block title %}App Framework: Device Detail{% endblock %}
 
@@ -81,7 +82,7 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row">
-            <div class="span6 block-centered bordered">
+            <div class="col-xs-8 block-centered">
             <form class="form-horizontal" action="" method="POST">
                 {% csrf_token %}
                 <fieldset>
@@ -89,27 +90,27 @@
                         {{ hidden }}
                     {% endfor %}
                     {% for field in form.visible_fields %}
-                        <div class="control-group">
-                            <div class="control-label">
+                        <div class="form-group">
+                            <label  for="{{ field.auto_id }}" class="col-xs-3 control-label">
                                 {{ field.label_tag }}
-                            </div>
-                            <div class="controls">
-                                {{ field }}
+                            </label>
+                            <div class="controls col-xs-9">
+                                {{ field|addcss:"form-control" }}
                                 {% if field.errors %}
                                     {% for err in field.errors %}
-                                        <p class="text-error">{{ err }}</p>
+                                        <p class="text-danger">{{ err }}</p>
                                     {% endfor %}
                                 {% endif %}
                             </div>
                         </div>
                     {% endfor %}
 
-                        <div class="control-group">
-                            <div class="control-label">
+                        <div class="form-group">
+                            <label for="{{ field.auto_id }}" class="col-xs-3 control-label">
                                 Auth Method:
-                            </div>
-                            <div class="controls">
-                             <select onchange="changeAuth(this)" id="auth_input">
+                            </label>
+                            <div class="controls col-xs-9">
+                             <select class="form-control" onchange="changeAuth(this)" id="auth_input">
                                  <option value={{ auth.NONE }}>None</option>
                                  <option value={{ auth.BASIC }}>Username/Password</option>
                                  <option value={{ auth.OAUTH }}>OAuth2</option>
@@ -118,24 +119,25 @@
                             </div>
                         </div>
 
-                        <div class="control-group" id="username_div" style="...; margin-left:50px">
-                            <div class="control-label" id="username_label">
+                        <div id="auth-controls" class="col-xs-offset-4 col-xs-8">
+                        <div class="form-group" id="username_div">
+                            <label for="{{ field.auto_id }}" class="control-label" id="username_label">
                                 Username:
-                            </div>
+                            </label>
                             <div class="controls">
-                                <input type="text" id="username_input" >
+                                <input class="form-control" type="text" id="username_input" >
                                 {% if form.username.errors %}
                                     <p class="text-error">{% for err in form.username.errors %}{{ err }}{% endfor %}</p>
                                 {% endif %}
                             </div>
                         </div>
 
-                        <div class="control-group" id="password_div" style="...; margin-left:50px">
-                            <div class="control-label">
+                        <div class="form-group" id="password_div">
+                            <label for="{{ field.auto_id }}" class="control-label">
                                 Password:
-                            </div>
+                            </label>
                             <div class="controls">
-                                <input type="password"  id="password_input">
+                                <input class="form-control" type="password"  id="password_input">
                                 {% if form.password.errors %}
                                     <p class="text-error">{% for err in form.password.errors %}{{ err }}{% endfor %}</p>
                                 {% endif %}
@@ -143,16 +145,17 @@
                         </div>
 
 
-                        <div class="control-group" id="access_code_div" style="...; margin-left:50px">
-                            <div class="control-label">
+                        <div class="form-group" id="access_code_div">
+                            <label for="{{ field.auto_id }}" class="control-label">
                                 Access code:
-                            </div>
+                            </label>
                             <div class="controls">
-                                <textarea id="access_code_input"></textarea>
+                                <textarea class="form-control" id="access_code_input"></textarea>
                                 {% if form.access_code.errors %}
                                     <p class="text-error">{% for err in form.access_code.errors %}{{ err }}{% endfor %}</p>
                                 {% endif %}
                             </div>
+                        </div>
                         </div>
 
                     </fieldset>

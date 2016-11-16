@@ -4,19 +4,15 @@
     {% endcomment %}
 
     {% block site_header %}
-    <link href="{{ STATIC_URL }}bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen, print"/>
-    <link href="{{ STATIC_URL }}css/main.css" rel="stylesheet"/>
     <link href="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.css" rel="stylesheet"/>
-    <link href="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.css" rel="stylesheet"/>
-
 
     {% if offline_js %}
         {% comment %}
         NEED FIX HERE
         {% endcomment %}
-    <link href="{{ STATIC_URL }}jquery-ui/themes/base/jquery-ui.css" rel="stylesheet"/>
+        <link href="{{ STATIC_URL }}jquery-ui/themes/base/jquery-ui.css" rel="stylesheet"/>
     {% else %}
-    <link href="//code.jquery.com/ui/{{ js_versions.jqueryui }}/themes/smoothness/jquery-ui.css" rel="stylesheet"/>
+        <link href="//code.jquery.com/ui/{{ js_versions.jqueryui }}/themes/smoothness/jquery-ui.css" rel="stylesheet"/>
         {% for css in css_files %}
         <link href="{{ css.0 }}" rel="stylesheet"/>
         {% endfor %}
@@ -25,10 +21,10 @@
     <script type="text/javascript" src="{{ STATIC_URL }}js/portal.js"></script>
 
     {% if offline_js %}
-    <script type="text/javascript" src="{{ STATIC_URL }}jquery.min.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}jquery-ui/ui/minified/jquery-ui.min.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}jquery.form.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}yui/build/yui/yui-min.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}jquery.min.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}jquery-ui/ui/minified/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}jquery.form.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}yui/build/yui/yui-min.js"></script>
         {% comment %}
         NEED FIX HERE
         {% endcomment %}
@@ -48,7 +44,7 @@
     <script type="text/javascript" src="http://yui.yahooapis.com/{{ js_versions.yui }}/build/yui/yui-min.js"></script>
     {% endif %}
     {% endif %}
-    {% endblock %}
 
-    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap-select/bootstrap-select.min.js"></script>
+    <link href="{{ STATIC_URL }}css/main.css" rel="stylesheet"/>
+
+    {% endblock %}

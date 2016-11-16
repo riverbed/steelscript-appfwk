@@ -86,8 +86,8 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container-fluid">
-      <div class="row-fluid">
+    <div class="container">
+      <div class="row">
               <form action="" method="POST">
                   {% csrf_token %}
                   {% for field in form.visible_fields %}
@@ -95,12 +95,12 @@
                   {% endfor %}
                   <input type="submit" value="Save File" class="btn btn-primary">
                   {% if gitavail %}
-                      <a href="{% url 'report-editor-diff' report.namespace report.slug %}" class="btn" target="_blank">Show File Diff</a>
+                      <a href="{% url 'report-editor-diff' report.namespace report.slug %}" class="btn btn-default" target="_blank">Show File Diff</a>
                   {% endif %}
-                  <a href="#" onclick="rvbd.modal.reloadRedirect('{% url 'reload-report' report.namespace report.slug %}', '{% url 'report-view' report.namespace report.slug %}')" class="btn">Reload Report</a>
+                  <a href="#" onclick="rvbd.modal.reloadRedirect('{% url 'reload-report' report.namespace report.slug %}', '{% url 'report-view' report.namespace report.slug %}')" class="btn btn-default">Reload Report</a>
 
-                  <a href="{% url 'admin:report_report_changelist' %}" class="btn pull-right">Manage All Reports</a>
-                  <a href="#" onclick="copy_file_modal()" class="btn pull-right">Copy Report</a>
+                  <a href="{% url 'admin:report_report_changelist' %}" class="btn btn-default pull-right">Manage All Reports</a>
+                  <a href="#" onclick="copy_file_modal()" class="btn btn-default pull-right">Copy Report</a>
               </form>
       </div>
     </div>

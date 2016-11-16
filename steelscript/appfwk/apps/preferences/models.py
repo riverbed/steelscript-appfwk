@@ -87,8 +87,9 @@ class AppfwkUser(AbstractUser):
                                 default='UTC',
                                 choices=TIMEZONE_CHOICES,
                                 verbose_name='Local Timezone',
-                                help_text='Please use the timezone '
-                                          'of the local system')
+                                help_text='Choose the timezone '
+                                          'that best matches your current '
+                                          'browser location')
 
     # hidden fields
     timezone_changed = models.BooleanField(default=False)

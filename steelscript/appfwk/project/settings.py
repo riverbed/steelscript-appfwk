@@ -115,6 +115,7 @@ STATIC_URL = '/static/'
 OFFLINE_JS = False
 
 JS_VERSIONS = {
+    'bootstrap': '3.3.7',
     'jquery': '1.12.4',
     'jqueryui': '1.10.2',
     'jqueryform': '3.32',
@@ -135,6 +136,10 @@ JS_FILES = [
         .format(JS_VERSIONS['jqueryui']), None),
     ("https://cdnjs.cloudflare.com/ajax/libs/jquery.form/{0}/jquery.form.js"
         .format(JS_VERSIONS['jqueryform']), None),
+
+    ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/js/bootstrap.min.js"
+        .format(JS_VERSIONS['bootstrap']), None),
+
     ('https://cdnjs.cloudflare.com/ajax/libs/c3/{0}/c3.min.js'
         .format(JS_VERSIONS['c3']), None),
     ('https://cdnjs.cloudflare.com/ajax/libs/d3/{0}/d3.min.js'
@@ -155,6 +160,11 @@ OFFLINE_JS_FILES = [
 ]
 
 CSS_FILES = [
+    ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/css/bootstrap.min.css"
+        .format(JS_VERSIONS['bootstrap']), None),
+    ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/css/bootstrap-theme.min.css"
+        .format(JS_VERSIONS['bootstrap']), None),
+
     ('https://cdnjs.cloudflare.com/ajax/libs/c3/{0}/c3.min.css'
         .format(JS_VERSIONS['c3']), None),
     ('https://cdnjs.cloudflare.com/ajax/libs/pivottable/{0}/pivot.min.css'

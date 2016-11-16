@@ -38,7 +38,11 @@ $.extend(rvbd.widgets.tables.DataTableWidget.prototype, {
                 // DataTables uses the 'render' attr for formatters
                 c.render = (function(key, formatter) {
                     return function(data, type, row) {
-                        return formatter(data);
+                        if (type === 'display') {
+                            return formatter(data);
+                        }
+                        // for all other queries, return default data
+                        return data;
                     }
                 })(c.key, formatter);
             }
@@ -49,6 +53,7 @@ $.extend(rvbd.widgets.tables.DataTableWidget.prototype, {
 
     render: function(data) {
         var self = this;
+        self.data = data;
 
         self.titleMsg = data['chartTitle'];
         self.buildInnerLayout();
