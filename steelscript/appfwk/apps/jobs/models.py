@@ -36,50 +36,10 @@ from steelscript.common.exceptions import RvbdHTTPException
 
 from steelscript.appfwk.apps.jobs.task import Task
 from steelscript.appfwk.apps.jobs.progress import progressd
+from steelscript.appfwk.project.locks import TransactionLock
 
 logger = logging.getLogger(__name__)
 
-
-if settings.DATABASES['default']['ENGINE'].endswith('sqlite3'):
-    # sqlite doesn't support row locking (select_for_update()), so need
-    # to use a threading lock.  This provides support when running
-    # the dev server.  It will not work across multiple processes, only
-    # between threads of a single process
-    lock = threading.RLock()
-
-    class TransactionLock(object):
-        def __init__(self, obj, context=""):
-            self.obj = obj
-            self.context = context
-
-        def __enter__(self):
-            logger.debug("TransactionLock.enter: %s - %s" %
-                         (self.context, self.obj))
-            lock.acquire()
-
-        def __exit__(self, type_, value, traceback_):
-            lock.release()
-            logger.debug("TransactionLock.exit: %s - %s" % (
-                self.context, self.obj))
-
-else:
-    class TransactionLock(transaction.Atomic):
-        def __init__(self, obj, context=""):
-            super(TransactionLock, self).__init__(using=None, savepoint=True)
-            self.obj = obj
-            self.context = context
-
-        def __enter__(self):
-            logger.debug("TransactionLock.enter: %s - %s" %
-                         (self.context, self.obj))
-            super(TransactionLock, self).__enter__()
-            self.obj.__class__.objects.select_for_update().get(id=self.obj.id)
-
-        def __exit__(self, type_, value, traceback_):
-            r = super(TransactionLock, self).__exit__(type_, value, traceback_)
-            logger.debug("TransactionLock.exit: %s - %s" % (
-                self.context, self.obj))
-            return r
 
 age_jobs_last_run = 0
 

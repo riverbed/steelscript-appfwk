@@ -6,54 +6,15 @@
 
 import re
 import logging
-import threading
 
-from django.db import models, transaction
+from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 from django.conf import settings
 
-from steelscript.appfwk.apps.jobs.models import TransactionLock
+from steelscript.appfwk.project.locks import ClassLock, TransactionLock
 
 logger = logging.getLogger(__name__)
-
-
-if settings.DATABASES['default']['ENGINE'].endswith('sqlite3'):
-    # sqlite doesn't support row locking (select_for_update()), so need
-    # to use a threading lock.  This provides support when running
-    # the dev server.  It will not work across multiple processes, only
-    # between threads of a single process
-    lock = threading.RLock()
-
-    class ClassLock(object):
-        def __init__(self, obj, context=""):
-            self.obj = obj
-            self.context = context
-
-        def __enter__(self):
-            logger.debug("ClassLock.enter: %s - %s" % (self.context, self.obj))
-            lock.acquire()
-
-        def __exit__(self, type_, value, traceback_):
-            lock.release()
-            logger.debug("ClassLock.exit: %s - %s" % ( self.context, self.obj))
-
-else:
-    class ClassLock(transaction.Atomic):
-        def __init__(self, obj, context=""):
-            super(ClassLock, self).__init__(using=None, savepoint=True)
-            self.obj = obj
-            self.context = context
-
-        def __enter__(self):
-            logger.debug("ClassLock.enter: %s - %s" %
-                         (self.context, self.obj))
-            super(ClassLock, self).__enter__()
-
-        def __exit__(self, type_, value, traceback_):
-            r = super(ClassLock, self).__exit__(type_, value, traceback_)
-            logger.debug("ClassLock.exit: %s - %s" % (self.context, self.obj))
-            return r
 
 
 # Helper function to determine whether URI should be ignored
@@ -75,7 +36,6 @@ class HitcountManager(models.Manager):
         # only create objects and score for desired URLs
         if not is_ignored(uri):
             # lock down the table
-            # separate get and create to avoid db locks with sqlite
             with ClassLock('checking for uri'):
                 hitcount, created = self.select_for_update().get_or_create(
                     uri=uri
