@@ -44,14 +44,34 @@ rvbd.report = {
         // don't overwrite an existing key
         var data = window.localStorage.getItem(key);
         if (!data) {
-            window.localStorage.setItem(key, JSON.stringify(value));
+            try {
+                window.localStorage.setItem(key, JSON.stringify(value));
+                console.log('setLocalStorage: First Attempt Save!');
+                return true;
+            } catch(out_err) {
+                // Remove all items and try again
+                try {
+                    window.localStorage.clear();
+                    console.log('setLocalStorage: localStorage cleared!');
+                    window.localStorage.setItem(key, JSON.stringify(value));
+                    console.log('setLocalStorage: Second Attempt Save!');
+                    return true;
+                } catch(in_err) {
+                    console.log('setLocalStorage: All Saves Failed!');
+                    return false;
+                }
+            }
+        } else {
+            console.log('setLocalStorage: Data Already Present!');
+            return true;
         }
+
     },
 
     saveState: function(hash, data) {
         // add location hash and corresponding local storage
-        if (rvbd.report.supports_history_api()) {
-            rvbd.report.setLocalStorage(hash, data);
+        if (rvbd.report.supports_history_api() &&
+            rvbd.report.setLocalStorage(hash, data)) {
             history.pushState(null, window.document.title, '#!' + hash)
         }
     },
