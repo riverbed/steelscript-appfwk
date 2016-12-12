@@ -5,14 +5,16 @@
 # as set forth in the License.
 
 import re
+import logging
 
-from django.db import models, transaction
+from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 from django.conf import settings
 
+from steelscript.appfwk.project.locks import ClassLock, TransactionLock
 
-from steelscript.appfwk.apps.jobs.models import TransactionLock
+logger = logging.getLogger(__name__)
 
 
 # Helper function to determine whether URI should be ignored
@@ -34,7 +36,7 @@ class HitcountManager(models.Manager):
         # only create objects and score for desired URLs
         if not is_ignored(uri):
             # lock down the table
-            with transaction.atomic():
+            with ClassLock('checking for uri'):
                 hitcount, created = self.select_for_update().get_or_create(
                     uri=uri
                 )

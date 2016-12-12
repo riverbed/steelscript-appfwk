@@ -1,10 +1,9 @@
 /**
- # Copyright (c) 2013 Riverbed Technology, Inc.
+ # Copyright (c) 2016 Riverbed Technology, Inc.
  #
- # This software is licensed under the terms and conditions of the
- # MIT License set forth at:
- #   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").
- # This software is distributed "AS IS" as set forth in the License.
+ # This software is licensed under the terms and conditions of the MIT License
+ # accompanying the software ("License").  This software is distributed "AS IS"
+ # as set forth in the License.
  */
 
 (function() {
@@ -84,14 +83,6 @@ $.extend(rvbd.widgets.yui3.YUIWidget.prototype, {
 
         self.titleMsg = data['chartTitle'];
         self.buildInnerLayout();
-
-        var $content = $(self.content);
-        self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
-                                  parseInt($content.css('margin-right'), 10);
-        self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
-                                  parseInt($content.css('margin-bottom'), 10);
-        self.titleHeight = $(self.title).outerHeight();
-
 
         data = self.addBasicParams(data);
         data = self.prepareData(data);

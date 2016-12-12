@@ -1,9 +1,25 @@
+.report-title
+{
+    margin: 10px 0;
+}
+
 .report-description
 {
   margin-top: 0px;
   margin-left: 20px;
   padding-top: 0px;
  }
+
+/* used for Criteria and Report header row */
+.section-title
+{
+    font-size: 110%;
+    font-weight: bold;
+    padding: 5px;
+    background-color: #F0F0F0;
+    margin-bottom: 10px;
+    border-bottom: solid 1px #d2d2d2
+}
 
 .criteria {
     margin-bottom: 10px;
@@ -22,11 +38,44 @@
 .duration { width: 100px; }
 .filterexpr { width: 300px; }
 
-#reports-dropdown {
+.loading-indicator-overlay {
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(63, 63, 68, 0.1);
+    /* let menus still appear over overlay */
+    z-index: 999;
+}
+
+.widget-box
+{
+    margin-bottom: 10px;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(63, 63, 68, 0.1);
+}
+
+.widget-title
+{
+    /*font-size: 110%;*/
+    font-weight: bold;
+    padding: 5px;
+    /*background-color: #F0F0F0;*/
+    margin-bottom: 10px;
+}
+
+.widget-content
+{
+    /*border-top: solid 1px black;*/
+}
+
+.widget-menu-container {
     position: relative;
-    float: right;
-    top: 0px;
-    height: 26px;
+    display: inline;
+    /*float: right;*/
+    /*top: 0px;*/
+    /*height: 26px;*/
+    padding-left: 10px;
+    font-size: .8em;
 }
 
 .widget-dropdown-menu {
@@ -41,16 +90,17 @@
 
 .widget-error {
     font-size: 13px;
+    padding: 5px;
 }
 
 .wid-outer-container {
-    overflow: hidden;
+    overflow: auto;
     width: 100%;
     height: 100%;
 }
 
 .wid-title {
-    height: 20px;
+    height: 28px;
     text-align: center;
 }
 
@@ -72,22 +122,30 @@
     margin-left: 4px;
 }
 
-/* When the print and reload report icons are span (rather than a link), gray it out */
-span#print-report {
+/* When the print and reload report icons are disabled, gray it out */
+span#print-report.enabled {
+    color: #337ab7;
+}
+
+span#reload-report.enabled {
+    color: #337ab7;
+}
+
+span#print-report.disabled {
     opacity: 0.4;
 }
 
-span#reload-report {
+span#reload-report.disabled {
     opacity: 0.4;
 }
 
-.modal-content { /* All modal content divs hidden initially */
-    display: none;
-}
+/*.modal-content { !* All modal content divs hidden initially *!*/
+    /*display: none;*/
+/*}*/
 
-.modal .modal-content { /* But shown if they're inside a modal */
-    display: block;
-}
+/*.modal .modal-content { !* But shown if they're inside a modal *!*/
+    /*display: block;*/
+/*}*/
 
 /* Inputs for embed widget dimensions */
 #embed-widget-width, #embed-widget-height {

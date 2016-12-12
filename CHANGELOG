@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+[1.3]
+ * User Interface overhaul including c3 and Bootstrap 3 support
+ * UI bug fixes.
+ * Avoid sqlite deadlock for hitcount app
+ * Sample Table support.
+
 [1.2.2]
  * Handle non-local timezones more cleanly
  * Fix missing requirements versions

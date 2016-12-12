@@ -83,23 +83,23 @@ class SystemSettingsForm(forms.ModelForm):
         cleaned_data = super(SystemSettingsForm, self).clean()
         version = cleaned_data.get('maps_version')
         api_key = cleaned_data.get('maps_api_key')
+        weather_enabled = cleaned_data.get('weather_enabled')
 
         if not api_key and version in ('FREE', 'BUSINESS'):
             if version == 'FREE':
                 msg = u'Usage of Free version of Google Maps requires API Key'
             else:
-                msg = u'Usage of Business version of Google Maps requires API Key'
+                msg = (u'Usage of Business version of Google Maps requires '
+                       u'Client ID')
             self._errors['maps_api_key'] = self.error_class([msg])
             del cleaned_data['maps_api_key']
 
         # Check if maps are disabled but weather is enabled
-        if not api_key and version == 'DISABLED':
+        if version == 'DISABLED' and weather_enabled:
             msg = u'Weather layers cannot be enabled while maps are disabled'
             self._errors['weather_enabled'] = self.error_class([msg])
             del cleaned_data['weather_enabled']
 
-        # Get our weather related variables
-        weather_enabled = cleaned_data.get('weather_enabled')
         weather_url = cleaned_data.get('weather_url')
         # Check if weather is enabled
         if weather_enabled:

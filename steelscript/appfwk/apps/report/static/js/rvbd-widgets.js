@@ -1,10 +1,9 @@
 /**
- # Copyright (c) 2013 Riverbed Technology, Inc.
+ # Copyright (c) 2016 Riverbed Technology, Inc.
  #
- # This software is licensed under the terms and conditions of the
- # MIT License set forth at:
- #   https://github.com/riverbed/flyscript-portal/blob/master/LICENSE ("License").
- # This software is distributed "AS IS" as set forth in the License.
+ # This software is licensed under the terms and conditions of the MIT License
+ # accompanying the software ("License").  This software is distributed "AS IS"
+ # as set forth in the License.
  */
 
 (function() {
@@ -99,30 +98,48 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
 
     self.postUrl = urls.postUrl;
     self.updateUrl = urls.updateUrl;
-    self.div = div;
     self.id = id;
     self.slug = slug;
     self.options = options;
     self.criteria = criteria;
 
+    var $div = $(div);
+
+    // with bootstrap 3 - the col-md-* widgets have padding so any borders
+    // show up outside of actual content.  here we create an inner div to
+    // apply our borders against and write our content into
+    $div.attr('id', 'outer_chart_' + id)
+        .addClass('widget col-md-' + (isEmbedded ? '12' : options.width));
+
+    self.widgetbox = $('<div></div>')
+        .attr('id', 'chart_' + id)
+        .addClass('widget-box')
+        .text("Widget " + id)
+        .appendTo($div);
+
+    self.div = self.widgetbox;
+    $div = self.div;
+
     if (dataCache) {
-      self.dataCache = JSON.parse(dataCache);
+        if (typeof dataCache === "string") {
+            self.dataCache = JSON.parse(dataCache);
+        } else {
+            self.dataCache = dataCache;
+        }
     }
 
     self.status = 'running';
     self.asyncID = null;
     self.lastUpdate = {};     // object datetime/timezone of last update
 
-    var $div = $(div);
-
-    $div.attr('id', 'chart_' + id)
-        .addClass('widget blackbox span' + (isEmbedded ? '12' : options.width))
-        .text("Widget " + id);
     if (options.height) {
         $div.height(options.height);
+    } else {
+        // add temporary height to widget
+        $div.height(90);
     }
 
-    $div.html("<p>Loading...</p>")
+    $div.html("<span></span>")
         .showLoading()
         .setLoading(0);
 
@@ -130,7 +147,7 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
       // If we are not using the cached report, follow normal
       // post request sequence
       self.postRequest(criteria);
-    } else if (self.dataCache.status == 'error') {
+    } else if (self.dataCache.status == 4) {  // error status == 4
       // No Widget Cache data exists
       self.displayError(self.dataCache);
       self.status = 'error';
@@ -187,11 +204,21 @@ rvbd.widgets.Widget.prototype = {
         switch (response.status) {
             case 3: // Complete
                 $(self.div).hideLoading();
+
+                // store original response data as JSON
+                self.dataCache = JSON.stringify(response.data);
+
                 self.render(response.data);
+                if (!self.options.height) {
+                    $(self.div).height('auto');
+                }
                 self.status = 'complete';
                 $(document).trigger('widgetDoneLoading', [self]);
                 break;
             case 4: // Error
+                // store error response data as JSON
+                self.dataCache = JSON.stringify(response);
+
                 self.displayError(response);
                 self.status = 'error';
                 $(document).trigger('widgetDoneLoading', [self]);
@@ -356,7 +383,7 @@ rvbd.widgets.Widget.prototype = {
         var $error = $('<div></div>')
             .addClass('widget-error')
             .append("Internal server error:<br>")
-            .append($shortMessage)
+            .append($shortMessage);
 
         if (isException) {
             $error.append('<br>')
@@ -396,13 +423,19 @@ rvbd.widgets.Widget.prototype = {
         // only include widget criteria if we have developer mode set
         if (rvbd.report.developer) {
             menuItems.push(
-                '<a tabindex="1" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
+                '<a tabindex="1" id="' + self.id + '_export_widget_json" class="export_widget_json" href="#">Export JSON (Table Data)...</a>'
+            );
+            menuItems.push(
+                '<a tabindex="2" id="' + self.id + '_show_widget_data" class="show_widget_data" href="#">Show Widget Data ...</a>'
+            );
+            menuItems.push(
+                '<a tabindex="3" id="' + self.id + '_show_criteria" class="show_criteria" href="#">Show Widget Criteria ...</a>'
             );
         }
 
         var $menuContainer = $('<div></div>')
-                .attr('id', 'reports-dropdown')
-                .addClass('dropdown'),
+                .attr('id', 'widget-menu-container-' + self.id)
+                .addClass('dropdown widget-menu-container'),
             $menuButton = $('<a></a>')
                 .attr('id', self.id + '_menu')
                 .addClass('dropdown-toggle widget-dropdown-toggle')
@@ -411,7 +444,8 @@ rvbd.widgets.Widget.prototype = {
                     'data-toggle': 'dropdown'
                 }),
             $menuIcon = $('<span></span>')
-                .addClass('icon-chevron-down'),
+                .addClass('glyphicon')
+                .addClass('glyphicon-chevron-down'),
             $menu = $('<ul></ul>')
                 .addClass('dropdown-menu widget-dropdown-menu')
                 .attr({
@@ -434,12 +468,25 @@ rvbd.widgets.Widget.prototype = {
                       .appendTo($(self.title));
 
         $menuContainer.find('.export_widget_csv').click($.proxy(self.onCsvExport, self));
+        $menuContainer.find('.export_widget_json').click($.proxy(self.onJSONExport, self));
+        //$menuContainer.find('.export_widget_data').click($.proxy(self.onDataExport, self));
 
         $(self.title).find('.get-embed').click($.proxy(self.embedModal, self));
         $(self.title).find('.show_criteria').click($.proxy(self.showCriteriaModal, self));
+        $(self.title).find('.show_widget_data').click($.proxy(self.showWidgetDataModal, self));
+    },
+
+    onJSONExport: function() {
+        var self = this;
+        self.onExport('json');
     },
 
     onCsvExport: function() {
+        var self = this;
+        self.onExport('csv');
+    },
+
+    onExport: function(exportType) {
         var self = this;
 
         $.ajax({
@@ -448,22 +495,22 @@ rvbd.widgets.Widget.prototype = {
             url: self.postUrl,
             data: { criteria: JSON.stringify(self.criteria) },
             success: function(data, textStatus, jqXHR) {
-                self.checkCsvExportStatus(data.joburl);
+                self.checkExportStatus(data.joburl, exportType);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 var alertBody = ("The server returned the following HTTP error: <pre>" +
                                  + errorThrown + '</pre>');
-                rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { })
+                rvbd.modal.alert("Export Error", alertBody, "OK", function() { })
             }
         });
     },
 
-    checkCsvExportStatus: function(csvJobUrl) {
+    checkExportStatus: function(jobUrl, exportType) {
         var self = this;
 
         $.ajax({
             dataType: "json",
-            url: csvJobUrl + 'status/',
+            url: jobUrl + 'status/',
             data: null,
             success: function(data, textStatus) {
                 switch (data.status) {
@@ -472,23 +519,23 @@ rvbd.widgets.Widget.prototype = {
                         // remove spaces and special chars from widget title
                         var fname = self.titleMsg.replace(/\W/g, '');
                         // Should trigger file download
-                        window.location = origin + '/jobs/' + data.id + '/data/csv/?filename=' + fname;
+                        window.location = origin + '/jobs/' + data.id + '/data/' + exportType + '/?filename=' + fname;
                         break;
                     case 4: // Error
                         var alertBody = ('The server returned the following error: <pre>' +
                                          data['message'] + '</pre>');
-                        rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { });
+                        rvbd.modal.alert("Export Error", alertBody, "OK", function() { });
                         break;
                     default: // Loading
-                        setTimeout(function() { self.checkCsvExportStatus(csvJobUrl); }, 200);
+                        setTimeout(function() { self.checkExportStatus(jobUrl, exportType); }, 200);
                 }
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                console.log('Error when checking csv status');
+                console.log('Error when checking export status');
 
                 var alertBody = ('The server returned the following HTTP error: <pre>' + textStatus +
                                  ': ' + errorThrown + '</pre>');
-                rvbd.modal.alert("CSV Export Error", alertBody, "OK", function() { });
+                rvbd.modal.alert("Export Error", alertBody, "OK", function() { });
             }
         });
     },
@@ -522,6 +569,13 @@ rvbd.widgets.Widget.prototype = {
 
         $div.empty()
             .append(self.outerContainer);
+
+        var $content = $(self.content);
+        self.contentExtraWidth  = parseInt($content.css('margin-left'), 10) +
+                                  parseInt($content.css('margin-right'), 10);
+        self.contentExtraHeight = parseInt($content.css('margin-top'), 10) +
+                                  parseInt($content.css('margin-bottom'), 10);
+        self.titleHeight = $(self.title).outerHeight();
     },
 
     /**
@@ -669,6 +723,24 @@ rvbd.widgets.Widget.prototype = {
 
         rvbd.modal.alert(title, body, "OK", function() { })
     },
+
+    /**
+     * Display dialog with widget's data
+     */
+    showWidgetDataModal: function() {
+        var self = this;
+        var body;
+        try {
+            body = $('<pre></pre>').html(JSON.stringify(self.data, null, 2));
+        } catch (e) {
+            // yui3 data objects get polluted with lots of circular references
+            console.log('error stringifying circular ref, just showing data');
+            body = $('<pre></pre>').html(JSON.stringify(self.data.dataProvider, null, 2));
+        }
+        var title = self.titleMsg + ' JSON Data';
+
+        rvbd.modal.alert(title, body, "OK", function() { })
+    }
 };
 
 rvbd.widgets.raw = {};

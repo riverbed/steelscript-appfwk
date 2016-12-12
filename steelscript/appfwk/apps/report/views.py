@@ -509,13 +509,13 @@ class ReportAutoView(GenericReportView):
                 try:
                     data_cache = WidgetDataCache.objects.get(
                         report_widget_id=rw_id)
-                    widget_def['data'] = data_cache.data
+                    widget_def['dataCache'] = data_cache.data
                 except WidgetDataCache.DoesNotExist:
                     msg = "No widget data cache available with id %s." % rw_id
                     resp = {'message': msg,
                             'status': 'error',
                             'exception': ''}
-                    widget_def['data'] = json.dumps(resp)
+                    widget_def['dataCache'] = json.dumps(resp)
         report_def = self.report_def(widget_defs, now)
 
         return JsonResponse(report_def, safe=False)

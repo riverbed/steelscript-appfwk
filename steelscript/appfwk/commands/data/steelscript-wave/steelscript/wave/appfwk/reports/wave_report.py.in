@@ -7,7 +7,8 @@
 import steelscript.appfwk.apps.datasource.modules.analysis as analysis
 from steelscript.appfwk.apps.report.models import Report
 from steelscript.appfwk.apps.datasource.models import Column
-import steelscript.appfwk.apps.report.modules.yui3 as yui3
+import steelscript.appfwk.apps.report.modules.tables as tables
+import steelscript.appfwk.apps.report.modules.c3 as c3
 
 import steelscript.wave.appfwk.datasources.wave_source as wave
 
@@ -32,7 +33,7 @@ table.add_column('sin2', 'Sine Wave 2', func='sin', period='8min', alpha=10)
 table.add_column('cos',  'Cosine Wave', func='cos', period='3min', alpha=2.5)
 
 # Bind the table to a widget for display
-report.add_widget(yui3.TimeSeriesWidget, table, "Waves", width=12)
+report.add_widget(c3.TimeSeriesWidget, table, "Waves", width=12)
 
 #
 # Define a clipped version of the above table.  The function
@@ -43,7 +44,7 @@ clipped_table = wave.ClippedWaveTable.create(
     name='clipped-wave-table', tables={'waves': table})
 
 # Bind to a timeseries widget
-report.add_widget(yui3.TimeSeriesWidget, clipped_table,
+report.add_widget(c3.TimeSeriesWidget, clipped_table,
                   "Clipped Waves", width=12)
 
 #
@@ -51,5 +52,5 @@ report.add_widget(yui3.TimeSeriesWidget, clipped_table,
 # given report run
 #
 table = analysis.CriteriaTable.create('wave-criteria')
-report.add_widget(yui3.TableWidget, table, "Report Criteria",
+report.add_widget(tables.TableWidget, table, "Report Criteria",
                   width=12, height=200)

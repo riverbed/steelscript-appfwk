@@ -303,7 +303,8 @@ class Table(models.Model):
 
         return filtered
 
-    def copy_columns(self, table, columns=None, except_columns=None):
+    def copy_columns(self, table, columns=None, except_columns=None,
+                     synthetic=None, ephemeral=None):
         """ Copy the columns from `table` into this table.
 
         This method will copy all the columns from another table, including
@@ -316,7 +317,7 @@ class Table(models.Model):
 
         sortcols = []
         sortdir = []
-        for c in table.get_columns():
+        for c in table.get_columns(synthetic=synthetic, ephemeral=ephemeral):
             if columns is not None and c.name not in columns:
                 continue
             if except_columns is not None and c.name in except_columns:

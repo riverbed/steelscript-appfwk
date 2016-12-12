@@ -12,7 +12,7 @@ from steelscript.appfwk.apps.datasource.modules.analysis import AnalysisTable
 from steelscript.netprofiler.appfwk.datasources.netprofiler import \
     NetProfilerGroupbyTable
 from steelscript.appfwk.apps.report.models import Report
-import steelscript.appfwk.apps.report.modules.yui3 as yui3
+import steelscript.appfwk.apps.report.modules.tables as tables
 
 #
 # Description
@@ -55,7 +55,7 @@ table.add_column('avg_bytes', 'Avg Bytes', units='B/s', sortdesc=True)
 # and also add the extra column of interest.
 whoistable = WhoisTable.create('5-whois-hosts', tables={'t': table})
 
-report.add_widget(yui3.TableWidget, whoistable,
+report.add_widget(tables.TableWidget, whoistable,
                   "Custom Analysis Link table", width=12)
 
 
@@ -68,5 +68,5 @@ function_table = AnalysisTable.create('whois-function-table',
 function_table.copy_columns(table)
 function_table.add_column('whois', label='Whois link', datatype='html')
 
-report.add_widget(yui3.TableWidget, function_table,
+report.add_widget(tables.TableWidget, function_table,
                   "Analysis Function Link table", width=12)

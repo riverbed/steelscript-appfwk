@@ -17,7 +17,7 @@ The typical structure is as follows:
     table.add_column(name, column_options...)
     table.add_column(name, column_options...)
 
-    report.add_widget(yui3.TimeSeriesWidget, table, name, width=12)
+    report.add_widget(c3.TimeSeriesWidget, table, name, width=12)
 
 See the documeantion or sample plugin for more details
 """
@@ -25,7 +25,8 @@ See the documeantion or sample plugin for more details
 import steelscript.appfwk.apps.datasource.modules.analysis as analysis
 from steelscript.appfwk.apps.report.models import Report
 from steelscript.appfwk.apps.datasource.models import Column, TableField
-import steelscript.appfwk.apps.report.modules.yui3 as yui3
+import steelscript.appfwk.apps.report.modules.c3 as c3
+import steelscript.appfwk.apps.report.modules.tables as tables
 
 # Import the datasource module for this plugin (if needed)
 import steelscript.{{name}}.appfwk.datasources.{{name}}_source as {{name}}

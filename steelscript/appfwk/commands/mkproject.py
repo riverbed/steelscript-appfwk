@@ -277,7 +277,8 @@ class Command(BaseCommand):
         self.mkdir(offline_js_dir)
 
         failedurls = set()
-        for url, dirname in settings.OFFLINE_JS_FILES:
+        offline_files = settings.OFFLINE_JS_FILES + settings.OFFLINE_CSS_FILES
+        for url, dirname in offline_files:
             filename = url.rsplit('/', 1)[1]
 
             console("Downloading {0}... ".format(url), newline=False)

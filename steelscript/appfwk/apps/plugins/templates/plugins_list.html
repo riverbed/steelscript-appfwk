@@ -30,17 +30,21 @@
             pluginName = 'All';
         }
         var heading = "Update " + pluginName + " Reports";
-        var question = '<label class="checkbox">' +
-            '<input type="checkbox" id="col-reports-id" ' +
-            'onclick="toggleOverwrite()"> Collect Reports' +
-            '</label>' +
-            '<label class="checkbox" style="margin-left:2em;">' +
-            '<input type="checkbox" id="col-overwrite-id"  disabled> ' +
-            'and Overwrite Reports' +
-            '</label>' +
-            '<label class="checkbox">' +
-                '<input type="checkbox" id="reload-reports-id"> Reload Reports' +
-            '</label>';
+        var question =
+            '<div class"row">' +
+                '<div class="col-xs-offset-1">' +
+                    '<label class="checkbox">' +
+                        '<input type="checkbox" id="col-reports-id" onclick="toggleOverwrite()"> Collect Reports' +
+                    '</label>' +
+                    '<label class="checkbox" style="margin-left:2em;">' +
+                    '<input type="checkbox" id="col-overwrite-id"  disabled> ' +
+                    'and Overwrite Reports' +
+                    '</label>' +
+                    '<label class="checkbox">' +
+                        '<input type="checkbox" id="reload-reports-id"> Reload Reports' +
+                    '</label>' +
+                '</div>' +
+            '</div>';
         var okButtonTxt = 'Go!';
         var cancelButtonTxt = 'Cancel';
         rvbd.modal.confirm(heading, question, cancelButtonTxt, okButtonTxt,
@@ -51,7 +55,8 @@
     var reloadingHandler = function(collect_url, reload_url) {
         var url = null,
             onSuccess = null,
-            modalText;
+            modalText,
+            modal;
         if($('#col-reports-id').is(':checked')){
             url = collect_url;
             if($('#col-overwrite-id').is(':checked'))

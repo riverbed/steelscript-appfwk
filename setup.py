@@ -96,12 +96,12 @@ http://pythonhosted.org/steelscript/
         'django-ace==1.0.2',
         'apscheduler==3.0.6',
 
-        'celery>=3.1',
+        'celery>=3.1,<4.0',
         'django-celery==3.1.16',
         'redis==2.10.3',
 
         # progressd
-        'reschema==0.5',
+        'reschema==0.5.1',
         'flask==0.10.1',
         'flask_restful==0.3.2',
 

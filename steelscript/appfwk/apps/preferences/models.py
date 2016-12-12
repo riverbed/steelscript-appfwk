@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 #
 TIMEZONE_CHOICES = zip(pytz.common_timezones, pytz.common_timezones)
 
-MAPS_VERSIONS = ('DISABLED',            # Google Maps Versions
-                 'DEVELOPER',
+MAPS_VERSIONS = ('DISABLED',
+                 'DEVELOPER',           # Google Maps Versions
                  'FREE',
                  'BUSINESS',
                  'OPEN_STREET_MAPS',    # Open Street Maps
@@ -87,8 +87,9 @@ class AppfwkUser(AbstractUser):
                                 default='UTC',
                                 choices=TIMEZONE_CHOICES,
                                 verbose_name='Local Timezone',
-                                help_text='Please use the timezone '
-                                          'of the local system')
+                                help_text='Choose the timezone '
+                                          'that best matches your current '
+                                          'browser location')
 
     # hidden fields
     timezone_changed = models.BooleanField(default=False)
@@ -113,7 +114,7 @@ class SystemSettings(models.Model):
         max_length=30,
         verbose_name='Maps Version',
         choices=MAPS_VERSION_CHOICES,
-        default='OPEN_STREET_MAPS'
+        default='DISABLED'
     )
     maps_api_key = models.CharField(
         max_length=100,
