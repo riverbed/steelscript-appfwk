@@ -68,7 +68,7 @@ class TimeSeriesWidget(BaseWidget):
         helper = UIWidgetHelper(widget, job)
 
         catname = '-'.join([k.name for k in helper.keycols])
-        timecol = [c for c in helper.keycols if c.istime()][0]
+        timecol = [c for c in helper.keycols if c.istime() or c.isdate()][0]
 
         if widget.options.altaxis:
             altcols = [c.name for c in helper.all_cols if
