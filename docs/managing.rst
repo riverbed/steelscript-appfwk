@@ -176,6 +176,79 @@ process.
       --version             show program's version number and exit
       -h, --help            show this help message and exit
 
+Using Static Files in Offline Mode
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When deploying a SteelScript VM into customer's networks, chances are the VM does not have
+Internet access due to security concerns. As the Application Framework server needs access
+to files on the Internet (mainly *Javascript* and *CSS*), we need to pre-download the files
+in order for the Application Framework server to function properly.
+
+Below are the steps to serve the required files to the Application Framework server in offline
+mode.
+
+1. Download the required files from Internet in the SteelScript VM.
+
+.. code-block:: console
+
+    $ steel appfwk mkproject --offline
+    Generating new Application Framework project ...
+
+    Enter path for project files [/home/vagrant/appfwk_project]: offline_project
+    Creating project directory /home/vagrant/offline_project ...
+    Writing local settings /home/vagrant/offline_project/local_settings.py ... done.
+    Collecting default reports...done
+    Downloading offline JavaScript files...
+    Downloading https://github.com/twbs/bootstrap/releases/download/v3.3.7/bootstrap-3.3.7-dist.zip... success.
+    Extracting to /home/vagrant/offline_project/offline/bootstrap-3.3.7... success.
+    Downloading https://jqueryui.com/resources/download/jquery-ui-1.10.2.zip... success.
+    Extracting to /home/vagrant/offline_project/offline/jquery-ui... success.
+    Downloading http://yui.zenfs.com/releases/yui3/yui_3.17.2.zip... success.
+    Extracting to /home/vagrant/offline_project/offline/yui... success.
+    Downloading https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js... success.
+    Downloading https://cdnjs.cloudflare.com/ajax/libs/jquery.form/3.32/jquery.form.js... success.
+    Downloading https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js... success.
+    Downloading https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js... success.
+    Downloading https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.1.0/pivot.min.js... success.
+    Downloading https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/jquery.dataTables.min.js... success.
+    Downloading https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.css... success.
+    Downloading https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.1.0/pivot.min.css... success.
+    Downloading https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/css/jquery.dataTables.min.css... success.
+    Done.
+    Checking if git is installed...done
+    Initializing project as git repo...done
+    Creating initial git commit...done
+    Initializing project with default settings............done
+
+    *****
+
+    App Framework project created.
+
+2. Copy the directory with downloaded static files to the production server root directory.
+
+.. code-block:: console
+
+    $ cd /steelscript/www
+    $ sudo cp -r offline_project/offline .
+
+3. Edit ``/steelscript/www/local_settings.py`` by adding the following two lines to the end.
+
+.. code-block:: console
+
+    OFFLINE_JS = True
+    STATICFILES_DIRS += (os.path.join(PROJECT_ROOT, 'offline'), )
+
+4. Collect all static files.
+
+.. code-block:: console
+
+    $ manage collectstatic
+
+5. Restart the SteelScript Application Framework Server.
+
+.. code-block:: console
+
+    appfwk_restart_services
 
 .. _Running the server:
 
