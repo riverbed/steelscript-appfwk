@@ -5,6 +5,7 @@
 # as set forth in the License.
 
 import os
+import re
 import requests
 import tempfile
 
@@ -320,9 +321,14 @@ class Command(BaseCommand):
                     console("Extracting to " + finaldir + "... ",
                             newline=False)
                     os.mkdir(finaldir)
-
                     try:
-                        if r.url.endswith('zip'):
+                        # when original url gets redirected to the cloud,
+                        # the zip file would be moved to the middle
+                        # hence search for string of '.zip' followed by
+                        # Non-alphanumeric letters
+
+                        if r.url.endswith('zip') or \
+                                re.search('.zip[^a-zA-Z\d]', r.url):
                             # Unzip into temporary dir, then move the contents
                             # of the outermost dir where we want. (With tar we
                             # can just use --strip-components 1.)

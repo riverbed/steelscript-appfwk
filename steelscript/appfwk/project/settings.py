@@ -129,50 +129,63 @@ JS_VERSIONS = {
 # Format: (url, dirname). If dirname is None, "steel appfwk mkproject" will
 # install the file directly into the offline JS dir. Otherwise, it will treat
 # the file as a zip or tar archive and extract it into that subdirectory.
+
+# JS_FILES are files that would be used in both online/offline scenarios.
 JS_FILES = [
     ("https://cdnjs.cloudflare.com/ajax/libs/jquery/{0}/jquery.min.js"
-        .format(JS_VERSIONS['jquery']), None),
-    ("https://cdnjs.cloudflare.com/ajax/libs/jqueryui/{0}/jquery-ui.min.js"
-        .format(JS_VERSIONS['jqueryui']), None),
+     .format(JS_VERSIONS['jquery']), None),
     ("https://cdnjs.cloudflare.com/ajax/libs/jquery.form/{0}/jquery.form.js"
-        .format(JS_VERSIONS['jqueryform']), None),
-
-    ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/js/bootstrap.min.js"
-        .format(JS_VERSIONS['bootstrap']), None),
-
+     .format(JS_VERSIONS['jqueryform']), None),
     ('https://cdnjs.cloudflare.com/ajax/libs/c3/{0}/c3.min.js'
-        .format(JS_VERSIONS['c3']), None),
+     .format(JS_VERSIONS['c3']), None),
     ('https://cdnjs.cloudflare.com/ajax/libs/d3/{0}/d3.min.js'
-        .format(JS_VERSIONS['d3']), None),
+     .format(JS_VERSIONS['d3']), None),
     ('https://cdnjs.cloudflare.com/ajax/libs/pivottable/{0}/pivot.min.js'
-        .format(JS_VERSIONS['pivottable']), None),
+     .format(JS_VERSIONS['pivottable']), None),
     ('https://cdnjs.cloudflare.com/ajax/libs/datatables/{0}/js/jquery.dataTables.min.js'
-        .format(JS_VERSIONS['datatables']), None),
+     .format(JS_VERSIONS['datatables']), None),
 ]
 
+ONLINE_JS_FILES = [
+    ("https://cdnjs.cloudflare.com/ajax/libs/jqueryui/{0}/jquery-ui.min.js"
+        .format(JS_VERSIONS['jqueryui']), None),
+    ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/js/bootstrap.min.js"
+        .format(JS_VERSIONS['bootstrap']), None),
+]
+
+ONLINE_JS_FILES.extend(JS_FILES)
+
 OFFLINE_JS_FILES = [
-    ("https://cdnjs.cloudflare.com/ajax/libs/jquery/{0}/jquery.min.map"
-        .format(JS_VERSIONS['jquery']), None),
+    ("https://github.com/twbs/bootstrap/releases/download/v{ver}/bootstrap-{ver}-dist.zip"
+        .format(ver=JS_VERSIONS['bootstrap']), "bootstrap-{ver}".format(ver=JS_VERSIONS['bootstrap'])),
     ("https://jqueryui.com/resources/download/jquery-ui-{0}.zip"
         .format(JS_VERSIONS['jqueryui']), "jquery-ui"),
     ("http://yui.zenfs.com/releases/yui3/yui_{0}.zip"
         .format(JS_VERSIONS['yui']), "yui"),
 ]
 
+OFFLINE_JS_FILES.extend(JS_FILES)
+
+# CSS_FILES are files that would be used in both online/offline scenarios.
 CSS_FILES = [
+    ('https://cdnjs.cloudflare.com/ajax/libs/c3/{0}/c3.min.css'
+     .format(JS_VERSIONS['c3']), None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/pivottable/{0}/pivot.min.css'
+     .format(JS_VERSIONS['pivottable']), None),
+    ('https://cdnjs.cloudflare.com/ajax/libs/datatables/{0}/css/jquery.dataTables.min.css'
+     .format(JS_VERSIONS['datatables']), None),
+]
+
+ONLINE_CSS_FILES = [
     ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/css/bootstrap.min.css"
         .format(JS_VERSIONS['bootstrap']), None),
     ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/css/bootstrap-theme.min.css"
         .format(JS_VERSIONS['bootstrap']), None),
-
-    ('https://cdnjs.cloudflare.com/ajax/libs/c3/{0}/c3.min.css'
-        .format(JS_VERSIONS['c3']), None),
-    ('https://cdnjs.cloudflare.com/ajax/libs/pivottable/{0}/pivot.min.css'
-        .format(JS_VERSIONS['pivottable']), None),
-    ('https://cdnjs.cloudflare.com/ajax/libs/datatables/{0}/css/jquery.dataTables.min.css'
-        .format(JS_VERSIONS['datatables']), None),
 ]
 
+ONLINE_CSS_FILES.extend(CSS_FILES)
+
+OFFLINE_CSS_FILES = CSS_FILES
 
 # Additional locations of static files
 STATICFILES_DIRS = (
