@@ -214,6 +214,10 @@ class Command(BaseCommand):
                     f.write("OFFLINE_JS = True\n")
                     f.write("STATICFILES_DIRS += (os.path.join(PROJECT_ROOT, "
                             "'offline'), )\n")
+                else:
+                    f.write("#OFFLINE_JS = True\n")
+                    f.write("#STATICFILES_DIRS += (os.path.join(PROJECT_ROOT, "
+                            "'offline'), )\n")
                 f.write("SECRET_KEY = '%s'\n" % secret)
                 f.write(LOCAL_FOOTER)
             console('done.')
