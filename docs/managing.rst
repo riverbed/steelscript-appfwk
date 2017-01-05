@@ -231,12 +231,22 @@ mode.
     $ cd /steelscript/www
     $ sudo cp -r offline_project/offline .
 
-3. Edit ``/steelscript/www/local_settings.py`` by adding the following two lines to the end.
+3. Edit ``/steelscript/www/local_settings.py``. If this is a newly published VM, just
+uncomment the following two lines close to the end of the file.
+
+.. code-block:: console
+
+    #OFFLINE_JS = True
+    #STATICFILES_DIRS += (os.path.join(PROJECT_ROOT, 'offline'), )
+
+The above two lines would be updated as below.
 
 .. code-block:: console
 
     OFFLINE_JS = True
     STATICFILES_DIRS += (os.path.join(PROJECT_ROOT, 'offline'), )
+
+If this is an old VM, the above two lines need to be added to the end of the file.
 
 4. Collect all static files.
 
