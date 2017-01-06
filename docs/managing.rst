@@ -176,18 +176,25 @@ process.
       --version             show program's version number and exit
       -h, --help            show this help message and exit
 
+.. _offline mode :
+
 Using Static Files in Offline Mode
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When deploying a SteelScript VM into customer's networks, chances are the VM does not have
-Internet access due to security concerns. As the Application Framework server needs access
-to files on the Internet (mainly *Javascript* and *CSS*), we need to pre-download the files
-in order for the Application Framework server to function properly.
+When deploying a SteelScript VM into customer's networks, the Application Framework server
+does not need to have Internet access. However, the web clients do need to access resources
+on Internet (mainly *Javascript* and *CSS*).
 
-Below are the steps to serve the required files to the Application Framework server in offline
-mode.
+Therefore, if web clients can not access Internet due to firewall or because they are on
+isolated networks themselves, we need to pre-download the files to the Application Framework
+server and update the server configuration accordingly.
 
-1. Download the required files from Internet in the SteelScript VM.
+Below are the steps to serve the required files to the Application Framework server if web
+clients can not access Internet.
+
+1. Download the required files from Internet in the SteelScript VM. Note that if the
+SteelScript VM does not have Internet access, the files need to be downloaded on a
+separate machine with Internet access and then sent over to the SteelScript VM.
 
 .. code-block:: console
 
@@ -258,7 +265,7 @@ If this is an old VM, the above two lines need to be added to the end of the fil
 
 .. code-block:: console
 
-    appfwk_restart_services
+    $ appfwk_restart_services
 
 .. _Running the server:
 
