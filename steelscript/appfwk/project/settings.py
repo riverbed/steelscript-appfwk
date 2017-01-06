@@ -157,7 +157,8 @@ ONLINE_JS_FILES.extend(JS_FILES)
 
 OFFLINE_JS_FILES = [
     ("https://github.com/twbs/bootstrap/releases/download/v{ver}/bootstrap-{ver}-dist.zip"
-        .format(ver=JS_VERSIONS['bootstrap']), "bootstrap-{ver}".format(ver=JS_VERSIONS['bootstrap'])),
+        .format(ver=JS_VERSIONS['bootstrap']),
+     "bootstrap-{ver}".format(ver=JS_VERSIONS['bootstrap'])),
     ("https://jqueryui.com/resources/download/jquery-ui-{0}.zip"
         .format(JS_VERSIONS['jqueryui']), "jquery-ui"),
     ("http://yui.zenfs.com/releases/yui3/yui_{0}.zip"
