@@ -7,11 +7,15 @@
     <link href="{{ STATIC_URL }}jquery-timepicker/jquery.timepicker.css" rel="stylesheet"/>
 
     {% if offline_js %}
-        {% comment %}
-        NEED FIX HERE
-        {% endcomment %}
         <link href="{{ STATIC_URL }}jquery-ui/themes/base/jquery-ui.css" rel="stylesheet"/>
-    {% else %}
+        <link href="{{ STATIC_URL }}bootstrap-{{ js_versions.bootstrap }}/css/bootstrap.min.css"
+              rel="stylesheet"/>
+        <link href="{{ STATIC_URL }}bootstrap-{{ js_versions.bootstrap }}/css/bootstrap-theme.min.css"
+              rel="stylesheet"/>
+        <link href="{{ STATIC_URL }}c3.min.css" rel="stylesheet"/>
+        <link href="{{ STATIC_URL }}pivot.min.css" rel="stylesheet"/>
+        <link href="{{ STATIC_URL }}jquery.dataTables.min.css" rel="stylesheet"/>
+{% else %}
         <link href="//code.jquery.com/ui/{{ js_versions.jqueryui }}/themes/smoothness/jquery-ui.css" rel="stylesheet"/>
         {% for css in css_files %}
         <link href="{{ css.0 }}" rel="stylesheet"/>
@@ -25,9 +29,11 @@
         <script type="text/javascript" src="{{ STATIC_URL }}jquery-ui/ui/minified/jquery-ui.min.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}jquery.form.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}yui/build/yui/yui-min.js"></script>
-        {% comment %}
-        NEED FIX HERE
-        {% endcomment %}
+        <script type="text/javascript" src="{{ STATIC_URL }}bootstrap-{{ js_versions.bootstrap }}/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}c3.min.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}d3.min.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}pivot.min.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}jquery.dataTables.min.js"></script>
     {% else %}
         {% for js in js_files %}
             <!-- comment here -->
