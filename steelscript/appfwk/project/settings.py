@@ -146,14 +146,12 @@ JS_FILES = [
      .format(JS_VERSIONS['datatables']), None),
 ]
 
-ONLINE_JS_FILES = [
+ONLINE_JS_FILES = JS_FILES + [
     ("https://cdnjs.cloudflare.com/ajax/libs/jqueryui/{0}/jquery-ui.min.js"
         .format(JS_VERSIONS['jqueryui']), None),
     ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/js/bootstrap.min.js"
         .format(JS_VERSIONS['bootstrap']), None),
 ]
-
-ONLINE_JS_FILES.extend(JS_FILES)
 
 OFFLINE_JS_FILES = [
     ("https://github.com/twbs/bootstrap/releases/download/v{ver}/bootstrap-{ver}-dist.zip"
@@ -182,9 +180,7 @@ ONLINE_CSS_FILES = [
         .format(JS_VERSIONS['bootstrap']), None),
     ("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/{0}/css/bootstrap-theme.min.css"
         .format(JS_VERSIONS['bootstrap']), None),
-]
-
-ONLINE_CSS_FILES.extend(CSS_FILES)
+] + CSS_FILES
 
 OFFLINE_CSS_FILES = CSS_FILES
 
