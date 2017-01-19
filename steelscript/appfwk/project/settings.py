@@ -14,7 +14,6 @@ import pkg_resources
 VERSION = pkg_resources.get_distribution("steelscript.appfwk").version
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
 
 SETTINGS_ROOT = os.path.abspath(__file__)
 PORTAL_ROOT = os.path.dirname(SETTINGS_ROOT)
@@ -194,20 +193,35 @@ STATICFILES_FINDERS = (
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'yc6!d7figlp%$$mhjio-9hn$zr9ot+zp)y8)un)rt^rukcwm^t'
 
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates"
-    # or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    os.path.join(PROJECT_ROOT, 'templates'),
-)
-
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-    'django.template.loaders.eggs.Loader',
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            os.path.join(PROJECT_ROOT, 'templates'),
+        ],
+        'OPTIONS': {
+            'debug': DEBUG,
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+                'steelscript.appfwk.project.context_processors.appfwk_vars',
+                'steelscript.appfwk.project.context_processors.static_extensions',
+                'steelscript.appfwk.apps.report.context_processors.report_list_processor',
+            ],
+            'loaders': [
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+                'django.template.loaders.eggs.Loader',
+                'admin_tools.template_loaders.Loader',
+            ]
+        },
+    },
+]
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
@@ -230,20 +244,6 @@ ROOT_URLCONF = 'steelscript.appfwk.project.urls'
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'steelscript.appfwk.project.wsgi.application'
 
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.i18n',
-    'django.core.context_processors.media',
-    'django.core.context_processors.static',
-    'django.core.context_processors.request',
-    'django.core.context_processors.tz',
-    'django.contrib.messages.context_processors.messages',
-    'steelscript.appfwk.project.context_processors.appfwk_vars',
-    'steelscript.appfwk.project.context_processors.static_extensions',
-    'steelscript.appfwk.apps.report.context_processors.report_list_processor',
-)
-
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -265,7 +265,7 @@ INSTALLED_APPS = (
     'django_ace',
     'pinax.announcements',
 
-    # portal apps
+    # appfwk apps - order matters, django loads in sequence
     'steelscript.appfwk.apps.datasource',
     'steelscript.appfwk.apps.devices',
     'steelscript.appfwk.apps.report',

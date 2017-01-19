@@ -238,7 +238,7 @@ class Trigger(models.Model):
     name = models.CharField(max_length=100)
     source = PickledObjectField()
     trigger_func = FunctionField()
-    destinations = models.ManyToManyField('Destination', null=True)
+    destinations = models.ManyToManyField('Destination')
 
     def save(self, *args, **kwargs):
         if not self.name:

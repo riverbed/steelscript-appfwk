@@ -10,6 +10,7 @@ from django.db import models
 import logging
 logger = logging.getLogger(__name__)
 
+
 #######################################################################
 #
 # Locations
@@ -23,7 +24,8 @@ class Location(models.Model):
     def __unicode__(self):
         return self.name
 
+
 class LocationIP(models.Model):
     location = models.ForeignKey(Location)
-    address = models.IPAddressField()
-    mask = models.IPAddressField()
+    address = models.GenericIPAddressField()
+    mask = models.GenericIPAddressField()

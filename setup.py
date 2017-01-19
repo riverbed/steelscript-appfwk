@@ -72,14 +72,14 @@ http://pythonhosted.org/steelscript/
     'scripts': None,
 
     'install_requires': (
-        'Django>=1.7,<1.8',
+        'Django<1.9',
         'steelscript>=1.1',
         'steelscript.netprofiler>=1.1',
         'steelscript.netshark>=1.1',
 
-        'djangorestframework==2.3.13',
+        'djangorestframework>2.4,<3.0',
         'djangorestframework-csv==1.3.3',
-        'django-extensions==1.4.6',
+        'django-extensions>1.7,<1.8',
         'django-model-utils==2.0.3',
         'jsonfield==0.9.20',
         'numpy>=1.8.0,<2.0',
@@ -90,7 +90,7 @@ http://pythonhosted.org/steelscript/
         'six>=1.3.0',
         'wsgiref>=0.1.2',
 
-        'django-admin-tools==0.5.2',
+        'django-admin-tools==0.8',
 
         'ansi2html>=1.0.6',
         'django-ace==1.0.2',

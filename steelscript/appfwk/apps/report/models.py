@@ -57,7 +57,7 @@ class Report(models.Model):
     sourcefile = models.CharField(max_length=200)
     filepath = models.FilePathField(max_length=200, path=settings.REPORTS_DIR)
 
-    fields = models.ManyToManyField(TableField, null=True, blank=True)
+    fields = models.ManyToManyField(TableField, blank=True)
     field_order = SeparatedValuesField(null=True,
                                        default=['starttime', 'endtime',
                                                 'duration', 'filterexpr'],
@@ -462,7 +462,7 @@ class Section(models.Model):
     report = models.ForeignKey(Report)
     title = models.CharField(max_length=200, blank=True)
     position = models.DecimalField(max_digits=7, decimal_places=3, default=10)
-    fields = models.ManyToManyField(TableField, null=True)
+    fields = models.ManyToManyField(TableField)
 
     @classmethod
     def create(cls, report, title='', position=None,
@@ -768,7 +768,7 @@ class WidgetJob(models.Model):
                                                       self.job.id)
 
     def save(self, *args, **kwargs):
-        with transaction.commit_on_success():
+        with transaction.atomic():
             self.job.reference(str(self))
             super(WidgetJob, self).save(*args, **kwargs)
 
