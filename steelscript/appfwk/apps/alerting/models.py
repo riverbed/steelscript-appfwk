@@ -7,8 +7,8 @@
 import threading
 
 from django.db import models
+from django.db.models import UUIDField
 from django.dispatch import Signal, receiver
-from django_extensions.db.fields import UUIDField
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 
