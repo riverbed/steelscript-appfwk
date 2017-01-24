@@ -139,6 +139,11 @@ class Command(BaseCommand):
 
         management.call_command('clean_pyc', path=settings.PROJECT_ROOT)
 
+        # some chain of migration dependencies requires this first
+        # https://code.djangoproject.com/ticket/24524
+        management.call_command('migrate', 'preferences', interactive=False)
+
+        # now we can do the full migrate (previously syncdb)
         management.call_command('migrate', interactive=False)
 
         self.stdout.write('Loading initial data ... ', ending='')
