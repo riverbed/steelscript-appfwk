@@ -139,7 +139,7 @@ class Command(BaseCommand):
 
         management.call_command('clean_pyc', path=settings.PROJECT_ROOT)
 
-        management.call_command('syncdb', interactive=False)
+        management.call_command('migrate', interactive=False)
 
         self.stdout.write('Loading initial data ... ', ending='')
         initial_data = glob.glob(os.path.join(settings.INITIAL_DATA, '*.json'))
