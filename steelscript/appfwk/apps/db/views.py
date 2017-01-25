@@ -44,8 +44,8 @@ class DBQuery(views.APIView):
                        query={time_col: {'gte': start_time,
                                          'lte': end_time}})]
 
-        df = storage.search(index=plugin,
-                            doc_type=handle,
-                            col_filters=col_filters)
+        records = storage.search(index=plugin,
+                                 doc_type=handle,
+                                 col_filters=col_filters)
 
-        return JsonResponse(df.to_dict('records'), safe=False)
+        return JsonResponse(records, safe=False)
