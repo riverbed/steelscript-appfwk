@@ -199,7 +199,7 @@ class Table(models.Model):
 
     # list of fields that must be bound to values in criteria
     # that this table needs to run
-    fields = models.ManyToManyField(TableField, null=True)
+    fields = models.ManyToManyField(TableField)
 
     # Default values for fields associated with this table, these
     # may be overridden by user criteria at run time

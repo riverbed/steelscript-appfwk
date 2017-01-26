@@ -15,9 +15,9 @@ from collections import deque
 import logging
 
 import dateutil
-from django.utils import timezone
+
 from django import forms
-from django.forms.util import from_current_timezone, ErrorDict
+from django.forms.utils import from_current_timezone, ErrorDict
 from django.core.files.uploadedfile import UploadedFile
 from django.core import validators
 from django.core.exceptions import ValidationError

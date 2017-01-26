@@ -62,7 +62,7 @@ class Command(BaseCommand):
         if options['import_locations']:
             filename = options['import_locations']
 
-            with transaction.commit_on_success():
+            with transaction.atomic():
 
                 count_new = 0
                 count_updated = 0
@@ -97,7 +97,7 @@ class Command(BaseCommand):
         if options['import_location_ip']:
             filename = options['import_location_ip']
 
-            with transaction.commit_on_success():
+            with transaction.atomic():
 
                 count_new = 0
                 count_updated = 0

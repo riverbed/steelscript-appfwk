@@ -18,7 +18,6 @@ from django.db import transaction
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.core.urlresolvers import reverse
-from django.utils.datastructures import SortedDict
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 from model_utils.managers import InheritanceManager
@@ -57,7 +56,7 @@ class Report(models.Model):
     sourcefile = models.CharField(max_length=200)
     filepath = models.FilePathField(max_length=200, path=settings.REPORTS_DIR)
 
-    fields = models.ManyToManyField(TableField, null=True, blank=True)
+    fields = models.ManyToManyField(TableField, blank=True)
     field_order = SeparatedValuesField(null=True,
                                        default=['starttime', 'endtime',
                                                 'duration', 'filterexpr'],
@@ -186,12 +185,12 @@ class Report(models.Model):
         """
 
         # map of section id to field dict
-        fields_by_section = SortedDict()
+        fields_by_section = OrderedDict()
 
         # section id=0 is the "common" section
         # fields attached directly to the Report object are always added
         # to the common section
-        fields_by_section[0] = SortedDict()
+        fields_by_section[0] = OrderedDict()
         if self.fields:
             report_fields = {}
             for f in self.fields.all():
@@ -223,7 +222,7 @@ class Report(models.Model):
             section_fields = fields_by_section[i]
             section_field_names = set(section_fields.keys())
 
-            ordered_field_names = SortedDict()
+            ordered_field_names = OrderedDict()
             # Iterate over the defined order list, which may not
             # address all fields
             for name in (self.field_order or []):
@@ -462,7 +461,7 @@ class Section(models.Model):
     report = models.ForeignKey(Report)
     title = models.CharField(max_length=200, blank=True)
     position = models.DecimalField(max_digits=7, decimal_places=3, default=10)
-    fields = models.ManyToManyField(TableField, null=True)
+    fields = models.ManyToManyField(TableField)
 
     @classmethod
     def create(cls, report, title='', position=None,
@@ -548,7 +547,7 @@ class Section(models.Model):
                 for f in t.fields.all().order_by('id'):
                     fields.append(f)
 
-        fields_by_section = SortedDict()
+        fields_by_section = OrderedDict()
         fields_by_section[0] = {}
         fields_by_section[self.id] = {}
         for f in fields:
@@ -715,7 +714,7 @@ class Widget(models.Model):
 
     def collect_fields(self):
         # Gather up all fields
-        fields = SortedDict()
+        fields = OrderedDict()
 
         # All fields attached to the section's report
         for f in self.section.report.fields.all().order_by('id'):
@@ -768,7 +767,7 @@ class WidgetJob(models.Model):
                                                       self.job.id)
 
     def save(self, *args, **kwargs):
-        with transaction.commit_on_success():
+        with transaction.atomic():
             self.job.reference(str(self))
             super(WidgetJob, self).save(*args, **kwargs)
 

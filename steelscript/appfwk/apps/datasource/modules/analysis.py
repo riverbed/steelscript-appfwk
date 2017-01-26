@@ -11,7 +11,8 @@ from datetime import timedelta
 import pandas
 
 from steelscript.appfwk.apps.jobs import \
-    Job, QueryContinue, QueryComplete, QueryError
+    QueryContinue, QueryComplete, QueryError
+from steelscript.appfwk.apps.jobs.models import Job
 from steelscript.common.timeutils import \
     parse_timedelta, timedelta_total_seconds
 from steelscript.appfwk.apps.datasource.models import \

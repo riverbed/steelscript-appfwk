@@ -8,7 +8,7 @@ import logging
 import threading
 from collections import defaultdict
 
-from django.db.models.loading import get_model
+from django.apps import apps
 from steelscript.appfwk.apps.alerting.source import Source
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class ModelCache(Cache):
             cls.debug('loading new data')
             cls._lookup = defaultdict(list)
 
-            model = get_model(*cls._model.rsplit('.', 1))
+            model = apps.get_model(*cls._model.rsplit('.', 1))
             objects = model.objects.select_related()
             for o in objects:
                 key = getattr(o, cls._key)
@@ -119,7 +119,7 @@ class GlobalCache(Cache):
         if cls._lookup is None:
             cls.debug('loading new data')
             cls._lookup = []
-            cls._model = get_model(*cls._model.rsplit('.', 1))
+            cls._model = apps.get_model(*cls._model.rsplit('.', 1))
             for one in cls._source:
                 # create defaultdict 'one_dict' using dict 'one' and
                 # _default_func, where one_dict is used as a list of keyword

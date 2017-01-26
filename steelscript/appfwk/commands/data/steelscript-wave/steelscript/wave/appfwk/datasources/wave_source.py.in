@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 class WaveColumn(Column):
     class Meta:
         proxy = True
+        app_label = 'steelscript.wave.appfwk'
 
     # COLUMN_OPTIONS is a dictionary of options that
     # are specific to columns for tables in this file.
@@ -72,6 +73,7 @@ class WaveTable(DatasourceTable):
     """
     class Meta:
         proxy = True
+        app_label = 'steelscript.wave.appfwk'
 
     # When a custom column is used, it must be linked
     _column_class = 'WaveColumn'
@@ -218,6 +220,7 @@ class WaveQuery(TableQueryBase):
 class ClippedWaveTable(AnalysisTable):
     class Meta:
         proxy = True
+        app_label = 'steelscript.wave.appfwk'
 
     # The query class defaults to TableQuery, change it here if
     # named something else
