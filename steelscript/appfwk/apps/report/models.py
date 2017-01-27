@@ -882,13 +882,14 @@ class UIWidgetHelper(object):
 
         # Map of column info by column name
         colmap = OrderedDict()
-        fmt = None
-        html = False
 
         # Build up the colmap
         for i, c in enumerate(self.all_cols):
             if c not in self.keycols and c not in self.valcols:
                 continue
+
+            fmt = None
+            html = False
 
             if c.formatter:
                 fmt = c.formatter
