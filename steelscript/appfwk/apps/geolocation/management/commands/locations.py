@@ -21,27 +21,30 @@ warnings.filterwarnings("ignore")
 
 
 class Command(BaseCommand):
-    help = 'Helper commands to manage locations'
+    help = 'Manage locations'
 
     def add_arguments(self, parser):
-        parser.add_argument('--import-locations',
-                            action='store',
-                            dest='import_locations',
-                            default=False,
-                            help='Import Locations: location,latitude,'
-                                 'longitude')
+        group = parser.add_argument_group("Location Help",
+                                          "Helper commands to manage "
+                                          "locations")
+        group.add_argument('--import-locations',
+                           action='store',
+                           dest='import_locations',
+                           default=False,
+                           help='Import Locations: location,latitude,'
+                                'longitude')
 
-        parser.add_argument('--import-location-ip',
-                            action='store',
-                            dest='import_location_ip',
-                            default=False,
-                            help='Import Location / IP map: location,ip,mask')
+        group.add_argument('--import-location-ip',
+                           action='store',
+                           dest='import_location_ip',
+                           default=False,
+                           help='Import Location / IP map: location,ip,mask')
 
-        parser.add_argument('--merge',
-                            action='store_true',
-                            dest='merge',
-                            default=False,
-                            help='Merge import file rather than replace')
+        group.add_argument('--merge',
+                           action='store_true',
+                           dest='merge',
+                           default=False,
+                           help='Merge import file rather than replace')
 
     def handle(self, *args, **options):
         """ Main command handler. """
