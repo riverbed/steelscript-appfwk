@@ -6,7 +6,6 @@
 
 
 import logging
-import optparse
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -21,41 +20,38 @@ class Command(BaseCommand):
     args = ''
     help = 'View and manage system Alerts and Events'
 
-    def create_parser(self, prog_name, subcommand):
-        """ Override super version to include special option grouping
-        """
-        parser = super(Command, self).create_parser(prog_name, subcommand)
-        group = optparse.OptionGroup(parser, "Alert Help",
-                                     "Helper commands to manange alerts")
-        group.add_option('--list-alerts',
-                         action='store_true',
-                         default=False,
-                         help='List all alerts')
-        group.add_option('--list-events',
-                         action='store_true',
-                         default=False,
-                         help='List all events')
-        group.add_option('--age',
-                         action='store_true',
-                         dest='alert_age',
-                         default=False,
-                         help='Delete old/ancient alerts based on settings')
-        group.add_option('--flush',
-                         action='store_true',
-                         dest='alert_flush',
-                         default=False,
-                         help='Delete all events and alerts without question')
-        group.add_option('--alert-detail',
-                         action='store',
-                         default=False,
-                         help='Print detailed information associated with an '
-                              'alert ID')
-        group.add_option('--event-detail',
-                         action='store',
-                         default=False,
-                         help='Print detailed information associated with an '
-                              'event ID')
-        parser.add_option_group(group)
+    def add_arguments(self, parser):
+        group = parser.add_argument_group("Alert Help",
+                                          "Helper commands to manange alerts")
+        group.add_argument('--list-alerts',
+                           action='store_true',
+                           default=False,
+                           help='List all alerts')
+        group.add_argument('--list-events',
+                           action='store_true',
+                           default=False,
+                           help='List all events')
+        group.add_argument('--age',
+                           action='store_true',
+                           dest='alert_age',
+                           default=False,
+                           help='Delete old/ancient alerts based on settings')
+        group.add_argument('--flush',
+                           action='store_true',
+                           dest='alert_flush',
+                           default=False,
+                           help='Delete all events and alerts without '
+                                'question')
+        group.add_argument('--alert-detail',
+                           action='store',
+                           default=False,
+                           help='Print detailed information associated with '
+                                'an alert ID')
+        group.add_argument('--event-detail',
+                           action='store',
+                           default=False,
+                           help='Print detailed information associated with '
+                                'an event ID')
 
         return parser
 

@@ -6,7 +6,6 @@
 
 
 import logging
-import optparse
 from graphviz import Digraph
 
 from django.core.management.base import BaseCommand
@@ -20,19 +19,15 @@ class Command(BaseCommand):
     args = None
     help = 'Work with already run jobs'
 
-    def create_parser(self, prog_name, subcommand):
-        """ Override super version to include special option grouping
-        """
-        parser = super(Command, self).create_parser(prog_name, subcommand)
-        group = optparse.OptionGroup(parser, "Job Help",
-                                     "Helper commands to manange jobs")
-        group.add_option('--job',
-                         default=None,
-                         help='Restrict tree to this job')
-        group.add_option('-o', '--outfile',
-                         default='/tmp/job-graph.svg',
-                         help='Restrict tree to this job')
-        parser.add_option_group(group)
+    def add_arguments(self, parser):
+        group = parser.add_argument_group("Job Help",
+                                          "Helper commands to manange jobs")
+        group.add_argument('--job',
+                           default=None,
+                           help='Restrict tree to this job')
+        group.add_argument('-o', '--outfile',
+                           default='/tmp/job-graph.svg',
+                           help='Restrict tree to this job')
 
         return parser
 
