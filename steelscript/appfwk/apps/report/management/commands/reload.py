@@ -82,7 +82,6 @@ class Command(BaseCommand):
         self.stdout.write('Reloading report objects ... ')
 
         management.call_command('clean_pyc', path=settings.PROJECT_ROOT)
-        management.call_command('migrate', interactive=False)
 
         self.importer = Importer(buf=self.stdout)
 

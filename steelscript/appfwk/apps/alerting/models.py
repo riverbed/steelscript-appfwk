@@ -4,6 +4,7 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+import uuid
 import threading
 
 from django.db import models
@@ -167,7 +168,7 @@ def process_error(sender, **kwargs):
 class Event(models.Model):
     """Event instance which may result in one or more Alerts."""
     timestamp = models.DateTimeField(auto_now=True)
-    eventid = UUIDField()
+    eventid = UUIDField(default=uuid.uuid4, editable=False)
     severity = models.IntegerField(validators=[MinValueValidator(0),
                                                MaxValueValidator(100)])
     log_message = models.TextField(null=True, blank=True)

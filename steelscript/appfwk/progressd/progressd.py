@@ -311,7 +311,7 @@ if __name__ == '__main__':
     parser.add_argument('--path',
                         help='Absolute path to appfwk_project directory')
     parser.add_argument('--no-sync-jobs', action='store_true', default=False,
-                        help='If true, will sync jobs with database on start')
+                        help='If true, will not sync jobs with database')
     parser.add_argument('--port', type=int, default=5000,
                         help='Port number to run server on')
 

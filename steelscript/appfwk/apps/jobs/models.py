@@ -562,7 +562,7 @@ class Job(models.Model):
 
             # Sort according to the defined sort columns
             if self.table.sortcols:
-                sorted = df.sort(
+                sorted = df.sort_values(
                     self.table.sortcols,
                     ascending=[b == Table.SORT_ASC
                                for b in self.table.sortdir]
@@ -690,8 +690,8 @@ class Job(models.Model):
                 try:
                     df[col.name] = df[col.name].apply(lambda x:
                                                       x.tz_localize(utc))
-                except BaseException as e:
-                    if e.message.startswith('Cannot convert'):
+                except TypeError as e:
+                    if e.message.startswith('Cannot localize'):
                         df[col.name] = df[col.name].apply(lambda x:
                                                           x.tz_convert(utc))
                     else:

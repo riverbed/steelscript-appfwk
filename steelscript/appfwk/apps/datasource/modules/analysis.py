@@ -423,7 +423,7 @@ class CriteriaQuery(DatasourceQuery):
         return QueryComplete(df)
 
 
-def resample(df, timecol, interval, how):
+def resample(df, timecol, interval, how='sum'):
     """Resample the input dataframe.
 
     :param str timecol: the name of the column containing the row time
@@ -436,6 +436,10 @@ def resample(df, timecol, interval, how):
     if isinstance(interval, timedelta):
         interval = '%ss' % (timedelta_total_seconds(parse_timedelta(interval)))
 
-    df = df.resample(interval, how=how)
+    # use new pandas reasmple API
+    # http://pandas.pydata.org/pandas-docs/stable/whatsnew.html#resample-api
+    r = df.resample(interval)
+    df = getattr(r, how)()
+
     df.reset_index(inplace=True)
     return df
