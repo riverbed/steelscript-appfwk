@@ -20,49 +20,48 @@ class Command(BaseCommand):
     args = ''
     help = 'Add, modify, delete and display device objects'
 
-    def create_parser(self, prog_name, subcommand):
-        parser = super(Command, self).create_parser(prog_name, subcommand)
-        parser.add_option('--show',
-                          action='store_true',
-                          dest='show_device',
-                          default=False,
-                          help=('Show one or more matching device(s). '
-                                'For example:\n'
-                                './manage.py device --show --enabled'))
+    def add_arguments(self, parser):
+        parser.add_argument('--show',
+                            action='store_true',
+                            dest='show_device',
+                            default=False,
+                            help=('Show one or more matching device(s). '
+                                  'For example:\n'
+                                  './manage.py device --show --enabled'))
 
-        parser.add_option('--add',
-                          action='store_true',
-                          dest='add_device',
-                          default=False,
-                          help=('Add one device to the database. '
-                                'For example:\n'
-                                './manage.py device --add -H host -M module '
-                                '-N name -p port -U user -P password '
-                                '-E True'))
+        parser.add_argument('--add',
+                            action='store_true',
+                            dest='add_device',
+                            default=False,
+                            help=('Add one device to the database. '
+                                  'For example:\n'
+                                  './manage.py device --add -H host -M module '
+                                  '-N name -p port -U user -P password '
+                                  '-E True'))
 
-        parser.add_option('--edit',
-                          action='store_true',
-                          dest='edit_device',
-                          default=False,
-                          help=('Edit one device identified by id. '
-                                'For example:\n'
-                                './manage.py device --edit -I 1 '
-                                '-N new_name'))
+        parser.add_argument('--edit',
+                            action='store_true',
+                            dest='edit_device',
+                            default=False,
+                            help=('Edit one device identified by id. '
+                                  'For example:\n'
+                                  './manage.py device --edit -I 1 '
+                                  '-N new_name'))
 
-        parser.add_option('--enabled', action='store_true', dest='enabled',
-                          help='Set the device as enabled')
-        parser.add_option('--no-enabled', action='store_false', dest='enabled',
-                          help='Set the device as disabled')
+        parser.add_argument('--enabled', action='store_true', dest='enabled',
+                            help='Set the device as enabled')
+        parser.add_argument('--no-enabled', action='store_false',
+                            dest='enabled', help='Set the device as disabled')
 
-        parser.add_option('-H', '--host', help='Hostname or IP address')
-        parser.add_option('-M', '--module', help='Module name for the device')
-        parser.add_option('-N', '--name', help='Name of the device')
-        parser.add_option('-p', '--port', help='Port of the device to connect')
-        parser.add_option('-U', '--username', help='Username for the device')
-        parser.add_option('-P', '--password', help='Password for the device')
-        parser.add_option('-I', '--id', help='ID of a device to be edited')
-
-        return parser
+        parser.add_argument('-H', '--host', help='Hostname or IP address')
+        parser.add_argument('-M', '--module',
+                            help='Module name for the device')
+        parser.add_argument('-N', '--name', help='Name of the device')
+        parser.add_argument('-p', '--port',
+                            help='Port of the device to connect')
+        parser.add_argument('-U', '--username', help='Username for the device')
+        parser.add_argument('-P', '--password', help='Password for the device')
+        parser.add_argument('-I', '--id', help='ID of a device to be edited')
 
     def handle(self, *args, **options):
         """ Main command handler. """

@@ -14,16 +14,17 @@ from django import db
 
 class Command(BaseCommand):
     args = ''
-    help = ('Initializes new database project.')
+    help = 'Initialize new database project.'
 
     def handle(self, *args, **options):
 
         tables = db.connection.introspection.table_names()
         if 'auth_permission' in tables:
-            self.stdout.write('Database already exists, aborting initialization.')
+            self.stdout.write('Database already exists, '
+                              'aborting initialization.')
             sys.exit(1)
 
-        db.close_connection()
+        db.connections.close_all()
         management.call_command('reset_appfwk',
                                 force=True,
                                 drop_users=True,

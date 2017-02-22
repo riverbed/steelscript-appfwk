@@ -2,7 +2,6 @@
 
 {% block comments %}{% endblock %}
 
-{% load url from future %}
 <html>
   <head>
     <title>{% block title %}SteelScript App Framework{% endblock %}</title>
@@ -81,12 +80,14 @@
         </div>
     </nav>
 
+{% comment %}
     {% load pinax_announcements_tags %}
     {% announcements as announcements_list %}
 
     {% if announcements_list %}
         {% include "annoucements.html" %}
     {% endif %}
+{% endcomment %}
 
     {% block login_row %}
     <div class="container-fluid">

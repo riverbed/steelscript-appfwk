@@ -9,7 +9,6 @@ import sys
 import time
 import datetime
 import logging
-import optparse
 
 from django.core.management.base import BaseCommand
 
@@ -32,79 +31,75 @@ class Command(BaseCommand):
     args = ''
     help = 'Run a defined table and return results in nice tabular format'
 
-    def create_parser(self, prog_name, subcommand):
-        """ Override super version to include special option grouping. """
-        parser = super(Command, self).create_parser(prog_name, subcommand)
-        group = optparse.OptionGroup(
-            parser, "Run Table Help",
-            "Helper commands to display list of tables to run"
+    def add_arguments(self, parser):
+        group = parser.add_argument_group(
+            title="Run Table Help",
+            description="Helper commands to display list of tables to run"
         )
-        group.add_option('--table-list',
-                         action='store_true',
-                         dest='table_list',
-                         default=False,
-                         help='List all available tables by id')
-        group.add_option('--table-list-by-report',
-                         action='store_true',
-                         dest='table_list_by_report',
-                         default=False,
-                         help='List tables organized by report')
-        parser.add_option_group(group)
 
-        group = optparse.OptionGroup(
-            parser, "Run Table Criteria",
+        group.add_argument('--table-list',
+                           action='store_true',
+                           dest='table_list',
+                           default=False,
+                           help='List all available tables by id')
+        group.add_argument('--table-list-by-report',
+                           action='store_true',
+                           dest='table_list_by_report',
+                           default=False,
+                           help='List tables organized by report')
+
+        group = parser.add_argument_group(
+            "Run Table Criteria",
             "Options to specify criteria for specified run table.\n"
             "When adding time-based criteria, the timezone offset "
             "must be included, otherwise the time will be assumed as UTC.\n"
             "For example:\n"
             '"python manage.py table --table-id 19 -C endtime:9:01-0500"',
         )
-        group.add_option(
+        group.add_argument(
             '--table-id',
             action='store',
             dest='table_id',
             help='Table ID to execute (use --table-list to find the right ID)'
         )
-        group.add_option(
+        group.add_argument(
             '--table-name',
             action='store',
             dest='table_name',
             help='Table name to execute (use --table-list to list all tables)'
         )
-        group.add_option(
+        group.add_argument(
             '-C', '--criteria',
             action='append',
-            type='str',
+            type=str,
             dest='criteria',
             default=None,
             help='Specify criteria as <key>:<value>, repeat as necessary'
         )
-        group.add_option('--criteria-list',
-                         action='store_true',
-                         dest='criteria_list',
-                         default=None,
-                         help='List criteria for this table')
+        group.add_argument('--criteria-list',
+                           action='store_true',
+                           dest='criteria_list',
+                           default=None,
+                           help='List criteria for this table')
 
-        parser.add_option_group(group)
+        group = parser.add_argument_group("Run Table Output Options",
+                                          "Specify how data should be "
+                                          "displayed")
 
-        group = optparse.OptionGroup(parser, "Run Table Output Options",
-                                     "Specify how data should be displayed")
-
-        group.add_option('-o', '--output-file',
-                         dest='output_file',
-                         default=None,
-                         help='Output data to a file')
-        group.add_option('--csv',
-                         action='store_true',
-                         dest='as_csv',
-                         default=False,
-                         help='Output data in CSV format instead of tabular')
-        group.add_option('--columns',
-                         action='store_true',
-                         dest='only_columns',
-                         default=False,
-                         help='Output only columns ignoring data')
-        parser.add_option_group(group)
+        group.add_argument('-o', '--output-file',
+                           dest='output_file',
+                           default=None,
+                           help='Output data to a file')
+        group.add_argument('--csv',
+                           action='store_true',
+                           dest='as_csv',
+                           default=False,
+                           help='Output data in CSV format instead of tabular')
+        group.add_argument('--columns',
+                           action='store_true',
+                           dest='only_columns',
+                           default=False,
+                           help='Output only columns ignoring data')
         return parser
 
     def console(self, msg, ending=None):

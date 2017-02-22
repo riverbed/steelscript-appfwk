@@ -16,7 +16,6 @@ from django.core import management
 from django.conf import settings
 from django import db
 from django.db import transaction, DatabaseError
-from requests.exceptions import ConnectionError
 
 from steelscript.appfwk.apps.preferences.models import SystemSettings, \
     AppfwkUser
@@ -86,7 +85,7 @@ class Command(BaseCommand):
 
         self.buffers[name]['buffer'] = clean_buf
 
-        db.close_connection()
+        db.connections.close_all()
         self.stdout.write('done.')
 
     def load_data(self, name):
@@ -98,12 +97,12 @@ class Command(BaseCommand):
         # ref http://stackoverflow.com/a/14192708/2157429
         buf = self.buffers[name]['buffer']
         if buf is not None:
-            self.stdout.write('Loading saved %s ...' % (name), ending='')
+            self.stdout.write('Loading saved %s ...' % name, ending='')
             m = imp.new_module('runscript')
             exec buf in m.__dict__
-            with transaction.commit_on_success():
+            with transaction.atomic():
                 m.run()
-            db.close_connection()
+            db.connections.close_all()
             self.stdout.write('done.')
 
     def handle(self, *args, **options):
@@ -140,7 +139,12 @@ class Command(BaseCommand):
 
         management.call_command('clean_pyc', path=settings.PROJECT_ROOT)
 
-        management.call_command('syncdb', interactive=False)
+        # some chain of migration dependencies requires this first
+        # https://code.djangoproject.com/ticket/24524
+        management.call_command('migrate', 'preferences', interactive=False)
+
+        # now we can do the full migrate (previously syncdb)
+        management.call_command('migrate', interactive=False)
 
         self.stdout.write('Loading initial data ... ', ending='')
         initial_data = glob.glob(os.path.join(settings.INITIAL_DATA, '*.json'))

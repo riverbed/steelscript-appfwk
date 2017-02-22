@@ -9,10 +9,11 @@ import os
 import glob
 import optparse
 
+from django.apps import apps
 from django.core.management.base import BaseCommand
 from django.core import management
 from django.db import connection
-from django.db.models import get_app, get_models, Count
+from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 
 from django.conf import settings
@@ -92,9 +93,9 @@ class Command(BaseCommand):
 
         if options['applications']:
             # reset objects from main applications
-            apps = ['report', 'datasource', 'alerting']
-            for app in apps:
-                for model in get_models(get_app(app)):
+            apps_to_clean = ['report', 'datasource', 'alerting']
+            for app in apps_to_clean:
+                for model in apps.get_app_config(app).get_models():
                     if model.__name__ not in ['Alert', 'WidgetAuthToken']:
                         # Avoid deleting Alerts when running a basic clean
                         self.stdout.write('Deleting objects from %s\n' % model)

@@ -6,7 +6,6 @@
 
 
 import logging
-import optparse
 from cStringIO import StringIO
 
 logger = logging.getLogger(__name__)
@@ -26,21 +25,18 @@ class Command(BaseCommand):
     args = ''
     help = 'Run a defined table and return results in nice tabular format'
 
-    def create_parser(self, prog_name, subcommand):
-        """ Override super version to include special option grouping
-        """
-        parser = super(Command, self).create_parser(prog_name, subcommand)
-        group = optparse.OptionGroup(parser, "Development Helpers",
-                                     "Helper commands for development of SteelScript reports")
-        group.add_option('--table-classes',
-                         action='store_true',
-                         default=False,
-                         help='List available DatasourceTable classes')
-        group.add_option('--widget-classes',
-                         action='store_true',
-                         default=False,
-                         help='List currently used Widget classes')
-        parser.add_option_group(group)
+    def add_arguments(self, parser):
+        group = parser.add_argument_group("Development Helpers",
+                                          "Helper commands for development "
+                                          "of SteelScript reports")
+        group.add_argument('--table-classes',
+                           action='store_true',
+                           default=False,
+                           help='List available DatasourceTable classes')
+        group.add_argument('--widget-classes',
+                           action='store_true',
+                           default=False,
+                           help='List currently used Widget classes')
 
         return parser
 

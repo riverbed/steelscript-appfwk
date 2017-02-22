@@ -7,7 +7,6 @@
 
 import os
 import logging
-import optparse
 
 from django.core.management.base import BaseCommand
 from steelscript.appfwk.apps.jobs.models import Job
@@ -28,33 +27,29 @@ class Command(BaseCommand):
     args = ''
     help = 'Work with already run jobs'
 
-    def create_parser(self, prog_name, subcommand):
-        """ Override super version to include special option grouping
-        """
-        parser = super(Command, self).create_parser(prog_name, subcommand)
-        group = optparse.OptionGroup(parser, "Job Help",
-                                     "Helper commands to manange jobs")
-        group.add_option('--list',
-                         action='store_true',
-                         dest='job_list',
-                         default=False,
-                         help='List all jobs')
-        group.add_option('--age',
-                         action='store_true',
-                         dest='job_age',
-                         default=False,
-                         help='Delete old/ancient jobs')
-        group.add_option('--flush',
-                         action='store_true',
-                         dest='job_flush',
-                         default=False,
-                         help='Delete all jobs without question')
-        group.add_option('--data',
-                         action='store',
-                         dest='job_data',
-                         default=False,
-                         help='Print data associated with a job')
-        parser.add_option_group(group)
+    def add_arguments(self, parser):
+        group = parser.add_argument_group("Job Help",
+                                          "Helper commands to manange jobs")
+        group.add_argument('--list',
+                           action='store_true',
+                           dest='job_list',
+                           default=False,
+                           help='List all jobs')
+        group.add_argument('--age',
+                           action='store_true',
+                           dest='job_age',
+                           default=False,
+                           help='Delete old/ancient jobs')
+        group.add_argument('--flush',
+                           action='store_true',
+                           dest='job_flush',
+                           default=False,
+                           help='Delete all jobs without question')
+        group.add_argument('--data',
+                           action='store',
+                           dest='job_data',
+                           default=False,
+                           help='Print data associated with a job')
 
         return parser
 

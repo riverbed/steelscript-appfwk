@@ -4,8 +4,6 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-
-import optparse
 import csv
 
 from django.core.management.base import BaseCommand
@@ -23,36 +21,30 @@ warnings.filterwarnings("ignore")
 
 
 class Command(BaseCommand):
-    args = ''
     help = 'Manage locations'
 
-    def create_parser(self, prog_name, subcommand):
-        """ Override super version to include special option grouping
-        """
-        parser = super(Command, self).create_parser(prog_name, subcommand)
-        group = optparse.OptionGroup(parser, "Location Help",
-                                     "Helper commands to manage locations")
-        group.add_option('--import-locations',
-                         action='store',
-                         dest='import_locations',
-                         default=False,
-                         help='Import Locations: location,latitude,longitude')
+    def add_arguments(self, parser):
+        group = parser.add_argument_group("Location Help",
+                                          "Helper commands to manage "
+                                          "locations")
+        group.add_argument('--import-locations',
+                           action='store',
+                           dest='import_locations',
+                           default=False,
+                           help='Import Locations: location,latitude,'
+                                'longitude')
 
-        group.add_option('--import-location-ip',
-                         action='store',
-                         dest='import_location_ip',
-                         default=False,
-                         help='Import Location / IP map: location,ip,mask')
+        group.add_argument('--import-location-ip',
+                           action='store',
+                           dest='import_location_ip',
+                           default=False,
+                           help='Import Location / IP map: location,ip,mask')
 
-        group.add_option('--merge',
-                         action='store_true',
-                         dest='merge',
-                         default=False,
-                         help='Merge import file rather than replace')
-
-        parser.add_option_group(group)
-
-        return parser
+        group.add_argument('--merge',
+                           action='store_true',
+                           dest='merge',
+                           default=False,
+                           help='Merge import file rather than replace')
 
     def handle(self, *args, **options):
         """ Main command handler. """
@@ -62,7 +54,7 @@ class Command(BaseCommand):
         if options['import_locations']:
             filename = options['import_locations']
 
-            with transaction.commit_on_success():
+            with transaction.atomic():
 
                 count_new = 0
                 count_updated = 0
@@ -97,7 +89,7 @@ class Command(BaseCommand):
         if options['import_location_ip']:
             filename = options['import_location_ip']
 
-            with transaction.commit_on_success():
+            with transaction.atomic():
 
                 count_new = 0
                 count_updated = 0

@@ -15,9 +15,9 @@ from collections import deque
 import logging
 
 import dateutil
-from django.utils import timezone
+
 from django import forms
-from django.forms.util import from_current_timezone, ErrorDict
+from django.forms.utils import from_current_timezone, ErrorDict
 from django.core.files.uploadedfile import UploadedFile
 from django.core import validators
 from django.core.exceptions import ValidationError
@@ -425,6 +425,7 @@ def fields_add_time_selection(obj, show_duration=True, initial_duration=None,
                               initial_start_date='now-1h',
                               show_end=True,
                               initial_end_time='now-0',
+                              initial_end_date='now-0',
                               round_initial=0,  # seconds to round initial time
                               special_values=None):
 
@@ -452,7 +453,7 @@ def fields_add_time_selection(obj, show_duration=True, initial_duration=None,
                                'widget': ReportSplitDateTimeWidget,
                                'widget_attrs': {
                                    'initial_time': initial_end_time,
-                                   'initial_date': initial_start_date,
+                                   'initial_date': initial_end_date,
                                    'round_initial': round_initial
                                }
                            },

@@ -4,11 +4,12 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
+import uuid
 import threading
 
 from django.db import models
+from django.db.models import UUIDField
 from django.dispatch import Signal, receiver
-from django_extensions.db.fields import UUIDField
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 
@@ -167,7 +168,7 @@ def process_error(sender, **kwargs):
 class Event(models.Model):
     """Event instance which may result in one or more Alerts."""
     timestamp = models.DateTimeField(auto_now=True)
-    eventid = UUIDField()
+    eventid = UUIDField(default=uuid.uuid4, editable=False)
     severity = models.IntegerField(validators=[MinValueValidator(0),
                                                MaxValueValidator(100)])
     log_message = models.TextField(null=True, blank=True)
@@ -238,7 +239,7 @@ class Trigger(models.Model):
     name = models.CharField(max_length=100)
     source = PickledObjectField()
     trigger_func = FunctionField()
-    destinations = models.ManyToManyField('Destination', null=True)
+    destinations = models.ManyToManyField('Destination')
 
     def save(self, *args, **kwargs):
         if not self.name:

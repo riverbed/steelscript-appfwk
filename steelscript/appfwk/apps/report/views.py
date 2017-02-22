@@ -17,6 +17,7 @@ import datetime
 import importlib
 import traceback
 import logging
+from collections import OrderedDict
 
 import pytz
 from django.conf import settings
@@ -29,7 +30,6 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.core import management
 from django.core.urlresolvers import reverse
 from django.core.servers.basehttp import FileWrapper
-from django.utils.datastructures import SortedDict
 from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 
@@ -255,7 +255,7 @@ class GenericReportView(views.APIView):
         fields_by_section = report.collect_fields_by_section()
 
         # Merge fields into a single dict for use by the Django Form # logic
-        all_fields = SortedDict()
+        all_fields = OrderedDict()
         [all_fields.update(c) for c in fields_by_section.values()]
 
         self.update_criteria_from_bookmark(report, request, all_fields)
@@ -369,7 +369,7 @@ class ReportView(GenericReportView):
                                    slug=report_slug)
 
         fields_by_section = report.collect_fields_by_section()
-        all_fields = SortedDict()
+        all_fields = OrderedDict()
         [all_fields.update(c) for c in fields_by_section.values()]
         form = TableFieldForm(all_fields, hidden_fields=report.hidden_fields,
                               data=request.POST, files=request.FILES)
@@ -558,7 +558,7 @@ def create_report_history(request, report, widgets):
     # the form in the calling context can not be used
     # because it does not include hidden fields
     fields_by_section = report.collect_fields_by_section()
-    all_fields = SortedDict()
+    all_fields = OrderedDict()
     [all_fields.update(c) for c in fields_by_section.values()]
 
     form = TableFieldForm(all_fields,
@@ -833,7 +833,7 @@ class FormCriteria(views.APIView):
                                    slug=report_slug)
 
         fields_by_section = report.collect_fields_by_section()
-        all_fields = SortedDict()
+        all_fields = OrderedDict()
         [all_fields.update(c) for c in fields_by_section.values()]
 
         form = TableFieldForm(all_fields, hidden_fields=report.hidden_fields,
