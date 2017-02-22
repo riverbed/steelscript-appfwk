@@ -22,7 +22,7 @@
         {% for field in ajaxform.visible_fields %}
             <div class="form-group">
                 <label for="{{ field.auto_id }}" class="col-xs-2 control-label"> {{ field.label_tag }}</label>
-                <div class="col-xs-8">
+                <div class="col-xs-8" id="{{ field.auto_id }}-span">
                     {{ field|addcss:"form-control" }}
                     {% if field.errors %}
                         {% for err in field.errors %}
