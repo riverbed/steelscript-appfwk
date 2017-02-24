@@ -7,6 +7,9 @@
 
 from django import forms
 
+from tagging.forms import TagField
+from tagging_autocomplete.widgets import TagAutocomplete
+
 from steelscript.common import Auth
 from steelscript.appfwk.libs.fields import Function
 from steelscript.appfwk.apps.datasource.models import TableField
@@ -16,10 +19,12 @@ from steelscript.appfwk.apps.datasource.forms import IntegerIDChoiceField
 
 
 class DeviceForm(forms.ModelForm):
+    tags = TagField(widget=TagAutocomplete())
+
     class Meta:
         model = Device
         fields = ('name', 'module', 'host', 'port', 'auth',
-                  'username', 'password', 'access_code', 'enabled')
+                  'username', 'password', 'access_code', 'enabled', 'tags')
 
         widgets = {'auth': forms.HiddenInput(),
                    'username': forms.HiddenInput(),

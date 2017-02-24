@@ -50,4 +50,5 @@ urlpatterns = patterns('',
     url(r'^accounts/password_change/$', 'django.contrib.auth.views.password_change',
         {'post_change_redirect': '/preferences/user',
          'template_name': 'password_change_form.html'}),
+    url(r'^tagging_autocomplete/', include('tagging_autocomplete.urls')),
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

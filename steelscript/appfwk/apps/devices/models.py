@@ -9,6 +9,7 @@ import os
 import json
 import logging
 from cStringIO import StringIO
+from tagging_autocomplete.models import TagAutocompleteField
 
 from django.db import models
 from django.core import management
@@ -56,6 +57,7 @@ class Device(models.Model):
     port = models.IntegerField(default=443)
     username = models.CharField(max_length=100, blank=True)
     password = models.CharField(max_length=100, blank=True)
+    tags = TagAutocompleteField()
 
     auth = models.IntegerField(
         default=Auth.NONE,
