@@ -7,18 +7,23 @@
 
 import logging
 
+from StringIO import StringIO
+
+from django.contrib import messages
+from django.core.management.base import CommandError
 from django.core.urlresolvers import reverse
 from django.forms.models import modelformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404
+from django.core import management
 from rest_framework import generics, views
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
-from steelscript.appfwk.apps.devices.forms import (DeviceListForm,
-                                                   DeviceDetailForm)
+from steelscript.appfwk.apps.devices.forms import DeviceListForm, \
+    DeviceDetailForm, DeviceBatchForm
 from steelscript.appfwk.apps.devices.models import Device
 from steelscript.appfwk.apps.devices.serializers import DeviceSerializer
 from steelscript.common.service import Auth
@@ -126,3 +131,40 @@ class DeviceList(generics.ListAPIView):
         else:
             data = {'formset': formset, 'auth': Auth}
             return Response(data, template_name='device_list.html')
+
+
+class DeviceBatch(views.APIView):
+    renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
+    permission_classes = (IsAdminUser,)
+
+    def get(self, request):
+
+        return Response({'form': DeviceBatchForm()},
+                        template_name='device_batch.html')
+
+    def post(self, request):
+
+        form = DeviceBatchForm(data=request.POST,
+                               files=request.FILES)
+
+        if not form.is_valid():
+            return Response({'form': form},
+                            template_name='device_batch.html')
+
+        data = form.cleaned_data
+
+        try:
+            msg = StringIO()
+            management.call_command('device', batch_file=data['batch_file'],
+                                    stdout=msg)
+            messages.add_message(request._request, messages.INFO,
+                                 msg.getvalue())
+        except CommandError as e:
+            msg = 'Error uploading devices - see log for details.'
+            logger.error(msg)
+            logger.error(e)
+            messages.add_message(request._request, messages.ERROR, msg)
+
+        DeviceManager.clear()
+
+        return HttpResponseRedirect(reverse('device-list'))

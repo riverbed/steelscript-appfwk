@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2015 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% load add_attrs %}
+
+{% block title %}App Framework: Device Batch Upload{% endblock %}
+
+{% block header_row %}
+    <h3>Batch Upload Devices</h3>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-8 block-centered">
+            <form class="form-horizontal" action="/devices/batch/" method="post" id="upload-form" enctype="multipart/form-data">
+                {% csrf_token %}
+                <fieldset>
+                    {% for field in form.visible_fields %}
+                        <div class="form-group">
+                            <label  for="{{ field.auto_id }}" class="col-xs-3 control-label">
+                                {{ field.label_tag }}
+                            </label>
+                            <div class="controls col-xs-8">
+                                {{ field|addcss:"form-control" }}
+                                {% if field.errors %}
+                                    {% for err in field.errors %}
+                                        <p class="text-danger">{{ err }}</p>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                </fieldset>
+
+            <div class="row">
+                <div class="block-centered" style="text-align: center">
+                    <input type="submit" value="Upload" class="btn btn-primary">
+                </div>
+            </div>
+
+            </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

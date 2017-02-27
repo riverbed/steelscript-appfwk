@@ -58,7 +58,7 @@ class Device(models.Model):
     port = models.IntegerField(default=443)
     username = models.CharField(max_length=100, blank=True)
     password = models.CharField(max_length=100, blank=True)
-    tags = TagAutocompleteField()
+    tags = TagAutocompleteField(blank=True)
 
     auth = models.IntegerField(
         default=Auth.NONE,
@@ -71,6 +71,9 @@ class Device(models.Model):
 
     # only enabled devices will require field validation
     enabled = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = (("host", "port"))
 
     def __unicode__(self):
         return '%s (%s:%s)' % (self.name, self.host, self.port)

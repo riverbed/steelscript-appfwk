@@ -8,7 +8,8 @@
 from django.conf.urls import patterns, url
 from rest_framework.urlpatterns import format_suffix_patterns
 
-from steelscript.appfwk.apps.devices.views import DeviceList, DeviceDetail
+from steelscript.appfwk.apps.devices.views import DeviceList, DeviceDetail,\
+    DeviceBatch
 
 
 urlpatterns = patterns(
@@ -25,6 +26,10 @@ urlpatterns = patterns(
     url(r'^add/$',
         DeviceDetail.as_view(),
         name='device-add'),
+
+    url(r'batch/$',
+        DeviceBatch.as_view(),
+        name='device-batch')
 
 )
 

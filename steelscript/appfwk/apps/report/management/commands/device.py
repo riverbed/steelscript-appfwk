@@ -9,7 +9,6 @@ import sys
 from django.core.management.base import BaseCommand
 
 from steelscript.common.datautils import Formatter
-
 from steelscript.appfwk.apps.devices.models import Device
 
 REQUIRED_DEVICE_ATTRS = ['host', 'module', 'name', 'username', 'password']
@@ -47,6 +46,17 @@ class Command(BaseCommand):
                                   'For example:\n'
                                   './manage.py device --edit -I 1 '
                                   '-N new_name'))
+
+        parser.add_argument('--batch-file',
+                            dest='batch_file',
+                            help=("Batch file with info of multiple "
+                                  "devices in the format of "
+                                  "<name>,<module>,<hostname>,<port>,"
+                                  "<username>,<password>,<AuthMethod>"
+                                  "<access_code>,<tag1;tag2;...>"
+                                  "for AuthMethod, 1 refers to "
+                                  "username/password; 2 refers to OAuth2."
+                                  ))
 
         parser.add_argument('--enabled', action='store_true', dest='enabled',
                             help='Set the device as enabled')
@@ -142,3 +152,37 @@ class Command(BaseCommand):
                 self.stdout.write("Device '%s' modified" % options['id'])
             else:
                 self.stdout.write("Device '%s' unchanged" % options['id'])
+
+        elif options['batch_file']:
+            file_name = options['batch_file']
+            with open(file_name, 'r') as f:
+                lines = f.readlines()
+                add = 0
+                for line in lines:
+                    if not line.strip():
+                        continue
+
+                    data = map(str.strip, line.rstrip('\n').split(','))
+                    [name, mod, host, port, username, pswd,
+                     auth, access_code, tags] = data
+
+                    tags = ','.join([t.strip() for t in tags.split(';')])
+
+                    kwargs = dict(name=name, module=mod, username=username,
+                                  password=pswd, auth=auth,
+                                  access_code=access_code, tags=tags,
+                                  enabled=True)
+
+                    # Check for device with same host and port
+                    res = Device.objects.filter(host=host, port=int(port))
+                    if res:
+                        dev = res[0]
+                        for k, v in kwargs.iteritems():
+                            setattr(dev, k, v)
+                    else:
+                        dev = Device(host=host, port=int(port), **kwargs)
+                        add += 1
+
+                    dev.save()
+
+                self.stdout.write('{add} devices added.'.format(add=add))
