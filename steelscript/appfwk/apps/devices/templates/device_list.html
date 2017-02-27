@@ -12,7 +12,7 @@
 {% block title %}App Framework: Edit Devices{% endblock %}
 
 {% block header_row %}
-    <h3>Edit Devices</h3>
+    <h3>Edit Devices2</h3>
     <h4>Update IP addresses and Username/Password for each device</h4>
 {% endblock %}
 
@@ -37,13 +37,14 @@
                         <th>Module</th>
                         <th>Host</th>
                         <th>Port</th>
+                        <th>Tags</th>
                         <th>Auth Method</th>
                     </tr>
                     </thead>
                     <tbody>
                         {% if not tabledata %}
                             <tr>
-                                <td colspan="6" style="text-align: center">No devices defined yet.</td>
+                                <td colspan="7" style="text-align: center">No devices defined yet.</td>
                             </tr>
                         {% endif %}
                         {% for form, device in tabledata %}
@@ -73,6 +74,13 @@
                                 <td>{{ device.module }}</td>
                                 <td>{{ device.host }}</td>
                                 <td>{{ device.port }}</td>
+                                <td>
+                                   {% for tag in device.tags_as_list %}
+                                    <a href="{%url 'device-list' %}?tag={{tag}}">
+                                      {{tag}}</a>{% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                </td>
+
                                 {% if device.auth == auth.NONE %}
                                    <td>None</td>
                                 {% elif device.auth == auth.BASIC %}

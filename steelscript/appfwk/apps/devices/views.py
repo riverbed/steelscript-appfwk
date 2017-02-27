@@ -77,7 +77,16 @@ class DeviceList(generics.ListAPIView):
     permission_classes = (IsAdminUser,)
 
     def get(self, request, *args, **kwargs):
-        queryset = Device.objects.order_by('id')
+        data = request.GET
+        if 'tag' in data and data['tag']:
+
+            dev_ids = [dev.id for dev in Device.objects.all()
+                       if data['tag'] in
+                       [str(t).strip() for t in dev.tags.split(',')]]
+
+            queryset = Device.objects.filter(id__in=dev_ids).order_by('id')
+        else:
+            queryset = Device.objects.order_by('id')
         invalid = request.QUERY_PARAMS.get('invalid', None)
 
         if request.accepted_renderer.format == 'html':
