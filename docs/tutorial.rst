@@ -215,8 +215,6 @@ to the data fetch API. Details are shown below.
     from steelscript.appfwk.apps.datasource.forms import (DateTimeField, ReportSplitDateWidget,
                                                           fields_add_time_selection, fields_add_resolution)
     from steelscript.appfwk.apps.datasource.models import TableField, DatasourceTable, Column
-    from steelscript.appfwk.apps.jobs import QueryComplete
-    from steelscript.stock.core.stock import get_historical_prices
 
 
     class StockColumn(Column):
@@ -304,8 +302,9 @@ After the ``StockTable`` class in the same module, we need to define the ``run``
 
     import pandas
 
-    from steelscript.stock.core.app import get_historical_prices
+    from steelscript.stock.core.stock import get_historical_prices
     from steelscript.appfwk.apps.datasource.models import TableField, TableQueryBase
+    from steelscript.appfwk.apps.jobs import QueryComplete
 
     class StockQuery(TableQueryBase):
 
