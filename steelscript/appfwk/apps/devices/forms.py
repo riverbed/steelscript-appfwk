@@ -4,8 +4,8 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-
 from django import forms
+from django.forms import FileInput
 
 from steelscript.common import Auth
 from steelscript.appfwk.libs.fields import Function
@@ -13,13 +13,16 @@ from steelscript.appfwk.apps.datasource.models import TableField
 from steelscript.appfwk.apps.devices.models import Device
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 from steelscript.appfwk.apps.datasource.forms import IntegerIDChoiceField
+from steelscript.appfwk.apps.datasource.forms import FileSelectField, \
+    TableFieldForm
 
 
 class DeviceForm(forms.ModelForm):
+
     class Meta:
         model = Device
         fields = ('name', 'module', 'host', 'port', 'auth',
-                  'username', 'password', 'access_code', 'enabled')
+                  'username', 'password', 'access_code', 'enabled', 'tags')
 
         widgets = {'auth': forms.HiddenInput(),
                    'username': forms.HiddenInput(),
@@ -51,6 +54,14 @@ class DeviceForm(forms.ModelForm):
                     msg = u'Please enter a valid access code.'
                     self._errors['access_code'] = self.error_class([msg])
                     cleaned_data.pop('access_code', None)
+
+        # Check if already exist device with same host/port when adding device
+        if not self.instance.host:
+            # To add a device
+            if Device.objects.filter(host=cleaned_data['host'],
+                                     port=cleaned_data['port']):
+                msg = "Found device(s) with same host-port pair."
+                self._errors['port'] = self.error_class([msg])
 
         return cleaned_data
 
@@ -100,3 +111,25 @@ def device_selection_preprocess(form, field, field_kwargs, params):
         choices = [(d.id, d.name) for d in devices]
 
     field_kwargs['choices'] = choices
+
+
+class DeviceBatchForm(TableFieldForm):
+
+    def __init__(self, *args, **kwargs):
+        fields = {}
+
+        res = TableField.objects.filter(keyword='batch_file')
+
+        if not res:
+            file_upload = TableField(keyword='batch_file',
+                                     label='Batch File',
+                                     field_cls=FileSelectField,
+                                     field_kwargs=dict(widget=FileInput),
+                                     required=True)
+            file_upload.save()
+        else:
+            file_upload = res[0]
+
+        fields['batch_file'] = file_upload
+
+        super(DeviceBatchForm, self).__init__(fields, *args, **kwargs)

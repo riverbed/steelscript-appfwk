@@ -89,6 +89,7 @@
                         {{ hidden }}
                     {% endfor %}
                     {% for field in form.visible_fields %}
+                      {% if field != form.tags %}
                         <div class="form-group">
                             <label  for="{{ field.auto_id }}" class="col-xs-3 control-label">
                                 {{ field.label_tag }}
@@ -102,6 +103,7 @@
                                 {% endif %}
                             </div>
                         </div>
+                      {% endif %}
                     {% endfor %}
 
                         <div class="form-group">
@@ -156,6 +158,21 @@
                             </div>
                         </div>
                         </div>
+
+                       <div class="form-group">
+                            <label  for="{{ field.auto_id }}" class="col-xs-3 control-label">
+                                Tags
+                            </label>
+                            <div class="controls col-xs-9">
+                                {{ form.tags|addcss:"form-control" }}
+                                {% if form.tags.errors %}
+                                    {% for err in form.tags.errors %}
+                                        <p class="text-danger">{{ err }}</p>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+
 
                     </fieldset>
 

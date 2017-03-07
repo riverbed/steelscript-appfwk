@@ -267,6 +267,8 @@ INSTALLED_APPS = (
     'admin_tools.menu',
     'admin_tools.dashboard',
     'django.contrib.admin',
+    'tagging',
+    'tagging_autocomplete',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
 
