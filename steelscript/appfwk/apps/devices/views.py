@@ -160,10 +160,10 @@ class DeviceBatch(views.APIView):
             messages.add_message(request._request, messages.INFO,
                                  msg.getvalue())
         except CommandError as e:
-            msg = 'Error uploading devices - see log for details.'
-            logger.error(msg)
-            logger.error(e)
-            messages.add_message(request._request, messages.ERROR, msg)
+            form._errors['batch_file'] = form.error_class([e])
+
+            return Response({'form': form},
+                            template_name='device_batch.html')
 
         DeviceManager.clear()
 
