@@ -9,7 +9,9 @@ import pandas
 import logging
 import hashlib
 
-from steelscript.appfwk.apps.jobs import Job
+from functools import partial
+
+from steelscript.appfwk.apps.jobs.models import Job
 from steelscript.appfwk.apps.datasource.models import Table
 from steelscript.appfwk.apps.datasource.modules.analysis import AnalysisTable,\
     AnalysisQuery
@@ -27,6 +29,10 @@ TIME_FIELDS = ['_orig_duration', '_orig_endtime', '_orig_starttime',
                'duration', 'endtime', 'starttime']
 
 tp = TimeParser()
+
+
+def make_index(s):
+    return 'appfwk-{0}'.format(s)
 
 
 class TimeInterval(Interval):
@@ -162,20 +168,19 @@ class TimeSeriesQuery(AnalysisQuery):
                                               'lte': endtime}
                               })]
 
+        # Obtain result from storage as a list of dicts,
+        # each dict represents one record/doc
         res = storage.search(index=self.ds_table.namespace,
                              doc_type=self.handle,
                              col_filters=col_filters)
 
-        # res is a list of dicts, each dict represents one record/doc
-        # The time filed is of format "YYYY/MM/DDTHH:MM:SS"
-        # Need to convert it to datetime filed
-        for rec in res:
-            rec[self.time_col] = \
-                force_to_utc(tp.parse(rec[self.time_col].replace('T', ' ')))
+        # The time field is a string formatted as "YYYY/MM/DDTHH:MM:SS"
+        # Need to convert it to datetime type
+        make_ts = partial(pandas.Timestamp, tz='UTC')
+        df = pandas.DataFrame(res)
+        df[self.time_col] = df[self.time_col].map(make_ts)
 
-        res = pandas.DataFrame(res)
-
-        return res.sort(self.time_col) if not res.empty else None
+        return df.sort(self.time_col) if not df.empty else None
 
     def _converge_adjacent(self, intervals):
 
@@ -255,7 +260,7 @@ class TimeSeriesQuery(AnalysisQuery):
         if not dfs_from_jobs:
             return QueryComplete(None)
 
-        storage.write(index=self.ds_table.namespace,
+        storage.write(index=make_index(self.ds_table.namespace),
                       doctype=self.handle,
                       data_frame=pandas.concat(dfs_from_jobs,
                                                ignore_index=True),
