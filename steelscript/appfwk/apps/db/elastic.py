@@ -11,10 +11,15 @@ from collections import namedtuple
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.connections import connections
 from elasticsearch import helpers
+from elasticsearch.connection.base import logger as elastic_logger
 
 from steelscript.common.timeutils import datetime_to_seconds
+from steelscript.appfwk.project.settings import ELASTICSEARCH_HOSTS
 
 logger = logging.getLogger(__name__)
+
+# Suppress debug logging in elasticsearch.connection.base module
+elastic_logger.setLevel(logging.INFO)
 
 MAX_NUMBER_DOCS = 10000
 
@@ -24,7 +29,7 @@ ColumnFilter = namedtuple('ColumnFilter', ['query_type', 'query'])
 class ElasticSearch(object):
 
     def __init__(self):
-        self.client = connections.create_connection(hosts=['localhost'])
+        self.client = connections.create_connection(hosts=ELASTICSEARCH_HOSTS)
 
     def write(self, index, doctype, data_frame, timecol):
 
