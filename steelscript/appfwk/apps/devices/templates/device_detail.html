@@ -71,6 +71,25 @@
            };
        };
 
+       function changeMod(){
+            // If adding a device and the module is set as steelhead,
+            // default port is set as 22
+
+            var instance_host = "{{ form.instance.host }}";
+
+            var ele_module = document.getElementById('id_module');
+            var module_text = ele_module.options[ele_module.selectedIndex].text;
+
+            var ele_port = document.getElementById('id_port');
+            if (instance_host == "") {
+                // This is an form to add a device
+                if ( module_text == "steelhead" )
+                    ele_port.value = "22";
+                else
+                    ele_port.value = "443";
+            };
+       };
+
    </script>
 {% endblock %}
 
@@ -89,19 +108,33 @@
                         {{ hidden }}
                     {% endfor %}
                     {% for field in form.visible_fields %}
+
                       {% if field != form.tags %}
                         <div class="form-group">
                             <label  for="{{ field.auto_id }}" class="col-xs-3 control-label">
                                 {{ field.label_tag }}
                             </label>
-                            <div class="controls col-xs-9">
-                                {{ field|addcss:"form-control" }}
-                                {% if field.errors %}
-                                    {% for err in field.errors %}
-                                        <p class="text-danger">{{ err }}</p>
-                                    {% endfor %}
-                                {% endif %}
-                            </div>
+
+                            {% if field == form.module %}
+                                <div class="controls col-xs-9">
+
+                                    {{ field|addcss:"form-control" }}
+                                    {% if field.errors %}
+                                        {% for err in field.errors %}
+                                            <p class="text-danger">{{ err }}</p>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="controls col-xs-9">
+                                    {{ field|addcss:"form-control" }}
+                                    {% if field.errors %}
+                                        {% for err in field.errors %}
+                                            <p class="text-danger">{{ err }}</p>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            {% endif %}
                         </div>
                       {% endif %}
                     {% endfor %}

@@ -83,7 +83,9 @@ class DeviceDetailForm(DeviceForm):
         modules = DeviceManager.get_modules()
         choices = zip(modules, modules)
 
-        self.fields['module'] = forms.ChoiceField(choices=choices)
+        self.fields['module'] = forms.ChoiceField(
+            choices=choices,
+            widget=forms.Select(attrs={"onChange":'changeMod()'}))
 
 
 def fields_add_device_selection(obj, keyword='device',
