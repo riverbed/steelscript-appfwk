@@ -108,33 +108,19 @@
                         {{ hidden }}
                     {% endfor %}
                     {% for field in form.visible_fields %}
-
                       {% if field != form.tags %}
                         <div class="form-group">
                             <label  for="{{ field.auto_id }}" class="col-xs-3 control-label">
                                 {{ field.label_tag }}
                             </label>
-
-                            {% if field == form.module %}
-                                <div class="controls col-xs-9">
-
-                                    {{ field|addcss:"form-control" }}
-                                    {% if field.errors %}
-                                        {% for err in field.errors %}
-                                            <p class="text-danger">{{ err }}</p>
-                                        {% endfor %}
-                                    {% endif %}
-                                </div>
-                            {% else %}
-                                <div class="controls col-xs-9">
-                                    {{ field|addcss:"form-control" }}
-                                    {% if field.errors %}
-                                        {% for err in field.errors %}
-                                            <p class="text-danger">{{ err }}</p>
-                                        {% endfor %}
-                                    {% endif %}
-                                </div>
-                            {% endif %}
+                            <div class="controls col-xs-9">
+                                {{ field|addcss:"form-control" }}
+                                {% if field.errors %}
+                                    {% for err in field.errors %}
+                                        <p class="text-danger">{{ err }}</p>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
                         </div>
                       {% endif %}
                     {% endfor %}
