@@ -24,4 +24,5 @@ class IntervalsAdmin(admin.ModelAdmin):
 
     existing_intervals.allow_tags = True
 
+
 admin.site.register(ExistingIntervals, IntervalsAdmin)
