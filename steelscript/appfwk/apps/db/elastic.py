@@ -53,6 +53,10 @@ class ElasticSearch(object):
         return
 
     def search(self, index, doc_type, col_filters=None):
+
+        logger.debug("Searching index %s for doc_type %s and col_filters %s"
+                     % (index, doc_type, col_filters))
+
         s = Search(using=self.client, index=index, doc_type=doc_type)
         if col_filters:
             for col_filter in col_filters:

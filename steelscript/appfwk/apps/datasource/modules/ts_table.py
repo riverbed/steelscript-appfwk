@@ -170,17 +170,20 @@ class TimeSeriesQuery(AnalysisQuery):
 
         # Obtain result from storage as a list of dicts,
         # each dict represents one record/doc
-        res = storage.search(index=self.ds_table.namespace,
+        res = storage.search(index=make_index(self.ds_table.namespace),
                              doc_type=self.handle,
                              col_filters=col_filters)
 
         # The time field is a string formatted as "YYYY/MM/DDTHH:MM:SS"
         # Need to convert it to datetime type
+        if not res:
+            return None
+
         make_ts = partial(pandas.Timestamp, tz='UTC')
         df = pandas.DataFrame(res)
         df[self.time_col] = df[self.time_col].map(make_ts)
 
-        return df.sort(self.time_col) if not df.empty else None
+        return df.sort(self.time_col)
 
     def _converge_adjacent(self, intervals):
 
