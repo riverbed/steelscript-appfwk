@@ -291,6 +291,7 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.logviewer',
     'steelscript.appfwk.apps.metrics',
     'steelscript.appfwk.apps.hitcount',
+    'steelscript.appfwk.apps.db',
 
     # 'standard' plugins
     'steelscript.appfwk.apps.plugins.builtin.whois',
@@ -472,3 +473,7 @@ REPORT_HISTORY_ENABLED = True
 HITCOUNT_IGNORE_URLS = [
     '/admin/', '/accounts/', '/favicon.ico', r'/report/.*/jobs/[0-9]+/'
 ]
+
+# DB solution
+DB_SOLUTION = 'elastic'
+ELASTICSEARCH_HOSTS = ['elasticsearch']

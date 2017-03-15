@@ -106,8 +106,8 @@ http://pythonhosted.org/steelscript/
         'reschema==0.5.1',
         'flask==0.10.1',
         'flask_restful==0.3.2',
-
         'pinax-announcements>=2.0.3',
+        'elasticsearch-dsl>=5.0.0,<6.0.0',
     ),
 
     'extras_require': {
