@@ -10,7 +10,6 @@ import json
 import logging
 from cStringIO import StringIO
 from tagging_autocomplete.models import TagAutocompleteField
-from tagging.models import Tag
 
 from django.db import models
 from django.core import management
@@ -83,5 +82,11 @@ class Device(models.Model):
         create_device_fixture(settings.APPFWK_STRIP_DEVICE_PASSWORDS)
 
     def tags_as_list(self):
-        return [Tag.objects.get(name=str(tag).strip())
-                for tag in self.tags.split(',') if tag.strip()]
+        return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+
+    @classmethod
+    def tag2devs(cls, tag, **kwargs):
+        dev_ids = [dev.id for dev in Device.objects.filter(**kwargs)
+                   if tag in dev.tags_as_list()]
+
+        return Device.objects.filter(pk__in=dev_ids)
