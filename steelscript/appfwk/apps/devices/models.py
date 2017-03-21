@@ -10,7 +10,6 @@ import json
 import logging
 from cStringIO import StringIO
 from tagging_autocomplete.models import TagAutocompleteField
-from tagging.models import Tag
 
 from django.db import models
 from django.core import management
@@ -46,6 +45,16 @@ def create_device_fixture(strip_passwords=True):
     logger.debug('Wrote %d devices to fixture file %s' % (len(devices), fname))
 
 
+class DevManager(models.Manager):
+
+    def filter_by_tag(self, tag, **kwargs):
+
+        dev_ids = [dev.id for dev in Device.objects.filter(**kwargs)
+                   if tag in dev.tags_as_list()]
+
+        return Device.objects.filter(pk__in=dev_ids)
+
+
 class Device(models.Model):
     """ Records for devices referenced in report configuration pages.
 
@@ -59,6 +68,8 @@ class Device(models.Model):
     username = models.CharField(max_length=100, blank=True)
     password = models.CharField(max_length=100, blank=True)
     tags = TagAutocompleteField(blank=True)
+
+    objects = DevManager()
 
     auth = models.IntegerField(
         default=Auth.NONE,
@@ -83,5 +94,4 @@ class Device(models.Model):
         create_device_fixture(settings.APPFWK_STRIP_DEVICE_PASSWORDS)
 
     def tags_as_list(self):
-        return [Tag.objects.get(name=str(tag).strip())
-                for tag in self.tags.split(',') if tag.strip()]
+        return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
