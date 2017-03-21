@@ -84,7 +84,7 @@ class DeviceList(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         data = request.GET
         if 'tag' in data and data['tag']:
-            queryset = Device.tag2devs(data['tag']).order_by('id')
+            queryset = Device.objects.filter_by_tag(data['tag']).order_by('id')
         else:
             queryset = Device.objects.order_by('id')
         invalid = request.QUERY_PARAMS.get('invalid', None)
