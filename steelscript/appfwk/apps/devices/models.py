@@ -68,6 +68,7 @@ class Device(models.Model):
     username = models.CharField(max_length=100, blank=True)
     password = models.CharField(max_length=100, blank=True)
     tags = TagAutocompleteField(blank=True)
+
     objects = DevManager()
 
     auth = models.IntegerField(
