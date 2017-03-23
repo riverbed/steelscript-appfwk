@@ -5,11 +5,12 @@
 # as set forth in the License.
 
 import sys
+import csv
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 
 from steelscript.common.datautils import Formatter
-
 from steelscript.appfwk.apps.devices.models import Device
 
 REQUIRED_DEVICE_ATTRS = ['host', 'module', 'name', 'username', 'password']
@@ -47,6 +48,17 @@ class Command(BaseCommand):
                                   'For example:\n'
                                   './manage.py device --edit -I 1 '
                                   '-N new_name'))
+
+        parser.add_argument('--batch-file',
+                            dest='batch_file',
+                            help=("Batch file with info of multiple "
+                                  "devices in the format of "
+                                  "<name>,<module>,<hostname>,<port>,"
+                                  "<username>,<password>,<AuthMethod>"
+                                  "<access_code>,<tag1;tag2;...>"
+                                  "for AuthMethod, 1 refers to "
+                                  "username/password; 2 refers to OAuth2."
+                                  ))
 
         parser.add_argument('--enabled', action='store_true', dest='enabled',
                             help='Set the device as enabled')
@@ -142,3 +154,68 @@ class Command(BaseCommand):
                 self.stdout.write("Device '%s' modified" % options['id'])
             else:
                 self.stdout.write("Device '%s' unchanged" % options['id'])
+
+        elif options['batch_file']:
+            file_name = options['batch_file']
+            default_header = ['name', 'module', 'host', 'port',
+                              'username', 'password', 'auth',
+                              'access_code', 'tags']
+            with open(file_name, 'r') as f:
+                reader = csv.reader(f)
+                devs = []
+                add, update = 0, 0
+                for i, row in enumerate(reader):
+                    row = map(str.lower, map(str.strip, row))
+                    if i == 0:
+                        if set(row) == set(default_header):
+                            header = row
+                            continue
+                        else:
+                            header = default_header
+
+                    if not row or not row[0]:
+                        continue
+
+                    if len(row) < len(header):
+                        msg = ('Line {0} only has {1} fields. '
+                               '{2} fields are required.'
+                               .format(i+1, len(row), len(header)))
+                        raise CommandError(msg)
+
+                    kwargs = dict(zip(header, row))
+
+                    if not kwargs['host']:
+                        msg = 'Host is empty string in line {0}.'.format(i+1)
+                        raise CommandError(msg)
+
+                    if not kwargs['port'].isdigit():
+                        msg = ("Port should be integer instead of '{0}'"
+                               " in line {1}".format(kwargs['port'], i+1))
+                        raise CommandError(msg)
+
+                    kwargs['port'] = int(kwargs['port'])
+                    kwargs['enabled'] = True
+                    kwargs['tags'] = ','.join(map(str.strip,
+                                                  kwargs['tags'].split(';')))
+
+                    # Check for device with same host and port
+                    res = Device.objects.filter(host=kwargs['host'],
+                                                port=kwargs['port'])
+                    if res:
+                        dev = res[0]
+                        for k, v in kwargs.iteritems():
+                            setattr(dev, k, v)
+                        update += 1
+                    else:
+                        dev = Device(**kwargs)
+                        add += 1
+
+                    devs.append(dev)
+
+                with transaction.atomic():
+                    for dev in devs:
+                        dev.save()
+
+                self.stdout.write('{add} devices added. '
+                                  '{update} existing devices refreshed.'
+                                  .format(add=add, update=update))

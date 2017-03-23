@@ -75,8 +75,8 @@ You need to develop an API to fetch data to feed the App Framework engine. This 
 to be done early as we can understand better the data format, which would help define the
 structure of the App Framework reports later.
 
-First we need to create a python module app.py in steelscript/stock/core directory. The reason
-the module ``app.py`` resides in ``core`` directory instead of ``appfwk`` directory is that the API can
+First we need to create a python module ``stock.py`` in steelscript/stock/core directory. The reason
+the module ``stock.py`` resides in ``core`` directory instead of ``appfwk`` directory is that the API can
 be used independently without App Framework. Below shows how a stock data API might look like.
 
 .. code-block:: python
@@ -215,7 +215,7 @@ to the data fetch API. Details are shown below.
     from steelscript.appfwk.apps.datasource.forms import (DateTimeField, ReportSplitDateWidget,
                                                           fields_add_time_selection, fields_add_resolution)
     from steelscript.appfwk.apps.datasource.models import TableField, DatasourceTable, Column
-    from steelscript.appfwk.apps.jobs import QueryComplete
+
 
     class StockColumn(Column):
         class Meta:
@@ -302,14 +302,11 @@ After the ``StockTable`` class in the same module, we need to define the ``run``
 
     import pandas
 
-    from steelscript.stock.core.app import get_historical_prices
+    from steelscript.stock.core.stock import get_historical_prices
     from steelscript.appfwk.apps.datasource.models import TableField, TableQueryBase
+    from steelscript.appfwk.apps.jobs import QueryComplete
 
     class StockQuery(TableQueryBase):
-
-        def __init__(self, table, job):
-            self.table = table
-            self.job = job
 
         def run(self):
             criteria = self.job.criteria

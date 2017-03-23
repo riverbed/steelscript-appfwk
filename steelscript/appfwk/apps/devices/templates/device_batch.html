@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2017 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% load add_attrs %}
+
+{% block title %}App Framework: Device Batch Upload{% endblock %}
+
+{% block header_row %}
+    <h3>Batch Upload Devices</h3>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-9 block-centered">
+            <form class="form-horizontal" action="/devices/batch/" method="post" id="upload-form" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group well">
+                    <div>
+
+                        <p>Please select the <b>batch file</b> to upload devices.
+                            <br><br> Each line in the batch file is parsed and saved as one device.
+                            The default order of the fields is shown as follows:
+                            <code>name,module,host,port,username,password,auth,access_code,tags</code>.
+                            <br><br>If the field order is different than above, it is <b>required</b> to put a header row
+                            in the <b>first</b> line with the same set of field names, which
+                            should be comma separated and in the same order as the data in following lines.
+
+                            <br><br>1.The <code>module</code> field can be set as <code>netprofiler, netshark, scc, steelhead_cli</code>.
+                                    Other modules can be configured for customized reports;
+                            <br>2. The <code>host</code> field can accept either hostname or IP address;
+                            <br>3. Generally, <code>Port</code> should be <b>443</b> for <code>netprofiler, netshark, scc</code> devices.
+                                For <code>steelhead_cli</code> devices, it should be the <b>SSH</b> port (usually <b>22</b>);
+                            <br>4. The <code>auth</code> field should be <code>1</code> for <b>Basic</b> authentication,
+                            <code>3</code> for <b>OAuth2</b> authentication. If <b>NO</b> authentication is required, use <code>0</code>;
+                            <br>5. In <code>tags</code> field, <code>";"</code> is used to separate different tags, i.e. <code>tag_1;tag_2;...;tag_n</code>.
+                        </p>
+
+                        {% with form.visible_fields.0 as field %}
+                            {{ field|addcss:"form-control" }}
+                            {% if field.errors %}
+                                {% for err in field.errors %}
+                                    <p class="text-danger">{{ err }}</p>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+
+            <div class="row">
+                <div class="block-centered" style="text-align: center">
+                    <input type="submit" value="Upload" class="btn btn-primary">
+                </div>
+            </div>
+
+            </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
