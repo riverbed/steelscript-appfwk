@@ -12,6 +12,9 @@ import steelscript.appfwk.apps.db.views as views
 urlpatterns = patterns(
     'steelscript.appfwk.apps.db.views',
 
-    url(r'^query/$',
-        views.DBQuery.as_view()),
+    url(r'^records/$',
+        views.Records.as_view()),
+
+    url(r'^handles/$',
+        views.Handles.as_view()),
 )
