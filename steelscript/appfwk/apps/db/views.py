@@ -6,7 +6,7 @@
 
 import logging
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseNotFound
 from django.core.exceptions import ObjectDoesNotExist
 
 from rest_framework import views
@@ -40,7 +40,8 @@ class Records(views.APIView):
         try:
             res = ExistingIntervals.objects.get(table_handle=handle)
         except ObjectDoesNotExist:
-            raise KeyError("Handle '{}' does not exist.".format(handle))
+            msg = "Handle '{}' does not exist.".format(handle)
+            return HttpResponseNotFound('<p>{}</p>'.format(msg))
 
         start_time = sec_string_to_datetime(int(request_data['start']))
         end_time = sec_string_to_datetime(int(request_data['end']))
