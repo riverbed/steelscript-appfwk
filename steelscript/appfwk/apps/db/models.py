@@ -14,7 +14,10 @@ class ExistingIntervals(models.Model):
     a set of criteria fields (represented by the table_handle field).
     """
     # Plugin name
-    plugin = models.CharField(max_length=20)
+    namespace = models.CharField(max_length=20)
+
+    # Source report module name
+    sourcefile = models.CharField(max_length=200)
 
     # Table name
     table = models.CharField(max_length=50)

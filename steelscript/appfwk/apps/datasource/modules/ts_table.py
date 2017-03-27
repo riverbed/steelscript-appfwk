@@ -244,7 +244,8 @@ class TimeSeriesQuery(AnalysisQuery):
             dfs_from_db = [self.query(itv.start, itv.end)
                            for itv in itvs_in_db]
         else:
-            obj = ExistingIntervals(plugin=self.ds_table.namespace,
+            obj = ExistingIntervals(namespace=self.ds_table.namespace,
+                                    sourcefile=self.ds_table.sourcefile,
                                     table=self.ds_table.name,
                                     criteria=self.no_time_criteria,
                                     table_handle=self.handle,

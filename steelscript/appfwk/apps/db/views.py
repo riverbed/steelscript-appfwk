@@ -16,6 +16,8 @@ from steelscript.appfwk.apps.db import storage, ColumnFilter
 from steelscript.common.timeutils import sec_string_to_datetime
 from steelscript.appfwk.apps.db.models import ExistingIntervals
 from steelscript.appfwk.apps.datasource.modules.ts_table import make_index
+from steelscript.appfwk.apps.datasource.models import Table
+from steelscript.appfwk.apps.datasource.models import Column
 
 logger = logging.getLogger(__name__)
 
@@ -31,28 +33,43 @@ class Records(views.APIView):
         # db/records?handle=**&start=**&end=**&timecol=**
         request_data = request.GET.dict()
 
-        keys = ['handle', 'start', 'end', 'timecol']
+        keys = ['handle', 'start']
         for k in keys:
             if k not in request_data:
                 raise KeyError("Missing '%s' parameter in url" % k)
 
         handle = request_data['handle']
         try:
-            res = ExistingIntervals.objects.get(table_handle=handle)
+            obj = ExistingIntervals.objects.get(table_handle=handle)
         except ObjectDoesNotExist:
             msg = "Handle '{}' does not exist.".format(handle)
             return HttpResponseNotFound('<p>{}</p>'.format(msg))
 
-        start_time = sec_string_to_datetime(int(request_data['start']))
-        end_time = sec_string_to_datetime(int(request_data['end']))
+        range = {}
+        range['gte'] = sec_string_to_datetime(int(request_data['start']))
+        if 'end' in request_data:
+            range['lte'] = sec_string_to_datetime(int(request_data['end']))
 
-        time_col = request_data['timecol']
+        # Getting the time column name
+        table = Table.from_ref(dict(sourcefile=obj.sourcefile,
+                                    namespace=obj.namespace,
+                                    name=obj.table))
+
+        timecols = [c for c in table.get_columns(iskey=True)
+                    if c.datatype == Column.DATATYPE_TIME]
+
+        if not timecols:
+            msg = "Table {} does not have a timeseries key column."\
+                .format(obj.table)
+            return HttpResponseNotFound('<p>{}</p>'.format(msg))
+
+        time_col_name = timecols[0].name
+
         col_filters = [ColumnFilter(
                        query_type='range',
-                       query={time_col: {'gte': start_time,
-                                         'lte': end_time}})]
+                       query={time_col_name: range})]
 
-        records = storage.search(index=make_index(res.plugin),
+        records = storage.search(index=make_index(obj.namespace),
                                  doc_type=handle,
                                  col_filters=col_filters)
 
@@ -65,11 +82,20 @@ class Handles(views.APIView):
 
     def get(self, request):
 
+        request_data = request.GET.dict()
+
+        keys = ['namespace', 'table']
+        for k, v in request_data.iteritems():
+            if k not in keys:
+                msg = "'{}' is not valid to query handles." .format(k)
+                return HttpResponseNotFound('<p>{}</p>'.format(msg))
+
         res = []
-        for obj in ExistingIntervals.objects.all():
+        for obj in ExistingIntervals.objects.filter(**request_data):
             res.append(dict(handle=obj.table_handle,
-                            cirteria=str(obj.criteria),
-                            plugin=obj.plugin,
+                            criteria=str(obj.criteria),
+                            namespace=obj.namespace,
+                            sourcefile=obj.sourcefile,
                             table=obj.table,
                             intervals=str(obj.intervals)))
         return JsonResponse(res, safe=False)
