@@ -59,6 +59,8 @@ class DataFileBase(models.Model):
 
 
 class DataFile(DataFileBase):
+    SUPPORTED_FILES = {'any': {'sig': 'All Files Supported',
+                               'name': 'All Files Supported'}}
     """ Records for a file maintained in local storage.
     """
     datafile = models.FileField(storage=SystemStore,
@@ -93,8 +95,14 @@ class PcapDataFile(DataFileBase):
 
     def save(self, *args, **kwargs):
         self.file_type = self.datafile.field.magic_file_type
-        pinfo = pcap_info(self.datafile.file)
-        self.start_time = datetime.utcfromtimestamp(pinfo[0])
-        self.end_time = datetime.utcfromtimestamp(pinfo[1])
-        self.pkt_count = pinfo[2]
+        if self.file_type in (x['name'] for x in
+                              self.SUPPORTED_FILES.values()):
+            pinfo = pcap_info(self.datafile.file)
+            self.start_time = datetime.utcfromtimestamp(pinfo[0])
+            self.end_time = datetime.utcfromtimestamp(pinfo[1])
+            self.pkt_count = pinfo[2]
+        else:
+            self.start_time = datetime.now()
+            self.end_time = datetime.now()
+            self.pkt_count = 0
         super(PcapDataFile, self).save(*args, **kwargs)
