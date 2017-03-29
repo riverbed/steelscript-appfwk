@@ -41,6 +41,7 @@ class CustomIndexDashboard(Dashboard):
                 'steelscript.appfwk.apps.hitcount.*',
                 'steelscript.appfwk.apps.preferences.*',
                 'steelscript.appfwk.apps.devices.*',
+                'steelscript.appfwk.apps.pcapmgr.*',
                 'steelscript.appfwk.apps.geolocation.*',
                 'steelscript.appfwk.apps.report.*',
                 'steelscript.*.appfwk.*',
@@ -52,6 +53,7 @@ class CustomIndexDashboard(Dashboard):
             _('System Models'),
             models=('steelscript.appfwk.apps.*',),
             exclude=('steelscript.appfwk.apps.devices.*',
+                     'steelscript.appfwk.apps.pcapmgr.*',
                      'steelscript.appfwk.apps.preferences.*',
                      'steelscript.appfwk.apps.geolocation.*',
                      'steelscript.appfwk.apps.report.*',)

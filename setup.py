@@ -6,6 +6,7 @@
 
 import os
 import itertools
+from distutils.extension import Extension
 
 try:
     from setuptools import setup, find_packages
@@ -71,6 +72,9 @@ http://pythonhosted.org/steelscript/
 
     'scripts': None,
 
+    'ext_modules': [Extension("steelscript.appfwk.libs.packets",
+                              ["steelscript/appfwk/libs/packets.c"])],
+
     'install_requires': (
         'Django<1.9',
         'steelscript>=1.1',
@@ -88,6 +92,7 @@ http://pythonhosted.org/steelscript/
         'pandas>=0.19.2,<0.20.0',
         'pygeoip>=0.2.6',
         'python-dateutil>=2.2',
+        'python-magic==0.4.12'
         'pytz>=2013.8',
         'six>=1.3.0',
         'wsgiref>=0.1.2',
