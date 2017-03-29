@@ -26,8 +26,10 @@ logger = logging.getLogger(__name__)
 class Records(views.APIView):
 
     def get(self, request):
-        """ The URL is formatted as '/db/records?handle=**&start=**&end=**'.
-        Within the URL, required parameterss include 'handle' and 'start'.
+        """ Retrieve records from time series data storage.
+
+        The URL is formatted as '/db/records?handle=**&start=**&end=**'.
+        Within the URL, required parameters include 'handle' and 'start'.
         Optional parameter is 'end'. Values for 'start' and 'end' in the
         URL should be epoch seconds. JSON results returned looks like:
 
@@ -81,7 +83,9 @@ class Records(views.APIView):
 class Handles(views.APIView):
 
     def get(self, request):
-        """ The URL is formated as '/db/handles/?namespace=**&table=**'.
+        """ Retrieve time series data handles.
+
+        The URL is formated as '/db/handles/?namespace=**&table=**'.
         Both 'namespace' and 'table' parameters are optional. 'namespace'
         refers to the plugin name while 'table' refers to the name of
         the timeseries source table generating the records.

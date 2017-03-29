@@ -10,7 +10,7 @@ from rest_framework.exceptions import APIException
 class NotFoundError(APIException):
     """ No object found for the handle. """
     status_code = 404
-    default_detail = 'Not found error.'
+    default_detail = 'Data not found.'
 
 
 class InvalidRequest(APIException):
