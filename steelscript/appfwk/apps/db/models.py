@@ -13,7 +13,9 @@ class ExistingIntervals(models.Model):
     """Store the existing time intervals in db for each table and
     a set of criteria fields (represented by the table_handle field).
     """
-    plugin = models.CharField(max_length=20)
+    namespace = models.CharField(max_length=20)
+
+    sourcefile = models.CharField(max_length=200)
 
     table = models.CharField(max_length=50)
 
