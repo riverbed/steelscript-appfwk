@@ -207,6 +207,8 @@ rvbd.widgets.Widget.prototype = {
 
                 // store original response data as JSON
                 self.dataCache = JSON.stringify(response.data);
+                // save job id for future exporting widget data
+                self.jobId = response.id
 
                 self.render(response.data);
                 if (!self.options.height) {
@@ -491,7 +493,7 @@ rvbd.widgets.Widget.prototype = {
         // remove spaces and special chars from widget title
         var fname = self.titleMsg.replace(/\W/g, '');
         // Should trigger file download
-        window.location = origin + '/jobs/' + self.id + '/data/' + type + '/?filename=' + fname;
+        window.location = origin + '/jobs/' + self.jobId + '/data/' + type + '/?filename=' + fname;
     },
 
     /**
