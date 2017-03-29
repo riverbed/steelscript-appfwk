@@ -14,4 +14,5 @@ class PcapFileAdmin(admin.ModelAdmin):
                     'file_type', 'start_time', 'end_time',
                     'pkt_count',)
 
+
 admin.site.register(PcapDataFile, PcapFileAdmin)

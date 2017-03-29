@@ -8,7 +8,7 @@ import logging
 import magic
 from datetime import datetime
 from django.forms import ValidationError
-from steelscript.appfwk.libs.packets import pcap_info
+from steelscript.appfwk.libs.pcap import pcap_info
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from steelscript.appfwk.apps.pcapmgr.filestore import PCAPStore, SystemStore
