@@ -350,7 +350,6 @@ rvbd.widgets.Widget.prototype = {
      */
     render: function(data) {
         var self = this;
-
         $(self.div).html(data);
     },
 
@@ -491,11 +490,8 @@ rvbd.widgets.Widget.prototype = {
         var origin = window.location.protocol + '//' + window.location.host;
         // remove spaces and special chars from widget title
         var fname = self.titleMsg.replace(/\W/g, '');
-        var array = self.jobUrl.split("/");
-        // The job id is the second to last element
-        var job_id = array[array.length - 2];
         // Should trigger file download
-        window.location = origin + '/jobs/' + job_id + '/data/' + type + '/?filename=' + fname;
+        window.location = origin + '/jobs/' + self.id + '/data/' + type + '/?filename=' + fname;
     },
 
     /**
