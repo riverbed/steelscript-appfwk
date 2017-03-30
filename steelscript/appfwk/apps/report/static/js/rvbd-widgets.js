@@ -207,6 +207,8 @@ rvbd.widgets.Widget.prototype = {
 
                 // store original response data as JSON
                 self.dataCache = JSON.stringify(response.data);
+                // save job id for future exporting widget data
+                self.jobId = response.id
 
                 self.render(response.data);
                 if (!self.options.height) {
@@ -350,7 +352,6 @@ rvbd.widgets.Widget.prototype = {
      */
     render: function(data) {
         var self = this;
-
         $(self.div).html(data);
     },
 
@@ -486,60 +487,14 @@ rvbd.widgets.Widget.prototype = {
         self.onExport('csv');
     },
 
-    onExport: function(exportType) {
+    onExport: function(type) {
         var self = this;
-
-        $.ajax({
-            dataType: 'json',
-            type: 'POST',
-            url: self.postUrl,
-            data: { criteria: JSON.stringify(self.criteria) },
-            success: function(data, textStatus, jqXHR) {
-                self.checkExportStatus(data.joburl, exportType);
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                var alertBody = ("The server returned the following HTTP error: <pre>" +
-                                 + errorThrown + '</pre>');
-                rvbd.modal.alert("Export Error", alertBody, "OK", function() { })
-            }
-        });
+        var origin = window.location.protocol + '//' + window.location.host;
+        // remove spaces and special chars from widget title
+        var fname = self.titleMsg.replace(/\W/g, '');
+        // Should trigger file download
+        window.location = origin + '/jobs/' + self.jobId + '/data/' + type + '/?filename=' + fname;
     },
-
-    checkExportStatus: function(jobUrl, exportType) {
-        var self = this;
-
-        $.ajax({
-            dataType: "json",
-            url: jobUrl + 'status/',
-            data: null,
-            success: function(data, textStatus) {
-                switch (data.status) {
-                    case 3: // Complete
-                        var origin = window.location.protocol + '//' + window.location.host;
-                        // remove spaces and special chars from widget title
-                        var fname = self.titleMsg.replace(/\W/g, '');
-                        // Should trigger file download
-                        window.location = origin + '/jobs/' + data.id + '/data/' + exportType + '/?filename=' + fname;
-                        break;
-                    case 4: // Error
-                        var alertBody = ('The server returned the following error: <pre>' +
-                                         data['message'] + '</pre>');
-                        rvbd.modal.alert("Export Error", alertBody, "OK", function() { });
-                        break;
-                    default: // Loading
-                        setTimeout(function() { self.checkExportStatus(jobUrl, exportType); }, 200);
-                }
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                console.log('Error when checking export status');
-
-                var alertBody = ('The server returned the following HTTP error: <pre>' + textStatus +
-                                 ': ' + errorThrown + '</pre>');
-                rvbd.modal.alert("Export Error", alertBody, "OK", function() { });
-            }
-        });
-    },
-
 
     /**
      * Construct this widget's basic layout--outer container, title bar, content
