@@ -11,7 +11,7 @@ from steelscript.appfwk.apps.db.models import ExistingIntervals
 
 
 class IntervalsAdmin(admin.ModelAdmin):
-    list_display = ('plugin', 'table', 'criteria',
+    list_display = ('namespace', 'sourcefile', 'table', 'criteria',
                     'existing_intervals', 'table_handle')
 
     def existing_intervals(self, obj):
