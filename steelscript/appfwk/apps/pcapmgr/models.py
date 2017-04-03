@@ -39,8 +39,10 @@ class PcapFileField(models.FileField):
 
         mft = [x['name'] for x in self.SUPPORTED_FILES.values() if
                x['sig'] == magic_type[:self.SIG_LEN]]
-        if len(mft):
+        if mft:
             self.magic_file_type = mft[0]
+        else:
+            self.magic_file_type = "__Unsupported File Type__"
 
         if self.magic_file_type is not None:
             return super(PcapFileField, self).clean(value, model_instance)

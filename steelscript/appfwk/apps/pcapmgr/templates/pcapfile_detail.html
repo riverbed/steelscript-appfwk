@@ -46,19 +46,19 @@
                         <label  for="{{ form.datafile.auto_id }}" class="col-xs-3 control-label">
                             {{ form.datafile.label_tag }}
                         </label>
-                        {% if for_edit %}
-                            <div class="controls col-xs-9">
-                                {{ form.datafile|addcss:"form-control" }}
+                        {% if form.instance.pk %}
+                            <div class="controls col-xs-9" style="margin-top: 6px;">
+                                {{ form.datafile.value }}
                             </div>
                         {% else %}
                             <div class="controls col-xs-9">
                                 {{ form.datafile|addcss:"form-control" }}
-                                {% if form.datafile.errors %}
-                                    {% for err in form.datafile.errors %}
-                                        <p class="text-danger">{{ err }}</p>
-                                {% endfor %}
-                            {% endif %}
                             </div>
+                        {% endif %}
+                        {% if form.datafile.errors %}
+                            {% for err in form.datafile.errors %}
+                                <p class="text-danger">{{ err }}</p>
+                            {% endfor %}
                         {% endif %}
                     </div>
                 </fieldset>

@@ -97,12 +97,6 @@ class PcapFileList(generics.ListAPIView):
         return Response(data)
 
     def put(self, request, *args, **kwargs):
-        """ Function to save changes to multiple devices once.
-
-        This function is called only when the "Save Changes" button is
-        clicked on /devices/ page. However, it only supports enable/disable
-        device(s). The url sent out will only include 'enable' field.
-        """
 
         df_form_set = modelformset_factory(PcapDataFile,
                                            form=PcapFileListForm,
