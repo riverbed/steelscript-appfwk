@@ -19,8 +19,6 @@ from steelscript.appfwk.apps.pcapmgr.models import PCAPStore, PcapDataFile
 from steelscript.appfwk.apps.pcapmgr.forms import PcapFileForm, \
     PcapFileListForm
 from steelscript.appfwk.apps.pcapmgr.serializers import PcapDataFileSerializer
-from steelscript.common.service import Auth
-
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +38,7 @@ class PcapFileDetail(views.APIView):
                 form = PcapFileForm(instance=datafile)
             else:
                 form = PcapFileForm()
-            return Response({'form': form, 'auth': Auth},
+            return Response({'form': form},
                             template_name='pcapfile_detail.html')
         else:
             datafile = get_object_or_404(PcapDataFile, pk=pcapfile_id)
@@ -60,7 +58,7 @@ class PcapFileDetail(views.APIView):
             form.save()
             return HttpResponseRedirect(reverse('pcapfile-list'))
         else:
-            return Response({'form': form, 'auth': Auth},
+            return Response({'form': form},
                             template_name='pcapfile_detail.html')
 
     def delete(self, request, pcapfile_id):
@@ -89,7 +87,7 @@ class PcapFileList(generics.ListAPIView):
             formset = df_form_set(queryset=queryset)
             tabledata = zip(formset.forms, queryset)
             data = {'formset': formset, 'tabledata': tabledata,
-                    'auth': Auth, 'supported_files': self.supported_files}
+                    'supported_files': self.supported_files}
             return Response(data, template_name='pcapfile_list.html')
 
         serializer = PcapDataFileSerializer(instance=queryset)
@@ -111,6 +109,6 @@ class PcapFileList(generics.ListAPIView):
                 return HttpResponseRedirect(reverse('pcapfile-list'))
 
         else:
-            data = {'formset': formset, 'auth': Auth,
+            data = {'formset': formset,
                     'supported_files': self.supported_files}
             return Response(data, template_name='pcapfile_list.html')
