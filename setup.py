@@ -6,7 +6,6 @@
 
 import os
 import itertools
-from distutils.extension import Extension
 
 try:
     from setuptools import setup, find_packages
@@ -71,9 +70,6 @@ http://pythonhosted.org/steelscript/
     },
 
     'scripts': None,
-
-    'ext_modules': [Extension("steelscript.appfwk.libs.packets",
-                              ["steelscript/appfwk/libs/packets.c"])],
 
     'install_requires': (
         'Django<1.9',
