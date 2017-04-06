@@ -165,10 +165,10 @@ class Command(BaseCommand):
                 devs = []
                 add, update = 0, 0
                 for i, row in enumerate(reader):
-                    row = map(str.lower, map(str.strip, row))
+                    row = map(str.strip, row)
                     if i == 0:
-                        if set(row) == set(default_header):
-                            header = row
+                        if set(map(str.lower, row)) == set(default_header):
+                            header = map(str.lower, row)
                             continue
                         else:
                             header = default_header
