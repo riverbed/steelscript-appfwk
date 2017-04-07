@@ -8,10 +8,20 @@ import logging
 import magic
 from datetime import datetime
 from django.forms import ValidationError
-from steelscript.appfwk.libs.pcap import pcap_info
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from steelscript.appfwk.apps.pcapmgr.filestore import PCAPStore, SystemStore
+
+WARN_PCAP = True
+try:
+    from steelscript.packets.core.pcap import pcap_info
+    WARN_PCAP = False
+except ImportError:
+    def pcap_info(file_handle):
+        return {'first_timestamp': 0.0,
+                'last_timestamp': 0.0,
+                'total_packets': 0,
+                'total_bytes': 0}
 
 logger = logging.getLogger(__name__)
 
@@ -82,11 +92,13 @@ class DataFile(DataFileBase):
 
 class PcapDataFile(DataFileBase):
     SUPPORTED_FILES = PcapFileField.SUPPORTED_FILES
+    pcap_warning = WARN_PCAP
     datafile = PcapFileField(storage=PCAPStore,
                              upload_to='/media/pcap/')
     start_time = models.DateTimeField(default=datetime.now, blank=True)
     end_time = models.DateTimeField(default=datetime.now, blank=True)
     pkt_count = models.IntegerField(blank=True)
+    packet_bytes = models.IntegerField(blank=True)
 
     def __unicode__(self):
         s = '{dfile}({type}) - {desc} (saved:{at})'
@@ -100,11 +112,14 @@ class PcapDataFile(DataFileBase):
         if self.file_type in (x['name'] for x in
                               self.SUPPORTED_FILES.values()):
             pinfo = pcap_info(self.datafile.file)
-            self.start_time = datetime.utcfromtimestamp(pinfo[0])
-            self.end_time = datetime.utcfromtimestamp(pinfo[1])
-            self.pkt_count = pinfo[2]
+            self.start_time = \
+                datetime.utcfromtimestamp(pinfo['first_timestamp'])
+            self.end_time = datetime.utcfromtimestamp(pinfo['last_timestamp'])
+            self.pkt_count = pinfo['total_packets']
+            self.packet_bytes = pinfo['total_bytes']
         else:
             self.start_time = datetime.now()
             self.end_time = datetime.now()
             self.pkt_count = 0
+            self.packet_bytes = 0
         super(PcapDataFile, self).save(*args, **kwargs)

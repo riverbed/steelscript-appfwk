@@ -12,7 +12,7 @@ from steelscript.appfwk.apps.pcapmgr.models import PcapDataFile
 class PcapFileAdmin(admin.ModelAdmin):
     list_display = ('datafile', 'description', 'uploaded_at',
                     'file_type', 'start_time', 'end_time',
-                    'pkt_count',)
+                    'pkt_count', 'packet_bytes', )
 
 
 admin.site.register(PcapDataFile, PcapFileAdmin)

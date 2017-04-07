@@ -87,7 +87,8 @@ class PcapFileList(generics.ListAPIView):
             formset = df_form_set(queryset=queryset)
             tabledata = zip(formset.forms, queryset)
             data = {'formset': formset, 'tabledata': tabledata,
-                    'supported_files': self.supported_files}
+                    'supported_files': self.supported_files,
+                    'pcap_lib_warning': self.model.pcap_warning}
             return Response(data, template_name='pcapfile_list.html')
 
         serializer = PcapDataFileSerializer(instance=queryset)
@@ -110,5 +111,6 @@ class PcapFileList(generics.ListAPIView):
 
         else:
             data = {'formset': formset,
-                    'supported_files': self.supported_files}
+                    'supported_files': self.supported_files,
+                    'no_pcap_warning': self.model.pcap_warning}
             return Response(data, template_name='pcapfile_list.html')

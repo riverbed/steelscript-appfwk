@@ -13,7 +13,7 @@
 
 {% block header_row %}
     <h3>Edit and add PCAP Files</h3>
-    <h5>Click on PcapFile link to update description.</h5>
+    <h5>Click on PCAP File link to update description.</h5>
     <h5>Click on Add New PCAP File to upload new data.</h5>
 {% endblock %}
 
@@ -35,6 +35,7 @@
                         <th>Start Time</th>
                         <th>End Time</th>
                         <th>Total Packets</th>
+                        <th>Total Packet Bytes</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -52,13 +53,13 @@
                                 <td>{{ datafile.start_time }}</td>
                                 <td>{{ datafile.end_time }}</td>
                                 <td>{{ datafile.pkt_count }}</td>
+                                <td>{{ datafile.packet_bytes }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             <div class="row">
                 <div class="block-centered" style="text-align: center">
-                    <input type="submit" value="Save Changes" class="btn btn-primary">
                     <a href="{% url 'pcapfile-add' %}" class="btn btn-default">Add New PCAP File</a>
                 </div>
                 <div class="block-centered" style="text-align: center">
@@ -66,6 +67,9 @@
                     <p class="text-danger">This PCAP file manager supports the
                                            following PCAP types:&nbsp;{{supported_files}}
                     </p>
+                {% endif %}
+                {% if pcap_lib_warning %}
+                    <p class="text-danger">Accurate Start Time, End Time, Total Packets, and Total Packet Bytes data requires installing steelscript.packets.</p>
                 {% endif %}
                 </div>
             </div>
