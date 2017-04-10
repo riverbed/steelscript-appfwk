@@ -7,12 +7,7 @@
 
 from rest_framework import serializers
 
-from steelscript.appfwk.apps.pcapmgr.models import DataFile, PcapDataFile
-
-
-class DataFileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DataFile
+from steelscript.appfwk.apps.pcapmgr.models import PcapDataFile
 
 
 class PcapDataFileSerializer(serializers.ModelSerializer):

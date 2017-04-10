@@ -6,11 +6,12 @@
 
 import logging
 import magic
+from django.conf import settings
 from datetime import datetime
 from django.forms import ValidationError
 from django.db import models
 from django.db.models.fields.files import FieldFile
-from steelscript.appfwk.apps.pcapmgr.filestore import PCAPStore, SystemStore
+from steelscript.appfwk.apps.pcapmgr.filestore import PCAPStore
 
 WARN_PCAP = True
 try:
@@ -22,6 +23,10 @@ except ImportError:
                 'last_timestamp': 0.0,
                 'total_packets': 0,
                 'total_bytes': 0}
+
+if not hasattr(settings, 'PCAP_STORE'):
+    raise ValueError('Please set local_settings.PCAP_STORE to the proper '
+                     'path for pcap storage')
 
 logger = logging.getLogger(__name__)
 
@@ -70,31 +75,11 @@ class DataFileBase(models.Model):
         return self.description
 
 
-class DataFile(DataFileBase):
-    SUPPORTED_FILES = {'any': {'sig': 'All Files Supported',
-                               'name': 'All Files Supported'}}
-    """ Records for a file maintained in local storage.
-    """
-    datafile = models.FileField(storage=SystemStore,
-                                upload_to='/media/documents/')
-
-    def __unicode__(self):
-        s = '{dfile}({type}) - {desc} (saved:{at})'
-        return s.format(dfile=self.datafile,
-                        desc=self.description,
-                        at=self.uploaded_at,
-                        type=self.file_type)
-
-    def save(self, *args, **kwargs):
-        self.file_type = "Not Available"
-        super(DataFile, self).save(*args, **kwargs)
-
-
 class PcapDataFile(DataFileBase):
     SUPPORTED_FILES = PcapFileField.SUPPORTED_FILES
     pcap_warning = WARN_PCAP
     datafile = PcapFileField(storage=PCAPStore,
-                             upload_to='/media/pcap/')
+                             upload_to='{0}/'.format(settings.PCAP_STORE))
     start_time = models.DateTimeField(default=datetime.now, blank=True)
     end_time = models.DateTimeField(default=datetime.now, blank=True)
     pkt_count = models.IntegerField(blank=True)
