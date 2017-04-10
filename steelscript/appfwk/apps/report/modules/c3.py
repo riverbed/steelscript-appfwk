@@ -374,8 +374,12 @@ class TimeAxis(object):
 
             best = i
 
-        bsecs = best[0].total_seconds()
-        multiple = int((secs / bsecs) / (maxticks - 1)) + 1
+        if best:
+            bsecs = best[0].total_seconds()
+            multiple = int((secs / bsecs) / (maxticks - 1)) + 1
+        else:
+            best = self.INTERVALS[0]
+            multiple = 1
 
         t = best[2](t0)
         ticks = [t]
