@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+[1.4]
+ * Django 1.8 compatiblity
+ * Support static files in offline mode
+ * Bulk device config
+ * Device tagging
+ * Add timeseries table to store data in elasticsearch
+ * Add db api to search records and handles
+
 [1.3]
  * User Interface overhaul including c3 and Bootstrap 3 support
  * UI bug fixes.
