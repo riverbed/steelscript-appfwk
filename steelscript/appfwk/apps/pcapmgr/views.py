@@ -5,6 +5,7 @@
 # as set forth in the License.
 import logging
 import datetime
+from django.contrib import messages
 from os.path import basename
 from django.core.urlresolvers import reverse
 from django.forms.models import modelformset_factory
@@ -121,11 +122,16 @@ class PcapFileList(generics.ListAPIView):
 class PcapFSSync(views.APIView):
     permission_classes = (IsAdminUser,)
 
-    def get(self, request, format=None):
+    def get(self, request):
         """
         Runs an ASYNC operation to sync the file system and the DB.
         redirects to the list view.
         """
+
+        added_files = list()
+        removed_db = list()
+        ignored_files = list()
+
         fs_files = list()
         fs_raw_files = PCAPStore.listdir(PCAPStore.location)[1]
         for f in fs_raw_files:
@@ -134,6 +140,8 @@ class PcapFSSync(views.APIView):
             # ignore the rest.
             if ftype[0]:
                 fs_files.append(f)
+            else:
+                ignored_files.append(f)
         db_files = PcapDataFile.objects.order_by('id')
 
         # first pass look in the db and delete any records that
@@ -142,6 +150,7 @@ class PcapFSSync(views.APIView):
                                    dbfile) for dbfile in db_files]:
             if not fs_files.count(fname):
                 datafile.delete()
+                removed_db.append(fname)
 
         # now look over the file system files to see if are are not
         # in the DB
@@ -160,5 +169,19 @@ class PcapFSSync(views.APIView):
                                       end_time=datetime.datetime.now()
                                       )
                 new_db.save()
+                added_files.append(fsfile)
 
+        msg = ('PCAP Manager Sync: {0} PCAP record(s) removed from database.'
+               ' {1} new file object(s) added to database{2}')
+
+        skipped = '.'
+        if len(ignored_files):
+            skipped = ' ({0} file(s) with invalid type skipped).'.format(
+                len(ignored_files)
+            )
+
+        messages.add_message(request._request, messages.INFO,
+                             msg.format(len(removed_db),
+                                        len(added_files),
+                                        skipped))
         return HttpResponseRedirect(reverse('pcapfile-list'))
