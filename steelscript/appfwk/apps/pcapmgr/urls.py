@@ -8,7 +8,7 @@ from django.conf.urls import patterns, url
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from steelscript.appfwk.apps.pcapmgr.views import PcapFileList, \
-    PcapFileDetail
+    PcapFileDetail, PcapFSSync
 
 
 urlpatterns = patterns(
@@ -25,6 +25,10 @@ urlpatterns = patterns(
     url(r'^add/$',
         PcapFileDetail.as_view(),
         name='pcapfile-add'),
+
+    url(r'^sync/$',
+        PcapFSSync.as_view(),
+        name='pcapfs-sync'),
 
 )
 

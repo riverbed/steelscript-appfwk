@@ -4,7 +4,8 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 import logging
-
+import datetime
+from os.path import basename
 from django.core.urlresolvers import reverse
 from django.forms.models import modelformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
@@ -12,10 +13,11 @@ from django.shortcuts import get_object_or_404
 
 from rest_framework import generics, views
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
-from steelscript.appfwk.apps.pcapmgr.models import PCAPStore, PcapDataFile
+from steelscript.appfwk.apps.pcapmgr.models import PCAPStore, PcapDataFile, \
+    PcapFileField
 from steelscript.appfwk.apps.pcapmgr.forms import PcapFileForm, \
     PcapFileListForm
 from steelscript.appfwk.apps.pcapmgr.serializers import PcapDataFileSerializer
@@ -114,3 +116,49 @@ class PcapFileList(generics.ListAPIView):
                     'supported_files': self.supported_files,
                     'no_pcap_warning': self.model.pcap_warning}
             return Response(data, template_name='pcapfile_list.html')
+
+
+class PcapFSSync(views.APIView):
+    permission_classes = (IsAdminUser,)
+
+    def get(self, request, format=None):
+        """
+        Runs an ASYNC operation to sync the file system and the DB.
+        redirects to the list view.
+        """
+        fs_files = list()
+        fs_raw_files = PCAPStore.listdir(PCAPStore.location)[1]
+        for f in fs_raw_files:
+            ftype = PcapFileField.get_magic_type(PCAPStore.open(f))
+            # Only take files supported by the field and storage.
+            # ignore the rest.
+            if ftype[0]:
+                fs_files.append(f)
+        db_files = PcapDataFile.objects.order_by('id')
+
+        # first pass look in the db and delete any records that
+        # don't have a file system object.
+        for (fname, datafile) in [(basename(dbfile.datafile.name),
+                                   dbfile) for dbfile in db_files]:
+            if not fs_files.count(fname):
+                datafile.delete()
+
+        # now look over the file system files to see if are are not
+        # in the DB
+        db_file_names = [basename(dbfile.datafile.name) for dbfile in
+                         PcapDataFile.objects.order_by('id')]
+        for fsfile in fs_files:
+            if not db_file_names.count(fsfile):
+                f = PCAPStore.path(fsfile)
+                ftype = PcapFileField.get_magic_type(PCAPStore.open(f))
+                new_db = PcapDataFile(description=fsfile,
+                                      uploaded_at=(
+                                          PCAPStore.created_time(fsfile)),
+                                      file_type=ftype[0],
+                                      datafile=f,
+                                      start_time=datetime.datetime.now(),
+                                      end_time=datetime.datetime.now()
+                                      )
+                new_db.save()
+
+        return HttpResponseRedirect(reverse('pcapfile-list'))

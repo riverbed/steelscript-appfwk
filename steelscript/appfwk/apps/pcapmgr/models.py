@@ -3,6 +3,8 @@
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
+from os import listdir
+from os.path import isfile, join, basename
 
 import logging
 import magic
@@ -48,22 +50,26 @@ class PcapFileField(models.FileField):
         super(PcapFileField, self).__init__(*args, **kwargs)
 
     def clean(self, value, model_instance):
-        magic_type = magic.from_buffer(value.file.read(min(self.MAGIC_LEN,
-                                                           value.file.size)))
-        value.file.seek(0)
-
-        mft = [x['name'] for x in self.SUPPORTED_FILES.values() if
-               x['sig'] == magic_type[:self.SIG_LEN]]
-        if mft:
-            self.magic_file_type = mft[0]
-        else:
-            self.magic_file_type = "__Unsupported File Type__"
+        mgc = self.get_magic_type(value.file)
+        self.magic_file_type = mgc[0]
 
         if self.magic_file_type is not None:
             return super(PcapFileField, self).clean(value, model_instance)
         else:
             raise ValidationError("File type '{0}' is not supported by this"
-                                  " file manager.".format(magic_type))
+                                  " file manager.".format(mgc[1]))
+
+    @classmethod
+    def get_magic_type(cls, file_object):
+        file_object.seek(0)
+        mgc = magic.from_buffer(file_object.read(cls.MAGIC_LEN))
+        file_object.seek(0)
+        mft = [x['name'] for x in cls.SUPPORTED_FILES.values() if
+                             x['sig'] == mgc[:cls.SIG_LEN]]
+        if mft:
+            return [mft[0], mgc]
+        else:
+            return [None, mgc]
 
 
 class DataFileBase(models.Model):
@@ -85,6 +91,10 @@ class PcapDataFile(DataFileBase):
     pkt_count = models.IntegerField(blank=True)
     packet_bytes = models.IntegerField(blank=True)
 
+    def __init__(self, *args, **kwargs):
+        pause = 0
+        super(PcapDataFile, self).__init__(*args, **kwargs)
+
     def __unicode__(self):
         s = '{dfile}({type}) - {desc} (saved:{at})'
         return s.format(dfile=self.datafile,
@@ -93,10 +103,24 @@ class PcapDataFile(DataFileBase):
                         type=self.file_type)
 
     def save(self, *args, **kwargs):
-        self.file_type = self.datafile.field.magic_file_type
+        try:
+            ttype = self.datafile.field.magic_file_type
+            if ttype:
+                self.file_type = ttype
+                datafile_clean = True
+            else:
+                datafile_clean = False
+        except BaseException:
+            datafile_clean = False
+
         if self.file_type in (x['name'] for x in
                               self.SUPPORTED_FILES.values()):
-            pinfo = pcap_info(self.datafile.file)
+            if datafile_clean:
+                pinfo = pcap_info(self.datafile.file)
+            else:
+                f = open(self.datafile.file.name, 'rb')
+                pinfo = pcap_info(f)
+                f.close()
             self.start_time = \
                 datetime.utcfromtimestamp(pinfo['first_timestamp'])
             self.end_time = datetime.utcfromtimestamp(pinfo['last_timestamp'])

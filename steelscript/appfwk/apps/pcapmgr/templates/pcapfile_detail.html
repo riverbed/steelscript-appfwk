@@ -56,9 +56,11 @@
                             </div>
                         {% endif %}
                         {% if form.datafile.errors %}
+                            <div class="block-centered">
                             {% for err in form.datafile.errors %}
-                                <p class="text-danger">{{ err }}</p>
+                                <p class="text-danger" align="center">{{ err }}</p>
                             {% endfor %}
+                            </div>
                         {% endif %}
                     </div>
                 </fieldset>

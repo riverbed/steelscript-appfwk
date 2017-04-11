@@ -61,6 +61,7 @@
             <div class="row">
                 <div class="block-centered" style="text-align: center">
                     <a href="{% url 'pcapfile-add' %}" class="btn btn-default">Add New PCAP File</a>
+                    <a href="{% url 'pcapfs-sync' %}" class="btn btn-danger delete">Resync PCAP Manager</a>
                 </div>
                 <div class="block-centered" style="text-align: center">
                 {% if supported_files %}
