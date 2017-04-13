@@ -496,6 +496,13 @@ class ReportAutoView(GenericReportView):
 
                     criteria['starttime'] = start.isoformat()
 
+            # Check for "Meta Widget" criteria items
+            system_settings = SystemSettings.get_system_settings()
+            if system_settings.ignore_cache:
+                criteria['ignore_cache'] = system_settings.ignore_cache
+            if system_settings.developer:
+                criteria['debug'] = system_settings.developer
+
             # setup json definition object
             widget_def = w.get_definition(criteria)
             widget_defs.append(widget_def)
