@@ -77,8 +77,8 @@ class PcapFileList(generics.ListAPIView):
     renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
     permission_classes = (IsAuthenticated,)
 
-    supported_files = ', '.join((file['name'] for file in
-                                model.SUPPORTED_FILES.values()))
+    supported_files = ', '.join((file_type['name'] for file_type in
+                                model.SUPPORTED_FILES))
 
     def get(self, request, *args, **kwargs):
         queryset = PcapDataFile.objects.order_by('id')

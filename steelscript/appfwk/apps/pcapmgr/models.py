@@ -3,8 +3,6 @@
 # This software is licensed under the terms and conditions of the MIT License
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
-from os import listdir
-from os.path import isfile, join, basename
 
 import logging
 import magic
@@ -35,10 +33,10 @@ logger = logging.getLogger(__name__)
 
 class PcapFileField(models.FileField):
     attr_class = FieldFile
-    SUPPORTED_FILES = {'pcap': {'sig': 'tcpdump capture file',
-                                'name': 'PCAP (libpcap format)'},
-                       'pcapng': {'sig': 'pcap-ng capture file',
-                                  'name': "PCAP Next Generation"}}
+    SUPPORTED_FILES = [{'sig': 'tcpdump capture file',
+                        'name': 'PCAP (libpcap format)'},
+                       {'sig': 'pcap-ng capture file',
+                        'name': "PCAP Next Generation"}]
 
     # Magic read length taken from magic.py examples:
     # https://github.com/ahupp/python-magic/blob/master/magic.py
@@ -64,8 +62,8 @@ class PcapFileField(models.FileField):
         file_object.seek(0)
         mgc = magic.from_buffer(file_object.read(cls.MAGIC_LEN))
         file_object.seek(0)
-        mft = [x['name'] for x in cls.SUPPORTED_FILES.values() if
-                             x['sig'] == mgc[:cls.SIG_LEN]]
+        mft = [x['name'] for x in cls.SUPPORTED_FILES if
+               x['sig'] == mgc[:cls.SIG_LEN]]
         if mft:
             return [mft[0], mgc]
         else:
@@ -91,10 +89,6 @@ class PcapDataFile(DataFileBase):
     pkt_count = models.IntegerField(blank=True)
     packet_bytes = models.IntegerField(blank=True)
 
-    def __init__(self, *args, **kwargs):
-        pause = 0
-        super(PcapDataFile, self).__init__(*args, **kwargs)
-
     def __unicode__(self):
         s = '{dfile}({type}) - {desc} (saved:{at})'
         return s.format(dfile=self.datafile,
@@ -114,7 +108,7 @@ class PcapDataFile(DataFileBase):
             datafile_clean = False
 
         if self.file_type in (x['name'] for x in
-                              self.SUPPORTED_FILES.values()):
+                              self.SUPPORTED_FILES):
             if datafile_clean:
                 pinfo = pcap_info(self.datafile.file)
             else:
