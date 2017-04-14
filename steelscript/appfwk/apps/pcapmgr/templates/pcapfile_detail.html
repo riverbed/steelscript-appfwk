@@ -82,7 +82,7 @@
         rvbd.report.csrfToken = "{{ csrf_token }}";
         $('.delete').click(function() {
             var heading = 'Confirm PCAP File Delete';
-            var question = "Are you sure you would like to delete '{{ form.instance.name }}'?";
+            var question = "Are you sure you would like to delete '{{ form.datafile.value }}'?";
             var cancelButtonTxt = 'Cancel';
             var okButtonTxt = 'Delete';
 
