@@ -6,7 +6,6 @@
 
 
 from rest_framework import serializers
-
 from steelscript.appfwk.apps.pcapmgr.models import PcapDataFile
 
 

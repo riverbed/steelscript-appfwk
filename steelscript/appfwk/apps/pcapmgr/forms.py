@@ -4,8 +4,8 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-from django import forms
 from os.path import basename
+from django import forms
 from steelscript.appfwk.libs.fields import Function
 from steelscript.appfwk.apps.pcapmgr.models import PcapDataFile
 from steelscript.appfwk.apps.datasource.models import TableField
@@ -29,14 +29,11 @@ class PcapFileListForm(forms.ModelForm):
 
 
 def pcap_selection_preprocess(form, field, field_kwargs, params):
-    choices = list()
     pcap_mgr_files = PcapDataFile.objects.order_by('id')
-    if len(pcap_mgr_files) == 0:
-        choices = [('', '<No PCAP Manager files available>')]
+    if pcap_mgr_files:
+        choices = [(p.id, basename(p.datafile.name)) for p in pcap_mgr_files]
     else:
-        for p in pcap_mgr_files:
-            f = basename(p.datafile.name)
-            choices.append((p.id, f))
+        choices = [('', '<No PCAP Manager files available>')]
 
     field_kwargs['choices'] = choices
 

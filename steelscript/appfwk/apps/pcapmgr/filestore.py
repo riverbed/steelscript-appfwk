@@ -10,5 +10,5 @@ if not hasattr(settings, 'PCAP_STORE'):
     raise ValueError('Please set local_settings.PCAP_STORE to the proper '
                      'path for pcap storage')
 
-PCAPStore = FileSystemStorage(location='{0}/'.format(settings.PCAP_STORE),
-                              base_url='{0}/'.format(settings.PCAP_STORE))
+pcap_store = FileSystemStorage(location='{0}/'.format(settings.PCAP_STORE),
+                               base_url='{0}/'.format(settings.PCAP_STORE))

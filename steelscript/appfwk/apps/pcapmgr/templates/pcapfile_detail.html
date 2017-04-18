@@ -32,9 +32,6 @@
                   enctype="multipart/form-data">
                 {% csrf_token %}
                 <fieldset>
-                    {% for hidden in form.hidden_fields %}
-                        {{ hidden }}
-                    {% endfor %}
                     <div class="form-group">
                         <label  for="{{ form.description.auto_id }}" class="col-xs-3 control-label">
                             {{ form.description.label_tag }}

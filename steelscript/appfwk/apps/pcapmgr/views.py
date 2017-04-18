@@ -5,8 +5,8 @@
 # as set forth in the License.
 import logging
 import datetime
-from django.contrib import messages
 from os.path import basename
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.forms.models import modelformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
@@ -17,8 +17,8 @@ from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
-from steelscript.appfwk.apps.pcapmgr.models import PCAPStore, PcapDataFile, \
-    PcapFileField
+from steelscript.appfwk.apps.pcapmgr.models import pcap_store, PcapDataFile, \
+    PcapFileField, WARN_PCAP
 from steelscript.appfwk.apps.pcapmgr.forms import PcapFileForm, \
     PcapFileListForm
 from steelscript.appfwk.apps.pcapmgr.serializers import PcapDataFileSerializer
@@ -66,7 +66,7 @@ class PcapFileDetail(views.APIView):
 
     def delete(self, request, pcapfile_id):
         datafile = get_object_or_404(PcapDataFile, pk=pcapfile_id)
-        PCAPStore.delete(datafile.datafile.name)
+        pcap_store.delete(datafile.datafile.name)
         datafile.delete()
         return HttpResponse(status=204)
 
@@ -77,8 +77,7 @@ class PcapFileList(generics.ListAPIView):
     renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
     permission_classes = (IsAuthenticated,)
 
-    supported_files = ', '.join((file_type['name'] for file_type in
-                                model.SUPPORTED_FILES))
+    supported_files = ', '.join(model.SUPPORTED_FILES.keys())
 
     def get(self, request, *args, **kwargs):
         queryset = PcapDataFile.objects.order_by('id')
@@ -88,35 +87,15 @@ class PcapFileList(generics.ListAPIView):
                                                form=PcapFileListForm,
                                                extra=0)
             formset = df_form_set(queryset=queryset)
-            tabledata = zip(formset.forms, queryset)
+            tabledata = queryset
             data = {'formset': formset, 'tabledata': tabledata,
                     'supported_files': self.supported_files,
-                    'pcap_lib_warning': self.model.pcap_warning}
+                    'pcap_lib_warning': WARN_PCAP}
             return Response(data, template_name='pcapfile_list.html')
 
         serializer = PcapDataFileSerializer(instance=queryset)
         data = serializer.data
         return Response(data)
-
-    def put(self, request, *args, **kwargs):
-
-        df_form_set = modelformset_factory(PcapDataFile,
-                                           form=PcapFileListForm,
-                                           extra=0)
-        formset = df_form_set(request.DATA)
-
-        if formset.is_valid():
-            formset.save()
-            if '/pcapmgr' not in request.META['HTTP_REFERER']:
-                return HttpResponseRedirect(request.META['HTTP_REFERER'])
-            else:
-                return HttpResponseRedirect(reverse('pcapfile-list'))
-
-        else:
-            data = {'formset': formset,
-                    'supported_files': self.supported_files,
-                    'no_pcap_warning': self.model.pcap_warning}
-            return Response(data, template_name='pcapfile_list.html')
 
 
 class PcapFSSync(views.APIView):
@@ -124,24 +103,24 @@ class PcapFSSync(views.APIView):
 
     def get(self, request):
         """
-        Runs an ASYNC operation to sync the file system and the DB.
+        Runs an operation to sync the file system and the DB.
         redirects to the list view.
         """
 
-        added_files = list()
-        removed_db = list()
-        ignored_files = list()
+        added_files = 0
+        removed_db = 0
+        ignored_files = 0
 
         fs_files = list()
-        fs_raw_files = PCAPStore.listdir(PCAPStore.location)[1]
+        _, fs_raw_files = pcap_store.listdir(pcap_store.location)
         for f in fs_raw_files:
-            ftype = PcapFileField.get_magic_type(PCAPStore.open(f))
+            t_name, t_code = PcapFileField.get_magic_type(pcap_store.open(f))
             # Only take files supported by the field and storage.
             # ignore the rest.
-            if ftype[0]:
+            if t_name:
                 fs_files.append(f)
             else:
-                ignored_files.append(f)
+                ignored_files += 1
         db_files = PcapDataFile.objects.order_by('id')
 
         # first pass look in the db and delete any records that
@@ -150,7 +129,7 @@ class PcapFSSync(views.APIView):
                                    dbfile) for dbfile in db_files]:
             if not fs_files.count(fname):
                 datafile.delete()
-                removed_db.append(fname)
+                removed_db += 1
 
         # now look over the file system files to see if are are not
         # in the DB
@@ -158,30 +137,31 @@ class PcapFSSync(views.APIView):
                          PcapDataFile.objects.order_by('id')]
         for fsfile in fs_files:
             if not db_file_names.count(fsfile):
-                f = PCAPStore.path(fsfile)
-                ftype = PcapFileField.get_magic_type(PCAPStore.open(f))
+                f = pcap_store.path(fsfile)
+                t_name, t_sig = \
+                    PcapFileField.get_magic_type(pcap_store.open(f))
                 new_db = PcapDataFile(description=fsfile,
                                       uploaded_at=(
-                                          PCAPStore.created_time(fsfile)),
-                                      file_type=ftype[0],
+                                          pcap_store.created_time(fsfile)),
+                                      file_type=t_name,
                                       datafile=f,
                                       start_time=datetime.datetime.now(),
                                       end_time=datetime.datetime.now()
                                       )
                 new_db.save()
-                added_files.append(fsfile)
+                added_files += 1
 
         msg = ('PCAP Manager Sync: {0} PCAP record(s) removed from database.'
                ' {1} new file object(s) added to database{2}')
 
         skipped = '.'
-        if len(ignored_files):
+        if ignored_files:
             skipped = ' ({0} file(s) with invalid type skipped).'.format(
-                len(ignored_files)
+                ignored_files
             )
 
         messages.add_message(request._request, messages.INFO,
-                             msg.format(len(removed_db),
-                                        len(added_files),
+                             msg.format(removed_db,
+                                        added_files,
                                         skipped))
         return HttpResponseRedirect(reverse('pcapfile-list'))
