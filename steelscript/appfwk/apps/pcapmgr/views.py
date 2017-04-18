@@ -5,11 +5,14 @@
 # as set forth in the License.
 import logging
 import datetime
+from os import stat
 from os.path import basename
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.forms.models import modelformset_factory
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, \
+    StreamingHttpResponse
+from django.core.servers.basehttp import FileWrapper
 from django.shortcuts import get_object_or_404
 
 from rest_framework import generics, views
@@ -39,9 +42,11 @@ class PcapFileDetail(views.APIView):
             if pcapfile_id:
                 datafile = get_object_or_404(PcapDataFile, pk=pcapfile_id)
                 form = PcapFileForm(instance=datafile)
+                f_name = basename(datafile.datafile.url)
             else:
                 form = PcapFileForm()
-            return Response({'form': form},
+                f_name = None
+            return Response({'form': form, 'file_name': f_name},
                             template_name='pcapfile_detail.html')
         else:
             datafile = get_object_or_404(PcapDataFile, pk=pcapfile_id)
@@ -164,4 +169,22 @@ class PcapFSSync(views.APIView):
                              msg.format(removed_db,
                                         added_files,
                                         skipped))
+        return HttpResponseRedirect(reverse('pcapfile-list'))
+
+
+def pcap_download(request, pcap_name=None):
+    if pcap_name is not None:
+        file_path = pcap_store.path(pcap_name)
+        chunk_size = 16384
+        response = StreamingHttpResponse(FileWrapper(open(file_path,
+                                                          'rb'),
+                                         chunk_size))
+
+        response['Content-Type'] = 'application/vnd.tcpdump.pcap'
+        response['Content-Length'] = \
+            stat(pcap_store.path(pcap_name)).st_size
+        response['Content-Disposition'] = ('attachment; filename={0}'
+                                           ''.format(pcap_name))
+        return response
+    else:
         return HttpResponseRedirect(reverse('pcapfile-list'))

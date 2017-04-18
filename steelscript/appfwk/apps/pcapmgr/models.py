@@ -70,7 +70,7 @@ class PcapFileField(models.FileField):
 
 class DataFileBase(models.Model):
     """ Base Data File model. Used as a base class by PCAPDataFile. Can
-        be used as base class for other file store types. 
+        be used as base class for other file store types.
     """
     description = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -103,8 +103,8 @@ class PcapDataFile(DataFileBase):
 
     def save(self, *args, **kwargs):
         """ Saved model instance to the database. 2 cases supported: 1st is
-            UI created PcapDataFile instance with the datafile instance 
-            being a PcapFileField wrapped in a FieldFile. Second is a 
+            UI created PcapDataFile instance with the datafile instance
+            being a PcapFileField wrapped in a FieldFile. Second is a
             manually created PcapDataFile generated when a file system sync
             operation finds files not present in the DB."""
 

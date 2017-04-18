@@ -46,7 +46,11 @@
                         </label>
                         {% if form.instance.pk %}
                             <div class="controls col-xs-9" style="margin-top: 6px;">
-                                {{ form.datafile.value }}
+                                {% if file_name %}
+                                    <a href="{% url 'pcapfile-download' file_name %}">{{ file_name }}</a>
+                                {% else %}
+                                    {{ form.datafile.value }}
+                                {% endif %}
                             </div>
                         {% else %}
                             <div class="controls col-xs-9">
