@@ -17,6 +17,8 @@
     <h5>Click on Add New PCAP File to upload new data.</h5>
 {% endblock %}
 
+{% load pcapmgr_extra %}
+
 {% block content %}
     <div class="container-fluid">
         <div class="row">
@@ -43,7 +45,7 @@
                         {% for datafile in tabledata %}
                             <tr>
                                 <td>{{ datafile.description }}</td>
-                                <td><a href="{% url 'pcapfile-detail' datafile.id %}">{{ datafile.datafile.url }}</a></td>
+                                <td><a href="{% url 'pcapfile-detail' datafile.id %}">{{ datafile.datafile.url|filename }}</a></td>
                                 <td>{{ datafile.uploaded_at }}</td>
                                 <td>{{ datafile.file_type }}</td>
                                 <td>{{ datafile.start_time }}</td>

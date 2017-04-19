@@ -121,7 +121,9 @@ class PcapFSSync(views.APIView):
             fs_files = list()
             _, fs_raw_files = pcap_store.listdir(pcap_store.location)
             for f in fs_raw_files:
-                t_name, t_code = PcapFileField.get_magic_type(pcap_store.open(f))
+                t_name, t_code = PcapFileField.get_magic_type(
+                    pcap_store.open(f)
+                )
                 # Only take files supported by the field and storage.
                 # ignore the rest.
                 if t_name:
