@@ -123,7 +123,7 @@ class PcapDataFile(DataFileBase):
             # But the built in pseudo file object can't be used yet.
             datafile_clean = False
 
-        if self.file_type in (self.SUPPORTED_FILES.keys()):
+        if self.file_type in self.SUPPORTED_FILES:
             if datafile_clean:
                 # UI created instance. Simply use the built in pseudo file type
                 # object.

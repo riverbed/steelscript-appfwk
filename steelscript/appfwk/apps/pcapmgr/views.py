@@ -5,8 +5,7 @@
 # as set forth in the License.
 import logging
 import datetime
-from os import stat
-from os.path import basename
+from os import stat, path
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.forms.models import modelformset_factory
@@ -42,7 +41,7 @@ class PcapFileDetail(views.APIView):
             if pcapfile_id:
                 datafile = get_object_or_404(PcapDataFile, pk=pcapfile_id)
                 form = PcapFileForm(instance=datafile)
-                f_name = basename(datafile.datafile.url)
+                f_name = path.basename(datafile.datafile.url)
             else:
                 form = PcapFileForm()
                 f_name = None
@@ -116,45 +115,48 @@ class PcapFSSync(views.APIView):
         removed_db = 0
         ignored_files = 0
 
-        fs_files = list()
-        _, fs_raw_files = pcap_store.listdir(pcap_store.location)
-        for f in fs_raw_files:
-            t_name, t_code = PcapFileField.get_magic_type(pcap_store.open(f))
-            # Only take files supported by the field and storage.
-            # ignore the rest.
-            if t_name:
-                fs_files.append(f)
-            else:
-                ignored_files += 1
-        db_files = PcapDataFile.objects.order_by('id')
+        # First check that the directory is present. If not then
+        # there can't be any files.
+        if path.exists(pcap_store.location):
+            fs_files = list()
+            _, fs_raw_files = pcap_store.listdir(pcap_store.location)
+            for f in fs_raw_files:
+                t_name, t_code = PcapFileField.get_magic_type(pcap_store.open(f))
+                # Only take files supported by the field and storage.
+                # ignore the rest.
+                if t_name:
+                    fs_files.append(f)
+                else:
+                    ignored_files += 1
+            db_files = PcapDataFile.objects.order_by('id')
 
-        # first pass look in the db and delete any records that
-        # don't have a file system object.
-        for (fname, datafile) in [(basename(dbfile.datafile.name),
-                                   dbfile) for dbfile in db_files]:
-            if not fs_files.count(fname):
-                datafile.delete()
-                removed_db += 1
+            # first pass look in the db and delete any records that
+            # don't have a file system object.
+            for (fname, datafile) in [(path.basename(dbfile.datafile.name),
+                                       dbfile) for dbfile in db_files]:
+                if not fs_files.count(fname):
+                    datafile.delete()
+                    removed_db += 1
 
-        # now look over the file system files to see if are are not
-        # in the DB
-        db_file_names = [basename(dbfile.datafile.name) for dbfile in
-                         PcapDataFile.objects.order_by('id')]
-        for fsfile in fs_files:
-            if not db_file_names.count(fsfile):
-                f = pcap_store.path(fsfile)
-                t_name, t_sig = \
-                    PcapFileField.get_magic_type(pcap_store.open(f))
-                new_db = PcapDataFile(description=fsfile,
-                                      uploaded_at=(
-                                          pcap_store.created_time(fsfile)),
-                                      file_type=t_name,
-                                      datafile=f,
-                                      start_time=datetime.datetime.now(),
-                                      end_time=datetime.datetime.now()
-                                      )
-                new_db.save()
-                added_files += 1
+            # now look over the file system files to see if are are not
+            # in the DB
+            db_file_names = [path.basename(dbfile.datafile.name) for dbfile in
+                             PcapDataFile.objects.order_by('id')]
+            for fsfile in fs_files:
+                if not db_file_names.count(fsfile):
+                    f = pcap_store.path(fsfile)
+                    t_name, t_sig = \
+                        PcapFileField.get_magic_type(pcap_store.open(f))
+                    new_db = PcapDataFile(description=fsfile,
+                                          uploaded_at=(
+                                              pcap_store.created_time(fsfile)),
+                                          file_type=t_name,
+                                          datafile=f,
+                                          start_time=datetime.datetime.now(),
+                                          end_time=datetime.datetime.now()
+                                          )
+                    new_db.save()
+                    added_files += 1
 
         msg = ('PCAP Manager Sync: {0} PCAP record(s) removed from database.'
                ' {1} new file object(s) added to database{2}')
@@ -164,11 +166,11 @@ class PcapFSSync(views.APIView):
             skipped = ' ({0} file(s) with invalid type skipped).'.format(
                 ignored_files
             )
-
         messages.add_message(request._request, messages.INFO,
                              msg.format(removed_db,
                                         added_files,
                                         skipped))
+
         return HttpResponseRedirect(reverse('pcapfile-list'))
 
 
