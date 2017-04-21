@@ -115,6 +115,8 @@ class PcapFSSync(views.APIView):
         removed_db = 0
         ignored_files = 0
 
+        removed_storage_loc = False
+
         # First check that the directory is present. If not then
         # there can't be any files.
         if path.exists(pcap_store.location):
@@ -159,19 +161,28 @@ class PcapFSSync(views.APIView):
                                           )
                     new_db.save()
                     added_files += 1
+        else:
+            db_files = PcapDataFile.objects.order_by('id')
+            if db_files:
+                removed_storage_loc = True
 
-        msg = ('PCAP Manager Sync: {0} PCAP record(s) removed from database.'
-               ' {1} new file object(s) added to database{2}')
+        if removed_storage_loc:
+            msg = ('Warning: PCAP records found in the database but the '
+                   'underlying storage location is missing. This could be '
+                   'caused by issues such as file system corruption. Please i'
+                   'nvestigate.')
+        else:
+            msg = ('PCAP Manager Sync: {0} PCAP record(s) removed from '
+                   'database. {1} new file object(s) added to database{2}')
 
-        skipped = '.'
-        if ignored_files:
-            skipped = ' ({0} file(s) with invalid type skipped).'.format(
-                ignored_files
-            )
-        messages.add_message(request._request, messages.INFO,
-                             msg.format(removed_db,
-                                        added_files,
-                                        skipped))
+            skipped = '.'
+            if ignored_files:
+                skipped = ' ({0} file(s) with invalid type skipped).'.format(
+                    ignored_files
+                )
+            msg = msg.format(removed_db, added_files, skipped)
+
+        messages.add_message(request._request, messages.INFO, msg)
 
         return HttpResponseRedirect(reverse('pcapfile-list'))
 
