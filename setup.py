@@ -88,6 +88,7 @@ http://pythonhosted.org/steelscript/
         'pandas>=0.19.2,<0.20.0',
         'pygeoip>=0.2.6',
         'python-dateutil>=2.2',
+        'python-magic==0.4.12',
         'pytz>=2013.8',
         'six>=1.3.0',
         'wsgiref>=0.1.2',

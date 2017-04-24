@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2017 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% load add_attrs %}
+
+{% block title %}App Framework: PCAP File Detail{% endblock %}
+
+
+{% block header %}
+{% endblock %}
+
+{% block header_row %}
+    <h3>Add/Edit PCAP File</h3>
+    <h5>File upload size is limited to 2G in many Steelscript AppFwk server configurations.</h5>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-8 block-centered">
+            <form class="form-horizontal"
+                  action=""
+                  method="POST"
+                  enctype="multipart/form-data">
+                {% csrf_token %}
+                <fieldset>
+                    <div class="form-group">
+                        <label  for="{{ form.description.auto_id }}" class="col-xs-3 control-label">
+                            {{ form.description.label_tag }}
+                        </label>
+                        <div class="controls col-xs-9">
+                            {{ form.description|addcss:"form-control" }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label  for="{{ form.datafile.auto_id }}" class="col-xs-3 control-label">
+                            {{ form.datafile.label_tag }}
+                        </label>
+                        {% if form.instance.pk %}
+                            <div class="controls col-xs-9" style="margin-top: 6px;">
+                                {% if file_name %}
+                                    <a href="{% url 'pcapfile-download' file_name %}">{{ file_name }}</a>
+                                {% else %}
+                                    {{ form.datafile.value }}
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="controls col-xs-9">
+                                {{ form.datafile|addcss:"form-control" }}
+                            </div>
+                        {% endif %}
+                        {% if form.datafile.errors %}
+                            <div class="block-centered">
+                            {% for err in form.datafile.errors %}
+                                <p class="text-danger" align="center">{{ err }}</p>
+                            {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </fieldset>
+
+                <div style="text-align: center">
+                    <input type="submit" value="Save Changes" class="btn btn-primary">
+                    {% if form.instance.pk %}
+                        <a href="#" id="{{ form.instance.pk }}" class="btn btn-danger delete">Delete DataFile</a>
+                    {% endif %}
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">document.getElementById("id_datafile").focus();</script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/rvbd-report.js"></script>
+    <script type="text/javascript">
+        rvbd.report.csrfToken = "{{ csrf_token }}";
+        $('.delete').click(function() {
+            var heading = 'Confirm PCAP File Delete';
+            var question = "Are you sure you would like to delete '{{ form.datafile.value }}'?";
+            var cancelButtonTxt = 'Cancel';
+            var okButtonTxt = 'Delete';
+
+            var callback = function() {
+                $.ajaxSetup({
+                    headers: { "X-CSRFToken": rvbd.report.csrfToken }
+                });
+
+                $.ajax({
+                    type: 'DELETE',
+                    url: '/pcapmgr/' + {{ form.instance.pk }} + '/',
+                    success: function(){
+                        window.location = '/pcapmgr/';
+                    }
+                });
+            };
+            rvbd.modal.confirm(heading, question, cancelButtonTxt, okButtonTxt, callback);
+        });
+    </script>
+{% endblock %}

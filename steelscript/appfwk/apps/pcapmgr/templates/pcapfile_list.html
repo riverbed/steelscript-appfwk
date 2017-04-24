@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2017 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% block title %}App Framework: Edit and Add PCAP Files{% endblock %}
+
+{% block header_row %}
+    <h3>Edit and add PCAP Files</h3>
+    <h5>Click on PCAP File link to update description.</h5>
+    <h5>Click on Add New PCAP File to upload new data.</h5>
+{% endblock %}
+
+{% load pcapmgr_extra %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-offset-1 col-xs-10">
+                <table border="0" class="table table-bordered block-centered">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>PCAP File</th>
+                            <th>Upload Time</th>
+                            <th>File Type</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Total Packets</th>
+                            <th>Total Packet Bytes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if not tabledata %}
+                            <tr>
+                                <td colspan="8" style="text-align: center">No files uploaded yet.</td>
+                            </tr>
+                        {% endif %}
+                        {% for datafile in tabledata %}
+                            <tr>
+                                <td>{{ datafile.description }}</td>
+                                <td><a href="{% url 'pcapfile-detail' datafile.id %}">{{ datafile.datafile.url|filename }}</a></td>
+                                <td>{{ datafile.uploaded_at }}</td>
+                                <td>{{ datafile.file_type }}</td>
+                                <td>{{ datafile.start_time }}</td>
+                                <td>{{ datafile.end_time }}</td>
+                                <td>{{ datafile.pkt_count }}</td>
+                                <td>{{ datafile.packet_bytes }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="row">
+                    <div class="block-centered" style="text-align: center">
+                        <a href="{% url 'pcapfile-add' %}" class="btn btn-default">Add New PCAP File</a>
+                        <a href="{% url 'pcapfs-sync' %}" class="btn btn-danger delete">Resync PCAP Manager</a>
+                    </div>
+                    <div class="block-centered" style="text-align: center">
+                    {% if supported_files %}
+                        <p class="text-danger">This PCAP file manager supports the
+                                               following PCAP types:&nbsp;{{supported_files}}
+                        </p>
+                    {% endif %}
+                    {% if pcap_lib_warning %}
+                        <p class="text-danger">Accurate Start Time, End Time, Total Packets, and Total Packet Bytes data requires installing steelscript.packets.</p>
+                    {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

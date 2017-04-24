@@ -281,6 +281,7 @@ INSTALLED_APPS = (
     # appfwk apps - order matters, django loads in sequence
     'steelscript.appfwk.apps.datasource',
     'steelscript.appfwk.apps.devices',
+    'steelscript.appfwk.apps.pcapmgr',
     'steelscript.appfwk.apps.report',
     'steelscript.appfwk.apps.geolocation',
     'steelscript.appfwk.apps.help',
