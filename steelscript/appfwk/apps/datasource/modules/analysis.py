@@ -356,7 +356,7 @@ class ResampleTable(AnalysisTable):
         self.fields.add(field)
 
     def post_process_table(self, field_options):
-        super(self.__class__, self).post_process_table(field_options)
+        super(ResampleTable, self).post_process_table(field_options)
         self.fields_add_sample(initial=self.options.resample_interval)
 
 
