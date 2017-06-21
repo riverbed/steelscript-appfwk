@@ -197,6 +197,33 @@ input[type="file"] {
   background: radial-gradient(#eee, #eee, #333);
 }
 
+/* colored glyphed icons */
+.bordered-icon
+{
+    font-size: 20px;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+}
+
+.red-icon
+{
+  color: #f00;
+}
+
+.yellow-icon
+{
+  color: #ff0;
+}
+
+.green-icon
+{
+  color: green;
+}
+
+.gray-icon
+{
+  color: grey;
+}
+
 /* add this class to make the circles a bit bigger */
 .wide
 {
@@ -229,8 +256,18 @@ input[type="file"] {
    font-weight: bold;
    color: black;
    margin-left: 20px;
-   /*margin-top: 0;*/
-   margin-top: -13px;
+   margin-top: 0;
+}
+
+.info-icon
+{
+    position: absolute;
+    font-size: 13px;
+    font-weight: bold;
+    color: black;
+    margin-left: 33px;
+    /*margin-top: 0;*/
+    margin-top: -23px;
 }
 
 /*

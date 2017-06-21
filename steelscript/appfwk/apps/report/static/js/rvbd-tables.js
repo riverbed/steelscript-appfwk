@@ -136,6 +136,9 @@ $.extend(rvbd.widgets.tables.TableWidget.prototype, {
             // don't apply any ordering within the widget init
             order: []
         });
+
+        // apply any tooltips that have been created inside table
+        $('.tooltip-class').tooltip();
     }
 });
 
