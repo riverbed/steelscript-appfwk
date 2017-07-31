@@ -15,36 +15,65 @@
     <script type="text/javascript">
         $(document).ready( function() {
             {% if results %}
-                YUI().use("datatable-sort", function(Y) {
-                    {% if device == 'NetProfiler' %}
-                        cols = [
-                            {key:"KeyColumn", label:"Is Key Column", sortable:true},
-                            {key:"Key", label:"Column Key", sortable:true},
-                            {key:"Label", label:"Label", sortable:true},
-                            {key:"ID", label:"Column ID", sortable:true}
-                        ],
-                        data = [
-                            {% for iskey, key, label, id in results %}
-                                {KeyColumn:"{{ iskey }}", Key:"{{ key }}", Label:"{{ label }}", ID:"{{ id }}"},
-                            {% endfor %}
-                        ],
-                    {% elif device == 'NetShark' %}
-                        cols = [
-                            {key:"ID", label:"Column ID", sortable:true},
-                            {key:"Description", label:"Description", sortable:true},
-                            {key:"Type", label:"Column Type", sortable:true}
-                        ],
-                        data = [
-                            {% for id, description, type in results %}
-                                {ID:"{{ id }}", Description:"{{ description }}", Type:"{{ type }}"},
-                            {% endfor %}
-                        ],
-                    {% endif %}
-                    table = new Y.DataTable({
-                        columns: cols,
-                        data: data,
-                        summary: "Column List",
-                    }).render('#sort');
+                var cols, data;
+
+                {% if device == 'NetProfiler' %}
+                    cols = [
+                        {data: "KeyColumn", title: "Is Key Column", sortable:true},
+                        {data: "Key", title: "Column Key", sortable:true},
+                        {data: "Label", title: "Label", sortable:true},
+                        {data: "ID", title: "Column ID", sortable:true}
+                    ];
+                    data = [
+                        {% for iskey, key, label, id in results %}
+                            {KeyColumn:"{{ iskey }}", Key:"{{ key }}", Label:"{{ label }}", ID:"{{ id }}"},
+                        {% endfor %}
+                    ];
+                {% elif device == 'NetShark' %}
+                    cols = [
+                        {data: "ID", title: "Column ID", sortable:true},
+                        {data: "Description", title: "Description", sortable:true},
+                        {data: "Type", title: "Column Type", sortable:true}
+                    ];
+                    data = [
+                        {% for id, description, type in results %}
+                            {ID:"{{ id }}", Description:"{{ description }}", Type:"{{ type }}"},
+                        {% endfor %}
+                    ];
+                {% elif device == 'AppResponse' %}
+                    cols = [
+                        {data: 'id', title: 'ID', sortable: true},
+                        {data: 'field', title: 'Field', sortable: true},
+                        {data: 'label', title: 'Label', sortable: true},
+                        {data: 'metric', title: 'Metric', sortable: true},
+                        {data: 'type', title: 'Type', sortable: true},
+                        {data: 'unit', title: 'Unit', sortable: true},
+                        {data: 'description', title: 'Description', sortable: true},
+                        {data: 'synthesized', title: 'Synthesized', sortable: true},
+                    ];
+
+                    data = [
+                        {% for id, field, label, metric, type, unit, description, synthesized in results %}
+                            {id:"{{id}}", field:"{{ field }}", label:"{{ label }}", metric:"{{ metric }}", type:"{{ type }}", unit:"{{ unit }}", description:"{{ description }}", synthesized:"{{ synthesized }}"},
+                        {% endfor %}
+                    ];
+                {% endif %}
+
+                var $table = $('<table></table>')
+                    .attr('id', self.id + '_datatable')
+                    .addClass('display')
+                    .addClass('compact');
+                var $content = $('#sort');
+                $content.append($table);
+
+                $table.DataTable({
+                    data: data,
+                    columns: cols,
+                    info: true,
+                    lengthChange: true,
+                    paging: false,
+                    scrollY: false,
+                    searching: true
                 });
             {% endif %}
 

@@ -7,22 +7,22 @@
 import os
 import sys
 import ast
-import operator
 import logging
+import operator
 import subprocess
+from collections import OrderedDict
 
-
+import pandas
 from django.http import Http404
 from django.template import RequestContext
 from django.shortcuts import render_to_response
 from rest_framework import views
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import TemplateHTMLRenderer
-from collections import OrderedDict
 
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
-from steelscript.appfwk.apps.help.forms import NetProfilerInputForm, NetSharkInputForm
-
+from steelscript.appfwk.apps.help.forms import NetProfilerInputForm, \
+    NetSharkInputForm, AppResponseInputForm
 
 logger = logging.getLogger(__name__)
 
@@ -173,6 +173,9 @@ class ColumnHelper(views.APIView):
         elif device_type == 'netshark':
             device = 'NetShark'
             form = NetSharkInputForm()
+        elif device_type == 'appresponse':
+            device = 'AppResponse'
+            form = AppResponseInputForm()
         else:
             raise Http404
 
@@ -189,6 +192,9 @@ class ColumnHelper(views.APIView):
         elif device_type == 'netshark':
             device = 'NetShark'
             form = NetSharkInputForm(request.POST)
+        elif device_type == 'appresponse':
+            device = 'AppResponse'
+            form = AppResponseInputForm(request.POST)
         else:
             raise Http404
 
@@ -209,6 +215,15 @@ class ColumnHelper(views.APIView):
 
                 results = [(f.id, f.description, f.type) for f in shark.get_extractor_fields()]
                 results.sort(key=operator.itemgetter(0))
+            elif device_type == 'appresponse':
+                ar = DeviceManager.get_device(data['device'])
+
+                rawcols = ar.reports.get_columns()
+                colkeys = ['id', 'field', 'label', 'metric', 'type', 'unit',
+                           'description', 'synthesized']
+                coldf = pandas.DataFrame(rawcols.values(), columns=colkeys)
+                coldf.sort_values(by='id', inplace=True)
+                results = list(coldf.to_records(index=False))
 
         return render_to_response('help.html',
                                   {'device': device,

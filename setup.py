@@ -47,7 +47,7 @@ http://pythonhosted.org/steelscript/
 
     'platforms': 'Linux, Mac OS, Windows',
 
-    'classifiers': (
+    'classifiers': [
         'Development Status :: 4 - Beta',
         'Framework :: Django',
         'Intended Audience :: Developers',
@@ -59,7 +59,7 @@ http://pythonhosted.org/steelscript/
         'Programming Language :: Python :: 2.7',
         'Topic :: System :: Networking',
         'Topic :: Software Development'
-    ),
+    ],
 
     'packages': find_packages(exclude=('gitpy_versioning', 'data')),
 

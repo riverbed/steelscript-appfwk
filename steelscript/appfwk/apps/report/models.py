@@ -463,6 +463,12 @@ class Section(models.Model):
     position = models.DecimalField(max_digits=7, decimal_places=3, default=10)
     fields = models.ManyToManyField(TableField)
 
+    def __unicode__(self):
+        return '<Section %s (%s)>' % (self.title, self.id)
+
+    def __repr__(self):
+        return unicode(self)
+
     @classmethod
     def create(cls, report, title='', position=None,
                section_keywords=None,

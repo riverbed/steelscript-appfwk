@@ -56,3 +56,12 @@ class NetSharkInputForm(DeviceInputForm):
         field_list = ([('device', cf)] +
                       [(k, v) for k, v in self.fields.iteritems()])
         self.fields = OrderedDict(field_list)
+
+
+class AppResponseInputForm(DeviceInputForm):
+    def __init__(self, *args, **kwargs):
+        super(AppResponseInputForm, self).__init__(*args, **kwargs)
+        cf = forms.ChoiceField(choices=get_device_choices('appresponse'))
+        field_list = ([('device', cf)] +
+                      [(k, v) for k, v in self.fields.iteritems()])
+        self.fields = OrderedDict(field_list)
