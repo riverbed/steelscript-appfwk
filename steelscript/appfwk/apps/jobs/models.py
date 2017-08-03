@@ -722,13 +722,28 @@ class Job(models.Model):
                   s.dtype == pandas.np.dtype('object')):
                 # The column is supposed to be numeric but must have
                 # some strings.  Try replacing empty strings with NaN
-                # and see if it converts to float64
+                # and see if it converts to float64 or int64
+
+                # special case the big ints
+                if col.datatype == col.DATATYPE_INTEGER64:
+                    dtype = pandas.np.uint64
+                else:
+                    dtype = pandas.np.float64
+
                 try:
                     df[col.name] = (s.replace('', pandas.np.NaN)
-                                    .astype(pandas.np.float64))
+                                    .astype(dtype))
                 except ValueError:
                     # This may incorrectly be tagged as numeric
                     pass
+            elif col.isstring():
+                # The column is supposed to be a string so lets make sure
+                # Try replacing empty strings with NaN, convert rest to string
+
+                dtype = pandas.np.str
+
+                df[col.name] = (s.replace('', pandas.np.NaN)
+                                .astype(dtype))
 
         return df
 
