@@ -13,7 +13,7 @@ from elasticsearch_dsl.connections import connections
 from elasticsearch import helpers
 from elasticsearch.connection.base import logger as elastic_logger
 
-from steelscript.common.timeutils import datetime_to_seconds
+from steelscript.common.timeutils import datetime_to_microseconds
 from steelscript.appfwk.project.settings import ELASTICSEARCH_HOSTS
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class ElasticSearch(object):
 
         actions = [{"_index": index,
                     "_type": doctype,
-                    "_id": datetime_to_seconds(df.iloc[i][timecol]),
+                    "_id": datetime_to_microseconds(df.iloc[i][timecol]),
                     "_source": df.iloc[i].to_dict()}
                    for i in xrange(len(df))]
 
