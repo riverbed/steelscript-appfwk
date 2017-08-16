@@ -5,6 +5,7 @@ CHANGELOG
  * Add PCAP file manager
  * Fix issue with resample tables being a child off of ResampleTable
  * Refactor JS formatters to support colored icons, tooltips, and raw text output
+ * Add AppResponse column viewer to Help menu
 
 [1.4]
  * Django 1.8 compatiblity
