@@ -10,6 +10,8 @@ import json
 import logging
 from cStringIO import StringIO
 from tagging_autocomplete.models import TagAutocompleteField
+from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import ValidationError
 
 from django.db import models
 from django.core import management
@@ -18,6 +20,15 @@ from django.conf import settings
 from steelscript.common import Auth
 
 logger = logging.getLogger(__name__)
+
+
+def validate_port(value):
+    if value <= 0 or value > 65535:
+        raise ValidationError(
+            _('%(value)s is not a valid port number, '
+              'which should be between 0 and 65536'),
+            params={'value': value},
+        )
 
 
 def create_device_fixture(strip_passwords=True):
@@ -64,7 +75,7 @@ class Device(models.Model):
     name = models.CharField(max_length=200)
     module = models.CharField(max_length=200)
     host = models.CharField(max_length=200)
-    port = models.IntegerField(default=443)
+    port = models.IntegerField(default=443, validators=[validate_port])
     username = models.CharField(max_length=100, blank=True)
     password = models.CharField(max_length=100, blank=True)
     tags = TagAutocompleteField(blank=True)
