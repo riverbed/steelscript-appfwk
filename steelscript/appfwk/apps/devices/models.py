@@ -23,10 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 def validate_port(value):
-    if value <= 0 or value > 65535:
+    if value < 1 or value > 65535:
         raise ValidationError(
             _('%(value)s is not a valid port number, '
-              'which should be between 0 and 65536'),
+              'which should be between 1 and 65535'),
             params={'value': value},
         )
 
