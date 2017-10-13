@@ -1,0 +1,38 @@
+# start from steelscript base
+FROM riverbed/steelscript
+MAINTAINER Riverbed Technology
+
+RUN set -ex \
+        && install=' \
+                git \
+                less \
+                vim \
+        ' \
+        && apt-get update && apt-get install -y $install --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
+# auto-reloading monitor
+RUN set -ex \
+        && cd /tmp && wget https://github.com/cortesi/modd/releases/download/v0.4/modd-0.4-linux64.tgz \
+        && tar xvzf modd-0.4-linux64.tgz \
+        && mv modd-0.4-linux64/modd /usr/local/bin/modd \
+        && chown root:staff /usr/local/bin/modd \
+        && rm -rf /tmp/*
+
+# wsgi and db access
+RUN set -ex \
+        && pip install psycopg2 gunicorn \
+        && pip install Cython \
+        && rm -rf ~/.cache
+
+# install from dev repo in editable mode
+# appfwk needs to be installed separately to ensure dependency gets picked up
+# for other two packages
+RUN set -ex \
+        && pip install --src /src -e git+https://gitlab.lab.nbttech.com/steelscript/steelscript-appfwk.git@develop#egg=steelscript-appfwk \
+        && pip install --src /src \
+            -e git+https://gitlab.lab.nbttech.com/steelscript/steelscript-appfwk-business-hours.git@develop#egg=steelscript-appfwk-business_hours \
+            -e git+https://gitlab.lab.nbttech.com/steelscript/steelscript-stock.git@master#egg=steelscript-stock \
+            -e git+https://gitlab.lab.nbttech.com/steelscript/steelscript-packets.git@master#egg=steelscript-packets \
+        && rm -f /src/pip-delete-this-directory.txt \
+        && rm -rf ~/.cache
+
