@@ -218,7 +218,7 @@ class ColumnHelper(views.APIView):
             elif device_type == 'appresponse':
                 ar = DeviceManager.get_device(data['device'])
 
-                rawcols = ar.reports.get_columns()
+                rawcols = ar.reports.get_columns()[data['source']]
                 colkeys = ['id', 'field', 'label', 'metric', 'type', 'unit',
                            'description', 'synthesized']
                 coldf = pandas.DataFrame(rawcols.values(), columns=colkeys)
