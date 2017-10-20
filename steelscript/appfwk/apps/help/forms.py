@@ -33,8 +33,8 @@ def get_centricities():
 
 
 def get_sourcenames():
-    return [('', '---') +
-            sorted(zip(report_source_names, report_source_names))]
+    return [('', '---')] + \
+           sorted(zip(report_source_names, report_source_names))
 
 
 class DeviceInputForm(forms.Form):
