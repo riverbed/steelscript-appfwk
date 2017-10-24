@@ -9,6 +9,7 @@ RUN set -ex \
                 less \
                 vim \
                 tshark \
+                libmagic-dev \ 
         ' \
         && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $install --no-install-recommends \
         && rm -rf /var/lib/apt/lists/*

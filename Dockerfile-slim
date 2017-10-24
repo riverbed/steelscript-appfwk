@@ -10,7 +10,10 @@ RUN set -ex \
                 libssl-dev \
                 libpq-dev \
         ' \
-        && apt-get update && apt-get install -y $buildDeps --no-install-recommends && rm -rf /var/lib/apt/lists/* \
+        && install=' \
+                libmagic-dev \ 
+        ' \
+        && apt-get update && apt-get install -y $buildDeps $install --no-install-recommends && rm -rf /var/lib/apt/lists/* \
         \
         && pip install psycopg2 gunicorn \
         && pip install --src /src -e git+https://github.com/riverbed/steelscript-appfwk#egg=steelscript-appfwk \
