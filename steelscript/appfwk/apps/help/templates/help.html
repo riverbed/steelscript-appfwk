@@ -41,22 +41,38 @@
                         {% endfor %}
                     ];
                 {% elif device == 'AppResponse' %}
-                    cols = [
-                        {data: 'id', title: 'ID', sortable: true},
-                        {data: 'field', title: 'Field', sortable: true},
-                        {data: 'label', title: 'Label', sortable: true},
-                        {data: 'metric', title: 'Metric', sortable: true},
-                        {data: 'type', title: 'Type', sortable: true},
-                        {data: 'unit', title: 'Unit', sortable: true},
-                        {data: 'description', title: 'Description', sortable: true},
-                        {data: 'synthesized', title: 'Synthesized', sortable: true},
-                    ];
+                    {% if display_columns %}
+                        cols = [
+                            {data: 'id', title: 'ID', sortable: true},
+                            {data: 'field', title: 'Field', sortable: true},
+                            {data: 'label', title: 'Label', sortable: true},
+                            {data: 'metric', title: 'Metric', sortable: true},
+                            {data: 'type', title: 'Type', sortable: true},
+                            {data: 'unit', title: 'Unit', sortable: true},
+                            {data: 'description', title: 'Description', sortable: true},
+                            {data: 'synthesized', title: 'Synthesized', sortable: true},
+                        ];
 
-                    data = [
-                        {% for id, field, label, metric, type, unit, description, synthesized in results %}
-                            {id:"{{id}}", field:"{{ field }}", label:"{{ label }}", metric:"{{ metric }}", type:"{{ type }}", unit:"{{ unit }}", description:"{{ description }}", synthesized:"{{ synthesized }}"},
-                        {% endfor %}
-                    ];
+                        data = [
+                            {% for id, field, label, metric, type, unit, description, synthesized in results %}
+                                {id:"{{id}}", field:"{{ field }}", label:"{{ label }}",
+                                 metric:"{{ metric }}", type:"{{ type }}", unit:"{{ unit }}",
+                                 description:"{{ description }}", synthesized:"{{ synthesized }}"},
+                            {% endfor %}
+                        ];
+
+                    {% else %}
+                        cols = [
+                                {data: 'name', title: 'Name', sortable: true},
+                                {data: 'filters_on_metrics', title: 'Support Filters on Metrics', sortable: true},
+                                {data: 'granularities', title: 'Granularities (Seconds)', sortable: true},
+                        ];
+                        data = [
+                            {% for name, filters_on_metrics, granularities in results %}
+                                {name:"{{name}}", filters_on_metrics:"{{ filters_on_metrics }}", granularities:"{{ granularities }}"},
+                            {% endfor %}
+                        ];
+                    {% endif %}
                 {% endif %}
 
                 var $table = $('<table></table>')
@@ -109,8 +125,45 @@
                 }
             });
 
+            {% if device == 'AppResponse' and display_columns %}
+                var source_options = JSON.parse('{{ report_sources|safe }}');
+                var group = $('#id_group :selected').attr('value');
+                var source = $('#id_source :selected').attr('value');
 
-        });
+                //set the field to show source options based on the group
+                var options = '<option value="">---&nbsp;</option>';
+                if (group != ''){
+                    j = source_options[group];
+                    for (var i = 0; i < j.length; i++) {
+                        options += '<option value="' + j[i] + '">' + j[i] + '</option>';
+                    }
+                }
+                $("#id_source").html(options);
+
+                // preserve the original selected field
+                opts = document.getElementById("id_source").options
+
+                for (var i = 0; i < opts.length; i ++) {
+                    if (opts[i].text == source) {
+                        opts[i].selected = true;
+                        break;
+                    }
+                }
+
+                //if group changes, update the corresponding sources
+                $('#id_group').change(function(e) {
+                    var text = $('#id_group :selected').attr('value');
+                    var options = '<option value="">---&nbsp;</option>';
+                    if (text != ''){
+                        j = source_options[text];
+                        for (var i = 0; i < j.length; i++) {
+                            options += '<option value="' + j[i] + '">' + j[i] + '</option>';
+                        }
+                     }
+                     $("#id_source").html(options);
+               });
+           {% endif %}
+    });
     </script>
 
     <style type="text/css">
@@ -123,7 +176,11 @@
 
 {% block content %}
     <div class="container-fluid">
-        <h3 align="center">{{ device }} Column Helper</h3>
+        {% if display_columns %}
+            <h3 align="center">{{ device }} Column Helper</h3>
+        {% else %}
+            <h3 align="center">{{ device }} Source Helper</h3>
+        {% endif %}
         <form id="profiler" class="form-inline" action='' method='post' align="center">
             <div class="row-fluid" align="center">
                 <div class="span10 offset1">
@@ -131,7 +188,11 @@
                         {% if form.valid_devices %}
                             {% csrf_token %}
                             <table>{{ form.as_table }}</table>
-                            <br><input id="submit" type="submit" value="Find Columns" class="btn btn-primary">
+                            {% if display_columns %}
+                                <br><input id="submit" type="submit" value="Find Columns" class="btn btn-primary">
+                            {% else %}
+                                <br><input id="submit" type="submit" value="Find Sources" class="btn btn-primary">
+                            {% endif %}
                         {% else %}
                             <table>
                                 <tr><td>No enabled devices found.</td></tr>

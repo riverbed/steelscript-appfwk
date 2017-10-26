@@ -10,7 +10,8 @@ from django import forms
 
 from steelscript.netprofiler.core import _constants
 from steelscript.appfwk.apps.devices.models import Device
-from steelscript.appresponse.core._constants import report_source_names
+from steelscript.appresponse.core._constants import report_source_names, \
+    report_groups
 
 
 def get_device_choices(device_type):
@@ -30,6 +31,10 @@ def get_realms():
 
 def get_centricities():
     return ('', '---'), ('hos', 'host'), ('int', 'interface')
+
+
+def get_groups():
+    return [('', '---')] + zip(report_groups, report_groups)
 
 
 def get_sourcenames():
@@ -65,7 +70,6 @@ class NetSharkInputForm(DeviceInputForm):
 
 
 class AppResponseInputForm(DeviceInputForm):
-    source = forms.ChoiceField(choices=get_sourcenames())
 
     def __init__(self, *args, **kwargs):
         super(AppResponseInputForm, self).__init__(*args, **kwargs)
@@ -73,3 +77,8 @@ class AppResponseInputForm(DeviceInputForm):
         field_list = ([('device', cf)] +
                       [(k, v) for k, v in self.fields.iteritems()])
         self.fields = OrderedDict(field_list)
+
+
+class AppResponseColumnsInputForm(AppResponseInputForm):
+    group = forms.ChoiceField(choices=get_groups())
+    source = forms.ChoiceField(choices=get_sourcenames())

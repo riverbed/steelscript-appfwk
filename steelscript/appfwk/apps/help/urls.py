@@ -18,4 +18,12 @@ urlpatterns = patterns(
 
     url(r'^(?P<device_type>[a-z]+)/$',
         views.ColumnHelper.as_view()),
+
+    # AppResponse columns
+    url(r'^(?P<device_type>[a-z]+)/columns/$',
+        views.ColumnHelper.as_view()),
+
+    # AppResponse sources
+    url(r'^(?P<device_type>[a-z]+)/sources/$',
+        views.SourceHelper.as_view()),
 )
