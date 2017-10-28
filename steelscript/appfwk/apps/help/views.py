@@ -168,7 +168,11 @@ class ColumnHelper(views.APIView):
     permission_classes = (IsAuthenticated, )   # no guests
     renderer_classes = (TemplateHTMLRenderer, )
 
-    def get(self, request, device_type):
+    def get(self, request, device_type, data_type):
+
+        if data_type not in ['columns', 'sources']:
+            raise Http404
+
         if device_type == 'netprofiler':
             device = 'NetProfiler'
             form = NetProfilerInputForm()
@@ -177,20 +181,27 @@ class ColumnHelper(views.APIView):
             form = NetSharkInputForm()
         elif device_type == 'appresponse':
             device = 'AppResponse'
-            form = AppResponseColumnsInputForm()
+            if data_type == 'columns':
+                form = AppResponseColumnsInputForm()
+            else:
+                form = AppResponseInputForm()
         else:
             raise Http404
 
         serialized_sources = json.dumps(report_sources)
         return render_to_response('help.html',
                                   {'device': device,
-                                   'display_columns': True,
+                                   'data_type': data_type,
                                    'report_sources': serialized_sources,
                                    'form': form,
                                    'results': None},
                                   context_instance=RequestContext(request))
 
-    def post(self, request, device_type):
+    def post(self, request, device_type, data_type):
+
+        if data_type not in ['columns', 'sources']:
+            raise Http404
+
         if device_type == 'netprofiler':
             device = 'NetProfiler'
             form = NetProfilerInputForm(request.POST)
@@ -199,7 +210,10 @@ class ColumnHelper(views.APIView):
             form = NetSharkInputForm(request.POST)
         elif device_type == 'appresponse':
             device = 'AppResponse'
-            form = AppResponseColumnsInputForm(request.POST)
+            if data_type == 'columns':
+                form = AppResponseColumnsInputForm(request.POST)
+            else:
+                form = AppResponseInputForm(request.POST)
         else:
             raise Http404
 
@@ -223,73 +237,36 @@ class ColumnHelper(views.APIView):
             elif device_type == 'appresponse':
                 ar = DeviceManager.get_device(data['device'])
 
-                rawcols = ar.reports.sources[data['source']]['columns']
+                if data_type == 'columns':
+                    rawcols = ar.reports.sources[data['source']]['columns']
 
-                for col in rawcols.values():
-                    if 'synthesized' in col:
-                        synth = col['synthesized']
-                        col['synthesized'] = \
-                            (', '.join(['{}: {}'.format(k, v)
-                             for k, v in synth.iteritems()]))
+                    for col in rawcols.values():
+                        if 'synthesized' in col:
+                            synth = col['synthesized']
+                            if isinstance(synth, dict):
+                                col['synthesized'] = \
+                                    (', '.join(['{}: {}'.format(k, v)
+                                     for k, v in synth.iteritems()]))
 
-                colkeys = ['id', 'field', 'label', 'metric', 'type', 'unit',
-                           'description', 'synthesized']
-                coldf = pandas.DataFrame(rawcols.values(), columns=colkeys)
-                coldf.fillna('---', inplace=True)
+                    colkeys = ['id', 'field', 'label', 'metric', 'type',
+                               'unit', 'description', 'synthesized']
+                    coldf = pandas.DataFrame(rawcols.values(), columns=colkeys)
+                    coldf.fillna('---', inplace=True)
 
-                coldf.sort_values(by='id', inplace=True)
-                results = list(coldf.to_records(index=False))
+                    coldf.sort_values(by='id', inplace=True)
+                    results = list(coldf.to_records(index=False))
+                else:
+                    colkeys = ['name', 'filters_on_metrics', 'granularities']
+                    coldf = pandas.DataFrame(ar.reports.sources.values(),
+                                             columns=colkeys)
+                    coldf.sort_values(by='name', inplace=True)
+                    results = list(coldf.to_records(index=False))
 
         serialized_sources = json.dumps(report_sources)
         return render_to_response('help.html',
                                   {'device': device,
                                    'report_sources': serialized_sources,
-                                   'display_columns': True,
-                                   'form': form,
-                                   'results': results},
-                                  context_instance=RequestContext(request))
-
-
-class SourceHelper(views.APIView):
-    permission_classes = (IsAuthenticated, )   # no guests
-    renderer_classes = (TemplateHTMLRenderer, )
-
-    def get(self, request, device_type):
-        if device_type == 'appresponse':
-            device = 'AppResponse'
-            form = AppResponseInputForm()
-        else:
-            raise Http404
-
-        return render_to_response('help.html',
-                                  {'device': device,
-                                   'display_columns': False,
-                                   'form': form,
-                                   'results': None},
-                                  context_instance=RequestContext(request))
-
-    def post(self, request, device_type):
-        if device_type == 'appresponse':
-            device = 'AppResponse'
-            form = AppResponseInputForm(request.POST)
-        else:
-            raise Http404
-
-        results = None
-        if form.is_valid():
-            data = form.cleaned_data
-            if device_type == 'appresponse':
-                ar = DeviceManager.get_device(data['device'])
-
-                colkeys = ['name', 'filters_on_metrics', 'granularities']
-                coldf = pandas.DataFrame(ar.reports.sources.values(),
-                                         columns=colkeys)
-                coldf.sort_values(by='name', inplace=True)
-                results = list(coldf.to_records(index=False))
-
-        return render_to_response('help.html',
-                                  {'device': device,
-                                   'display_columns': False,
+                                   'data_type': data_type,
                                    'form': form,
                                    'results': results},
                                   context_instance=RequestContext(request))

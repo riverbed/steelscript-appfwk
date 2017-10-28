@@ -41,7 +41,7 @@
                         {% endfor %}
                     ];
                 {% elif device == 'AppResponse' %}
-                    {% if display_columns %}
+                    {% if data_type == 'columns' %}
                         cols = [
                             {data: 'id', title: 'ID', sortable: true},
                             {data: 'field', title: 'Field', sortable: true},
@@ -125,7 +125,7 @@
                 }
             });
 
-            {% if device == 'AppResponse' and display_columns %}
+            {% if device == 'AppResponse' and data_type == 'columns' %}
                 var source_options = JSON.parse('{{ report_sources|safe }}');
                 var group = $('#id_group :selected').attr('value');
                 var source = $('#id_source :selected').attr('value');
@@ -176,7 +176,7 @@
 
 {% block content %}
     <div class="container-fluid">
-        {% if display_columns %}
+        {% if data_type == 'columns' %}
             <h3 align="center">{{ device }} Column Helper</h3>
         {% else %}
             <h3 align="center">{{ device }} Source Helper</h3>
@@ -188,7 +188,7 @@
                         {% if form.valid_devices %}
                             {% csrf_token %}
                             <table>{{ form.as_table }}</table>
-                            {% if display_columns %}
+                            {% if data_type == 'columns' %}
                                 <br><input id="submit" type="submit" value="Find Columns" class="btn btn-primary">
                             {% else %}
                                 <br><input id="submit" type="submit" value="Find Sources" class="btn btn-primary">
