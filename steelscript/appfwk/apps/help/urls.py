@@ -20,6 +20,6 @@ urlpatterns = patterns(
         views.ColumnHelper.as_view()),
 
     # appresponse/columns or appresponse/sources
-    url(r'^(?P<device_type>[a-z]+)/(?P<data_type>[a-z]+)/$',
-        views.ColumnHelper.as_view()),
+    url(r'appresponse/(?P<data_type>[a-z]+)/$',
+        views.AppResponseHelper.as_view()),
 )

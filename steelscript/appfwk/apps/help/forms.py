@@ -34,7 +34,7 @@ def get_centricities():
 
 
 def get_groups():
-    return [('', '---')] + zip(report_groups, report_groups)
+    return [('', '---')] + zip(report_groups.keys(), report_groups.values())
 
 
 def get_sourcenames():
