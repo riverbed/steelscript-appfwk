@@ -50,7 +50,7 @@
                             {data: 'type', title: 'Type', sortable: true},
                             {data: 'unit', title: 'Unit', sortable: true},
                             {data: 'description', title: 'Description', sortable: true},
-                            {data: 'synthesized', title: 'Synthesized', sortable: true},
+                            {data: 'synthesized', title: 'Additional Details', sortable: true},
                         ];
 
                         data = [
@@ -64,12 +64,13 @@
                     {% else %}
                         cols = [
                                 {data: 'name', title: 'Name', sortable: true},
+                                {data: 'groups', title: 'Groups', sortable: true},
                                 {data: 'filters_on_metrics', title: 'Support Filters on Metrics', sortable: true},
                                 {data: 'granularities', title: 'Granularities (Seconds)', sortable: true},
                         ];
                         data = [
-                            {% for name, filters_on_metrics, granularities in results %}
-                                {name:"{{name}}", filters_on_metrics:"{{ filters_on_metrics }}", granularities:"{{ granularities }}"},
+                            {% for name, filters_on_metrics, granularities, groups in results %}
+                                {name:"{{name}}", groups:"{{groups}}", filters_on_metrics:"{{ filters_on_metrics }}", granularities:"{{ granularities }}"},
                             {% endfor %}
                         ];
                     {% endif %}

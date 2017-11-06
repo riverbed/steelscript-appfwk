@@ -24,7 +24,8 @@ from rest_framework.renderers import TemplateHTMLRenderer
 from steelscript.appfwk.apps.devices.devicemanager import DeviceManager
 from steelscript.appfwk.apps.help.forms import NetProfilerInputForm, \
     NetSharkInputForm, AppResponseInputForm, AppResponseColumnsInputForm
-from steelscript.appresponse.core._constants import report_sources
+from steelscript.appresponse.core._constants import report_sources, \
+    report_source_to_groups
 
 logger = logging.getLogger(__name__)
 
@@ -272,7 +273,7 @@ class AppResponseHelper(views.APIView):
                                  for k, v in synth.iteritems()]))
 
                 colkeys = ['id', 'field', 'label', 'metric', 'type',
-                           'unit', 'description', 'synthesized']
+                           'unit', 'description', 'synthesized', 'iskey']
                 coldf = pandas.DataFrame(rawcols.values(), columns=colkeys)
                 coldf.fillna('---', inplace=True)
                 coldf['iskey'] = coldf['metric'].apply(
@@ -281,9 +282,12 @@ class AppResponseHelper(views.APIView):
                 coldf.sort_values(by='id', inplace=True)
                 results = list(coldf.to_records(index=False))
             else:
-                colkeys = ['name', 'filters_on_metrics', 'granularities']
+                colkeys = ['name', 'filters_on_metrics', 'granularities',
+                           'groups']
                 coldf = pandas.DataFrame(ar.reports.sources.values(),
                                          columns=colkeys)
+                coldf['groups'] = coldf['name'].apply(
+                    lambda x: ', '.join(report_source_to_groups[x]))
                 coldf.sort_values(by='name', inplace=True)
                 results = list(coldf.to_records(index=False))
 

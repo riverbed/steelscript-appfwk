@@ -10,8 +10,8 @@ from django import forms
 
 from steelscript.netprofiler.core import _constants
 from steelscript.appfwk.apps.devices.models import Device
-from steelscript.appresponse.core._constants import report_source_names, \
-    report_groups
+from steelscript.appresponse.core._constants import report_groups, \
+    report_source_to_groups
 
 
 def get_device_choices(device_type):
@@ -37,9 +37,9 @@ def get_groups():
     return [('', '---')] + zip(report_groups.keys(), report_groups.values())
 
 
-def get_sourcenames():
-    return [('', '---')] + \
-           sorted(zip(report_source_names, report_source_names))
+def get_source_names():
+    return [('', '---')] + zip(report_source_to_groups.keys(),
+                               report_source_to_groups.keys())
 
 
 class DeviceInputForm(forms.Form):
@@ -81,4 +81,4 @@ class AppResponseInputForm(DeviceInputForm):
 
 class AppResponseColumnsInputForm(AppResponseInputForm):
     group = forms.ChoiceField(choices=get_groups())
-    source = forms.ChoiceField(choices=get_sourcenames())
+    source = forms.ChoiceField(choices=get_source_names())
