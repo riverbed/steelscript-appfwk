@@ -273,11 +273,11 @@ class AppResponseHelper(views.APIView):
                                  for k, v in synth.iteritems()]))
 
                 colkeys = ['id', 'field', 'label', 'metric', 'type',
-                           'unit', 'description', 'synthesized', 'iskey']
+                           'unit', 'description', 'synthesized', 'grouped_by']
                 coldf = pandas.DataFrame(rawcols.values(), columns=colkeys)
                 coldf.fillna('---', inplace=True)
-                coldf['iskey'] = coldf['metric'].apply(
-                    lambda x: False if x is True else True)
+                coldf['iskey'] = coldf['grouped_by'].apply(
+                    lambda x: True if x is True else '---')
 
                 coldf.sort_values(by='id', inplace=True)
                 results = list(coldf.to_records(index=False))

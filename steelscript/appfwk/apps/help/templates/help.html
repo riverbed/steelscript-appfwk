@@ -46,6 +46,7 @@
                             {data: 'id', title: 'ID', sortable: true},
                             {data: 'field', title: 'Field', sortable: true},
                             {data: 'label', title: 'Label', sortable: true},
+                            {data: 'metric', title: 'Metric', sortable: true},
                             {data: 'iskey', title: 'IsKey', sortable: true},
                             {data: 'type', title: 'Type', sortable: true},
                             {data: 'unit', title: 'Unit', sortable: true},
@@ -54,8 +55,8 @@
                         ];
 
                         data = [
-                            {% for id, field, label, metric, type, unit, description, synthesized, iskey in results %}
-                                {id:"{{id}}", field:"{{ field }}", label:"{{ label }}",
+                            {% for id, field, label, metric, type, unit, description, synthesized, grouped_by, iskey in results %}
+                                {id:"{{id}}", field:"{{ field }}", label:"{{ label }}", metric:"{{ metric }}",
                                  iskey:"{{ iskey }}", type:"{{ type }}", unit:"{{ unit }}",
                                  description:"{{ description }}", synthesized:"{{ synthesized }}"},
                             {% endfor %}
