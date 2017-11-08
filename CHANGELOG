@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+[1.6]
+ * Update AppResponse column viewer to adapt to different sources
+ * Add AppResponse source viewer to Help menu
+ * Add docker configs
+
 [1.5]
  * Add PCAP file manager
  * Fix issue with resample tables being a child off of ResampleTable
