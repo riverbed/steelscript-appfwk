@@ -199,7 +199,7 @@ class GenericReportView(views.APIView):
                     dt_local.strftime('%m/%d/%Y')
                 # Setting initial time as 'hh:mm:ss'
                 field.field_kwargs['widget_attrs']['initial_time'] = \
-                    dt_local.strftime('%H:%M:%S')
+                    dt_local.strftime('%m/%d/%Y %H:%M:%S')
 
             elif self.is_field_cls(field, 'BooleanField'):
                 logger.debug(override_msg % (k, v.lower() == 'true'))

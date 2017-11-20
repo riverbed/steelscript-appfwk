@@ -132,7 +132,7 @@ class TimeWidget(forms.TimeInput):
                     "d = new Date(); d.setSeconds(d.getSeconds()-%d);" % secs
                 )
             else:
-                initial_time = "d = '%s';" % initial_time
+                initial_time = "d = new Date('{}');".format(initial_time)
         else:
             initial_time = "d = new Date();"
 
