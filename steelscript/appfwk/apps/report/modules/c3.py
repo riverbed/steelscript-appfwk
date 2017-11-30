@@ -18,6 +18,10 @@ from steelscript.common.timeutils import force_to_utc
 logger = logging.getLogger(__name__)
 
 
+def replace_dot(s):
+    return s.replace('.', '*')
+
+
 class BaseWidget(object):
     @classmethod
     def calculate_keycol(cls, table, keycols):
@@ -89,6 +93,10 @@ class TimeSeriesWidget(BaseWidget):
 
         tickvalues = [c3datefmt(d) for d in timeaxis.ticks]
 
+        # Replace the '.' character with '*' from column names as '.'
+        # is be treated as object-attr access action in c3 0.4.11 version
+        df = df.rename(columns=dict(zip(helper.col_names,
+                                        map(replace_dot, helper.col_names))))
         rows = json.loads(
             df.to_json(orient='records', date_format='iso', date_unit='ms')
         )
@@ -97,8 +105,9 @@ class TimeSeriesWidget(BaseWidget):
             'chartTitle': widget.title.format(**job.actual_criteria),
             'json': rows,
             'key': catname,
-            'values': [c.name for c in helper.valcols],
-            'names': {c.col.name: c.col.label for c in helper.colmap.values()},
+            'values': [replace_dot(c.name) for c in helper.valcols],
+            'names': {replace_dot(c.col.name): c.col.label
+                      for c in helper.colmap.values()},
             'altaxis': {c: 'y2' for c in altcols} or None,
             'tickFormat': timeaxis.best[1],
             'tickValues': tickvalues,
