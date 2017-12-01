@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def replace_dot(s):
-    return s.replace('.', '*')
+    return s.replace('.', '_')
 
 
 class BaseWidget(object):
