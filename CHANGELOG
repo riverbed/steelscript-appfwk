@@ -1,6 +1,9 @@
 CHANGELOG
 =========
 
+[1.6.1]
+ * Fix c3 widget bug when column names contain dot
+
 [1.6]
  * Update AppResponse column viewer to adapt to different sources
  * Add AppResponse source viewer to Help menu
