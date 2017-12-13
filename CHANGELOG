@@ -1,6 +1,9 @@
 CHANGELOG
 =========
 
+[1.6.2]
+ * Update version dependencies
+
 [1.6.1]
  * Fix c3 widget bug when column names contain dot
 
