@@ -60,7 +60,9 @@ class DestinationThread(threading.Thread):
         super(DestinationThread, self).__init__(**kwargs)
 
     def run(self):
+        logger.debug('XXX here - event/dest: %s/%s' % (self.event, self.destination))
         sender = self.destination.get_sender()
+        logger.debug('XXX here - event/sender: %s/%s' % (self.event, sender))
 
         if self.is_error:
             level = AlertLevels.ERROR
@@ -69,12 +71,15 @@ class DestinationThread(threading.Thread):
             level = None    # set via options or Sender
             message_context = Source.message_context(self.event.context,
                                                      self.event.trigger_result)
+            logger.debug('XXX here - message context: %s' % (message_context))
 
         message = self.destination.get_message(message_context)
         options = self.destination.options
+        logger.debug('XXX here - message/options: %s/%s' % (message, options))
         if options:
             level = AlertLevels.find(options.get('level', None))
 
+        logger.debug('XXX here - event/dest: %s/%s' % (self.event, self.destination))
         alert = Alert(event=self.event,
                       level=level or sender.level,
                       sender=self.destination.sender,
@@ -339,6 +344,7 @@ class Destination(models.Model):
         """Return string from either template_func or template
         processed with result and given context.
         """
+        logger.debug('XXX here - get_message context/func: %s/%s' % (context, self.template))
         if self.template_func:
             return self.template_func(**context)
         else:
