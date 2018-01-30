@@ -53,7 +53,8 @@ class TimeSeriesTable(AnalysisTable):
     _query_class = 'TimeSeriesQuery'
 
     TABLE_OPTIONS = {'max_length_per_call': 3600,
-                     'max_number_of_calls': 2}
+                     'max_number_of_calls': 2,
+                     'override_table_handle': None}
 
 
 class TimeSeriesQuery(AnalysisQuery):
@@ -77,13 +78,12 @@ class TimeSeriesQuery(AnalysisQuery):
         and the criteria fields, excluding fields such as 'endtime',
         'starttime' and 'duration'.
 
-        :return: the hash hex string.
+        If the handle was specified via overried in table options,
+        we use that value instead.  This allows for tables from separate
+        reports to store/retrieve the same data set.
+
+        :return: the hash hex string and the criteria without time values
         """
-        h = hashlib.md5()
-        h.update(str(self.table.id))
-
-        h.update('.'.join([c.name for c in self.ds_table.get_columns()]))
-
         criteria = copy.copy(self.job.criteria)
 
         for k, v in self.job.criteria.iteritems():
@@ -91,9 +91,21 @@ class TimeSeriesQuery(AnalysisQuery):
                 # We do not want time related fields included in the criteria
                 criteria.pop(k, None)
                 continue
-            h.update('%s:%s' % (k, v))
 
-        return h.hexdigest(), criteria
+        if self.table.options.override_table_handle:
+            handle = self.table.options.override_table_handle
+        else:
+            h = hashlib.md5()
+            h.update(str(self.table.id))
+
+            h.update('.'.join([c.name for c in self.ds_table.get_columns()]))
+
+            for k, v in self.job.criteria.iteritems():
+                h.update('%s:%s' % (k, v))
+
+            handle = h.hexdigest()
+
+        return handle, criteria
 
     def _check_intervals(self, intervals):
 
