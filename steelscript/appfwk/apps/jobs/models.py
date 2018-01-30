@@ -631,7 +631,12 @@ class Job(models.Model):
         df = self.data()
         if df is not None:
             # Replace NaN with None
-            df = df.where(pandas.notnull(df), None)
+            # NB this recasts all columns to object, which causes issues
+            # when dealing with large values
+            #df = df.where(pandas.notnull(df), None)
+
+            # this will only change affected columns to object type
+            df = df.astype(object).replace(numpy.nan, 'None')
 
             # Extract tha values in the right order
             all_columns = self.get_columns()
