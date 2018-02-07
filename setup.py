@@ -76,6 +76,8 @@ http://pythonhosted.org/steelscript/
         'steelscript>=1.1',
         'steelscript.netprofiler>=1.1',
         'steelscript.netshark>=1.1',
+        'steelscript.appresponse>=1.2',
+        'steelscript.wireshark>=1.3',
 
         'djangorestframework>2.4,<3.0',
         'djangorestframework-csv==1.3.3',
@@ -107,7 +109,7 @@ http://pythonhosted.org/steelscript/
         'reschema==0.5.1',
         'flask==0.10.1',
         'flask_restful==0.3.2',
-        'pinax-announcements>=2.0.3',
+        'pinax-announcements>=2.0.3,<2.1.1',
         'elasticsearch-dsl>=5.0.0,<6.0.0',
     ),
 
