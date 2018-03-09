@@ -362,6 +362,11 @@ class ReportView(GenericReportView):
         if namespace is None or report_slug is None:
             return self.http_method_not_allowed(request)
 
+        logger.debug("**")
+        logger.debug("**")
+        logger.debug("** REPORT - %s" % report_slug)
+        logger.debug("**")
+        logger.debug("**")
         logger.debug("Received POST for report %s, with params: %s" %
                      (report_slug, request.POST))
 

@@ -14,15 +14,16 @@ class ExistingIntervals(models.Model):
     a set of criteria fields (represented by the table_handle field).
     """
     namespace = models.CharField(max_length=20)
-
     sourcefile = models.CharField(max_length=200)
-
     table = models.CharField(max_length=50)
-
     criteria = PickledObjectField(null=True)
-
     table_handle = models.CharField(max_length=100, default="")
-
     intervals = PickledObjectField(null=True)
-
     tzinfo = PickledObjectField()
+
+    def __unicode__(self):
+        return "<ExistingIntervals %s/%s - %s>" % (self.id, self.handle,
+                                                   self.intervals)
+
+    def __repr__(self):
+        return unicode(self)
