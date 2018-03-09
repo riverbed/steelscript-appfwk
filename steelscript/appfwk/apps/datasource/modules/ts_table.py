@@ -67,17 +67,24 @@ class TimeSeriesQuery(AnalysisQuery):
                          if col.datatype == Column.DATATYPE_TIME][0]
 
         starttime, endtime, self.resolution = self._round_times()
-
         self.query_interval = TimeInterval(starttime, endtime)
 
         self.handle, self.no_time_criteria = self._calc_handle()
+
+        logger.debug('TimeSeriesQuery initialized - job: %s, table: %s, '
+                     'interval: %s, handle: %s' %
+                     (self.job, self.table, self.query_interval, self.handle))
 
     def _calc_handle(self):
         """ Compute the handle corresponding to the table object
         and the criteria fields, excluding fields such as 'endtime',
         'starttime' and 'duration'.
 
-        :return: the hash hex string.
+        If the handle was specified via override in table options,
+        we use that value instead.  This allows for tables from separate
+        reports to store/retrieve the same data set.
+
+        :return: the hash hex string and the criteria without time values
         """
         h = hashlib.md5()
         h.update(str(self.table.id))
@@ -162,6 +169,9 @@ class TimeSeriesQuery(AnalysisQuery):
         return starttime, endtime, resolution
 
     def query(self, starttime, endtime):
+        logger.debug('Querying database for range: %s to %s' %
+                     (starttime, endtime))
+
         col_filters = [ColumnFilter(
                        query_type='range',
                        query={self.time_col: {'gte': starttime,
@@ -199,9 +209,13 @@ class TimeSeriesQuery(AnalysisQuery):
                 itvs.append(current_interval)
                 current_interval = interval
         itvs.append(current_interval)
-        return IntervalList(itvs)
+        interval_list = IntervalList(itvs)
+
+        logger.debug('Merging intervals from %s --> %s' % (intervals, itvs))
+        return interval_list
 
     def analyze(self, jobs=None):
+        logger.debug('TimeSeriesTable analysis with jobs %s' % jobs)
 
         filtered_list = ExistingIntervals.objects.filter(
             table_handle=self.handle)
@@ -210,15 +224,25 @@ class TimeSeriesQuery(AnalysisQuery):
 
         if filtered_list:
             existing_intervals = filtered_list[0].intervals
+            logger.debug('Found existing intervals for handle %s: %s' %
+                         (self.handle, existing_intervals))
 
             if self.query_interval in existing_intervals:
+                logger.debug('Query interval totally covered by DB, returning '
+                             'DB query.')
                 # Search DB for the queried data
-                return QueryComplete(self.query(self.query_interval.start,
-                                                self.query_interval.end))
+                data = self.query(self.query_interval.start,
+                                  self.query_interval.end)
+                return QueryComplete(data)
+
+            logger.debug('Query interval only partially covered by DB ...')
 
         intervals_to_call = self._check_intervals(
             self.query_interval - existing_intervals)
 
+        logger.debug('Setting up %d jobs to cover missing data '
+                     'for these intervals: %s' % (len(intervals_to_call),
+                                                  intervals_to_call))
         dep_jobs = {}
         for interval in intervals_to_call:
             criteria = copy.copy(self.job.criteria)
@@ -232,11 +256,17 @@ class TimeSeriesQuery(AnalysisQuery):
         return QueryContinue(self.collect, jobs=dep_jobs)
 
     def collect(self, jobs=None):
+        logger.debug('TimeSeriesTable collect with jobs %s' % jobs)
         dfs_from_jobs, dfs_from_db = [], []
 
         objs = ExistingIntervals.objects.filter(table_handle=self.handle)
 
         if objs:
+            # we should only find one with our handle
+            if len(objs) > 1:
+                logger.warning('Multiple instances of ExistingIntervals found '
+                               'for handle %s, taking first one.'
+                               % self.handle)
             obj = objs[0]
 
             # Query for the intervals already in db
@@ -244,6 +274,11 @@ class TimeSeriesQuery(AnalysisQuery):
             dfs_from_db = [self.query(itv.start, itv.end)
                            for itv in itvs_in_db]
         else:
+            logger.debug('Creating new ExistingIntervals object for '
+                         'namespace: %s, sourcefile: %s, table: %s, handle: %s'
+                         % (self.ds_table.namespace, self.ds_table.sourcefile,
+                            self.ds_table.name, self.handle))
+
             obj = ExistingIntervals(namespace=self.ds_table.namespace,
                                     sourcefile=self.ds_table.sourcefile,
                                     table=self.ds_table.name,
@@ -251,15 +286,50 @@ class TimeSeriesQuery(AnalysisQuery):
                                     table_handle=self.handle,
                                     intervals=IntervalList([]))
 
+        job_intervals = obj.intervals
+
         for job_id, job in jobs.iteritems():
             df = job.data()
             if df is None:
                 continue
             dfs_from_jobs.append(df)
 
-            obj.intervals += \
-                TimeInterval(df[self.time_col].min().to_datetime(),
-                             df[self.time_col].max().to_datetime())
+            # evaluate job time interval extents
+
+            # Handle case where data returned slightly smaller than base query.
+            # This can be caused because data doesn't always align with query
+            # edges, but as a result any future queries of the same requested
+            # time interval would return the same results.
+
+            # if our new interval is entirely within the original query,
+            # and the deltas at each of the edges is less than the resolution
+            # of the table, then we got the best we could hope for,
+            # and we should just add the interval as originally requested.
+            job_criteria_start = job.criteria.starttime
+            job_criteria_end = job.criteria.endtime
+
+            job_data_start = df[self.time_col].min().to_datetime()
+            job_data_end = df[self.time_col].max().to_datetime()
+
+            if abs(job_data_start - job_criteria_start) < self.resolution:
+                interval_start = job_criteria_start
+            else:
+                interval_start = job_data_start
+
+            if abs(job_criteria_end - job_data_end) < self.resolution:
+                interval_end = job_criteria_end
+            else:
+                interval_end = job_data_end
+
+            logger.debug('Job time intervals: Criteria - (%s, %s), '
+                         'Data - (%s, %s)' %
+                         (job_criteria_start, job_criteria_end,
+                          job_data_start, job_data_end))
+
+            interval = TimeInterval(interval_start, interval_end)
+            logger.debug('Appending TimeInterval: %s' % interval)
+
+            job_intervals += interval
 
         if not dfs_from_jobs:
             return QueryComplete(None)
@@ -270,8 +340,7 @@ class TimeSeriesQuery(AnalysisQuery):
                                                ignore_index=True),
                       timecol=self.time_col)
 
-        obj.intervals = self._converge_adjacent(obj.intervals)
-
+        obj.intervals = self._converge_adjacent(job_intervals)
         obj.tzinfo = self.job.criteria.starttime.tzinfo
 
         # Only update existing intervals if writing to db succeeds

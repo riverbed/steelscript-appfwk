@@ -12,9 +12,9 @@ from elasticsearch_dsl import Search
 from elasticsearch_dsl.connections import connections
 from elasticsearch import helpers
 from elasticsearch.connection.base import logger as elastic_logger
+from django.conf import settings
 
-from steelscript.common.timeutils import datetime_to_seconds
-from steelscript.appfwk.project.settings import ELASTICSEARCH_HOSTS
+from steelscript.common.timeutils import datetime_to_microseconds
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,11 @@ ColumnFilter = namedtuple('ColumnFilter', ['query_type', 'query'])
 class ElasticSearch(object):
 
     def __init__(self):
-        self.client = connections.create_connection(hosts=ELASTICSEARCH_HOSTS)
+        logger.debug('Initializing ElasticSearch with hosts: %s' %
+                     settings.ELASTICSEARCH_HOSTS)
+        self.client = connections.create_connection(
+            hosts=settings.ELASTICSEARCH_HOSTS
+        )
 
     def write(self, index, doctype, data_frame, timecol):
 
@@ -46,6 +50,7 @@ class ElasticSearch(object):
                      % (len(df), df[timecol].min(), df[timecol].max(),
                         index, doctype))
 
+        logger.debug('Calling Bulk load with client: %s' % self.client)
         written, errors = helpers.bulk(self.client, actions=actions,
                                        stats_only=True)
         logger.debug("Successfully wrote %s records, %s errors." % (written,
