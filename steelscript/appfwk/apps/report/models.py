@@ -70,7 +70,6 @@ class Report(models.Model):
     reload_offset = models.IntegerField(default=15*60)  # secs, default 15 min
     auto_run = models.BooleanField(default=False)
     static = models.BooleanField(default=False)
-    _column_names = SeparatedValuesField(null=True, blank=True)  # will be populated from column_names method
 
     @classmethod
     def create(cls, title, **kwargs):
@@ -255,7 +254,7 @@ class Report(models.Model):
         cols = []
         for table in self.tables():
             for c in table.column_set.all():
-                  cols.append(c)
+                cols.append(c)
         colnames = list(set(str(c.name) for c in cols))
         return colnames
 
