@@ -20,8 +20,7 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         model = get_user_model()
-        fields = ('email', 'timezone')
-
+        fields = ('email', 'timezone', 'color_palette')
 
 class AppfwkUserCreationForm(forms.ModelForm):
     """ Create unprivileged user. """

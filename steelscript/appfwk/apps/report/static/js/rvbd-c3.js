@@ -35,7 +35,9 @@ $.extend(rvbd.widgets.c3.C3Widget.prototype, {
     
     generateColor: function(color, d) {
 	var column, hash = 0;
-	if (typeof d === 'string') {
+	if (rvbd.report.color_palette == 'default') {
+	    return color; 
+	} else if (typeof d === 'string') {
 	    column = d;
 	} else if (d.hasOwnProperty('id')) {
 	    if (typeof d.id === 'string') {
@@ -47,10 +49,7 @@ $.extend(rvbd.widgets.c3.C3Widget.prototype, {
 	    return color;
 	}
 	
-	/* generate unigue hash based on column ids (string -> unique integer) */
-	for (var i = 0; i < column.length; i++) {
-	    hash  = ((hash << 5) - hash) + column.charCodeAt(i);
-	}
+	var index = rvbd.report.columns.sort().indexOf(column);
 	
 	/* this recursivce method converts hash to index (any number from 0 to 20)
 	   by summarizing all digits in hash */ 
@@ -61,15 +60,21 @@ $.extend(rvbd.widgets.c3.C3Widget.prototype, {
 		.reduce(function(a,b){
 		    return +a + +b;
 		}, 0);
-	    if (sum >= 20) {
+	    
+	    if (sum >= 10) {
 		sum = sumDigits(sum);
 	    }
+	    
 	    return sum; 
 	}
 	
-	var index = sumDigits(hash);
+	if (rvbd.report.color_palette == 'category10') {
+	    if (index >= 10) {
+		index = sumDigits(index);
+	    }
+	}
 	
-	return d3.scale.category20().domain(d3.range(0, index))(index);
+	return d3.scale[rvbd.report.color_palette]().domain(d3.range(0, index))(index);
     }
 });
     

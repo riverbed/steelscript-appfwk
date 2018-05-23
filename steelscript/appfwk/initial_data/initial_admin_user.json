@@ -14,7 +14,8 @@
       "last_login": "2014-04-15T19:35:41.909Z", 
       "groups": [], 
       "user_permissions": [], 
-      "timezone": "US/Eastern", 
+      "timezone": "US/Eastern",
+      "color_palette": "default",
       "password": "pbkdf2_sha256$10000$DRfFnvmvOCxY$DRVJBUbUPYYP8k6JQiqkTk1UYwCNOWRhkd6tE9b7FlQ=", 
       "email": "admin@test.com", 
       "date_joined": "2014-04-15T19:19:49.027Z"
