@@ -59,6 +59,13 @@ rvbd.formatters = {
             '.' + rvbd.formatters.padZeros(d.getMilliseconds(), 3);
      },
 
+    formatDateTimeMs: function(t, precision) {
+        var d = new Date(t);
+        var date = d.toLocaleDateString();
+        var time = rvbd.formatters.formatTimeMs(t);
+        return date + ', ' + time;
+    },
+
      formatMetric: function(num, precision) {
         if (typeof num === 'undefined') {
             return "";
