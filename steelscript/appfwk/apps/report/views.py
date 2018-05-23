@@ -300,7 +300,8 @@ class GenericReportView(views.APIView):
              'criteria': criteria,
              'expand_tables': expand_tables,
              'missing_devices': missing_devices,
-             'is_superuser': request.user.is_superuser},
+             'is_superuser': request.user.is_superuser,
+             'columns': report.column_names()},
             context_instance=RequestContext(request)
         )
 

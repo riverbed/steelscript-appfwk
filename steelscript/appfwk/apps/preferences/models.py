@@ -35,6 +35,11 @@ MAPS_VERSIONS = ('DISABLED',
                  )
 MAPS_VERSION_CHOICES = zip(MAPS_VERSIONS, map(str.title, MAPS_VERSIONS))
 
+COLOR_CHOICES = (('default', 'Default'),
+                 ('category10', 'Minimal'),
+                 ('category20', 'Category20A'),
+                 ('category20b', 'Category20B'),
+                 ('category20c', 'Category20C'))
 
 def create_preference_fixture(initial_admin_only=True):
     """Dump preferences to JSON file for safe keeping.
@@ -91,8 +96,15 @@ class AppfwkUser(AbstractUser):
                                           'that best matches your current '
                                           'browser location')
 
+    color_palette = models.CharField(max_length=20,
+                                     default='default',
+                                     choices=COLOR_CHOICES,
+                                     verbose_name='Color Schema',
+                                     help_text='Choose color schema for reports')
+
     # hidden fields
     timezone_changed = models.BooleanField(default=False)
+    color_palette_changed = models.BooleanField(default=False)
     profile_seen = models.BooleanField(default=False)
 
 

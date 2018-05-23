@@ -89,6 +89,7 @@ GUEST_USER_ENABLED = False
 GUEST_USER_NAME = 'Guest'             # display name when in guest-mode
 GUEST_USER_TIME_ZONE = 'US/Eastern'   # timezone to use when in guest-mode
 GUEST_SHOW_BUTTON = True              # whether to show user button when Guest
+GUEST_COLOR_PALETTE = 'default'       # default color palette for charts
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"

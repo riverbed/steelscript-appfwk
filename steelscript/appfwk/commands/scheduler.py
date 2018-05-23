@@ -44,7 +44,7 @@ The config file uses the ConfigParser format. For example:
     ; if needed you can specify which timezone the endtime should be in
     timezone=US/Eastern
 
-Each section name (the line with sourrounding brackets) will
+Each section name (the line with surrounding brackets) will
 translate into a scheduled job name.  The key-value pairs include
 parameters for the table command itself (e.g. 'table-name', 'criteria'),
 and job configuration that gets handled by the scheduler

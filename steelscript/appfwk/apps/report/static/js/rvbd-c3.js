@@ -31,9 +31,53 @@ $.extend(rvbd.widgets.c3.C3Widget.prototype, {
     onResize: function() {
         var self = this;
         self.render(self.data);
+    },
+    
+    generateColor: function(color, d) {
+	var column, hash = 0;
+	if (rvbd.report.color_palette == 'default') {
+	    return color; 
+	} else if (typeof d === 'string') {
+	    column = d;
+	} else if (d.hasOwnProperty('id')) {
+	    if (typeof d.id === 'string') {
+		column = d.id;  
+	    } else {
+		return color; 
+	    }
+	} else {
+	    return color;
+	}
+	
+	var index = rvbd.report.columns.sort().indexOf(column);
+	
+	/* this recursivce method converts hash to index (any number from 0 to 20)
+	   by summarizing all digits in hash */ 
+	function sumDigits(number) {
+	    var sum = Math.abs(number).toString()
+		.split('')
+		.map(Number)
+		.reduce(function(a,b){
+		    return +a + +b;
+		}, 0);
+	    
+	    if (sum >= 10) {
+		sum = sumDigits(sum);
+	    }
+	    
+	    return sum; 
+	}
+	
+	if (rvbd.report.color_palette == 'category10') {
+	    if (index >= 10) {
+		index = sumDigits(index);
+	    }
+	}
+	
+	return d3.scale[rvbd.report.color_palette]().domain(d3.range(0, index))(index);
     }
 });
-
+    
 /**
  * TimeSeriesWidget -- does a generic bar chart
  *
@@ -71,6 +115,9 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
                        value: data.values},
                 names: data.names,
                 type: data.type,
+		color : function (color, d) {
+		    return self.generateColor(color, d);
+		},
                 x: 'time',
                 // "2016-10-28T18:49:24.000Z"
                 xFormat: '%Y-%m-%dT%H:%M:%S.%LZ',
@@ -148,6 +195,9 @@ $.extend(rvbd.widgets.c3.PieWidget.prototype, {
             data: {
                 columns: data.rows,
                 type: data.type,
+		color : function (color, d) {
+		    return self.generateColor(color, d);
+		},
             },
             legend: {
                 position: 'inset'
@@ -196,7 +246,10 @@ $.extend(rvbd.widgets.c3.ChartWidget.prototype, {
                 keys: {
                     x: data.keyname,
                     value: data.values
-                }
+                },
+		color : function (color, d) {
+		    return self.generateColor(color, d);
+		}
             },
             legend: {
                 position: 'inset',

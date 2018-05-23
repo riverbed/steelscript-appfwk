@@ -70,6 +70,7 @@ class Report(models.Model):
     reload_offset = models.IntegerField(default=15*60)  # secs, default 15 min
     auto_run = models.BooleanField(default=False)
     static = models.BooleanField(default=False)
+    _column_names = SeparatedValuesField(null=True, blank=True)  # will be populated from column_names method
 
     @classmethod
     def create(cls, title, **kwargs):
@@ -249,6 +250,14 @@ class Report(models.Model):
                     section__in=Section.objects.filter(
                         report=self)))
                 .distinct().order_by(order_by))
+
+    def column_names(self):
+        cols = []
+        for table in self.tables():
+            for c in table.column_set.all():
+                  cols.append(c)
+        colnames = list(set(str(c.name) for c in cols))
+        return colnames
 
     def widget_definitions(self, criteria):
         """Return list of widget definitions suitable for a JSON response.

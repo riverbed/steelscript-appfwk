@@ -18,7 +18,7 @@ class AppfwkUserAdmin(UserAdmin):
 
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('Preferences', {'fields': ('timezone',)}),
+        ('Preferences', {'fields': ('timezone', 'color_palette')}),
         ('Personal info', {'fields': ('email', 'first_name', 'last_name')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser',
                                     'groups', 'user_permissions')}),
