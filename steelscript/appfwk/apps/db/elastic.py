@@ -39,11 +39,17 @@ class ElasticSearch(object):
 
         df = data_frame.fillna('')
 
-        actions = [{"_index": index,
-                    "_type": doctype,
-                    "_id": datetime_to_microseconds(df.iloc[i][timecol]),
-                    "_source": df.iloc[i].to_dict()}
-                   for i in xrange(len(df))]
+        def gen_actions(data):
+            # ElasticSearch will raise an exception on `NaN` values
+            data = data.dropna()
+            for i, row in data.iterrows():
+                action = {
+                    '_index': index,
+                    '_type': doctype,
+                    # '_id': row['some_pk'],
+                    '_source': row.to_dict()
+                }
+                yield action
 
         logger.debug("Writing %s records from %s to %s into db. Index: %s, "
                      "doc_type: %s."
@@ -51,7 +57,7 @@ class ElasticSearch(object):
                         index, doctype))
 
         logger.debug('Calling Bulk load with client: %s' % self.client)
-        written, errors = helpers.bulk(self.client, actions=actions,
+        written, errors = helpers.bulk(self.client, actions=gen_actions(df),
                                        stats_only=True)
         logger.debug("Successfully wrote %s records, %s errors." % (written,
                                                                     errors))
