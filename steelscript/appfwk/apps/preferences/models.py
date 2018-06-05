@@ -100,7 +100,8 @@ class AppfwkUser(AbstractUser):
                                      default='default',
                                      choices=COLOR_CHOICES,
                                      verbose_name='Color Schema',
-                                     help_text='Choose color schema for reports')
+                                     help_text='Choose color schema '
+                                               'for graphs')
 
     # hidden fields
     timezone_changed = models.BooleanField(default=False)
