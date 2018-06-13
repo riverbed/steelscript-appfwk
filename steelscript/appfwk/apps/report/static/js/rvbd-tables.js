@@ -55,7 +55,9 @@ $.extend(rvbd.widgets.tables.DataTableWidget.prototype, {
         var self = this;
         self.data = data;
 
-        self.titleMsg = data['chartTitle'];
+        if (typeof data['chartTitle'] !== "undefined") {
+            self.titleMsg = data['chartTitle'];
+        }
         self.buildInnerLayout();
 
         data = self.prepareData(data);
@@ -124,7 +126,7 @@ $.extend(rvbd.widgets.tables.TableWidget.prototype, {
             options.scrollY = height;
         }
 
-        $table.DataTable({
+        self.widget = $table.DataTable({
             data: self.data.data,
             columns: self.data.columns,
             info: options.info,

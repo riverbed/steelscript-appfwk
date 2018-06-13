@@ -97,8 +97,9 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
     render: function(data) {
         var self = this;
         self.data = data;
-
-        self.titleMsg = data['chartTitle'];
+        if (typeof data['chartTitle'] !== "undefined") {
+            self.titleMsg = data['chartTitle'];
+        }
         self.buildInnerLayout();
 
         var height = ($(self.outerContainer).height() - self.contentExtraHeight -
@@ -158,7 +159,7 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
             };
         }
 
-        c3.generate(chartdef);
+        self.widget = c3.generate(chartdef);
     }
 });
 
@@ -182,7 +183,9 @@ $.extend(rvbd.widgets.c3.PieWidget.prototype, {
         var self = this;
         self.data = data;
 
-        self.titleMsg = data['chartTitle'];
+        if (typeof data['chartTitle'] !== "undefined") {
+            self.titleMsg = data['chartTitle'];
+        }
         self.buildInnerLayout();
 
         var height = ($(self.outerContainer).height() - self.contentExtraHeight - self.titleHeight);
@@ -204,7 +207,7 @@ $.extend(rvbd.widgets.c3.PieWidget.prototype, {
             },
         };
 
-        c3.generate(chartdef);
+        self.widget = c3.generate(chartdef);
     }
 });
 
@@ -229,7 +232,9 @@ $.extend(rvbd.widgets.c3.ChartWidget.prototype, {
         var self = this;
         self.data = data;
 
-        self.titleMsg = data['chartTitle'];
+        if (typeof data['chartTitle'] !== "undefined") {
+            self.titleMsg = data['chartTitle'];
+        }
         self.buildInnerLayout();
 
         var height = ($(self.outerContainer).height() - self.contentExtraHeight - self.titleHeight);
@@ -279,7 +284,7 @@ $.extend(rvbd.widgets.c3.ChartWidget.prototype, {
             }
         }
 
-        c3.generate(chartdef);
+        self.widget = c3.generate(chartdef);
     }
 });
 

@@ -23,7 +23,6 @@ rvbd.report = {
 
     intervalID: 0,              // ID to manage scheduled reports
     needs_reload_scheduled: false,
-    reportHasRendered: false,
 
     /**
      * HTML5 local storage and history methods
@@ -118,6 +117,7 @@ rvbd.report = {
             if (rvbd.report.static) {
                 $("#criteria-row").hide();
             }
+            $("#print-report").remove();
             rvbd.report.needs_reload_scheduled = true;
             rvbd.report.runFixedCriteriaReport();
         } else if (rvbd.report.static && !rvbd.report.live) { // Non-reloading static report
@@ -293,7 +293,7 @@ rvbd.report = {
             rvbd.report.runFixedCriteriaReport();
         } else {
             $.each(rvbd.report.widgets, function (i, w) {
-                w.reloadWidget()
+                w.reloadWidget();
             })
         }
     },
@@ -479,8 +479,7 @@ rvbd.report = {
 
         var $row,
             rownum = 0,
-            opts,
-            widget;
+            opts;
         $.each(widgetsToRender, function(i, w) {
             if (w.row !== rownum) { // If we're at a new row number, create a new row element
                 $row = $('<div></div>')
@@ -504,25 +503,21 @@ rvbd.report = {
                 widgetClass = w.widgettype[1],
                 urls = {"postUrl": w.posturl, "updateUrl": w.updateurl};
 
-            widget = new rvbd.widgets[widgetModule][widgetClass](urls, rvbd.report.isEmbedded, $div[0],
+            var widget = new rvbd.widgets[widgetModule][widgetClass](urls, rvbd.report.isEmbedded, $div[0],
                                                                  w.widgetid, w.widgetslug, opts, w.criteria, w.dataCache);
             rvbd.report.widgets.push(widget);
         });
-
-        if (!rvbd.report.reportHasRendered) { // If first time rendering the report, attach widgetDoneLoading handler
-            rvbd.report.reportHasRendered = true;
-
-            $(document).on('widgetDoneLoading', function(e, widget_) {
-                rvbd.report.handleReportLoadedIfNeeded(widget_);
-            });
-        }
+        $(document).off('widgetDoneLoading');
+        $(document).on('widgetDoneLoading', function(event) {
+            rvbd.report.handleReportLoadedIfNeeded();
+        });
     },
 
     /**
      * Check if all widgets are done loading, and if so, update the UI to indicate
      * the report is loaded.
      */
-    handleReportLoadedIfNeeded: function(widget) {
+    handleReportLoadedIfNeeded: function() {
         var widgetsRunning = false;
 
         $.each(rvbd.report.widgets, function(i, w) {
@@ -541,10 +536,16 @@ rvbd.report = {
 
             // update datetime with meta from this last widget update
             // only updates from widget reloads
-            if (widget.lastUpdate) {
-                rvbd.report.updateReportDateTime(widget.lastUpdate.datetime,
-                                                 widget.lastUpdate.timezone);
-                rvbd.report.meta.lastUpdate = widget.lastUpdate;
+            var widget = rvbd.report.widgets[0];
+            if (typeof widget !== "undefined") {
+                if (typeof widget.lastUpdate !== "undefined") {
+                    rvbd.report.meta.lastUpdate = widget.lastUpdate;
+                    if (typeof widget.lastUpdate.datetime !== "undefined" &&
+                        typeof widget.lastUpdate.timezone !== "undefined") {
+                        rvbd.report.updateReportDateTime(widget.lastUpdate.datetime,
+                            widget.lastUpdate.timezone);
+                    }
+                }
             }
 
             // apply sortable to widgets
@@ -584,7 +585,7 @@ rvbd.report = {
                 };
                 saveobj.widgets.push(w);
             });
-
+	    
             rvbd.report.saveState(key, saveobj);
         }
     }

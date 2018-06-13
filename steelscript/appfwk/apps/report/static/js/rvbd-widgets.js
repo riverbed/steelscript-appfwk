@@ -66,7 +66,7 @@ rvbd.formatters = {
         return date + ', ' + time;
     },
 
-     formatMetric: function(num, precision) {
+    formatMetric: function(num, precision) {
         if (typeof num === 'undefined') {
             return "";
         } else if (num === 0) {
@@ -119,6 +119,8 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
     // with bootstrap 3 - the col-md-* widgets have padding so any borders
     // show up outside of actual content.  here we create an inner div to
     // apply our borders against and write our content into
+    $div.empty();
+
     $div.attr('id', 'outer_chart_' + id)
         .addClass('widget col-md-' + (isEmbedded ? '12' : options.width));
 
@@ -165,6 +167,9 @@ rvbd.widgets.Widget = function(urls, isEmbedded, div, id, slug, options, criteri
     } else {
       // If we are using the cached report, load the data immediately
       $(self.div).hideLoading();
+      if (typeof self.widget !== "undefined") {
+          self.widget.destroy();
+      }
       self.render(self.dataCache);
       self.status = 'complete';
     }
@@ -215,18 +220,19 @@ rvbd.widgets.Widget.prototype = {
         switch (response.status) {
             case 3: // Complete
                 $(self.div).hideLoading();
-
                 // store original response data as JSON
                 self.dataCache = JSON.stringify(response.data);
                 // save job id for future exporting widget data
-                self.jobId = response.id
-
+                self.jobId = response.id;
+                if (typeof self.widget !== "undefined") {
+                    self.widget.destroy();
+                }
                 self.render(response.data);
                 if (!self.options.height) {
                     $(self.div).height('auto');
                 }
                 self.status = 'complete';
-                $(document).trigger('widgetDoneLoading', [self]);
+                $(document).trigger('widgetDoneLoading');
                 break;
             case 4: // Error
                 // store error response data as JSON
@@ -234,7 +240,7 @@ rvbd.widgets.Widget.prototype = {
 
                 self.displayError(response);
                 self.status = 'error';
-                $(document).trigger('widgetDoneLoading', [self]);
+                $(document).trigger('widgetDoneLoading');
                 break;
             default:
                 $(self.div).setLoading(response.progress);
@@ -303,7 +309,7 @@ rvbd.widgets.Widget.prototype = {
         }
     },
 
-    reloadCriteria: function(callback) {
+    reloadCriteria: function() {
         // request updated criteria from server
         var self = this;
 
@@ -316,10 +322,6 @@ rvbd.widgets.Widget.prototype = {
                 self.criteria = data.widgets[0].criteria;
                 self.lastUpdate.datetime = data.meta.datetime;
                 self.lastUpdate.timezone = data.meta.timezone;
-
-                if (callback) {
-                    callback();
-                }
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 self.displayError(JSON.parse(jqXHR.responseText));
@@ -349,12 +351,8 @@ rvbd.widgets.Widget.prototype = {
         }
 
         self.status = 'running';
-
-        self.reloadCriteria(
-            function () {
-                self.postRequestAsync(self.criteria);
-            }
-        );
+        self.reloadCriteria();
+	    self.postRequestAsync(self.criteria);
     },
 
     /**
@@ -516,6 +514,19 @@ rvbd.widgets.Widget.prototype = {
         var self = this;
 
         var $div = $(self.div);
+        $div.empty();
+
+        if (self.outerContainer !== "undefined") {
+            $(self.outerContainer).html();
+        }
+
+        if (self.title !== "undefined") {
+            $(self.title).html();
+        }
+
+        if (self.content !== "undefined") {
+            $(self.content).html();
+        }
 
         self.outerContainer = $('<div></div>')
             .addClass('wid-outer-container')[0];
