@@ -353,9 +353,10 @@ class ReportView(GenericReportView):
                 queryset = queryset.get(namespace='default',
                                         slug=report_slug)
             elif namespace:
-                queryset = queryset.filter(namespace='default')
+                queryset = queryset.filter(namespace=namespace)
 
-            serializer = ReportSerializer(instance=queryset)
+            serializer = ReportSerializer(instance=queryset.all(),
+                                          many=True)
             return Response(serializer.data)
 
     # ReportView.post()
