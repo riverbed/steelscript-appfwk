@@ -35,20 +35,41 @@ class ElasticSearch(object):
             hosts=settings.ELASTICSEARCH_HOSTS
         )
 
-    def write(self, index, doctype, data_frame, timecol):
+    def write(self, index, doctype, data_frame, timecol, id_method='time'):
+        """ Write `data_frame` to elasticsearch storage.
+
+        :param index: name of index to use
+        :param doctype:  elasticsearch `_type` for the records
+        :param data_frame: pandas dataframe
+        :param timecol: name of the column in data_frame to use for time
+        :param id_method: how to generate _id's for each record
+            'time' - microseconds of time column
+            'unique' - auto-generated unique value by elasticsearch
+            tuple - tuple of column names to be combined for each row
+
+        """
 
         df = data_frame.fillna('')
 
+        if id_method == 'time':
+            _id = lambda x: datetime_to_microseconds(x[timecol])
+        elif id_method == 'unique':
+            _id = None
+        else:
+            # we are passed a tuple of columns
+            # try to get timestamp value otherwise just use the item itself
+            _id = lambda x: ':'.join(str(getattr(x[c], 'value', x[c]))
+                                     for c in id_method)
+
         def gen_actions(data):
-            # ElasticSearch will raise an exception on `NaN` values
-            data = data.dropna()
             for i, row in data.iterrows():
                 action = {
                     '_index': index,
                     '_type': doctype,
-                    # '_id': row['some_pk'],
                     '_source': row.to_dict()
                 }
+                if _id:
+                    action['_id'] = _id(row)
                 yield action
 
         logger.debug("Writing %s records from %s to %s into db. Index: %s, "

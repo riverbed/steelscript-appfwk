@@ -52,9 +52,11 @@ class TimeSeriesTable(AnalysisTable):
 
     TABLE_OPTIONS = {'max_length_per_call': 3600,
                      'max_number_of_calls': 2,
+                     'id_method': 'time',
                      'override_table_handle': None,
                      'table_filter': None,
-                     'override_index': None}
+                     'override_index': None,
+                     }
 
 
 class TimeSeriesQuery(AnalysisQuery):
@@ -369,7 +371,8 @@ class TimeSeriesQuery(AnalysisQuery):
                       doctype=self.handle,
                       data_frame=pandas.concat(dfs_from_jobs,
                                                ignore_index=True),
-                      timecol=self.time_col)
+                      timecol=self.time_col,
+                      id_method=self.table.options.id_method)
 
         obj.intervals = self._converge_adjacent(job_intervals)
         obj.tzinfo = self.job.criteria.starttime.tzinfo
