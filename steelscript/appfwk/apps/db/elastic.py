@@ -48,6 +48,9 @@ class ElasticSearch(object):
             tuple - tuple of column names to be combined for each row
 
         """
+        # find whether we have a write alias for the given index
+        if index in settings.ES_ROLLOVER:
+            index = settings.ES_ROLLOVER[index]['write_index']
 
         df = data_frame.fillna('')
 
@@ -85,6 +88,10 @@ class ElasticSearch(object):
         return
 
     def search(self, index, doc_type, col_filters=None):
+
+        # find whether we have a search alias for the given index
+        if index in settings.ES_ROLLOVER:
+            index = settings.ES_ROLLOVER[index]['search_index']
 
         logger.debug("Searching index %s for doc_type %s and col_filters %s"
                      % (index, doc_type, col_filters))

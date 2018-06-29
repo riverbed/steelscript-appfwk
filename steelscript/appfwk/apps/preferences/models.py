@@ -41,6 +41,7 @@ COLOR_CHOICES = (('default', 'Default'),
                  ('category20b', 'Category20B'),
                  ('category20c', 'Category20C'))
 
+
 def create_preference_fixture(initial_admin_only=True):
     """Dump preferences to JSON file for safe keeping.
 

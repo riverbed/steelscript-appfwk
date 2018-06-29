@@ -479,3 +479,13 @@ HITCOUNT_IGNORE_URLS = [
 # DB solution
 DB_SOLUTION = 'elastic'
 ELASTICSEARCH_HOSTS = ['elasticsearch']
+
+# For custom elasticsearch deployments, map rollover to given index
+ES_ROLLOVER = {
+    'index_name': {
+        'write_index': None,
+        'rollover_criteria': None,
+        'search_index': None,
+        'search_pattern': None,
+    }
+}
