@@ -31,7 +31,7 @@ rvbd.timeutil = {
 };
 
 rvbd.modal = {
-    html: function(heading, body, cancelButtonTxt, okButtonTxt, customClass) {
+    html: function(heading, body, cancelButton, okButton, customClass) {
         var modalHtml, $body, $modal;
 
         if (typeof customClass === 'undefined') {
@@ -48,29 +48,39 @@ rvbd.modal = {
                 '</div>' +
                 '<div id="modalBody" class="modal-body"></div>';
         // if we don't include cancelButtonTxt then don't draw cancel button
-        if ( cancelButtonTxt ){
-            modalHtml +=
-                '<div class="modal-footer">' +
-                    '<button type="button" class="btn btn-default" id="cancelButton" data-dismiss="modal">' +
-                      cancelButtonTxt +
-                    '</button>' +
-                    '<button class="btn btn-primary" id="okButton">' +
-                      okButtonTxt +
-                    '</button>' +
-                '</div>' +
-                '</div>' +
-                '</div>' +
-              '</div>';
+        if ( cancelButton ){
+            modalHtml += '<div class="modal-footer">';
+            if (typeof cancelButton === 'object') {
+                modalHtml += '<button type="button" class="'+cancelButton.class+'"' +
+                    ' id="cancelButton" data-dismiss="modal">' + cancelButton.text + '</button>';
+            } else {
+                modalHtml += '<button type="button" class="btn btn-default"' +
+                    ' id="cancelButton" data-dismiss="modal">' + cancelButton + '</button>';
+            }
+            if (typeof okButton === 'object') {
+                modalHtml += '<button class="'+okButton.class+'" ' +
+                    'id="okButton">' +  okButton.text + '</button>';
+            } else {
+                modalHtml += '<button class="btn btn-primary"' +
+                    ' id="okButton">' + okButton + '</button>';
+            }
+            modalHtml +=  '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
         } else {
-            modalHtml +=
-                '<div class="modal-footer">' +
-                    '<button class="btn btn-primary" id="okButton">' +
-                      okButtonTxt +
-                    '</button>' +
-                '</div>' +
-                '</div>' +
-                '</div>' +
-              '</div>';
+            modalHtml += '<div class="modal-footer">';
+            if (typeof okButton === 'object') {
+                modalHtml += '<button class="'+okButton.class+'"' +
+                    ' id="okButton">' + okButton.text + '</button>';
+            } else {
+                modalHtml += '<button class="btn btn-primary"' +
+                    ' id="okButton">' + okButton + '</button>';
+            }
+            modalHtml += '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
         }
 
         if (typeof body === 'string') {
@@ -151,30 +161,36 @@ rvbd.modal = {
 
         modal.find('#okButton').click(function(event) {
             var form = $('#' + formId);
+            $.ajaxSetup({
+                headers: { "X-CSRFToken": rvbd.report.csrfToken }
+            });
             form.ajaxSubmit({
                 dataType: "json",
                 type: form.attr('method'),
                 url: form.attr('action'),
                 success: function(data, textStatus) {
-                    var json = $.parseJSON(data);
-                    if (json.redirect) {
+                    if (data.redirect) {
                         // successful post
                         if (responseHandlers.redirect) {
-                            responseHandlers.redirect(json.redirect);
+                            responseHandlers.redirect(data.redirect);
                         } else {
-                            window.location.replace(json.redirect);
+                            window.location.replace(data.redirect);
                         }
-                    } else if (json.messages) {
-                        // successful post - notification from processing
-                        $('#messages').append(json.messages);
                         modal.modal('hide');
-                    } else if (json.form) {
+                    } else if (data.messages) {
+                        // successful post - notification from processing
+                        $('#messages').append(data.messages);
+                        modal.modal('hide');
+                    } else if (data.form) {
                         // error with post, updated form
-                        form.replaceWith(json.form);
+                        form.replaceWith(data.form);
                         applyHandlers();
                     } else {
-                        console.log('ERROR - unknown response from server: ' + json);
+                        console.log('ERROR - unknown response from server: ' + data);
                     }
+                },
+                error: function(xhr, errorMsg, errorThrown) {
+                    rvbd.modal.alert("Action failed", xhr.responseText, "OK", function(){});
                 }
             });
         });
