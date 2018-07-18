@@ -23,21 +23,27 @@ class Source(object):
     @staticmethod
     def message_context(context, result):
         """Get key-value context to pass to message format string."""
-        # XXX: can't use "actual_criteria" here because it hasn't yet
-        # been saved to Job on the main thread
-        d = context['job'].criteria
+        # check for type of message
+        if 'job' in context:
+            # XXX: can't use "actual_criteria" here because it hasn't yet
+            # been saved to Job on the main thread
+            d = context['job'].criteria
 
-        # pull data from result dict, check if its a dict itself
-        # and flatten it into message_context
-        r = copy.deepcopy(result)
-        data = r.pop('data', None)
-        if hasattr(data, 'keys'):
-            d.update(data)
+            # pull data from result dict, check if its a dict itself
+            # and flatten it into message_context
+            r = copy.deepcopy(result)
+            data = r.pop('data', None)
+            if hasattr(data, 'keys'):
+                d.update(data)
+            else:
+                d['result'] = data
+
+            d.update(r)
+            return d
+        elif 'rule' in context:
+            return {'rule': context['rule'], 'data': result}
         else:
-            d['result'] = data
-
-        d.update(r)
-        return d
+            return context
 
     @staticmethod
     def error_context(context):
