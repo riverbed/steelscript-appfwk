@@ -8,7 +8,7 @@
 import logging
 import smtplib
 from email.mime.text import MIMEText
-from email.MIMEMultipart import MIMEMultipart
+from email import MIMEMultipart
 
 from steelscript.appfwk.apps.alerting.senders.base import BaseSender
 from steelscript.appfwk.apps.alerting.datastructures import AlertLevels
@@ -65,7 +65,7 @@ class SMTPSender(BaseSender):
     def send(self, alert):
         self.process_alert(alert)
         try:
-            msg = MIMEMultipart()
+            msg = MIMEMultipart.MIMEMultipart()
             msg['Subject'] = self.subject_text
             msg['From'] = self.from_addr
             msg['To'] = ','.join(self.dest_addrs)
