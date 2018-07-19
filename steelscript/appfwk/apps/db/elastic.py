@@ -48,11 +48,20 @@ class ElasticSearch(object):
             tuple - tuple of column names to be combined for each row
 
         """
+        # NOTE:
+        # Fix obscure pandas bug with NaT and fillna
+        #
+        # The error shows "AssertionError: Gaps in blk ref_locs" when
+        # executing fillna() on a dataframe that has a pandas.NaT
+        # reference in it.
+        #
+        # Instead of replacing values, just drop them when loading to ES,
+        # ES handles the missing items as null
+        df = data_frame
+
         # find whether we have a write alias for the given index
         if index in settings.ES_ROLLOVER:
             index = settings.ES_ROLLOVER[index]['write_index']
-
-        df = data_frame.fillna('')
 
         if id_method == 'time':
             _id = lambda x: datetime_to_microseconds(x[timecol])
@@ -69,7 +78,7 @@ class ElasticSearch(object):
                 action = {
                     '_index': index,
                     '_type': doctype,
-                    '_source': row.to_dict()
+                    '_source': row.dropna().to_dict()
                 }
                 if _id:
                     action['_id'] = _id(row)
