@@ -283,6 +283,7 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.datasource',
     'steelscript.appfwk.apps.devices',
     'steelscript.appfwk.apps.pcapmgr',
+    'steelscript.appfwk.apps.filemgr',
     'steelscript.appfwk.apps.report',
     'steelscript.appfwk.apps.geolocation',
     'steelscript.appfwk.apps.help',
@@ -464,6 +465,7 @@ APPFWK_SYNTHETIC_MODULES = (
 
 # Size limit of all netshark downloaded pcap files in bytes (default 10GB)
 PCAP_SIZE_LIMIT = 10000000000
+FILE_SIZE_LIMIT = PCAP_SIZE_LIMIT
 
 # Create report history
 REPORT_HISTORY_ENABLED = True

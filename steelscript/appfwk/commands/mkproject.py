@@ -23,6 +23,7 @@ from steelscript.appfwk.project.settings import *
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 DATAHOME = os.getenv('DATAHOME', PROJECT_ROOT)
 PCAP_STORE = os.path.join(DATAHOME, 'data', 'pcap')
+FILE_STORE = os.path.join(DATAHOME, 'data', 'datafiles')
 DATA_CACHE = os.path.join(DATAHOME, 'data', 'datacache')
 INITIAL_DATA = os.path.join(DATAHOME, 'data', 'initial_data')
 REPORTS_DIR = os.path.join(PROJECT_ROOT, 'reports')
