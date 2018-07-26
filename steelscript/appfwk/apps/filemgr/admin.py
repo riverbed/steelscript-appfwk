@@ -11,7 +11,7 @@ from steelscript.appfwk.apps.filemgr.models import DataFile
 
 class FileAdmin(admin.ModelAdmin):
     list_display = ('datafile', 'description', 'uploaded_at',
-                    'file_type' )
+                    'file_type', 'file_bytes',)
 
 
 admin.site.register(DataFile, FileAdmin)

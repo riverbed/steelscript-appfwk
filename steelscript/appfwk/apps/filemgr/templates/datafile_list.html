@@ -30,12 +30,13 @@
                             <th>PCAP File</th>
                             <th>Upload Time</th>
                             <th>File Type</th>
+                            <th>Bytes</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% if not tabledata %}
                             <tr>
-                                <td colspan="4" style="text-align: center">No files uploaded yet.</td>
+                                <td colspan="5" style="text-align: center">No files uploaded yet.</td>
                             </tr>
                         {% endif %}
                         {% for datafile in tabledata %}
@@ -44,6 +45,7 @@
                                 <td><a href="{% url 'datafile-detail' datafile.id %}">{{ datafile.datafile.url|filename }}</a></td>
                                 <td>{{ datafile.uploaded_at }}</td>
                                 <td>{{ datafile.file_type }}</td>
+                                <td>{{ datafile.file_bytes }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

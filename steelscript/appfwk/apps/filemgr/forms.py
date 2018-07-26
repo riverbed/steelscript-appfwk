@@ -15,13 +15,13 @@ from steelscript.appfwk.apps.datasource.forms import IntegerIDChoiceField
 class DataFileForm(forms.ModelForm):
     class Meta:
         model = DataFile
-        fields = ('description', 'datafile', 'file_type',)
+        fields = ('description', 'datafile', 'file_type', 'file_bytes',)
 
 
 class DataFileListForm(forms.ModelForm):
     class Meta:
         model = DataFile
-        fields = ('description', 'datafile', 'file_type',)
+        fields = ('description', 'datafile', 'file_type', 'file_bytes',)
 
 
 def file_selection_preprocess(form, field, field_kwargs, params):

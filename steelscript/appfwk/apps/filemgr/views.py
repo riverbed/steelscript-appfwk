@@ -20,13 +20,13 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
 from steelscript.appfwk.apps.filemgr.filestore import file_store
-from steelscript.appfwk.apps.filemgr.models import DataFile, DataFileField
-from steelscript.appfwk.apps.filemgr.forms import DataFileForm, \
-    DataFileListForm
+from steelscript.appfwk.apps.filemgr.models import DataFile
+from steelscript.appfwk.apps.filemgr.forms import DataFileForm
 from steelscript.appfwk.apps.filemgr.serializers import DataFileSerializer
 
 logger = logging.getLogger(__name__)
-
+mime_type = magic.Magic(mime=True)
+type_desc = magic.Magic()
 
 class DataFileDetail(views.APIView):
 
@@ -129,11 +129,12 @@ class DataFSSync(views.APIView):
             for fsfile in fs_files:
                 if not db_file_names.count(fsfile):
                     f = file_store.path(fsfile)
-                    t_name = DataFileField.get_magic_type(file_store.open(f))
                     new_db = DataFile(description=fsfile,
                                       uploaded_at=(
-                                          file_store.created_time(fsfile)),
-                                          file_type=t_name,
+                                          file_store.created_time(fsfile)
+                                      ),
+                                      file_type=type_desc.from_file(f),
+                                      file_bytes=stat(f).st_size,
                                       datafile=f)
                     new_db.save()
                     added_files += 1
@@ -163,17 +164,14 @@ class DataFSSync(views.APIView):
 def file_download(request, file_name=None):
     if file_name is not None:
         file_path = file_store.path(file_name)
-        mgk = magic.Magic(mime=True)
-        mime_t = mgk.from_file(file_path)
         chunk_size = 16384
 
         response = StreamingHttpResponse(FileWrapper(open(file_path,
                                                           'rb'),
                                          chunk_size))
 
-        response['Content-Type'] = mime_t
-        response['Content-Length'] = \
-            stat(file_path).st_size
+        response['Content-Type'] = mime_type.from_file(file_path)
+        response['Content-Length'] = stat(file_path).st_size
         response['Content-Disposition'] = ('attachment; filename={0}'
                                            ''.format(file_name))
         return response

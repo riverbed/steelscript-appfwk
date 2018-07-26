@@ -4,15 +4,16 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-import logging
+from os import stat
 import magic
+import logging
+
 from django.forms import ValidationError
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from steelscript.appfwk.apps.filemgr.filestore import file_store
 
 logger = logging.getLogger(__name__)
-
 
 class DataFileField(models.FileField):
     """ Implements a FileField with support for magic file type checking
@@ -21,8 +22,6 @@ class DataFileField(models.FileField):
     # The class to wrap instance attributes in. Accessing the file object off
     # the instance will always return an instance of attr_class.
     attr_class = FieldFile
-    # Magic read length taken from magic.py examples:
-    # https://github.com/ahupp/python-magic/blob/master/magic.py
     MAGIC_LEN = 1024
     SIG_LEN = 20
 
@@ -52,6 +51,7 @@ class DataFileBase(models.Model):
     description = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     file_type = models.CharField(max_length=255, blank=True)
+    file_bytes = models.IntegerField(blank=True)
 
     def __unicode__(self):
         return self.description
@@ -70,10 +70,6 @@ class DataFile(DataFileBase):
                         f_type=self.file_type)
 
     def save(self, *args, **kwargs):
-        f_type = self.datafile.field.magic_file_type
-        if f_type:
-            self.file_type = f_type
-        else:
-            pass
-
+        self.file_type = self.datafile.field.magic_file_type
+        self.file_bytes = self.datafile.file.size
         super(DataFile, self).save(*args, **kwargs)
