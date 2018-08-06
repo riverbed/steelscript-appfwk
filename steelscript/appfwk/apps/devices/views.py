@@ -118,6 +118,8 @@ class DeviceList(generics.ListAPIView):
         if formset.is_valid():
             formset.save()
             DeviceManager.clear()
+            messages.success(request._request,
+                             'Changes successfully saved')
             if '/devices' not in request.META['HTTP_REFERER']:
                 return HttpResponseRedirect(request.META['HTTP_REFERER'])
             else:

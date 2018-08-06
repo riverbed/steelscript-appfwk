@@ -9,6 +9,7 @@ import logging
 
 from django.http import HttpResponseRedirect
 from django.utils import timezone
+from django.contrib import messages
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.views import APIView
@@ -39,6 +40,8 @@ class PreferencesView(APIView):
         form = UserProfileForm(request.DATA, instance=user)
         if form.is_valid():
             form.save()
+            messages.success(request._request,
+                             'Preferences successfully updated')
             if user.timezone_changed:
                 request.session['django_timezone'] = user.timezone
                 timezone.activate(user.timezone)
@@ -66,7 +69,8 @@ class SystemSettingsView(APIView):
         form = SystemSettingsForm(request.DATA, instance=instance)
         if form.is_valid():
             form.save()
-
+            messages.success(request._request,
+                             'System Settings successfully saved')
             try:
                 return HttpResponseRedirect(request.QUERY_PARAMS['next'])
             except KeyError:

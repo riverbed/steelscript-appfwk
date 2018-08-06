@@ -114,7 +114,11 @@
                                 {{ field.label_tag }}
                             </label>
                             <div class="controls col-xs-9">
+                            {% if field != form.enabled %}
                                 {{ field|addcss:"form-control" }}
+                            {% else %}
+                                {{ field|addcss:"checkbox checkbox-inline"}}
+                            {% endif %}
                                 {% if field.errors %}
                                     {% for err in field.errors %}
                                         <p class="text-danger">{{ err }}</p>
