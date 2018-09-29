@@ -26,6 +26,9 @@ INITIAL_DATA = os.path.join(DATAHOME, 'data', 'initial_data')
 REPORTS_DIR = os.path.join(PROJECT_ROOT, 'reports')
 LOG_DIR = os.path.join(DATAHOME, 'logs')
 
+PCAP_STORE = os.path.join(DATAHOME, 'data', 'pcaps')
+FILE_STORE = os.path.join(DATAHOME, 'data', 'uploads')
+
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
 )
