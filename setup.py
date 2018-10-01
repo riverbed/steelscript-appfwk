@@ -55,7 +55,6 @@ http://pythonhosted.org/steelscript/
         'Intended Audience :: System Administrators',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Topic :: System :: Networking',
         'Topic :: Software Development'
