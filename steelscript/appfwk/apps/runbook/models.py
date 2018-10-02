@@ -8,7 +8,6 @@
 import logging
 
 from django.db import models
-from django.contrib.auth.models import AbstractUser
 from ordered_model.models import OrderedModel
 
 from steelscript.appfwk.apps.report.models import Report

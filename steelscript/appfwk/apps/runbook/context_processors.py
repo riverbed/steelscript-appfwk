@@ -4,7 +4,6 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-from steelscript.appfwk.apps.preferences.models import SystemSettings
 from steelscript.appfwk.apps.runbook.models import Workflow
 
 
