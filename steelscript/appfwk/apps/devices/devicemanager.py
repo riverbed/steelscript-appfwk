@@ -64,6 +64,10 @@ class DeviceManager(object):
 
                 cls.devices[ds.id] = create_func(host=ds.host, port=ds.port,
                                                  auth=auth)
+            else:
+                logger.debug('Found existing device: {}({}:{}) - {}'.format(
+                    ds.module, ds.host, ds.port, cls.devices[ds.id]
+                ))
 
         return cls.devices[ds.id]
 

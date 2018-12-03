@@ -841,6 +841,11 @@ class UIWidgetHelper(object):
             self.istime = col.istime()
             self.isdate = col.isdate()
 
+        def __repr__(self):
+            return '<ColInfo %s/%d/%s>'.format(self.key,
+                                               self.dataindex,
+                                               self.label)
+
         def to_json(self, *keys):
             # return a dict object with just the requested keys
             return {k: getattr(self, k) for k in keys}

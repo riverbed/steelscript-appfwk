@@ -539,6 +539,8 @@ class TableFieldForm(forms.Form):
         self._errors[field_id] = self.error_class([msg])
 
     def add_field(self, field_id, tablefield):
+        logger.debug('FORMS: adding field - {}, {}'.format(field_id,
+                                                           tablefield))
         if field_id in self.fields:
             # Already added this field
             return

@@ -26,10 +26,16 @@ class BaseTableWidget(object):
 
         rows = []
 
+        allcols = helper.colmap.values()
+        if widget.options.get('columns', None):
+            cols = [c for c in allcols if c.key in widget.options['columns']]
+        else:
+            cols = allcols
+
         for rawrow in data:
             row = {}
 
-            for col in helper.colmap.values():
+            for col in cols:
                 if col.istime or col.isdate:
                     t = rawrow[col.dataindex]
                     try:
@@ -43,7 +49,7 @@ class BaseTableWidget(object):
 
         column_defs = [
             c.to_json('key', 'label', 'sortable', 'formatter', 'allow_html')
-            for c in helper.colmap.values()
+            for c in cols
         ]
 
         data = {
