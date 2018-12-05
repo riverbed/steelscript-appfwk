@@ -264,7 +264,12 @@ class FocusedAnalysisQuery(AnalysisQuery):
         etime = ftime + (duration / 2)
 
         criteria = self.job.criteria
-        criteria['resolution'] = resolution
+
+        if 'resolution' in criteria:
+            criteria['resolution'] = resolution
+        else:
+            criteria['granularity'] = resolution
+
         criteria['duration'] = duration
         criteria['_orig_duration'] = duration
         criteria['starttime'] = stime

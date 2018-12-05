@@ -25,7 +25,7 @@ def replace_dot(s):
 class BaseWidget(object):
     @classmethod
     def calculate_keycol(cls, table, keycols):
-        if keycols is None:
+        if keycols is None or keycols == [None]:
             keycols = [col.name for col in table.get_columns()
                        if col.iskey is True]
         if len(keycols) == 0:
@@ -129,12 +129,16 @@ class TimeSeriesWidget(BaseWidget):
 class PieWidget(BaseWidget):
     @classmethod
     def create(cls, section, table, title, width=6, rows=10, height=300,
-               stack_widget=False):
+               keycol=None, stack_widget=False):
         """Create a widget displaying data in a pie chart.
 
         :param int width: Width of the widget in columns (1-12, default 6)
-        :param int height: Height of the widget in pixels (default 300)
         :param int rows: Number of rows to display as pie slices (default 10)
+        :param int height: Height of the widget in pixels (default 300)
+        :param str keycol: Optional column to use as key column.  By default,
+            the widget will pick the first Key column it finds, but there
+            are cases where non-Key columns could be used instead or perhaps
+            a secondary Key is desired.
         :param bool stack_widget: stack this widget below the previous one.
 
         The labels are taken from the Table key column (the first key,
@@ -142,7 +146,7 @@ class PieWidget(BaseWidget):
         widget values are taken from the sort column.
 
         """
-        keycols = cls.calculate_keycol(table, keycols=None)
+        keycols = cls.calculate_keycol(table, keycols=[keycol])
 
         if table.sortcols is None:
             raise ValueError("Table %s does not have a sort column defined" %
@@ -205,7 +209,7 @@ class ChartWidget(BaseWidget):
            any C3 'type'
 
         """
-        keycols = cls.calculate_keycol(table, keycols=None)
+        keycols = cls.calculate_keycol(table, keycols=keycols)
 
         if table.sortcols is None:
             raise ValueError("Table %s does not have a sort column defined" %

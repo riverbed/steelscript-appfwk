@@ -55,7 +55,6 @@ http://pythonhosted.org/steelscript/
         'Intended Audience :: System Administrators',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Topic :: System :: Networking',
         'Topic :: Software Development'
@@ -85,6 +84,7 @@ http://pythonhosted.org/steelscript/
         'django-model-utils==2.0.3',
         'django-tagging==0.4.5',
         'django-tagging-autocomplete==0.5.0',
+        'django-ordered-model==1.5',
         'jsonfield==0.9.20',
         'numpy>=1.12.0,<1.13.0',
         'pandas>=0.19.2,<0.20.0',

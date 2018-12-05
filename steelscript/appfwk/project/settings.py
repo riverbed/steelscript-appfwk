@@ -28,6 +28,9 @@ FILE_STORE = os.path.join(DATAHOME, 'data', 'datafiles')
 REPORTS_DIR = os.path.join(PROJECT_ROOT, 'reports')
 LOG_DIR = os.path.join(DATAHOME, 'logs')
 
+PCAP_STORE = os.path.join(DATAHOME, 'data', 'pcaps')
+FILE_STORE = os.path.join(DATAHOME, 'data', 'uploads')
+
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
 )
@@ -226,6 +229,7 @@ TEMPLATES = [
                 'steelscript.appfwk.project.context_processors.appfwk_vars',
                 'steelscript.appfwk.project.context_processors.static_extensions',
                 'steelscript.appfwk.apps.report.context_processors.report_list_processor',
+                'steelscript.appfwk.apps.runbook.context_processors.runbook_processor',
             ],
             'loaders': [
                 'django.template.loaders.filesystem.Loader',
@@ -280,6 +284,7 @@ INSTALLED_APPS = (
     'django_extensions',
     'django_ace',
     'pinax.announcements',
+    'ordered_model',
 
     # appfwk apps - order matters, django loads in sequence
     'steelscript.appfwk.apps.datasource',
@@ -297,6 +302,7 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.metrics',
     'steelscript.appfwk.apps.hitcount',
     'steelscript.appfwk.apps.db',
+    'steelscript.appfwk.apps.runbook',
 
     # 'standard' plugins
     'steelscript.appfwk.apps.plugins.builtin.whois',

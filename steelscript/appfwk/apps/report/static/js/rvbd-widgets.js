@@ -69,6 +69,8 @@ rvbd.formatters = {
     formatMetric: function(num, precision) {
         if (typeof num === 'undefined') {
             return "";
+        } else if (num === 'None') {
+            return "--"
         } else if (num === 0) {
             return "0";
         }
