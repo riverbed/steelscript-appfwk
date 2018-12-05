@@ -28,6 +28,9 @@ steelscriptNotifications OBJECT IDENTIFIER ::=
 steelscriptNotificationObjects OBJECT IDENTIFIER ::=
     { steelscriptNotificationPrefix 1 }
 
+steelscriptProjects OBJECT IDENTIFIER ::=
+    { steelscript 100}
+
 --
 -- Notification Objects
 --

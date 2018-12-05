@@ -687,20 +687,25 @@ class Job(models.Model):
                     # hopefully astype() can figure it out
                     df[col.name] = s.astype('datetime64[ms]')
 
-                # Make sure we are UTC, must use internal tzutc because
-                # pytz timezones will cause an error when unpickling
-                # https://github.com/pydata/pandas/issues/6871
-                # -- problem appears solved with latest pandas
+                # Make sure we are UTC
                 utc = pytz.utc
                 try:
+                    # try to apply timezone to naive timestamps
                     df[col.name] = df[col.name].apply(lambda x:
                                                       x.tz_localize(utc))
                 except TypeError as e:
+                    # can occur when first datetime already has timezone
                     if e.message.startswith('Cannot localize'):
                         df[col.name] = df[col.name].apply(lambda x:
                                                           x.tz_convert(utc))
-                    else:
-                        raise
+                except AttributeError as e:
+                    # can occur when first datetime is NaT
+                    # running convert on rest of series will still work
+                    # as expected
+                    if e.message.startswith("'NaTType'"):
+                        df[col.name] = df[col.name].apply(lambda x:
+                                                          x.tz_convert(utc))
+
             elif col.isdate():
                 if str(s.dtype).startswith(str(pandas.np.dtype('datetime64'))):
                     # Already a datetime
