@@ -631,7 +631,12 @@ class Job(models.Model):
         df = self.data()
         if df is not None:
             # Replace NaN with None
-            df = df.where(pandas.notnull(df), None)
+            # NB this recasts all columns to object, which causes issues
+            # when dealing with large values
+            #df = df.where(pandas.notnull(df), None)
+
+            # this will only change affected columns to object type
+            df = df.astype(object).replace(numpy.nan, 'None')
 
             # Extract tha values in the right order
             all_columns = self.get_columns()
@@ -682,20 +687,25 @@ class Job(models.Model):
                     # hopefully astype() can figure it out
                     df[col.name] = s.astype('datetime64[ms]')
 
-                # Make sure we are UTC, must use internal tzutc because
-                # pytz timezones will cause an error when unpickling
-                # https://github.com/pydata/pandas/issues/6871
-                # -- problem appears solved with latest pandas
+                # Make sure we are UTC
                 utc = pytz.utc
                 try:
+                    # try to apply timezone to naive timestamps
                     df[col.name] = df[col.name].apply(lambda x:
                                                       x.tz_localize(utc))
                 except TypeError as e:
+                    # can occur when first datetime already has timezone
                     if e.message.startswith('Cannot localize'):
                         df[col.name] = df[col.name].apply(lambda x:
                                                           x.tz_convert(utc))
-                    else:
-                        raise
+                except AttributeError as e:
+                    # can occur when first datetime is NaT
+                    # running convert on rest of series will still work
+                    # as expected
+                    if e.message.startswith("'NaTType'"):
+                        df[col.name] = df[col.name].apply(lambda x:
+                                                          x.tz_convert(utc))
+
             elif col.isdate():
                 if str(s.dtype).startswith(str(pandas.np.dtype('datetime64'))):
                     # Already a datetime
@@ -722,13 +732,28 @@ class Job(models.Model):
                   s.dtype == pandas.np.dtype('object')):
                 # The column is supposed to be numeric but must have
                 # some strings.  Try replacing empty strings with NaN
-                # and see if it converts to float64
+                # and see if it converts to float64 or int64
+
+                # special case the big ints
+                if col.datatype == col.DATATYPE_INTEGER64:
+                    dtype = pandas.np.uint64
+                else:
+                    dtype = pandas.np.float64
+
                 try:
                     df[col.name] = (s.replace('', pandas.np.NaN)
-                                    .astype(pandas.np.float64))
+                                    .astype(dtype))
                 except ValueError:
                     # This may incorrectly be tagged as numeric
                     pass
+            elif col.isstring():
+                # The column is supposed to be a string so lets make sure
+                # Try replacing empty strings with NaN, convert rest to string
+
+                dtype = pandas.np.str
+
+                df[col.name] = (s.replace('', pandas.np.NaN)
+                                .astype(dtype))
 
         return df
 

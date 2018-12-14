@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
 
 from rest_framework import views
+from rest_framework.response import Response
 
 from steelscript.appfwk.apps.db import storage, ColumnFilter
 from steelscript.common.timeutils import sec_string_to_datetime
@@ -73,11 +74,14 @@ class Records(views.APIView):
                        query_type='range',
                        query={time_col_name: tr})]
 
-        records = storage.search(index=make_index(obj.namespace),
+        # allow for override via url param
+        index = request_data.get('index', make_index(obj.namespace))
+
+        records = storage.search(index=index,
                                  doc_type=handle,
                                  col_filters=col_filters)
 
-        return JsonResponse(records, safe=False)
+        return Response(records)
 
 
 class Handles(views.APIView):
@@ -125,4 +129,4 @@ class Handles(views.APIView):
                             sourcefile=obj.sourcefile,
                             table=obj.table,
                             intervals=str(obj.intervals)))
-        return JsonResponse(res, safe=False)
+        return Response(res)

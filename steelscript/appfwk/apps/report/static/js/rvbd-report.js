@@ -140,6 +140,13 @@ rvbd.report = {
             // Attach handlers for "Run" button/menu
             $('#button-run').click(function() { $form.submit(); });
 
+            // hitting enter in criteria form submits
+            $form.keypress(function(e) {
+                if (e.which == 13) {
+                    $form.submit();
+                }
+            });
+
             $('#menu-debug').click(function() {
                     rvbd.report.debugFlag = true;
                     $form.submit();

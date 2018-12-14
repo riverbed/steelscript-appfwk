@@ -87,6 +87,10 @@ class Command(BaseCommand):
                 rdir = os.path.join(report_dir, plugin.get_namespace())
                 self.ensure_dir(rdir)
 
+                if os.path.islink(rdir):
+                    self.stdout.write(' skipping symlinked dir: %s\n' % rdir)
+                    continue
+
                 for name, src_file in reports:
                     dest_file = os.path.join(rdir, name + '.py')
                     self.copyfile(src_file, dest_file, options['overwrite'])

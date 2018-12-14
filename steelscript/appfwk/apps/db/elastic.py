@@ -35,15 +35,54 @@ class ElasticSearch(object):
             hosts=settings.ELASTICSEARCH_HOSTS
         )
 
-    def write(self, index, doctype, data_frame, timecol):
+    def write(self, index, doctype, data_frame, timecol, id_method='time'):
+        """ Write `data_frame` to elasticsearch storage.
 
-        df = data_frame.fillna('')
+        :param index: name of index to use
+        :param doctype:  elasticsearch `_type` for the records
+        :param data_frame: pandas dataframe
+        :param timecol: name of the column in data_frame to use for time
+        :param id_method: how to generate _id's for each record
+            'time' - microseconds of time column
+            'unique' - auto-generated unique value by elasticsearch
+            tuple - tuple of column names to be combined for each row
 
-        actions = [{"_index": index,
-                    "_type": doctype,
-                    "_id": datetime_to_seconds(df.iloc[i][timecol]),
-                    "_source": df.iloc[i].to_dict()}
-                   for i in xrange(len(df))]
+        """
+        # NOTE:
+        # Fix obscure pandas bug with NaT and fillna
+        #
+        # The error shows "AssertionError: Gaps in blk ref_locs" when
+        # executing fillna() on a dataframe that has a pandas.NaT
+        # reference in it.
+        #
+        # Instead of replacing values, just drop them when loading to ES,
+        # ES handles the missing items as null
+        df = data_frame
+
+        # find whether we have a write alias for the given index
+        if index in settings.ES_ROLLOVER:
+            index = settings.ES_ROLLOVER[index]['write_index']
+
+        if id_method == 'time':
+            _id = lambda x: datetime_to_microseconds(x[timecol])
+        elif id_method == 'unique':
+            _id = None
+        else:
+            # we are passed a tuple of columns
+            # try to get timestamp value otherwise just use the item itself
+            _id = lambda x: ':'.join(str(getattr(x[c], 'value', x[c]))
+                                     for c in id_method)
+
+        def gen_actions(data):
+            for i, row in data.iterrows():
+                action = {
+                    '_index': index,
+                    '_type': doctype,
+                    '_source': row.dropna().to_dict()
+                }
+                if _id:
+                    action['_id'] = _id(row)
+                yield action
 
         logger.debug("Writing %s records from %s to %s into db. Index: %s, "
                      "doc_type: %s."
@@ -51,13 +90,17 @@ class ElasticSearch(object):
                         index, doctype))
 
         logger.debug('Calling Bulk load with client: %s' % self.client)
-        written, errors = helpers.bulk(self.client, actions=actions,
+        written, errors = helpers.bulk(self.client, actions=gen_actions(df),
                                        stats_only=True)
         logger.debug("Successfully wrote %s records, %s errors." % (written,
                                                                     errors))
         return
 
     def search(self, index, doc_type, col_filters=None):
+
+        # find whether we have a search alias for the given index
+        if index in settings.ES_ROLLOVER:
+            index = settings.ES_ROLLOVER[index]['search_index']
 
         logger.debug("Searching index %s for doc_type %s and col_filters %s"
                      % (index, doc_type, col_filters))

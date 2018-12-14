@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block comments %}
+<!--
+# Copyright (c) 2017 Riverbed Technology, Inc.
+#
+# This software is licensed under the terms and conditions of the MIT License
+# accompanying the software ("License").  This software is distributed "AS IS"
+# as set forth in the License.
+-->
+{% endblock %}
+
+{% block title %}App Framework: Edit and Add Data Files{% endblock %}
+
+{% block header_row %}
+    <h3>Edit and add Data Files</h3>
+    <h5>Click on Data File link to update description.</h5>
+    <h5>Click on Add New Data File to upload new data.</h5>
+{% endblock %}
+
+{% load filemgr_extra %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-offset-1 col-xs-10">
+                <table border="0" class="table table-bordered block-centered">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>PCAP File</th>
+                            <th>Upload Time</th>
+                            <th>File Type</th>
+                            <th>Bytes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if not tabledata %}
+                            <tr>
+                                <td colspan="5" style="text-align: center">No files uploaded yet.</td>
+                            </tr>
+                        {% endif %}
+                        {% for datafile in tabledata %}
+                            <tr>
+                                <td>{{ datafile.description }}</td>
+                                <td><a href="{% url 'datafile-detail' datafile.id %}">{{ datafile.datafile.url|filename }}</a></td>
+                                <td>{{ datafile.uploaded_at }}</td>
+                                <td>{{ datafile.file_type }}</td>
+                                <td>{{ datafile.file_bytes }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="row">
+                    <div class="block-centered" style="text-align: center">
+                        <a href="{% url 'datafile-add' %}" class="btn btn-default">Add New Data File</a>
+                        <a href="{% url 'datafilefs-sync' %}" class="btn btn-danger delete">Resync Data File Manager</a>
+                    </div>
+                    <div class="block-centered" style="text-align: center">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

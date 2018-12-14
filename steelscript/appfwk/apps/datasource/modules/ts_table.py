@@ -28,8 +28,6 @@ logger = logging.getLogger(__name__)
 TIME_FIELDS = ['_orig_duration', '_orig_endtime', '_orig_starttime',
                'duration', 'endtime', 'starttime']
 
-tp = TimeParser()
-
 
 def make_index(s):
     return 'appfwk-{0}'.format(s)
@@ -53,7 +51,12 @@ class TimeSeriesTable(AnalysisTable):
     _query_class = 'TimeSeriesQuery'
 
     TABLE_OPTIONS = {'max_length_per_call': 3600,
-                     'max_number_of_calls': 2}
+                     'max_number_of_calls': 2,
+                     'id_method': 'time',
+                     'override_table_handle': None,
+                     'table_filter': None,
+                     'override_index': None,
+                     }
 
 
 class TimeSeriesQuery(AnalysisQuery):
@@ -86,11 +89,6 @@ class TimeSeriesQuery(AnalysisQuery):
 
         :return: the hash hex string and the criteria without time values
         """
-        h = hashlib.md5()
-        h.update(str(self.table.id))
-
-        h.update('.'.join([c.name for c in self.ds_table.get_columns()]))
-
         criteria = copy.copy(self.job.criteria)
 
         for k, v in self.job.criteria.iteritems():
@@ -98,9 +96,21 @@ class TimeSeriesQuery(AnalysisQuery):
                 # We do not want time related fields included in the criteria
                 criteria.pop(k, None)
                 continue
-            h.update('%s:%s' % (k, v))
 
-        return h.hexdigest(), criteria
+        if self.table.options.override_table_handle:
+            handle = self.table.options.override_table_handle
+        else:
+            h = hashlib.md5()
+            h.update(str(self.table.id))
+
+            h.update('.'.join([c.name for c in self.ds_table.get_columns()]))
+
+            for k, v in self.job.criteria.iteritems():
+                h.update('%s:%s' % (k, v))
+
+            handle = h.hexdigest()
+
+        return handle, criteria
 
     def _check_intervals(self, intervals):
 
@@ -178,9 +188,24 @@ class TimeSeriesQuery(AnalysisQuery):
                                               'lte': endtime}
                               })]
 
+        if self.table.options.table_filter:
+            # (type, col, value)
+            type_, colname, value = self.table.options.table_filter.split(':')
+            tbl_filter = ColumnFilter(
+                query_type=type_,
+                query={colname: value}
+            )
+            col_filters.append(tbl_filter)
+            logger.debug('Added extra table filter: {}'.format(col_filters))
+
         # Obtain result from storage as a list of dicts,
         # each dict represents one record/doc
-        res = storage.search(index=make_index(self.ds_table.namespace),
+        if self.table.options.override_index:
+            index = self.table.options.override_index
+        else:
+            index = make_index(self.ds_table.namespace)
+
+        res = storage.search(index=index,
                              doc_type=self.handle,
                              col_filters=col_filters)
 
@@ -218,7 +243,9 @@ class TimeSeriesQuery(AnalysisQuery):
         logger.debug('TimeSeriesTable analysis with jobs %s' % jobs)
 
         filtered_list = ExistingIntervals.objects.filter(
-            table_handle=self.handle)
+            table_handle=self.handle,
+            criteria=self.no_time_criteria
+        )
 
         existing_intervals = None
 
@@ -259,7 +286,8 @@ class TimeSeriesQuery(AnalysisQuery):
         logger.debug('TimeSeriesTable collect with jobs %s' % jobs)
         dfs_from_jobs, dfs_from_db = [], []
 
-        objs = ExistingIntervals.objects.filter(table_handle=self.handle)
+        objs = ExistingIntervals.objects.filter(table_handle=self.handle,
+                                                criteria=self.no_time_criteria)
 
         if objs:
             # we should only find one with our handle
@@ -334,11 +362,17 @@ class TimeSeriesQuery(AnalysisQuery):
         if not dfs_from_jobs:
             return QueryComplete(None)
 
-        storage.write(index=make_index(self.ds_table.namespace),
+        if self.table.options.override_index:
+            index = self.table.options.override_index
+        else:
+            index = make_index(self.ds_table.namespace)
+
+        storage.write(index=index,
                       doctype=self.handle,
                       data_frame=pandas.concat(dfs_from_jobs,
                                                ignore_index=True),
-                      timecol=self.time_col)
+                      timecol=self.time_col,
+                      id_method=self.table.options.id_method)
 
         obj.intervals = self._converge_adjacent(job_intervals)
         obj.tzinfo = self.job.criteria.starttime.tzinfo
@@ -350,4 +384,6 @@ class TimeSeriesQuery(AnalysisQuery):
         # non-correct data, thus stitching the data frames together
         total_df = pandas.concat(dfs_from_db + dfs_from_jobs,
                                  ignore_index=True)
-        return QueryComplete(total_df.sort(self.time_col).drop_duplicates())
+        data = total_df.sort(self.time_col).drop_duplicates()
+
+        return QueryComplete(data)

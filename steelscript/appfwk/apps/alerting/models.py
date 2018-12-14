@@ -61,6 +61,7 @@ class DestinationThread(threading.Thread):
 
     def run(self):
         sender = self.destination.get_sender()
+        logger.debug('XXX here - event/sender: %s/%s' % (self.event, sender))
 
         if self.is_error:
             level = AlertLevels.ERROR
@@ -72,19 +73,25 @@ class DestinationThread(threading.Thread):
 
         message = self.destination.get_message(message_context)
         options = self.destination.options
+        logger.debug('XXX here - message/options: %s/%s' % (message, options))
         if options:
             level = AlertLevels.find(options.get('level', None))
 
-        alert = Alert(event=self.event,
-                      level=level or sender.level,
-                      sender=self.destination.sender,
-                      message=message,
-                      options=options)
-        # need to save to get datetime assigned
-        alert.save()
-        logger.debug('Sending Alert %s via Destination %s' %
-                     (alert, self.destination))
         try:
+            alert = Alert(event=self.event,
+                          level=level or sender.level,
+                          sender=self.destination.sender,
+                          message=message,
+                          options=options)
+            # need to save to get datetime assigned
+            alert.save()
+            logger.debug('Sending Alert %s via Destination %s' %
+                         (alert, self.destination))
+        except Exception as e:
+            logger.error('Error saving Alert: %s' % e)
+
+        try:
+            # even if we had an error saving, may be able to still send alert
             sender.send(alert)
         except:
             logger.exception("An error occurred while sending alert %s"
@@ -339,8 +346,14 @@ class Destination(models.Model):
         """Return string from either template_func or template
         processed with result and given context.
         """
+        logger.debug('XXX here - get_message context keys/template/func: '
+                     '%s/%s/%s' %
+                     (context.keys(), self.template, self.template_func))
         if self.template_func:
-            return self.template_func(**context)
+            try:
+                return self.template_func(self, **context)
+            except Exception as e:
+                logger.error('Error processing template function: %s' % e)
         else:
             return self.template.format(**context)
 

@@ -23,6 +23,8 @@ PROJECT_ROOT = os.path.dirname(PORTAL_ROOT)
 DATAHOME = os.getenv('DATAHOME', PROJECT_ROOT)
 DATA_CACHE = os.path.join(DATAHOME, 'data', 'datacache')
 INITIAL_DATA = os.path.join(DATAHOME, 'data', 'initial_data')
+PCAP_STORE = os.path.join(DATAHOME, 'data', 'pcap')
+FILE_STORE = os.path.join(DATAHOME, 'data', 'datafiles')
 REPORTS_DIR = os.path.join(PROJECT_ROOT, 'reports')
 LOG_DIR = os.path.join(DATAHOME, 'logs')
 
@@ -288,6 +290,7 @@ INSTALLED_APPS = (
     'steelscript.appfwk.apps.datasource',
     'steelscript.appfwk.apps.devices',
     'steelscript.appfwk.apps.pcapmgr',
+    'steelscript.appfwk.apps.filemgr',
     'steelscript.appfwk.apps.report',
     'steelscript.appfwk.apps.geolocation',
     'steelscript.appfwk.apps.help',
@@ -470,6 +473,7 @@ APPFWK_SYNTHETIC_MODULES = (
 
 # Size limit of all netshark downloaded pcap files in bytes (default 10GB)
 PCAP_SIZE_LIMIT = 10000000000
+FILE_SIZE_LIMIT = PCAP_SIZE_LIMIT
 
 # Create report history
 REPORT_HISTORY_ENABLED = True
@@ -485,3 +489,13 @@ HITCOUNT_IGNORE_URLS = [
 # DB solution
 DB_SOLUTION = 'elastic'
 ELASTICSEARCH_HOSTS = ['elasticsearch']
+
+# For custom elasticsearch deployments, map rollover to given index
+ES_ROLLOVER = {
+    'index_name': {
+        'write_index': None,
+        'rollover_criteria': None,
+        'search_index': None,
+        'search_pattern': None,
+    }
+}
