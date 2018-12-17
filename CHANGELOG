@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+[1.8]
+ * Last release planned to support python 2.7 for anything other than security fixes to the SteelScript codebase.
+ * Support for enhanced UI color choices in UI widgets.
+ * Fixes memory leak issue in auto-refreshing reports.
+ * Expanded support for ElasticSearch.
+ * Remove python 2.6 support.
+ * Add support for basic 'runbook' workflows.
+
 [1.6.2]
  * Update version dependencies
 
