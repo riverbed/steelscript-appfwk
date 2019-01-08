@@ -9,6 +9,9 @@ import re
 import logging
 
 from steelscript.appfwk.apps.report.models import Widget, UIWidgetHelper
+from steelscript.appfwk.apps.report.utils import format_labels, \
+    format_single_value
+from steelscript.appfwk.apps.preferences.models import SystemSettings
 from steelscript.common import timeutils
 
 logger = logging.getLogger(__name__)
@@ -24,6 +27,7 @@ class BaseTableWidget(object):
     def base_process(cls, widget, job, data):
         helper = UIWidgetHelper(widget, job)
 
+        d_unit = SystemSettings.get_system_settings().data_units
         rows = []
 
         allcols = helper.colmap.values()
@@ -43,7 +47,12 @@ class BaseTableWidget(object):
                     except AttributeError:
                         val = t * 1000
                 else:
-                    val = rawrow[col.dataindex]
+                    col.label = format_labels(col.label,
+                                              d_unit,
+                                              helper.valcols)
+                    val = format_single_value(col.col,
+                                              rawrow[col.dataindex],
+                                              d_unit)
                 row[col.key] = val
             rows.append(row)
 
@@ -53,7 +62,9 @@ class BaseTableWidget(object):
         ]
 
         data = {
-            "chartTitle": widget.title.format(**job.actual_criteria),
+            "chartTitle": format_labels(
+                widget.title.format(**job.actual_criteria),
+                d_unit, helper.valcols),
             "columns": column_defs,
             "data": rows
         }

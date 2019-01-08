@@ -69,8 +69,8 @@ class SystemSettingsForm(forms.ModelForm):
 
     class Meta:
         model = SystemSettings
-        fields = ('ignore_cache', 'developer', 'maps_version',
-                  'maps_api_key', 'global_error_handler',
+        fields = ('data_units', 'ignore_cache', 'developer',
+                  'maps_version', 'maps_api_key', 'global_error_handler',
                   'weather_enabled', 'weather_url')
         widgets = {'maps_version': forms.HiddenInput(),
                    'maps_api_key': forms.HiddenInput(),

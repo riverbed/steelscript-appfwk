@@ -15,10 +15,75 @@ from django.conf import settings
 
 from steelscript.commands.steel import shell
 from steelscript.common.timeutils import datetime_to_seconds
+from steelscript.appfwk.apps.datasource.models import Column
 from steelscript.appfwk.apps.preferences.models import AppfwkUser
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+def check_if_bytes(unit):
+    if (unit == Column.UNITS_BYTES_PER_SEC or
+            unit == Column.UNITS_BYTES_PER_SEC_VERBOSE or
+            unit == Column.UNITS_BYTES or
+            unit == Column.UNITS_BYTES_VERBOSE):
+        return True
+    else:
+        return False
+
+
+def check_if_bits(unit):
+    if (unit == Column.UNITS_BITS_PER_SEC or
+            unit == Column.UNITS_BITS_PER_SEC_VERBOSE or
+            unit == Column.UNITS_BITS or
+            unit == Column.UNITS_BITS_VERBOSE):
+        return True
+    else:
+        return False
+
+
+def format_labels(label, d_unit, columns):
+    if d_unit != 'default':
+        for col in columns:
+            if hasattr(col, 'units'):
+                if (check_if_bytes(col.units) or
+                        check_if_bits(col.units)):
+                        if d_unit == 'bits':
+                            if 'Bytes' in label:
+                                label = label.replace("Bytes", "Bits")
+                            elif 'bytes' in label:
+                                label = label.replace("bytes", "bits")
+                        elif d_unit == 'bytes':
+                            if 'Bits' in label:
+                                label = label.replace("Bits", "Bytes")
+                            elif 'bits' in label:
+                                label = label.replace("bits", "bytes")
+                        break
+    return label
+
+
+def format_df_values(c, df, d_unit):
+    if d_unit != 'default':
+        if hasattr(c, 'units'):
+            if d_unit == 'bits':
+                if check_if_bytes(c.units):
+                    df.loc[:, c.name] *= 8
+            elif d_unit == 'bytes':
+                if check_if_bits(c.units):
+                    df.loc[:, c.name] /= 8
+    return df
+
+
+def format_single_value(c, value, d_unit):
+    if d_unit != 'default':
+        if hasattr(c, 'units'):
+            if d_unit == 'bits':
+                if check_if_bytes(c.units):
+                    value *= 8
+            elif d_unit == 'bytes':
+                if check_if_bits(c.units):
+                    value /= 8
+    return value
 
 
 def debug_fileinfo(fname):

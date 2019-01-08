@@ -147,7 +147,13 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
             tooltip: {
                 format: {
                     title: function (x) { return d3.time.format('%Y-%m-%d ' + data.tickFormat)(x); },
-                    value: function (value, ratio, id) { return d3.format(',')(Math.round(value)); }
+                    value: function (value, ratio, id) {
+                        if (value > 1) {
+                            return d3.format(',')(Math.round(value));
+                        } else  {
+                            return value;
+                        }
+                    }
                 }
             }
         };
@@ -155,10 +161,10 @@ $.extend(rvbd.widgets.c3.TimeSeriesWidget.prototype, {
         if (data.altaxis) {
             chartdef.data.axes = data.altaxis;
             chartdef.axis.y2 = {
-                show: true, 
-		tick: {
-		    format: function (d) { return d3.format('s')(Math.abs(d)); }
-		}
+                show: true,
+                tick: {
+                    format: function (d) { return d3.format('s')(Math.abs(d)); }
+                }
             };
         }
 

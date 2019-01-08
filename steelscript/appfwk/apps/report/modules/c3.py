@@ -14,6 +14,9 @@ from dateutil.relativedelta import relativedelta
 
 from steelscript.appfwk.apps.report.models import Widget, UIWidgetHelper
 from steelscript.common.timeutils import force_to_utc
+from steelscript.appfwk.apps.report.utils import format_labels,\
+    format_df_values, format_single_value
+from steelscript.appfwk.apps.preferences.models import SystemSettings
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +73,6 @@ class TimeSeriesWidget(BaseWidget):
     @classmethod
     def process(cls, widget, job, data):
         helper = UIWidgetHelper(widget, job)
-
         catname = '-'.join([k.name for k in helper.keycols])
         timecol = [c for c in helper.keycols if c.istime() or c.isdate()][0]
 
@@ -92,6 +94,8 @@ class TimeSeriesWidget(BaseWidget):
         timeaxis.compute()
 
         tickvalues = [c3datefmt(d) for d in timeaxis.ticks]
+        d_unit = SystemSettings.get_system_settings().data_units
+        [format_df_values(c, df, d_unit) for c in helper.valcols]
 
         # Replace the '.' character with '*' from column names as '.'
         # is be treated as object-attr access action in c3 0.4.11 version
@@ -102,11 +106,15 @@ class TimeSeriesWidget(BaseWidget):
         )
 
         data = {
-            'chartTitle': widget.title.format(**job.actual_criteria),
+            'chartTitle': format_labels(
+                widget.title.format(**job.actual_criteria),
+                d_unit, helper.valcols),
             'json': rows,
             'key': catname,
             'values': [replace_dot(c.name) for c in helper.valcols],
-            'names': {replace_dot(c.col.name): c.col.label
+            'names': {replace_dot(c.col.name): format_labels(c.col.label,
+                                                             d_unit,
+                                                             helper.valcols)
                       for c in helper.colmap.values()},
             'altaxis': {c: 'y2' for c in altcols} or None,
             'tickFormat': timeaxis.best[1],
@@ -181,8 +189,12 @@ class PieWidget(BaseWidget):
             # create a "full" pie to show something
             rows = [[1, 1]]
 
+        d_unit = SystemSettings.get_system_settings().data_units
+
         data = {
-            'chartTitle': widget.title.format(**job.actual_criteria),
+            'chartTitle': format_labels(
+                widget.title.format(**job.actual_criteria),
+                d_unit, columns),
             'rows': rows,
             'type': 'pie',
         }
@@ -231,7 +243,7 @@ class ChartWidget(BaseWidget):
     @classmethod
     def process(cls, widget, job, data):
         helper = UIWidgetHelper(widget, job)
-
+        d_unit = SystemSettings.get_system_settings().data_units
         # create composite name for key label
         keyname = '-'.join([k.name for k in helper.keycols])
 
@@ -242,7 +254,8 @@ class ChartWidget(BaseWidget):
             row = dict(zip([c.name for c in helper.all_cols], rawrow))
 
             # populate values first
-            r = {c.name: row[c.name] for c in helper.valcols}
+            r = {c.name: format_single_value(c, row[c.name], d_unit)
+                 for c in helper.valcols}
 
             # now add the key
             key = '-'.join([row[k.name] for k in helper.keycols])
@@ -251,7 +264,9 @@ class ChartWidget(BaseWidget):
             rows.append(r)
 
         data = {
-            'chartTitle': widget.title.format(**job.actual_criteria),
+            'chartTitle':  format_labels(
+                widget.title.format(**job.actual_criteria),
+                d_unit, helper.valcols),
             'rows': rows,
             'keyname': keyname,
             'values': [c.name for c in helper.valcols],
