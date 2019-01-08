@@ -41,6 +41,10 @@ COLOR_CHOICES = (('default', 'Default'),
                  ('category20b', 'Category20B'),
                  ('category20c', 'Category20C'))
 
+DATA_UNIT_CHOICES = (('default', 'Default'),
+                     ('bits', 'Bits'),
+                     ('bytes', 'Bytes'))
+
 
 def create_preference_fixture(initial_admin_only=True):
     """Dump preferences to JSON file for safe keeping.
@@ -114,6 +118,13 @@ class SystemSettings(models.Model):
     """ Global system preferences, configured by admin user. """
     # implemented as a singleton instance
     # investigate using package like django-solo for more features
+
+    data_units = models.CharField(max_length=20,
+                                  default='default',
+                                  choices=DATA_UNIT_CHOICES,
+                                  verbose_name='Bandwidth data units',
+                                  help_text='Choose preferred data '
+                                            'units for reports')
 
     ignore_cache = models.BooleanField(
         default=False,

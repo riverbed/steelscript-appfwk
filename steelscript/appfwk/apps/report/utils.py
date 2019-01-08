@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 
 def check_if_bytes(unit):
     if (unit == Column.UNITS_BYTES_PER_SEC or
-            unit == Column.UNITS_BYTES_PER_SEC_VERBAL or
+            unit == Column.UNITS_BYTES_PER_SEC_VERBOSE or
             unit == Column.UNITS_BYTES or
-            unit == Column.UNITS_BYTES_VERBAL):
+            unit == Column.UNITS_BYTES_VERBOSE):
         return True
     else:
         return False
@@ -34,9 +34,9 @@ def check_if_bytes(unit):
 
 def check_if_bits(unit):
     if (unit == Column.UNITS_BITS_PER_SEC or
-            unit == Column.UNITS_BITS_PER_SEC_VERBAL or
+            unit == Column.UNITS_BITS_PER_SEC_VERBOSE or
             unit == Column.UNITS_BITS or
-            unit == Column.UNITS_BITS_VERBAL):
+            unit == Column.UNITS_BITS_VERBOSE):
         return True
     else:
         return False

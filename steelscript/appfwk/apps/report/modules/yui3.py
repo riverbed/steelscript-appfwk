@@ -77,7 +77,7 @@ class TableWidget(object):
                 w_column['allowHTML'] = True
             elif ci.col.isnumeric():
                 if (ci.col.units == ci.col.UNITS_PCT or
-                        ci.col.units == ci.col.UNITS_PCT_VERBAL):
+                        ci.col.units == ci.col.UNITS_PCT_VERBOSE):
                     w_column['formatter'] = 'formatPct'
                 else:
                     if ci.col.datatype == ci.col.DATATYPE_FLOAT:
@@ -428,7 +428,7 @@ class TimeSeriesWidget(object):
                 w_axes[axis_name]['styles'] = {'majorUnit': {'count': 1}}
 
             if (ci.col.units == ci.col.UNITS_PCT or
-                    ci.col.units == ci.col.UNITS_PCT_VERBAL):
+                    ci.col.units == ci.col.UNITS_PCT_VERBOSE):
                 w_axes[axis_name]['formatter'] = 'formatPct'
             else:
                 w_axes[axis_name]['formatter'] = 'formatMetric'
