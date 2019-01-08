@@ -784,6 +784,13 @@ class Column(models.Model):
     UNITS_PCT = 5
     UNITS_BITS = 6
     UNITS_BITS_PER_SEC = 7
+    UNITS_SECS_VERBAL = 8
+    UNITS_MSECS_VERBAL = 9
+    UNITS_BYTES_VERBAL = 10
+    UNITS_BYTES_PER_SEC_VERBAL = 11
+    UNITS_PCT_VERBAL = 12
+    UNITS_BITS_VERBAL = 13
+    UNITS_BITS_PER_SEC_VERBAL = 14
     units = models.IntegerField(
         default=UNITS_NONE,
         choices=((UNITS_NONE, "none"),
@@ -794,6 +801,13 @@ class Column(models.Model):
                  (UNITS_PCT, "pct"),
                  (UNITS_BITS, "b"),
                  (UNITS_BITS_PER_SEC, "b/s"),
+                 (UNITS_SECS_VERBAL, "seconds"),
+                 (UNITS_MSECS_VERBAL, "milliseconds"),
+                 (UNITS_BYTES_VERBAL, "bytes"),
+                 (UNITS_BYTES_PER_SEC_VERBAL, "bytes/second"),
+                 (UNITS_PCT_VERBAL, "percents"),
+                 (UNITS_BITS_VERBAL, "bits"),
+                 (UNITS_BITS_PER_SEC_VERBAL, "bits/second")
                  )
     )
 

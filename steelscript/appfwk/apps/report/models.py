@@ -914,7 +914,8 @@ class UIWidgetHelper(object):
                 fmt = c.formatter
                 html = True
             elif c.isnumeric():
-                if c.units == c.UNITS_PCT:
+                if (c.units == c.UNITS_PCT or
+                        c.units == c.UNITS_PCT_VERBAL):
                     fmt = 'formatPct'
                 else:
                     if c.datatype == c.DATATYPE_FLOAT:
