@@ -177,7 +177,7 @@ class PieWidget(object):
 
         if len(data) > 0:
             for rawrow in data:
-                row = dict(zip(col_names, rawrow))
+                row = dict(list(zip(col_names, rawrow)))
                 r = {catcol.name: row[catcol.name],
                      col.name: row[col.name]}
                 rows.append(r)
@@ -376,7 +376,7 @@ class TimeSeriesWidget(object):
             row = {'time': t}
             rowmin = {}
             rowmax = {}
-            for ci in colinfo.values():
+            for ci in list(colinfo.values()):
                 if ci.istime or ci.isdate:
                     continue
                 a = ci.axis
@@ -396,7 +396,7 @@ class TimeSeriesWidget(object):
                     rowmax[a] = ((rowmax[a] + val) if stacked
                                  else max(rowmax[a], val))
 
-            for a in rowmin.keys():
+            for a in list(rowmin.keys()):
                 minval[a] = rowmin[a] if (a not in minval) else min(minval[a],
                                                                     rowmin[a])
                 maxval[a] = rowmax[a] if (a not in maxval) else max(maxval[a],
@@ -405,7 +405,7 @@ class TimeSeriesWidget(object):
             rows.append(row)
 
         # Setup the scale values for the axes
-        for ci in colinfo.values():
+        for ci in list(colinfo.values()):
             if ci.istime or ci.isdate:
                 continue
 
@@ -589,14 +589,14 @@ class ChartWidget(object):
 
             # collect key values
             keyvals = []
-            for c in colmap.values():
+            for c in list(colmap.values()):
                 if not c.col.iskey:
                     continue
                 keyvals.append(rawrow[c.dataindex])
             row[catname] = ','.join(str(k) for k in keyvals)
 
             # collect the data values
-            for c in colmap.values():
+            for c in list(colmap.values()):
                 if c.col.iskey:
                     continue
 
@@ -614,7 +614,7 @@ class ChartWidget(object):
                     rowmax[a] = ((rowmax[a] + val) if stacked
                                  else max(rowmax[a], val))
 
-            for a in rowmin.keys():
+            for a in list(rowmin.keys()):
                 minval[a] = rowmin[a] if (a not in minval) else min(minval[a],
                                                                     rowmin[a])
                 maxval[a] = rowmax[a] if (a not in maxval) else max(maxval[a],
@@ -622,7 +622,7 @@ class ChartWidget(object):
             rows.append(row)
 
         # Build up axes
-        for c in colmap.values():
+        for c in list(colmap.values()):
             if c.col.iskey:
                 continue
 
@@ -759,7 +759,7 @@ class CandleStickWidget(object):
                              "xKey": 'date',
                              "yAxis": "candle"}]
 
-        rows = [dict(zip(["date"] + price_names, day)) for day in data]
+        rows = [dict(list(zip(["date"] + price_names, day))) for day in data]
         ret = {
             "chartTitle": widget.title.format(**job.actual_criteria),
             "type": widget.options.charttype,

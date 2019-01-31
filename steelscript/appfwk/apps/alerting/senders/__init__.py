@@ -4,7 +4,7 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-from __future__ import absolute_import
+
 
 from steelscript.appfwk.apps.alerting.senders.base import *
 from steelscript.appfwk.apps.alerting.senders.snmp import *

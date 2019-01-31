@@ -13,7 +13,7 @@ class JobDataField(serializers.Field):
     def field_to_native(self, obj, fieldname):
         # calls values() on the Job object to get list of lists
         try:
-            return obj.values()
+            return list(obj.values())
         except AttributeError:
             # requesting data before its ready
             # XXX what is the best choice to do here?

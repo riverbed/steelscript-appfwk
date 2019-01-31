@@ -72,8 +72,8 @@ class Command(BaseCommand):
                 if not os.path.exists(j.datafile()):
                     datafile += " (missing)"
 
-                status = (s for s in ('NEW', 'RUNNING', 'COMPLETE', 'ERROR')
-                          if getattr(Job, s) == j.status).next()
+                status = next((s for s in ('NEW', 'RUNNING', 'COMPLETE', 'ERROR')
+                          if getattr(Job, s) == j.status))
                 parent_id = j.parent.id if j.parent else '--'
                 master_id = j.master.id if j.master else '--'
 
@@ -89,7 +89,7 @@ class Command(BaseCommand):
             columns = [c.name for c in job.table.get_columns()]
 
             if job.status == job.COMPLETE:
-                Formatter.print_table(job.values(), columns)
+                Formatter.print_table(list(job.values()), columns)
 
         elif options['job_age']:
             logger.debug('Aging all jobs.')

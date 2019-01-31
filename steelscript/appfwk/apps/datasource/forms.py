@@ -275,7 +275,7 @@ class DateTimeField(forms.DateTimeField):
             # This came from SplitDateTimeWidget so the value is two strings
             value = ' '.join(value)
 
-        if isinstance(value, str) or isinstance(value, unicode):
+        if isinstance(value, str):
             try:
                 v = dateutil.parser.parse(value, tzinfos=all_timezones_map())
             except:
@@ -308,7 +308,7 @@ class DurationWidget(forms.MultiWidget):
         super(DurationWidget, self).__init__(split_widgets)
 
     def decompress(self, value):
-        if isinstance(value, str) or isinstance(value, unicode):
+        if isinstance(value, str):
             value = timedelta_total_seconds(parse_timedelta(value))
 
         if value:
@@ -396,7 +396,7 @@ class IDChoiceField(forms.ChoiceField):
         initial = kwargs.get('initial', None)
         if initial:
             # choices are lists as [(choice_id, choice_name),...]
-            res = filter(lambda x: x[0] == initial, kwargs['choices'])
+            res = [x for x in kwargs['choices'] if x[0] == initial]
             if not res:
                 self.error_msg = ("No %s found with ID %s."
                                   % (kwargs['label'], initial))
@@ -612,7 +612,7 @@ class TableFieldForm(forms.Form):
             f.widget.attrs.update(widget_attrs)
 
     def compute_field_precedence(self):
-        ids = self._tablefields.keys()
+        ids = list(self._tablefields.keys())
 
         # List of fields that are still unset after this iteration
         unprocessed_ids = deque(ids)
@@ -679,14 +679,14 @@ class TableFieldForm(forms.Form):
 
     def dynamic_fields(self):
         """Return dynamic, non-hidden fields."""
-        return [self[id_] for id_, tablefield in self._tablefields.iteritems()
+        return [self[id_] for id_, tablefield in self._tablefields.items()
                 if tablefield.dynamic and id_ in self.fields]
 
     def as_text(self):
         """Return certain field values as a dict for simple json parsing."""
         result = {}
 
-        for k, v in self.cleaned_data.iteritems():
+        for k, v in self.cleaned_data.items():
 
             if isinstance(v, datetime.datetime):
                 result[k] = v.isoformat()
@@ -715,7 +715,7 @@ class TableFieldForm(forms.Form):
             raise ValidationError("Form data is not valid")
 
         data = copy.copy(self.initial)
-        for k, v in self.cleaned_data.iteritems():
+        for k, v in self.cleaned_data.items():
             if k in (self._hidden_fields or []):
                 data[k] = self.fields[k].clean(self._tablefields[k].initial)
             else:
@@ -763,7 +763,7 @@ class TableFieldForm(forms.Form):
         super(TableFieldForm, self).is_valid()
 
         if check_unknown and self.is_bound:
-            for k in self.data.keys():
+            for k in list(self.data.keys()):
                 if k not in self.fields:
                     self._errors[k] = self.error_class(['Unknown criteria field'])
 
@@ -774,7 +774,7 @@ class TableFieldForm(forms.Form):
         if not self.is_valid():
             raise ValidationError("Form data is not valid")
 
-        for k, v in self.cleaned_data.iteritems():
+        for k, v in self.cleaned_data.items():
             if isinstance(v, datetime.datetime) and v.tzinfo is None:
                 self.cleaned_data[k] = v.replace(tzinfo=tzinfo)
 

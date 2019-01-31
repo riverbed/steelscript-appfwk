@@ -1,6 +1,6 @@
 import os
 import logging
-from cStringIO import StringIO
+from io import StringIO
 
 from django.test import TestCase
 from django.core import management

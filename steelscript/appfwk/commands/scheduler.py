@@ -61,14 +61,14 @@ import json
 import signal
 import logging
 import datetime
-from urlparse import urljoin, urlsplit
-from ConfigParser import SafeConfigParser
+from urllib.parse import urljoin, urlsplit
+from configparser import SafeConfigParser
 
 try:
     from apscheduler.schedulers.blocking import BlockingScheduler
 except ImportError:
-    print 'This module requires an additional python module'
-    print 'called "apscheduler", ensure this is installed and try again'
+    print('This module requires an additional python module')
+    print('called "apscheduler", ensure this is installed and try again')
     sys.exit(1)
 
 import pytz
@@ -130,12 +130,12 @@ def run_table(*args, **kwargs):
     # split out criteria
     criteria, options = process_criteria(kwargs)
     critargs = ' '.join('--criteria=%s:%s' % (k, v)
-                        for k, v in criteria.iteritems())
+                        for k, v in criteria.items())
     argstr = '%s %s' % (argstr, critargs)
 
     # format remaining keyword args
     kws = []
-    for k, v in kwargs.iteritems():
+    for k, v in kwargs.items():
         if v.lower() in ('true', ''):
             # handle empty or True attrs as command-line flags
             kws.append('--%s' % k)
@@ -204,7 +204,7 @@ def wait_for_complete(conn, interval, timeout, urls, output_filenames=None):
 
     if not all(complete.values()):
         logger.warning("Timed out waiting for URLs to complete: %s"
-                       % [k for k, v in complete.iteritems() if v is False])
+                       % [k for k, v in complete.items() if v is False])
 
     elif not all(error.values()):
         if output_filenames:
@@ -398,7 +398,7 @@ class Command(BaseCommand):
                 logger.debug('Getting available reports from server ...')
                 r = conn.json_request('GET', baseurl)
                 for report in r:
-                    if slug in report.values():
+                    if slug in list(report.values()):
                         title = report['title']
                         break
 
@@ -432,7 +432,7 @@ class Command(BaseCommand):
         interval = dict()
         offset = timeutils.parse_timedelta(job_config.pop('offset', '0'))
 
-        keys = job_config.keys()
+        keys = list(job_config.keys())
         job_kwargs = dict((k[9:], job_config.pop(k))
                           for k in keys if k.startswith('interval_'))
 

@@ -8,7 +8,7 @@
 import os
 import json
 import logging
-from cStringIO import StringIO
+from io import StringIO
 
 from django.db import models
 from django.core import management
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 #
 # User Preferences
 #
-TIMEZONE_CHOICES = zip(pytz.common_timezones, pytz.common_timezones)
+TIMEZONE_CHOICES = list(zip(pytz.common_timezones, pytz.common_timezones))
 
 MAPS_VERSIONS = ('DISABLED',
                  'DEVELOPER',           # Google Maps Versions
@@ -33,7 +33,7 @@ MAPS_VERSIONS = ('DISABLED',
                  'OPEN_STREET_MAPS',    # Open Street Maps
                  #'STATIC_MAPS'          # Static library created maps
                  )
-MAPS_VERSION_CHOICES = zip(MAPS_VERSIONS, map(str.title, MAPS_VERSIONS))
+MAPS_VERSION_CHOICES = list(zip(MAPS_VERSIONS, list(map(str.title, MAPS_VERSIONS))))
 
 COLOR_CHOICES = (('default', 'Default'),
                  ('category10', 'Minimal'),

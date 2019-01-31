@@ -163,7 +163,7 @@ class Command(BaseCommand):
             # criteria like ignore_cache can still be passed in, they
             # just won't be shown in this list
             output = [(k, v.label)
-                      for k, v in form.fields.iteritems() if v.label]
+                      for k, v in form.fields.items() if v.label]
             Formatter.print_table(output, ['Keyword', 'Label'])
         else:
             if 'table_id' in options and options['table_id'] is not None:
@@ -190,8 +190,8 @@ class Command(BaseCommand):
                 self.console('Invalid criteria:')
                 logger.error('Invalid criteria: %s' %
                              ','.join('%s:%s' % (k, v)
-                                      for k, v in form.errors.iteritems()))
-                for k, v in form.errors.iteritems():
+                                      for k, v in form.errors.items()))
+                for k, v in form.errors.items():
                     self.console('  %s: %s' % (k, ','.join(v)))
 
                 sys.exit(1)
@@ -201,7 +201,7 @@ class Command(BaseCommand):
             columns = [c.name for c in table.get_columns()]
 
             if options['only_columns']:
-                print columns
+                print(columns)
                 return
 
             job = Job.create(table=table, criteria=criteria,
@@ -237,14 +237,14 @@ class Command(BaseCommand):
                 if options['as_csv']:
                     if options['output_file']:
                         with open(options['output_file'], 'w') as f:
-                            for line in Formatter.get_csv(job.values(),
+                            for line in Formatter.get_csv(list(job.values()),
                                                           columns):
                                 f.write(line)
                                 f.write('\n')
                     else:
-                        Formatter.print_csv(job.values(), columns)
+                        Formatter.print_csv(list(job.values()), columns)
                 else:
-                    Formatter.print_table(job.values(), columns)
+                    Formatter.print_table(list(job.values()), columns)
             else:
                 self.console("Job completed with an error:")
                 self.console(job.message)

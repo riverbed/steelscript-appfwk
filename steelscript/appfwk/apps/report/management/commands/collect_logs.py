@@ -26,4 +26,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         fname = create_debug_zipfile(options['no_summary'])
-        print 'Zipfile created: %s' % fname
+        print('Zipfile created: %s' % fname)

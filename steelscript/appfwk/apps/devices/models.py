@@ -8,7 +8,7 @@
 import os
 import json
 import logging
-from cStringIO import StringIO
+from io import StringIO
 from tagging_autocomplete.models import TagAutocompleteField
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError

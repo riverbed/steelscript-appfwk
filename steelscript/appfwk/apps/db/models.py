@@ -26,4 +26,4 @@ class ExistingIntervals(models.Model):
                                                    self.intervals)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)

@@ -91,7 +91,7 @@ class TimeSeriesQuery(AnalysisQuery):
         """
         criteria = copy.copy(self.job.criteria)
 
-        for k, v in self.job.criteria.iteritems():
+        for k, v in self.job.criteria.items():
             if k in TIME_FIELDS:
                 # We do not want time related fields included in the criteria
                 criteria.pop(k, None)
@@ -105,7 +105,7 @@ class TimeSeriesQuery(AnalysisQuery):
 
             h.update('.'.join([c.name for c in self.ds_table.get_columns()]))
 
-            for k, v in self.job.criteria.iteritems():
+            for k, v in self.job.criteria.items():
                 h.update('%s:%s' % (k, v))
 
             handle = h.hexdigest()
@@ -316,7 +316,7 @@ class TimeSeriesQuery(AnalysisQuery):
 
         job_intervals = obj.intervals
 
-        for job_id, job in jobs.iteritems():
+        for job_id, job in jobs.items():
             df = job.data()
             if df is None:
                 continue

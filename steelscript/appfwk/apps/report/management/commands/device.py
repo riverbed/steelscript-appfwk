@@ -165,10 +165,10 @@ class Command(BaseCommand):
                 devs = []
                 add, update = 0, 0
                 for i, row in enumerate(reader):
-                    row = map(str.strip, row)
+                    row = list(map(str.strip, row))
                     if i == 0:
                         if set(map(str.lower, row)) == set(default_header):
-                            header = map(str.lower, row)
+                            header = list(map(str.lower, row))
                             continue
                         else:
                             header = default_header
@@ -182,7 +182,7 @@ class Command(BaseCommand):
                                .format(i+1, len(row), len(header)))
                         raise CommandError(msg)
 
-                    kwargs = dict(zip(header, row))
+                    kwargs = dict(list(zip(header, row)))
 
                     if not kwargs['host']:
                         msg = 'Host is empty string in line {0}.'.format(i+1)
@@ -203,7 +203,7 @@ class Command(BaseCommand):
                                                 port=kwargs['port'])
                     if res:
                         dev = res[0]
-                        for k, v in kwargs.iteritems():
+                        for k, v in kwargs.items():
                             setattr(dev, k, v)
                         update += 1
                     else:

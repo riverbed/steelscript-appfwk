@@ -12,7 +12,7 @@ import logging
 import datetime
 import tokenize
 import importlib
-from StringIO import StringIO
+from io import StringIO
 
 import pytz
 
@@ -139,7 +139,7 @@ class TableField(models.Model):
         return "<TableField %s (%s)>" % (self.keyword, self.id)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     def is_report_criteria(self, table):
         """ Runs through intersections of widgets to determine if this criteria
@@ -258,7 +258,7 @@ class Table(models.Model):
         return "<Table %s (%s)>" % (str(self.id), self.name)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     @property
     def queryclass(self):
@@ -415,15 +415,11 @@ class Table(models.Model):
 
         if self.resample:
             if timecol is None:
-                raise (TableComputeSyntheticError
-                       ("%s: 'resample' is set but no 'time' column'" %
-                        self))
+                raise TableComputeSyntheticError
 
             if (('resolution' not in job.criteria) and
                     ('resample_resolution' not in job.criteria)):
-                raise (TableComputeSyntheticError
-                       (("%s: 'resample' is set but criteria missing " +
-                         "'resolution' or 'resample_resolution'") % self))
+                raise TableComputeSyntheticError
 
             how = {}
             for k in df.keys():
@@ -439,9 +435,7 @@ class Table(models.Model):
 
             resolution = timedelta_total_seconds(resolution)
             if resolution < 1:
-                raise (TableComputeSyntheticError
-                       (("Table %s cannot resample at a resolution " +
-                         "less than 1 second") % self))
+                raise TableComputeSyntheticError
 
             logger.debug('%s: resampling to %ss' % (self, int(resolution)))
 
@@ -527,7 +521,7 @@ class DatasourceTable(Table):
             of choices in a drop-down selection field.
 
         """
-        name = slugify(unicode(name))
+        name = slugify(str(name))
 
         # process subclass assigned options
         table_options = copy.deepcopy(cls.TABLE_OPTIONS)
@@ -537,7 +531,7 @@ class DatasourceTable(Table):
             table_options.update(cls._ANALYSIS_TABLE_OPTIONS)
             field_options.update(cls._ANALYSIS_FIELD_OPTIONS)
 
-        keys = kwargs.keys()
+        keys = list(kwargs.keys())
 
         # The field_map mapping is stored in table_options for reference
         # later when building criteria for this table
@@ -556,7 +550,7 @@ class DatasourceTable(Table):
             options = None
 
         # process normal model kwargs
-        keys = kwargs.keys()
+        keys = list(kwargs.keys())
         tkeys = [f.name for f in Table._meta.local_fields]
         table_kwargs = dict((k, kwargs.pop(k)) for k in keys if k in tkeys)
 
@@ -600,13 +594,13 @@ class DatasourceTable(Table):
 
         # if field_map has been specified, go through attached fields and
         # change them accordingly
-        for keyword, mapped in (t.options.field_map or {}).iteritems():
+        for keyword, mapped in (t.options.field_map or {}).items():
             try:
                 field = t.fields.get(keyword=keyword)
-                if isinstance(mapped, basestring):
+                if isinstance(mapped, str):
                     field.keyword = mapped
                 else:
-                    for k, v in mapped.iteritems():
+                    for k, v in mapped.items():
                         if not hasattr(field, k):
                             raise AttributeError(
                                 "Invalid attribute for field '%s': %s" %
@@ -729,7 +723,7 @@ class DatasourceQuery(object):
         jobs = {}
         # Hack to avoid circular import problem
         Job = self.job.__class__
-        for name, jobid in jobids.iteritems():
+        for name, jobid in jobids.items():
             jobs[name] = Job.objects.get(id=jobid)
 
         return callback(self, jobs)
@@ -821,7 +815,7 @@ class Column(models.Model):
         return "<Column %s (%s)>" % (str(self.id), self.name)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     def save(self, *args, **kwargs):
         if self.label is None:
@@ -835,7 +829,7 @@ class Column(models.Model):
 
         column_options = copy.deepcopy(cls.COLUMN_OPTIONS)
 
-        keys = kwargs.keys()
+        keys = list(kwargs.keys())
         cp = dict((k, kwargs.pop(k)) for k in keys if k in column_options)
         column_options.update(**cp)
 
@@ -844,7 +838,7 @@ class Column(models.Model):
         else:
             options = None
 
-        keys = kwargs.keys()
+        keys = list(kwargs.keys())
         ckeys = [f.name for f in Column._meta.local_fields]
         col_kwargs = dict((k, kwargs.pop(k)) for k in keys if k in ckeys)
 
@@ -937,7 +931,7 @@ class Criteria(DictObject):
     def print_details(self):
         """ Return instance variables as nicely formatted string
         """
-        return ', '.join([("%s: %s" % (k, v)) for k, v in self.iteritems()])
+        return ', '.join([("%s: %s" % (k, v)) for k, v in self.items()])
 
     def build_for_table(self, table):
         """ Build a criteria object for a table.
@@ -957,15 +951,15 @@ class Criteria(DictObject):
 
         field_map = (table.options.field_map or {})
         rev_field_map = {}
-        for k, v in field_map.iteritems():
-            if not isinstance(v, basestring):
+        for k, v in field_map.items():
+            if not isinstance(v, str):
                 if 'keyword' in v:
                     v = v['keyword']
                 else:
                     v = k
             rev_field_map[v] = k
 
-        for k, v in self.iteritems():
+        for k, v in self.items():
             if k in ['starttime', 'endtime', 'duration'] or k.startswith('_'):
                 continue
 

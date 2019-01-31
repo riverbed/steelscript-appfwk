@@ -116,7 +116,7 @@ class Handles(views.APIView):
         request_data = request.GET.dict()
 
         keys = ['namespace', 'table']
-        for k, v in request_data.iteritems():
+        for k, v in request_data.items():
             if k not in keys:
                 msg = "'{}' is not valid to query handles." .format(k)
                 raise InvalidRequest(msg)

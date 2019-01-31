@@ -6,10 +6,10 @@
 
 
 import socket
-import httplib
-import urllib2
+import http.client
+import urllib.request, urllib.error, urllib.parse
 import logging
-import urlparse
+import urllib.parse
 from urllib import addinfourl
 
 from ntlm import ntlm
@@ -38,16 +38,16 @@ class PatchedHTTPNtlmAuthHandler(HTTPNtlmAuthHandler):
 
             host = req.get_host()
             if not host:
-                raise urllib2.URLError('no host given')
+                raise urllib.error.URLError('no host given')
             h = None
             if req.get_full_url().startswith('https://'):
-                h = httplib.HTTPSConnection(host) # will parse host:port
+                h = http.client.HTTPSConnection(host) # will parse host:port
             else:
-                h = httplib.HTTPConnection(host) # will parse host:port
+                h = http.client.HTTPConnection(host) # will parse host:port
             h.set_debuglevel(self._debuglevel)
             # we must keep the connection because NTLM authenticates the connection, not single requests
             headers["Connection"] = "Keep-Alive"
-            headers = dict((name.title(), val) for name, val in headers.items())
+            headers = dict((name.title(), val) for name, val in list(headers.items()))
             h.request(req.get_method(), req.get_selector(), req.data, headers)
             r = h.getresponse()
             r.begin()
@@ -70,7 +70,7 @@ class PatchedHTTPNtlmAuthHandler(HTTPNtlmAuthHandler):
             auth = 'NTLM %s' % ntlm.create_NTLM_AUTHENTICATE_MESSAGE(ServerChallenge, UserName, DomainName, pw, NegotiateFlags)
             headers[self.auth_header] = auth
             headers["Connection"] = "Close"
-            headers = dict((name.title(), val) for name, val in headers.items())
+            headers = dict((name.title(), val) for name, val in list(headers.items()))
             try:
                 h.request(req.get_method(), req.get_selector(), req.data, headers)
                 # none of the configured handlers are triggered, for example redirect-responses are not handled!
@@ -82,8 +82,8 @@ class PatchedHTTPNtlmAuthHandler(HTTPNtlmAuthHandler):
                 infourl.code = response.status
                 infourl.msg = response.reason
                 return infourl
-            except socket.error, err:
-                raise urllib2.URLError(err)
+            except socket.error as err:
+                raise urllib.error.URLError(err)
         else:
             return None
 
@@ -112,14 +112,14 @@ class SharepointDevice(object):
     def __init__(self, host, username, password):
         self.host = host
 
-        password_manager = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        password_manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         password_manager.add_password(None, host, username, password)
         auth_handler = PatchedHTTPNtlmAuthHandler(password_manager)
-        self.opener = urllib2.build_opener(auth_handler)
+        self.opener = urllib.request.build_opener(auth_handler)
 
     def set_basic_auth(self, username, password):
         self.opener = basic_auth_opener(self.host, username, password)
 
     def get_site_object(self, site_url):
-        url = urlparse.urljoin(self.host, site_url)
+        url = urllib.parse.urljoin(self.host, site_url)
         return SharePointSite(url, self.opener)

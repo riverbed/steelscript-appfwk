@@ -6,7 +6,7 @@
 
 
 import logging
-from cStringIO import StringIO
+from io import StringIO
 
 logger = logging.getLogger(__name__)
 

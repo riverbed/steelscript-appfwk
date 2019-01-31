@@ -28,7 +28,7 @@ class SyntheticTest(reportrunner.ReportRunnerTestCase):
         widgets = self.run_report(criteria)
 
         for i, e in enumerate(expected):
-            w = widgets.values()[i]
+            w = list(widgets.values())[i]
             self.assertEqual(w['status'], Job.COMPLETE,
                              'Widget %d, message %s' % (i, w['message']))
 
@@ -37,7 +37,7 @@ class SyntheticTest(reportrunner.ReportRunnerTestCase):
             logger.debug("Expected: %s" % expected)
             self.assertEqual(len(data), len(e))
 
-            for k, v in e.iteritems():
+            for k, v in e.items():
                 self.assertEqual(data[k], v,
                                  "Time %s => %s vs %s" %
                                  (k, v, data[k]))

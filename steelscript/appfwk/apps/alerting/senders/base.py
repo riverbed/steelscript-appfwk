@@ -28,9 +28,8 @@ class SenderMount(type):
             cls._senders[name] = cls
 
 
-class BaseSender(object):
+class BaseSender(object, metaclass=SenderMount):
     """Base class for Senders."""
-    __metaclass__ = SenderMount
 
     level = AlertLevels.WARNING
 
@@ -57,4 +56,4 @@ class LoggingSender(BaseSender):
 class ConsoleSender(LoggingSender):
     """Sends results to console."""
     def send(self, alert):
-        print 'ConsoleSender: %s - %s' % (alert.level, alert)
+        print('ConsoleSender: %s - %s' % (alert.level, alert))

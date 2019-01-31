@@ -50,7 +50,7 @@ class AsyncTask(threading.Thread, BaseTask):
         return "<AsyncTask %s>" % (self.job)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     @classmethod
     def validate_jobs(cls, jobs, delete=False):

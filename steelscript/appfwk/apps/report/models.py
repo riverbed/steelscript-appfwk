@@ -145,7 +145,7 @@ class Report(models.Model):
         return "<Report %s (%s)>" % (self.title, self.id)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     def add_section(self, title=None, **kwargs):
         """Create a new section associated with this report.
@@ -201,7 +201,7 @@ class Report(models.Model):
         # Pull in fields from each section (which may add fields to
         # the common as well)
         for s in Section.objects.filter(report=self):
-            for secid, fields in s.collect_fields_by_section().iteritems():
+            for secid, fields in s.collect_fields_by_section().items():
                 if secid not in fields_by_section:
                     fields_by_section[secid] = fields
                 else:
@@ -217,7 +217,7 @@ class Report(models.Model):
 
         # Reorder fields in each section according to the field_order list
         new_fields_by_section = {}
-        for i, fields in fields_by_section.iteritems():
+        for i, fields in fields_by_section.items():
             # collect all field names
             section_fields = fields_by_section[i]
             section_field_names = set(section_fields.keys())
@@ -338,7 +338,7 @@ class ReportHistory(models.Model):
                 % (self.id, self.namespace, self.slug))
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     def update_status(self, status):
         if self.status != status:
@@ -367,7 +367,7 @@ class ReportHistory(models.Model):
         # length of business_hours_weekends.
         # current longest field
         tr_line = '<tr><td><b>{0}</b>:&nbsp;</td><td>{1}</td></tr>'
-        cprops = self.criteria.keys()
+        cprops = list(self.criteria.keys())
         cprops.sort()
         rstr = '<table>'
         for k in cprops:
@@ -475,7 +475,7 @@ class Section(models.Model):
         return '<Section %s (%s)>' % (self.title, self.id)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     @classmethod
     def create(cls, report, title='', position=None,
@@ -527,7 +527,7 @@ class Section(models.Model):
                 critmode.save()
 
         if keyword_field_modes:
-            for keyword, mode in keyword_field_modes.iteritems():
+            for keyword, mode in keyword_field_modes.items():
                 critmode = SectionFieldMode(section=section,
                                             keyword=keyword,
                                             mode=mode)
@@ -942,7 +942,7 @@ class Axes(object):
 
     def getaxis(self, colname):
         if self.definition is not None:
-            for n, v in self.definition.items():
+            for n, v in list(self.definition.items()):
                 if ('columns' in v) and (colname in v['columns']):
                     return int(n)
         return 0

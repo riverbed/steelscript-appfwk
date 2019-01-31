@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def start_progressd():
-    print 'Starting progressd ...'
+    print('Starting progressd ...')
     logger.info('Starting progressd ...')
     pdpath = pkg_resources.get_distribution('steelscript.appfwk').location
     pd = os.path.join(pdpath, 'steelscript', 'appfwk',
@@ -30,7 +30,7 @@ def start_progressd():
 
 
 def stop_progressd():
-    print 'Stopping progressd ...'
+    print('Stopping progressd ...')
     logger.info('Stopping progressd ...')
     try:
         with open('/tmp/test-progressd.pid', 'r') as f:

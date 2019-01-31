@@ -47,6 +47,6 @@ class WhoisQuery(AnalysisQuery):
 #
 def whois_function(query, tables, criteria, params):
     # we want the first table, don't care what its been named
-    t = query.tables.values()[0]
+    t = list(query.tables.values())[0]
     t['whois'] = t['host_ip'].map(make_whois_link)
     return t

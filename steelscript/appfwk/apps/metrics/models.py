@@ -60,15 +60,15 @@ class Metric(models.Model):
     name = models.CharField(max_length=100)
     value = models.CharField(max_length=100, null=True, blank=True)
     override_value = models.CharField(max_length=100, null=True, blank=True,
-                                      choices=zip(STATUS_CHOICES,
-                                                  STATUS_CHOICES))
+                                      choices=list(zip(STATUS_CHOICES,
+                                                  STATUS_CHOICES)))
 
     def __unicode__(self):
         return "<%s (%s) %s>" % (self.__class__.__name__,
                                  self.schema, self.name)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     def process_data(self, data):
         """Base class to handle incoming data.

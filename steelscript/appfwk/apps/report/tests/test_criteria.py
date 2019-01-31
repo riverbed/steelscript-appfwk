@@ -49,7 +49,7 @@ class CriteriaTest(reportrunner.ReportRunnerTestCase):
         # processing works, the endtime is actuall split into two pieces
         # by the django forms processor
         run_criteria = {}
-        for k, v in criteria.iteritems():
+        for k, v in criteria.items():
             if k == 'endtime':
                 (e0, e1) = v.split(' ', 1)
                 run_criteria['endtime_0'] = e0
@@ -68,7 +68,7 @@ class CriteriaTest(reportrunner.ReportRunnerTestCase):
 
         # Verify the results
         for i, e in enumerate(expected):
-            w = widgets.values()[i]
+            w = list(widgets.values())[i]
             self.assertEqual(w['status'], Job.COMPLETE,
                              'Widget %d, message %s' % (i, w['message']))
 
@@ -76,7 +76,7 @@ class CriteriaTest(reportrunner.ReportRunnerTestCase):
             logger.debug("Widget %d, returned_criteria: %s" %
                          (i, returned_criteria))
 
-            for k, v in e.iteritems():
+            for k, v in e.items():
                 self.assertEqual(returned_criteria[k], v,
                                  "Key %s => %s vs %s" %
                                  (k, v, returned_criteria[k]))
@@ -108,7 +108,7 @@ class CriteriaTest(reportrunner.ReportRunnerTestCase):
                          as_csv=True,
                          output_file=filename,
                          criteria=['%s:%s' % (k, v)
-                                   for (k, v) in criteria.iteritems()])
+                                   for (k, v) in criteria.items()])
 
             data = []
             with open(filename, 'r') as f:
@@ -122,7 +122,7 @@ class CriteriaTest(reportrunner.ReportRunnerTestCase):
             logger.debug("Table %s, returned_criteria: %s" %
                          (t.id, returned_criteria))
 
-            for k, v in expected[i].iteritems():
+            for k, v in expected[i].items():
                 self.assertEqual(returned_criteria[k], v,
                                  "Key %s => %s vs %s" %
                                  (k, v, returned_criteria[k]))

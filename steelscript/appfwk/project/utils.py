@@ -8,6 +8,7 @@
 import os
 import sys
 import inspect
+import importlib
 
 from steelscript.common.exceptions import RvbdHTTPException, RvbdException
 
@@ -121,7 +122,7 @@ def get_caller_name(frames_back=2):
 
 
 # list of files/directories to ignore
-IGNORE_FILES = ['helpers']
+IGNORE_FILES = ['helpers', '__pycache__']
 
 
 class Importer(object):
@@ -132,19 +133,24 @@ class Importer(object):
         else:
             self.stdout = buf
 
-    def import_file(self, f, name):
+    def import_file(self, f, name, package=None):
         try:
             if name in sys.modules:
-                reload(sys.modules[name])
+                importlib.reload(sys.modules[name])
                 self.stdout.write('reloading %s as %s\n' % (f, name))
             else:
-                __import__(name)
-                self.stdout.write('importing %s as %s\n' % (f, name))
+                if package is None:
+                    importlib.import_module(name)
+                    self.stdout.write('importing %s as %s\n' % (f, name))
+                else:
+                    importlib.import_module(name, package=package)
+                    self.stdout.write("importing {0} as {1} in package {2}"
+                                      "".format(f, name, package))
 
         except RvbdHTTPException as e:
             instance = RvbdException('From config file "%s": %s\n' %
                                      (name, e.message))
-            raise RvbdException, instance, sys.exc_info()[2]
+            raise RvbdException(instance).with_traceback(sys.exc_info()[2])
 
         except SyntaxError as e:
             msg_format = '%s: (file: %s, line: %s, offset: %s)\n%s\n'
@@ -152,29 +158,32 @@ class Importer(object):
                                     e.lineno, e.offset, e.text)
             instance = type(e)('From config file "%s": %s\n' % (name,
                                                                 message))
-            raise type(e), instance, sys.exc_info()[2]
+            raise type(e)(instance).with_traceback(sys.exc_info()[2])
 
         except Exception as e:
             instance = type(e)('From config file "%s": %s\n' % (name,
                                                                 str(e)))
-            raise type(e), instance, sys.exc_info()[2]
+            raise type(e)(instance).with_traceback(sys.exc_info()[2])
 
     def import_directory(self, root, report_name=None, ignore_list=None):
         """ Recursively imports all python files in a directory
         """
         if ignore_list is None:
             ignore_list = IGNORE_FILES
-
+        package = None
         rootpath = os.path.basename(root)
+
         for path, dirs, files in os.walk(root, followlinks=True):
             # if we are in an ignored directory, continue
             if os.path.basename(os.path.normpath(path)) in ignore_list:
                 continue
 
             for f in files:
-                if f in ignore_list or not f.endswith('.py') or '__init__' in f:
+                package = None
+                if (f in ignore_list
+                        or not f.endswith('.py')
+                        or '__init__' in f):
                     continue
-
                 f = os.path.splitext(f)[0]
                 dirpath = os.path.relpath(path, root)
                 if dirpath != '.':
@@ -183,8 +192,25 @@ class Importer(object):
                     name = os.path.join(rootpath, f)
                 name = '.'.join(name.split(os.path.sep))
 
+                if name.count('.') == 2:
+                    parts = name.split('.')
+                    package = ('steelscript.{0}.appfwk.reports'
+                               ''.format(parts[1]))
+                    name = '.' + parts[2]
+                elif name.count('.') == 1:
+                    pass
+                else:
+                    self.stdout.write("Found module with seeming sub "
+                                      "module under reports. Not "
+                                      "supported! Skipping {0} ({1})"
+                                      "".format(f, name))
+                    continue
+
                 if report_name and report_name != name:
                     self.stdout.write('skipping %s (%s) ...\n' % (f, name))
                     continue
 
-                self.import_file(f, name)
+                print("import_directory: {0}, {1}, {2}".format(f,
+                                                               name,
+                                                               package))
+                self.import_file(f, name, package=package)

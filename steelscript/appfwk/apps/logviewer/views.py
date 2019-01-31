@@ -8,7 +8,7 @@
 import os
 import re
 import logging
-from cStringIO import StringIO
+from io import StringIO
 from collections import namedtuple
 
 from django.http import Http404

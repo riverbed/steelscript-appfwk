@@ -9,7 +9,6 @@ from itertools import groupby
 
 from django import forms
 from django.forms.widgets import Select
-from django.utils.encoding import force_unicode
 from django.utils.html import escape, conditional_escape
 from django.core.urlresolvers import reverse
 
@@ -26,19 +25,19 @@ class SelectWithDisabled(Select):
     # https://djangosnippets.org/snippets/2453/
 
     def render_option(self, selected_choices, option_value, option_label):
-        option_value = force_unicode(option_value)
+        option_value = option_value
         if option_value in selected_choices:
-            selected_html = u' selected="selected"'
+            selected_html = ' selected="selected"'
         else:
             selected_html = ''
         disabled_html = ''
         if isinstance(option_label, dict):
             if dict.get(option_label, 'disabled'):
-                disabled_html = u' disabled="disabled"'
+                disabled_html = ' disabled="disabled"'
             option_label = option_label['label']
-        return u'<option value="%s"%s%s>%s</option>' % (
+        return '<option value="%s"%s%s>%s</option>' % (
             escape(option_value), selected_html, disabled_html,
-            conditional_escape(force_unicode(option_label))
+            conditional_escape(option_label)
         )
 
 

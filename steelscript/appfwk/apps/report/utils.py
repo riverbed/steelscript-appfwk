@@ -96,7 +96,7 @@ def debug_fileinfo(fname):
 def find_logs():
     # returns file paths for all local logs (ignores syslogs)
     files = set()
-    for k, v in settings.LOGGING['handlers'].iteritems():
+    for k, v in settings.LOGGING['handlers'].items():
         if 'filename' in v:
             path = v['filename']
             base = os.path.splitext(path)[0] + '*'

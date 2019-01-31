@@ -30,8 +30,8 @@ def process_file(src, dst, options):
                                ).replace("'", "\\'")
                 line = (m.group(1) + val_escaped + m.group(3))
             except:
-                print ("Failed to process {file}:{i} - key {key}:\n{line}"
-                       .format(file=src, i=i, key=k, line=line))
+                print(("Failed to process {file}:{i} - key {key}:\n{line}"
+                       .format(file=src, i=i, key=k, line=line)))
                 sys.exit(1)
 
         dstf.write(line + '\n')
@@ -175,7 +175,7 @@ class Command(BaseCommand):
                                          .replace(which, options.name)))
 
                 process_file(srcfile, dstfile, vars(options))
-                print('Writing:  {dst}'.format(dst=dstfile))
+                print(('Writing:  {dst}'.format(dst=dstfile)))
 
         shell('(cd {dir}; python setup.py develop )'.format(dir=targetbasedir))
 

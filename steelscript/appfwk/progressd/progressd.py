@@ -5,6 +5,7 @@
 # as set forth in the License.
 
 import os
+import re
 import sys
 import json
 import logging
@@ -36,6 +37,8 @@ JOBS = {}                   # Map of Job IDs to Job objects
 PARENT_MIN_PROGRESS = 33    # progress when single child complete
 PARENT_MAX_PROGRESS = 90    # max progress until job is complete
 
+is_django_warning = re.compile(r'.*RemovedInDjango\d*Warning.*')
+
 
 def get_job_or_404(job_id):
     if job_id not in JOBS:
@@ -61,13 +64,13 @@ class Job(object):
 
     def values(self):
         return ', '.join('%s: %s' % (k, getattr(self, k))
-                         for k in job_resource_fields.keys())
+                         for k in list(job_resource_fields.keys()))
 
     def __repr__(self):
-        return '<Job (%s)>' % self.values()
+        return '<Job (%s)>' % list(self.values())
 
-    def unicode(self):
-        return self.values()
+    def str(self):
+        return list(self.values())
 
     def update_links(self):
         """Update internal references to master/parent links"""
@@ -159,14 +162,14 @@ class JobAPI(Resource):
     @marshal_with(job_resource_fields)
     def get(self, job_id):
         job = get_job_or_404(job_id)
-        print 'Received GET request for Job: %s' % job
+        print('Received GET request for Job: %s' % job)
         return job
 
     @marshal_with(job_resource_fields)
     def put(self, job_id):
         s = get_job_or_404(job_id)
         data = request.get_json()
-        print 'Received PUT data for Job ID %d: %s' % (job_id, data)
+        print('Received PUT data for Job ID %d: %s' % (job_id, data))
 
         # id and master fields are read-only, remove if present
         data.pop('job_id', None)
@@ -202,28 +205,28 @@ class JobRelationsAPI(Resource):
 class JobMasterAPI(JobRelationsAPI):
     @marshal_with(job_resource_fields)
     def get(self, job_id):
-        print 'Received GET for master of Job ID: %s' % job_id
+        print('Received GET for master of Job ID: %s' % job_id)
         return self._get_master(job_id)
 
 
 class JobFollowersAPI(JobRelationsAPI):
     @marshal_with(job_resource_fields)
     def get(self, job_id):
-        print 'Received GET for followers of Job ID: %s' % job_id
+        print('Received GET for followers of Job ID: %s' % job_id)
         return self._get_followers(job_id)
 
 
 class JobChildrenAPI(JobRelationsAPI):
     @marshal_with(job_resource_fields)
     def get(self, job_id):
-        print 'Received GET for children of Job ID: %s' % job_id
+        print('Received GET for children of Job ID: %s' % job_id)
         return self._get_children(job_id)
 
 
 class JobDoneAPI(JobRelationsAPI):
     @marshal_with(job_resource_fields)
     def post(self, job_id):
-        print 'Received POST for completed Job ID: %s' % job_id
+        print('Received POST for completed Job ID: %s' % job_id)
         return self._get_followers(job_id)
 
 
@@ -236,7 +239,7 @@ class JobListAPI(Resource):
     @marshal_with(job_resource_fields)
     def post(self):
         data = request.get_json()
-        print 'Received POST data: %s' % data
+        print('Received POST data: %s' % data)
         try:
             job_schema.validate(data)
         except ValidationError as e:
@@ -253,7 +256,7 @@ class JobListAPI(Resource):
 class JobFlushAPI(Resource):
     """Flush existing jobs and re-read from database."""
     def post(self):
-        print 'Resetting JOBS data ...'
+        print('Resetting JOBS data ...')
         load_existing_jobs()
         return '', 204
 
@@ -271,7 +274,7 @@ def load_existing_jobs():
     global JOBS
 
     if not app.config['SYNC_JOBS']:
-        print 'Skipping job sync ...'
+        print('Skipping job sync ...')
         return
 
     project_path = app.config['PROJECT_PATH']
@@ -280,12 +283,12 @@ def load_existing_jobs():
     cmd = 'cd %s && %s manage.py dumpdata jobs.job' % (project_path,
                                                        sys.executable)
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         shell=True)
+                         shell=True, universal_newlines=True)
     stdout, stderr = p.communicate()
 
-    if stderr:
-        print 'Error while processing existing jobs:'
-        print stderr
+    if stderr and not is_django_warning.match(stderr):
+        print('Error while processing existing jobs:')
+        print(stderr)
         sys.exit(1)
 
     jobs = json.loads(stdout)
@@ -298,11 +301,11 @@ def load_existing_jobs():
                   status=j['fields']['status'],
                   progress=0,
                   master_id=j['fields']['master'])
-        print 'Adding existing job %s' % job
+        print('Adding existing job %s' % job)
         JOBS[j['pk']] = job
 
     # update references since jobs may have been added out of order
-    for j in JOBS.itervalues():
+    for j in JOBS.values():
         j.update_links()
 
 

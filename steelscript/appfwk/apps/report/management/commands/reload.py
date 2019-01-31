@@ -70,7 +70,7 @@ class Command(BaseCommand):
             self.enabled_reports[(r.namespace, r.slug)] = r.enabled
 
     def apply_enabled(self):
-        for (namespace, slug), enabled in self.enabled_reports.iteritems():
+        for (namespace, slug), enabled in self.enabled_reports.items():
             try:
                 report = Report.objects.get(namespace=namespace, slug=slug)
                 report.enabled = enabled

@@ -107,7 +107,7 @@ class Command(BaseCommand):
 
             def del_table(tbl):
                 related_tables = ((tbl.options or {}).get('related_tables'))
-                for ref in (related_tables or {}).values():
+                for ref in list((related_tables or {}).values()):
                     try:
                         del_table(Table.from_ref(ref))
                     except ObjectDoesNotExist:
@@ -127,7 +127,7 @@ class Command(BaseCommand):
                 Destination.objects.filter(trigger=None).delete()
 
                 tables = (tbl.options or {}).get('tables')
-                for ref in (tables or {}).values():
+                for ref in list((tables or {}).values()):
                     try:
                         del_table(Table.from_ref(ref))
                     except ObjectDoesNotExist:

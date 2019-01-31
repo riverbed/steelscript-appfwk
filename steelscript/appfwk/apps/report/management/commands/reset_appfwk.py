@@ -5,7 +5,7 @@
 # as set forth in the License.
 
 
-from cStringIO import StringIO
+from io import StringIO
 import os
 import glob
 import optparse
@@ -99,7 +99,7 @@ class Command(BaseCommand):
         if buf is not None:
             self.stdout.write('Loading saved %s ...' % name, ending='')
             m = imp.new_module('runscript')
-            exec buf in m.__dict__
+            exec(buf, m.__dict__)
             with transaction.atomic():
                 m.run()
             db.connections.close_all()
@@ -111,7 +111,7 @@ class Command(BaseCommand):
                    'everything from the database and start from scratch.\n'
                    'Are you sure?\n'
                    "Type 'yes' to continue, or 'no' to cancel: ")
-            confirm = raw_input(msg)
+            confirm = input(msg)
         else:
             confirm = 'yes'
 

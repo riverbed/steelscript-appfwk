@@ -7,7 +7,7 @@
 
 import logging
 
-from StringIO import StringIO
+from io import StringIO
 
 from django.contrib import messages
 from django.core.management.base import CommandError
@@ -94,7 +94,7 @@ class DeviceList(generics.ListAPIView):
                                                  form=DeviceListForm,
                                                  extra=0)
             formset = DeviceFormSet(queryset=queryset)
-            tabledata = zip(formset.forms, queryset)
+            tabledata = list(zip(formset.forms, queryset))
             data = {'formset': formset, 'tabledata': tabledata,
                     'invalid': invalid, 'auth': Auth}
             return Response(data, template_name='device_list.html')

@@ -29,6 +29,6 @@ def load_plugins():
             import traceback
             msg = "Failed to load plugin %r:\n%s" % (ep.name,
                                                      traceback.format_exc())
-            print >> sys.stderr, msg
+            print(msg, file=sys.stderr)
         else:
             register(plugin)

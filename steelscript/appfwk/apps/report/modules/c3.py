@@ -99,8 +99,8 @@ class TimeSeriesWidget(BaseWidget):
 
         # Replace the '.' character with '*' from column names as '.'
         # is be treated as object-attr access action in c3 0.4.11 version
-        df = df.rename(columns=dict(zip(helper.col_names,
-                                        map(replace_dot, helper.col_names))))
+        df = df.rename(columns=dict(list(zip(helper.col_names,
+                                        list(map(replace_dot, helper.col_names))))))
         rows = json.loads(
             df.to_json(orient='records', date_format='iso', date_unit='ms')
         )
@@ -115,7 +115,7 @@ class TimeSeriesWidget(BaseWidget):
             'names': {replace_dot(c.col.name): format_labels(c.col.label,
                                                              d_unit,
                                                              helper.valcols)
-                      for c in helper.colmap.values()},
+                      for c in list(helper.colmap.values())},
             'altaxis': {c: 'y2' for c in altcols} or None,
             'tickFormat': timeaxis.best[1],
             'tickValues': tickvalues,
@@ -123,7 +123,7 @@ class TimeSeriesWidget(BaseWidget):
         }
 
         if widget.options.stacked:
-            data['groups'] = [[c.col.label for c in helper.colmap.values()
+            data['groups'] = [[c.col.label for c in list(helper.colmap.values())
                                if not c.col.iskey]]
             data['type'] = 'area'
 
@@ -182,7 +182,7 @@ class PieWidget(BaseWidget):
 
         if data:
             for rawrow in data:
-                row = dict(zip(col_names, rawrow))
+                row = dict(list(zip(col_names, rawrow)))
                 r = [row[catcol.name], row[col.name]]
                 rows.append(r)
         else:
@@ -251,7 +251,7 @@ class ChartWidget(BaseWidget):
         rows = []
 
         for rawrow in data:
-            row = dict(zip([c.name for c in helper.all_cols], rawrow))
+            row = dict(list(zip([c.name for c in helper.all_cols], rawrow)))
 
             # populate values first
             r = {c.name: format_single_value(c, row[c.name], d_unit)
@@ -270,7 +270,7 @@ class ChartWidget(BaseWidget):
             'rows': rows,
             'keyname': keyname,
             'values': [c.name for c in helper.valcols],
-            'names': {c.col.name: c.col.label for c in helper.colmap.values()},
+            'names': {c.col.name: c.col.label for c in list(helper.colmap.values())},
             'type': widget.options.charttype,
         }
 
@@ -334,44 +334,44 @@ class TimeAxis(object):
 
     INTERVALS = [
         [timedelta(milliseconds=1), '%H:%M:%S.%L',
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute, d.second, d.microsecond, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute, d.second, d.microsecond, tzinfo=d.tzinfo) + timedelta(milliseconds=1)],
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute, d.second, d.microsecond, tzinfo=d.tzinfo),
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute, d.second, d.microsecond, tzinfo=d.tzinfo) + timedelta(milliseconds=1)],
         [timedelta(seconds=1), '%H:%M:%S',
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute, d.second, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute, d.second, tzinfo=d.tzinfo) + timedelta(seconds=1)],
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute, d.second, tzinfo=d.tzinfo),
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute, d.second, tzinfo=d.tzinfo) + timedelta(seconds=1)],
         [timedelta(minutes=1), '%H:%M',
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute, tzinfo=d.tzinfo) + timedelta(minutes=1)],
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute, tzinfo=d.tzinfo),
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute, tzinfo=d.tzinfo) + timedelta(minutes=1)],
         [timedelta(minutes=5), '%H:%M',
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%5, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%5, tzinfo=d.tzinfo) + timedelta(minutes=5)],
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%5, tzinfo=d.tzinfo),
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%5, tzinfo=d.tzinfo) + timedelta(minutes=5)],
         [timedelta(minutes=10), '%H:%M',
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%10, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%10, tzinfo=d.tzinfo) + timedelta(minutes=10)],
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%10, tzinfo=d.tzinfo),
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%10, tzinfo=d.tzinfo) + timedelta(minutes=10)],
         [timedelta(minutes=15), '%H:%M',
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%15, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%15, tzinfo=d.tzinfo) + timedelta(minutes=15)],
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%15, tzinfo=d.tzinfo),
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%15, tzinfo=d.tzinfo) + timedelta(minutes=15)],
         [timedelta(minutes=30), '%H:%M',
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%30, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%30, tzinfo=d.tzinfo) + timedelta(minutes=30)],
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%30, tzinfo=d.tzinfo),
+         lambda d: datetime(d.year, d.month, d.day, d.hour, d.minute - d.minute%30, tzinfo=d.tzinfo) + timedelta(minutes=30)],
         [timedelta(hours=1), '%H:%M',
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, d.day, d.hour, tzinfo=d.tzinfo) + timedelta(hours=1)],
+         lambda d: datetime(d.year, d.month, d.day, d.hour, tzinfo=d.tzinfo),
+         lambda d: datetime(d.year, d.month, d.day, d.hour, tzinfo=d.tzinfo) + timedelta(hours=1)],
         [timedelta(hours=12), '%b %d %Y %H:%M',
-         lambda(d): datetime(d.year, d.month, d.day, d.hour - d.hour%12, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, d.day, d.hour - d.hour%12, tzinfo=d.tzinfo) + timedelta(hours=12)],
+         lambda d: datetime(d.year, d.month, d.day, d.hour - d.hour%12, tzinfo=d.tzinfo),
+         lambda d: datetime(d.year, d.month, d.day, d.hour - d.hour%12, tzinfo=d.tzinfo) + timedelta(hours=12)],
         [timedelta(days=1), '%b %d %Y',
-         lambda(d): datetime(d.year, d.month, d.day, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, d.day, tzinfo=d.tzinfo) + timedelta(days=1)],
+         lambda d: datetime(d.year, d.month, d.day, tzinfo=d.tzinfo),
+         lambda d: datetime(d.year, d.month, d.day, tzinfo=d.tzinfo) + timedelta(days=1)],
         [timedelta(days=7), '%b %d %Y',
-         lambda(d): datetime(d.year, d.month, d.day - d.weekday(), tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, d.day - d.weekday(), tzinfo=d.tzinfo) + timedelta(days=7)],
+         lambda d: datetime(d.year, d.month, d.day - d.weekday(), tzinfo=d.tzinfo),
+         lambda d: datetime(d.year, d.month, d.day - d.weekday(), tzinfo=d.tzinfo) + timedelta(days=7)],
         [timedelta(days=30), '%b %Y',
-         lambda(d): datetime(d.year, d.month, 1, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year, d.month, 1, tzinfo=d.tzinfo) + relativedelta(months=1)],
+         lambda d: datetime(d.year, d.month, 1, tzinfo=d.tzinfo),
+         lambda d: datetime(d.year, d.month, 1, tzinfo=d.tzinfo) + relativedelta(months=1)],
         [timedelta(days=365), '%Y',
-         lambda(d): datetime(d.year, 1, 1, tzinfo=d.tzinfo),
-         lambda(d): datetime(d.year+1, 1, 1, tzinfo=d.tzinfo)],
+         lambda d: datetime(d.year, 1, 1, tzinfo=d.tzinfo),
+         lambda d: datetime(d.year+1, 1, 1, tzinfo=d.tzinfo)],
     ]
 
     def __init__(self, ts, minticks=5, maxticks=10):

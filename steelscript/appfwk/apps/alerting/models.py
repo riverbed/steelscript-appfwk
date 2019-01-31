@@ -186,7 +186,7 @@ class Event(models.Model):
         return '<Event %s/%s (%s)>' % (self.id, self.eventid, self.timestamp)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     def get_details(self):
         """Return details in a string"""
@@ -226,7 +226,7 @@ class Alert(models.Model):
                                        self.sender, msg)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     def get_details(self):
         """Return details in a string"""
@@ -348,7 +348,7 @@ class Destination(models.Model):
         """
         logger.debug('XXX here - get_message context keys/template/func: '
                      '%s/%s/%s' %
-                     (context.keys(), self.template, self.template_func))
+                     (list(context.keys()), self.template, self.template_func))
         if self.template_func:
             try:
                 return self.template_func(self, **context)

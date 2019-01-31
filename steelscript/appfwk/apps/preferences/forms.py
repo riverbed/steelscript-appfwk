@@ -4,7 +4,7 @@
 # accompanying the software ("License").  This software is distributed "AS IS"
 # as set forth in the License.
 
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from django import forms
 from django.contrib.auth import get_user_model
@@ -86,16 +86,16 @@ class SystemSettingsForm(forms.ModelForm):
 
         if not api_key and version in ('FREE', 'BUSINESS'):
             if version == 'FREE':
-                msg = u'Usage of Free version of Google Maps requires API Key'
+                msg = 'Usage of Free version of Google Maps requires API Key'
             else:
-                msg = (u'Usage of Business version of Google Maps requires '
-                       u'Client ID')
+                msg = ('Usage of Business version of Google Maps requires '
+                       'Client ID')
             self._errors['maps_api_key'] = self.error_class([msg])
             del cleaned_data['maps_api_key']
 
         # Check if maps are disabled but weather is enabled
         if version == 'DISABLED' and weather_enabled:
-            msg = u'Weather layers cannot be enabled while maps are disabled'
+            msg = 'Weather layers cannot be enabled while maps are disabled'
             self._errors['weather_enabled'] = self.error_class([msg])
             del cleaned_data['weather_enabled']
 
@@ -105,7 +105,7 @@ class SystemSettingsForm(forms.ModelForm):
             # Validate that the weather url is valid
             parsed = urlparse(weather_url)
             if not all([parsed.scheme, parsed.netloc]):
-                msg = u'URL must resemble: http://example.com/{x}/{y}/{z}'
+                msg = 'URL must resemble: http://example.com/{x}/{y}/{z}'
                 self._errors['weather_url'] = self.error_class([msg])
                 del cleaned_data['weather_url']
             else:
@@ -113,7 +113,7 @@ class SystemSettingsForm(forms.ModelForm):
                 coordinates = ['{x}', '{y}', '{z}']
                 if not all(coordinate in weather_url
                            for coordinate in coordinates):
-                    msg = u'Weather URL must contain {x} {y} and {z}'
+                    msg = 'Weather URL must contain {x} {y} and {z}'
                     self._errors['weather_url'] = self.error_class([msg])
                     del cleaned_data['weather_url']
 

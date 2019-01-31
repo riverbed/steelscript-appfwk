@@ -75,7 +75,7 @@ class NodeBase(models.Model):
         return "<%s %s>" % (self.__class__, self.name)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
 
 class ServiceNode(NodeBase):
@@ -92,8 +92,8 @@ class ServicesMetric(Metric):
     # transient fields for receiving node status
     node_name = models.CharField(max_length=50, null=True, blank=True)
     node_status = models.CharField(max_length=20, null=True, blank=True,
-                                   choices=zip(NodeBase.STATUS_CHOICES,
-                                               NodeBase.STATUS_CHOICES))
+                                   choices=list(zip(NodeBase.STATUS_CHOICES,
+                                               NodeBase.STATUS_CHOICES)))
 
     def process_data(self, data):
         """Update internal nodes list based on incoming message."""
@@ -203,14 +203,14 @@ class NetworkMetric(Metric):
     # transient fields for receiving node status
     node_name = models.CharField(max_length=50, null=True, blank=True)
     node_status = models.CharField(max_length=20, null=True, blank=True,
-                                   choices=zip(NodeBase.STATUS_CHOICES,
-                                               NodeBase.STATUS_CHOICES))
+                                   choices=list(zip(NodeBase.STATUS_CHOICES,
+                                               NodeBase.STATUS_CHOICES)))
 
     location = models.CharField(max_length=100, null=True, blank=True)
     parent_group = models.CharField(max_length=100, null=True, blank=True)
     parent_status = models.CharField(max_length=100, null=True, blank=True,
-                                     choices=zip(STATUS_CHOICES,
-                                                 STATUS_CHOICES))
+                                     choices=list(zip(STATUS_CHOICES,
+                                                 STATUS_CHOICES)))
 
     def save(self, *args, **kwargs):
         self.name = "%s%s" % (self.location, self.parent_group)
@@ -291,4 +291,4 @@ class NetworkMetric(Metric):
         return xdf
 
 # get serializers registered with plugin models
-import serializers
+from . import serializers

@@ -60,7 +60,7 @@ class PcapFileField(models.FileField):
         magic_code = magic.from_buffer(file_object.read(cls.MAGIC_LEN))
         file_object.seek(0)
         file_type_name = None
-        for type_name, sig in cls.SUPPORTED_FILES.viewitems():
+        for type_name, sig in cls.SUPPORTED_FILES.items():
             if sig == magic_code[:cls.SIG_LEN]:
                 file_type_name = type_name
                 break

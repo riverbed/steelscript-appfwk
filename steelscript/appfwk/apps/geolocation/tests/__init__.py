@@ -1,1 +1,1 @@
-from test_locations import *
+from .test_locations import *

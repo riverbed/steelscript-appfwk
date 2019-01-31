@@ -27,10 +27,10 @@ class PickledObjectField(serializers.Field):
 
         if field:
             if hasattr(field, 'iteritems'):
-                for k, v in field.iteritems():
+                for k, v in field.items():
                     field[k] = self.field_to_native(field, k)
             else:
-                if not isinstance(field, (str, unicode)):
+                if not isinstance(field, str):
                     # XXX do we want repr or str?
                     field = str(field)
         return field

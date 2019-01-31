@@ -32,7 +32,7 @@ class AlertLevels(object):
     @classmethod
     def get_levels(cls):
         """Return class-defined levels."""
-        return [k for k, v in cls.__dict__.iteritems()
+        return [k for k, v in cls.__dict__.items()
                 if (not k.startswith('__') and not hasattr(v, '__func__'))]
 
     @classmethod
@@ -43,7 +43,7 @@ class AlertLevels(object):
     @classmethod
     def get_choices(cls):
         lvls = cls.get_levels()
-        return zip(lvls, lvls)
+        return list(zip(lvls, lvls))
 
 
 class Results(object):
@@ -93,7 +93,7 @@ class Results(object):
         return str(self)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     def _validate_keys(self, severity, **kwargs):
         if severity is None:
@@ -115,11 +115,11 @@ class Results(object):
 
     def _add_items(self, **kwargs):
         try:
-            kvs = zip(*[[(k, v) for v in val] for k, val in kwargs.items()])
-            items = map(dict, kvs)
+            kvs = list(zip(*[[(k, v) for v in val] for k, val in list(kwargs.items())]))
+            items = list(map(dict, kvs))
         except TypeError:
             # single values rather than lists
-            items = [dict([(k, v) for k, v in kwargs.items()])]
+            items = [dict([(k, v) for k, v in list(kwargs.items())])]
         self._data.extend(items)
 
     def add_result(self, data, severity=None, **kwargs):

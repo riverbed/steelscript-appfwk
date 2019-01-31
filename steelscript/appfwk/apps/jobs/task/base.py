@@ -69,7 +69,7 @@ class BaseTask(object):
         return "<%s %s %s>" % (self.__class__, self.job, self.callback)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     def call_method(self):
         if self.generic:
@@ -107,7 +107,7 @@ class BaseTask(object):
             elif result.jobs:
                 # QueryContinue with dependent jobs
                 jobids = {}
-                for name, job in result.jobs.iteritems():
+                for name, job in result.jobs.items():
                     if job.parent is None:
                         # Just in case caller forgot to set the
                         # parent...
@@ -121,7 +121,7 @@ class BaseTask(object):
                 logger.debug("%s: Setting callback %s" % (self.job, callback))
                 self.job.safe_update(callback=callback)
 
-                for name, job in result.jobs.iteritems():
+                for name, job in result.jobs.items():
                     job.start()
 
             else:

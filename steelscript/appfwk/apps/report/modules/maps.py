@@ -46,12 +46,12 @@ def authorized():
     settings = SystemSettings.get_system_settings()
 
     if settings.maps_version == 'DISABLED':
-        msg = (u'Maps API has been disabled.\n'
+        msg = ('Maps API has been disabled.\n'
                'See Admin User for changes.')
         return False, msg
     elif (settings.maps_version in ('FREE', 'BUSINESS') and
           not settings.maps_api_key):
-        msg = (u'A valid API_KEY must be provided for either \n'
+        msg = ('A valid API_KEY must be provided for either \n'
                '"Free" or "Business" Google Maps API choices.\n'
                'See Configure->Preferences to update.')
         return False, msg
@@ -188,7 +188,7 @@ class MapWidget(object):
             valmax = None
             if valuecol.col.isnumeric():
                 values = zip(*data)[valuecol.dataindex]
-                filtered = filter(bool, values)
+                filtered = list(filter(bool, values))
                 if filtered:
                     valmin = min(filtered)
                     valmax = max(filtered)
@@ -239,7 +239,7 @@ class MapWidget(object):
 
                         circle = Circle(title=geo.name,
                                         lat=geo.latitude,
-                                        long=geo.longitude,
+                                        int=geo.longitude,
                                         value=val,
                                         size=marker_size,
                                         units=valuecol.col.units_str(),
@@ -255,7 +255,7 @@ class MapWidget(object):
 
                     circle = Circle(title=title,
                                     lat=lat,
-                                    long=long,
+                                    int=int,
                                     value=val,
                                     size=marker_size,
                                     units=valuecol.col.units_str(),

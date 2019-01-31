@@ -74,10 +74,8 @@ http://pythonhosted.org/steelscript/
         'Django<1.9',
         'steelscript>=1.1',
         'steelscript.netprofiler>=1.1',
-        'steelscript.netshark>=1.1',
         'steelscript.appresponse>=1.2',
         'steelscript.wireshark>=1.3',
-
         'djangorestframework>2.4,<3.0',
         'djangorestframework-csv==1.3.3',
         'django-extensions>1.7,<1.8',
@@ -93,7 +91,6 @@ http://pythonhosted.org/steelscript/
         'python-magic==0.4.12',
         'pytz>=2013.8',
         'six>=1.3.0',
-        'wsgiref>=0.1.2',
 
         'django-admin-tools==0.8',
 
@@ -106,7 +103,7 @@ http://pythonhosted.org/steelscript/
         'redis==2.10.3',
 
         # progressd
-        'reschema==0.5.2',
+        'reschema>=0.5.2',
         'flask==0.10.1',
         'flask_restful==0.3.2',
         'pinax-announcements>=2.0.3,<2.1.1',

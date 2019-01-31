@@ -101,7 +101,7 @@ class AnalysisTable(DatasourceTable):
         # handle direct id's, table references, or table classes
         # from tables option and transform to simple table id value
         for i in ['tables', 'related_tables']:
-            for k, v in (table_options[i] or {}).iteritems():
+            for k, v in (table_options[i] or {}).items():
                 table_options[i][k] = Table.to_ref(v)
 
         tf = table_options['function']
@@ -379,7 +379,7 @@ class ResampleQuery(AnalysisQuery):
                 "{0}: resample_interval ({2}) not set or valid in "
                 "job criteria {1}".format(self, job.criteria, rs))
 
-            job.criteria.resample_interval = u'{0}'.format(rs.split('s')[0])
+            job.criteria.resample_interval = '{0}'.format(rs.split('s')[0])
 
         df = job.data()
         rs_df = resample(df,
@@ -420,7 +420,7 @@ class CriteriaQuery(DatasourceQuery):
     def run(self):
         criteria = self.job.criteria
         values = [[str(k), str(v)]
-                  for k, v in criteria.iteritems()]
+                  for k, v in criteria.items()]
         values.append(['criteria.starttime', str(criteria.starttime)])
         df = pandas.DataFrame(values,
                               columns=['key', 'value']).sort('key')

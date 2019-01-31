@@ -66,4 +66,4 @@ class Source(object):
         # require a hashable object, see here for simple way to hash dicts:
         # http://stackoverflow.com/a/16162138/2157429
         from steelscript.appfwk.apps.datasource.models import Table
-        return frozenset(Table.to_ref(source).itervalues())
+        return frozenset(iter(Table.to_ref(source).values()))

@@ -63,4 +63,4 @@ class Command(BaseCommand):
         if outfile.endswith('.svg'):
             outfile = outfile[:-4]
         dot.render(outfile)
-        print "Rendered to %s.svg" % outfile
+        print("Rendered to %s.svg" % outfile)

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class VMBaseSender(BaseSender):
     """Base sender class for spinning up/down vms"""
     def process_alert(self, alert):
-        for k, v in (alert.options or {}).iteritems():
+        for k, v in (alert.options or {}).items():
             setattr(self, k, v)
 
     def send(self, alert):
@@ -157,7 +157,7 @@ class BareMetalVMSender(VMBaseSender):
         self.get_status()
 
         # check all vms in down_list are not running
-        to_be_down_vms = (self._status.keys() if self.down_list == 'all'
+        to_be_down_vms = (list(self._status.keys()) if self.down_list == 'all'
                           else self.down_list)
 
         if not set(to_be_down_vms).issubset(set(self._non_running_vms)):
@@ -166,7 +166,7 @@ class BareMetalVMSender(VMBaseSender):
         # check all vms in up_list minus down_list are not running
         # as shutdown execution is implemented after the start operation
         # there can be vms started first then being shutdown after
-        up_vms = self._status.keys() if self.up_list == 'all' else self.up_list
+        up_vms = list(self._status.keys()) if self.up_list == 'all' else self.up_list
         to_be_up_vms = set(up_vms) - set(to_be_down_vms)
 
         if not to_be_up_vms.issubset(set(self._running_vms)):

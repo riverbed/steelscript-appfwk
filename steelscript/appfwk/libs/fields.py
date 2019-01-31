@@ -12,12 +12,11 @@ from copy import deepcopy
 from base64 import b64encode, b64decode
 from zlib import compress, decompress
 try:
-    from cPickle import loads, dumps
+    from pickle import loads, dumps
 except ImportError:
     from pickle import loads, dumps
 
 from django.db import models
-from django.utils.encoding import force_unicode
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ class ClassError(Exception):
     pass
 
 
-class PickledObject(str):
+class PickledObject(bytes):
     """
     A subclass of string so it can be told whether a string is a pickled
     object or not (if the object is an instance of this class then it must
@@ -74,7 +73,7 @@ def dbsafe_decode(value, compress_object=False):
     return value
 
 
-class PickledObjectField(models.Field):
+class PickledObjectField(models.Field, metaclass=models.SubfieldBase):
     """
     A field that will accept *any* python object and store it in the
     database. PickledObjectField will optionally compress it's values if
@@ -87,7 +86,6 @@ class PickledObjectField(models.Field):
     None values since they aren't pickled and encoded.
 
     """
-    __metaclass__ = models.SubfieldBase
 
     def __init__(self, *args, **kwargs):
         self.compress = kwargs.pop('compress', False)
@@ -126,6 +124,7 @@ class PickledObjectField(models.Field):
 
         """
         if value is not None:
+
             try:
                 value = dbsafe_decode(value, self.compress)
 
@@ -152,13 +151,7 @@ class PickledObjectField(models.Field):
 
         """
         if value is not None and not isinstance(value, PickledObject):
-            # We call force_unicode here explicitly, so that the encoded string
-            # isn't rejected by the postgresql_psycopg2 backend. Alternatively,
-            # we could have just registered PickledObject with the psycopg
-            # marshaller (telling it to store it like it would a string), but
-            # since both of these methods result in the same value being
-            # stored, doing things this way is much easier.
-            value = force_unicode(dbsafe_encode(value, self.compress))
+            value = dbsafe_encode(value, self.compress)
         return value
 
     def value_to_string(self, obj):
@@ -179,7 +172,7 @@ class Function(object):
     def __init__(self, function=None, params=None):
         if function:
             self.module = function.__module__
-            self.function = function.func_name
+            self.function = function.__name__
         else:
             self.module = None
             self.function = None
@@ -195,7 +188,6 @@ class Function(object):
     @classmethod
     def from_dict(cls, d):
         self = Function()
-
         self.module = d['module']
         self.function = d['function']
         self.params = d['params']
@@ -221,21 +213,21 @@ class Function(object):
                 "<%s> in module <%s>"
                 % (self.function, self.module))
 
-        if 'params' in func.func_code.co_varnames:
+        if 'params' in func.__code__.co_varnames:
             kwargs['params'] = self.params
 
         return func(*args, **kwargs)
 
 
-class FunctionField(PickledObjectField):
+class FunctionField(PickledObjectField, metaclass=models.SubfieldBase):
     """Model field which stores a Function object."""
-
-    __metaclass__ = models.SubfieldBase
 
     def to_python(self, value):
         if isinstance(value, Function):
             return value
 
+        if isinstance(value, str):
+            value = value.encode()
         value = super(FunctionField, self).to_python(value)
         if value is not None:
             return Function.from_dict(value)
@@ -265,12 +257,12 @@ class Callable(object):
         if callable:
             if hasattr(callable, 'im_func'):
                 # This is a class method
-                self.classname = callable.im_class.__name__
-                self.module = callable.im_class.__module__
-                self.function = callable.im_func.func_name
+                self.classname = callable.__self__.__class__.__name__
+                self.module = callable.__self__.__class__.__module__
+                self.function = callable.__func__.__name__
             else:
                 self.module = callable.__module__
-                self.function = callable.func_name
+                self.function = callable.__name__
                 self.classname = None
         else:
             self.module = None
@@ -344,10 +336,8 @@ class Callable(object):
         return func(*args, **kwargs)
 
 
-class CallableField(PickledObjectField):
+class CallableField(PickledObjectField, metaclass=models.SubfieldBase):
     """Model field which stores a Callable object."""
-
-    __metaclass__ = models.SubfieldBase
 
     def to_python(self, value):
         if isinstance(value, Callable):
@@ -409,9 +399,7 @@ class Class(object):
 
 
 # See http://stackoverflow.com/questions/1110153/what-is-the-most-efficent-way-to-store-a-list-in-the-django-models
-class SeparatedValuesField(models.TextField):
-    __metaclass__ = models.SubfieldBase
-
+class SeparatedValuesField(models.TextField, metaclass=models.SubfieldBase):
     def __init__(self, *args, **kwargs):
         self.token = kwargs.pop('token', ',')
         super(SeparatedValuesField, self).__init__(*args, **kwargs)
@@ -425,7 +413,7 @@ class SeparatedValuesField(models.TextField):
     def get_prep_value(self, value):
         if not value: return
         assert(isinstance(value, list) or isinstance(value, tuple))
-        return self.token.join([unicode(s) for s in value])
+        return self.token.join([str(s) for s in value])
 
     def value_to_string(self, obj):
         value = self._get_val_from_obj(obj)

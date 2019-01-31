@@ -111,6 +111,5 @@ class IPlugin(object):
             self._reports_loaded = True
 
 
-class Plugin(IPlugin):
+class Plugin(IPlugin, metaclass=PluginMount):
     """ Portal plugin class for subclassing. """
-    __metaclass__ = PluginMount

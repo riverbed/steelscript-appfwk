@@ -95,7 +95,7 @@ class PluginsCollectView(APIView):
 
     def get(self, request, slug=None, *args, **kwargs):
         overwrite = request.QUERY_PARAMS.get('overwrite', False)
-        if isinstance(overwrite, basestring) and overwrite.lower() == 'true':
+        if isinstance(overwrite, str) and overwrite.lower() == 'true':
             overwrite = True
         if slug is not None:
             try:

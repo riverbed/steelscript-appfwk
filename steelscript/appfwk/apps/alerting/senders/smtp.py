@@ -41,7 +41,7 @@ class SMTPSender(BaseSender):
         values will raise an AttributeError.
         """
         missing = []
-        for k, v in (alert.options or {}).iteritems():
+        for k, v in (alert.options or {}).items():
             if hasattr(self, k):
                 setattr(self, k, v)
             else:

@@ -194,7 +194,7 @@ class Job(models.Model):
         return "<Job %s (%8.8s) - t%s>" % (self.id, self.handle, self.table.id)
 
     def __repr__(self):
-        return unicode(self)
+        return str(self)
 
     def json(self, data=None):
         """ Return a JSON representation of this Job. """
@@ -349,14 +349,14 @@ class Job(models.Model):
 
     def schedule(self, jobs, callback):
         jobid_map = {}
-        for name, job in jobs.iteritems():
+        for name, job in jobs.items():
             jobid_map[name] = job.id
 
         logger.debug("%s: Setting callback %s" % (self, callback))
         self.safe_update(callback=Callable(callback))
         logger.debug("%s: Done setting callback %s" % (self, self.callback))
 
-        for name, job in jobs.iteritems():
+        for name, job in jobs.items():
             job.start()
 
     def check_children(self, objlock=None):
@@ -429,7 +429,7 @@ class Job(models.Model):
                 # double action and return now
                 return
             self.status = status
-            for k, v in kwargs.iteritems():
+            for k, v in kwargs.items():
                 setattr(self, k, v)
             self.save()
 
@@ -518,7 +518,7 @@ class Job(models.Model):
             if table.criteria_handle_func:
                 criteria = table.criteria_handle_func(criteria)
 
-            for k, v in criteria.iteritems():
+            for k, v in criteria.items():
                 # logger.debug("Updating hash from %s -> %s" % (k,v))
                 h.update('%s:%s' % (k, v))
         else:

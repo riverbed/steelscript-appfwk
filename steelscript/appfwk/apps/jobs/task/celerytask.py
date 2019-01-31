@@ -45,7 +45,7 @@ class CeleryInspector(object):
         if self._needs_update:
             w = djcelery.celery.control.inspect().active_queues()
             if w:
-                self._workers = w.keys()
+                self._workers = list(w.keys())
                 logging.debug('Updated workers are: %s' % (self._workers))
             else:
                 logging.warning('No active queues found.')
@@ -58,7 +58,7 @@ class CeleryInspector(object):
 
         # each worker reports a list of jobs, untangle into single list
         jobs = []
-        for worker in queues.values():
+        for worker in list(queues.values()):
             for job in worker:
                 # add args from active and scheduled queues
                 if 'args' in job:

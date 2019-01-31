@@ -264,17 +264,17 @@ class AppResponseHelper(views.APIView):
             if data_type == 'columns':
                 rawcols = ar.reports.sources[data['source']]['columns']
 
-                for col in rawcols.values():
+                for col in list(rawcols.values()):
                     if 'synthesized' in col:
                         synth = col['synthesized']
                         if isinstance(synth, dict):
                             col['synthesized'] = \
                                 (', '.join(['{}: {}'.format(k, v)
-                                 for k, v in synth.iteritems()]))
+                                 for k, v in synth.items()]))
 
                 colkeys = ['id', 'field', 'label', 'metric', 'type',
                            'unit', 'description', 'synthesized', 'grouped_by']
-                coldf = pandas.DataFrame(rawcols.values(), columns=colkeys)
+                coldf = pandas.DataFrame(list(rawcols.values()), columns=colkeys)
                 coldf.fillna('---', inplace=True)
                 coldf['iskey'] = coldf['grouped_by'].apply(
                     lambda x: True if x is True else '---')
@@ -284,7 +284,7 @@ class AppResponseHelper(views.APIView):
             else:
                 colkeys = ['name', 'filters_on_metrics', 'granularities',
                            'groups']
-                coldf = pandas.DataFrame(ar.reports.sources.values(),
+                coldf = pandas.DataFrame(list(ar.reports.sources.values()),
                                          columns=colkeys)
                 coldf['groups'] = coldf['name'].apply(
                     lambda x: ', '.join(report_source_to_groups[x]))

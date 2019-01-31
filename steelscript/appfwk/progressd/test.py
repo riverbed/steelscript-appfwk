@@ -48,4 +48,4 @@ for method, id, d in commands:
         url = '%s%d/' % (JURL, id)
 
     r = session.request(method, url, data=d)
-    print r.text
+    print(r.text)

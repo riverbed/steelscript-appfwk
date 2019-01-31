@@ -30,7 +30,7 @@ class BaseTableWidget(object):
         d_unit = SystemSettings.get_system_settings().data_units
         rows = []
 
-        allcols = helper.colmap.values()
+        allcols = list(helper.colmap.values())
         if widget.options.get('columns', None):
             cols = [c for c in allcols if c.key in widget.options['columns']]
         else:

@@ -21,7 +21,7 @@ def get_device_choices(device_type):
 
 def get_groupbys():
     return [('', '---')] + sorted(((v, k) for
-                                   k, v in _constants.groupbys.iteritems()))
+                                   k, v in _constants.groupbys.items()))
 
 
 def get_realms():
@@ -34,12 +34,16 @@ def get_centricities():
 
 
 def get_groups():
-    return [('', '---')] + zip(report_groups.keys(), report_groups.values())
-
+    return [('', '---')] + list(zip(report_groups.keys(),
+                                    report_groups.values()
+                                    )
+                                )
 
 def get_source_names():
-    return [('', '---')] + zip(report_source_to_groups.keys(),
-                               report_source_to_groups.keys())
+    return [('', '---')] + list(zip(report_source_to_groups.keys(),
+                                    report_source_to_groups.keys()
+                                    )
+                                )
 
 
 class DeviceInputForm(forms.Form):
@@ -56,7 +60,7 @@ class NetProfilerInputForm(DeviceInputForm):
         super(NetProfilerInputForm, self).__init__(*args, **kwargs)
         cf = forms.ChoiceField(choices=get_device_choices('netprofiler'))
         field_list = ([('device', cf)] +
-                      [(k, v) for k, v in self.fields.iteritems()])
+                      [(k, v) for k, v in self.fields.items()])
         self.fields = OrderedDict(field_list)
 
 
@@ -65,7 +69,7 @@ class NetSharkInputForm(DeviceInputForm):
         super(NetSharkInputForm, self).__init__(*args, **kwargs)
         cf = forms.ChoiceField(choices=get_device_choices('netshark'))
         field_list = ([('device', cf)] +
-                      [(k, v) for k, v in self.fields.iteritems()])
+                      [(k, v) for k, v in self.fields.items()])
         self.fields = OrderedDict(field_list)
 
 
@@ -75,7 +79,7 @@ class AppResponseInputForm(DeviceInputForm):
         super(AppResponseInputForm, self).__init__(*args, **kwargs)
         cf = forms.ChoiceField(choices=get_device_choices('appresponse'))
         field_list = ([('device', cf)] +
-                      [(k, v) for k, v in self.fields.iteritems()])
+                      [(k, v) for k, v in self.fields.items()])
         self.fields = OrderedDict(field_list)
 
 

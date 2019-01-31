@@ -6,7 +6,7 @@
 
 
 from django.conf import settings
-from models import ExistingIntervals
+from .models import ExistingIntervals
 
 if (not hasattr(settings, 'DB_SOLUTION')):
     raise Exception('settings.DB_SOLUTION not set')

@@ -33,7 +33,7 @@ class PreferencesTestCase(TestCase):
         """Escape the exception of missing 'HTTP_REFERER' in header"""
         try:
             self.client.post(self.url, data=data)
-        except KeyError, e:
+        except KeyError as e:
             if e.message != 'HTTP_REFERER':
                 raise e
 

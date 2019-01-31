@@ -11,7 +11,7 @@ try:
 except ImportError:
     pass
 
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from steelscript.common import timeutils
 from steelscript.appfwk.apps.alerting.senders.base import BaseSender
@@ -41,7 +41,7 @@ class SNMPBaseSender(BaseSender):
         values will raise an AttributeError.
         """
         missing = []
-        for k, v in (alert.options or {}).iteritems():
+        for k, v in (alert.options or {}).items():
             if hasattr(self, k):
                 setattr(self, k, v)
             else:
@@ -99,7 +99,7 @@ class SNMPSenderSteelScript(SNMPBaseSender):
         trapid = self.trapid        # base string for trap indicators
         self.trapname = '.'.join([oid, trapid])
 
-        context = urllib.urlencode(alert.event.trigger_result)
+        context = urllib.parse.urlencode(alert.event.trigger_result)
         eid = alert.event.eventid
 
         self.binds = (

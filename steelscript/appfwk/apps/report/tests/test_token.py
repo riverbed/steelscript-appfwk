@@ -20,7 +20,7 @@ class WidgetTokenTest(reportrunner.ReportRunnerTestCase):
                          'duration': '15min',
                          'resolution': '2min'}
         widgets = self.run_report(self.criteria)
-        url = widgets.keys()[0]
+        url = list(widgets.keys())[0]
         # url="/report/appfwk/<report_slug>/widgets/<widget_slug>/jobs/1/"
         self.base_url = url.rsplit('/', 3)[0]
 

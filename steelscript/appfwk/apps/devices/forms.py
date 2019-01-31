@@ -40,18 +40,18 @@ class DeviceForm(forms.ModelForm):
         if enabled:
             if cleaned_data.get('auth', '') == Auth.BASIC:
                 if cleaned_data.get('username', '') == '':
-                    msg = u'Please enter a valid username.'
+                    msg = 'Please enter a valid username.'
                     self._errors['username'] = self.error_class([msg])
                     cleaned_data.pop('username', None)
 
                 if cleaned_data.get('password', '') == '':
-                    msg = u'Please enter a valid password.'
+                    msg = 'Please enter a valid password.'
                     self._errors['password'] = self.error_class([msg])
                     cleaned_data.pop('password', None)
 
             elif cleaned_data.get('auth', '') == Auth.OAUTH:
                 if cleaned_data.get('access_code', '') == '':
-                    msg = u'Please enter a valid access code.'
+                    msg = 'Please enter a valid access code.'
                     self._errors['access_code'] = self.error_class([msg])
                     cleaned_data.pop('access_code', None)
 
@@ -81,7 +81,7 @@ class DeviceDetailForm(DeviceForm):
         super(DeviceDetailForm, self).__init__(*args, **kwargs)
 
         modules = DeviceManager.get_modules()
-        choices = zip(modules, modules)
+        choices = list(zip(modules, modules))
 
         self.fields['module'] = forms.ChoiceField(
             choices=choices,

@@ -86,11 +86,11 @@ class NiceScale:
             vals.append("{0:.4f}".format(val))
             val += self.tickspacing
 
-        print "(%.4f - %.4f @ %d) => %d [%s]" % (self.minval,
+        print("(%.4f - %.4f @ %d) => %d [%s]" % (self.minval,
                                                  self.maxval,
                                                  self.maxticks,
                                                  self.numticks,
-                                                 ', '.join(vals))
+                                                 ', '.join(vals)))
 
 if __name__ == "__main__":
     def test(minval, maxval, maxticks=10):
