@@ -43,7 +43,7 @@ class AsyncTask(threading.Thread, BaseTask):
         if self.job:
             self.job.dereference("AsyncTask deleted")
 
-    def __unicode__(self):
+    def __str__(self):
         return "<AsyncTask %s>" % (self.job)
 
     def __str__(self):

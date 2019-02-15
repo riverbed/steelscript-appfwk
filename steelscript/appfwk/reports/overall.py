@@ -12,7 +12,7 @@ import steelscript.appfwk.apps.report.modules.tables as tables
 
 from steelscript.netprofiler.appfwk.datasources.netprofiler import (NetProfilerGroupbyTable,
                                                                     NetProfilerTimeSeriesTable)
-from steelscript.netshark.appfwk.datasources.netshark import NetSharkTable
+#from steelscript.netshark.appfwk.datasources.netshark import NetSharkTable
 
 #
 # Overall report
@@ -53,19 +53,19 @@ p.add_column('avg_bytes', label='Avg Bytes/s', units='B/s')
 report.add_widget(c3.TimeSeriesWidget, p,
                   "NetProfiler Overall Traffic", width=6)
 
-# NetShark Time Series
-section = report.add_section('NetShark Traffic',
-                             section_keywords=['resolution', 'duration'])
-
-shark = NetSharkTable.create('Total Traffic Bits', duration=15,
-                             resolution='1sec', aggregated=False)
-
-shark.add_column('time', extractor='sample_time', iskey=True,
-                 label='Time', datatype='time')
-shark.add_column('generic_bits', label='bits', iskey=False,
-                 extractor='generic.bits', operation='sum', units='b')
-
-# Widgets can also be added to Section objects explicitly
-section.add_widget(c3.TimeSeriesWidget, shark,
-                   'Overall Bandwidth (Bits) at (1-second resolution)',
-                   width=6)
+# # NetShark Time Series
+# section = report.add_section('NetShark Traffic',
+#                              section_keywords=['resolution', 'duration'])
+#
+# shark = NetSharkTable.create('Total Traffic Bits', duration=15,
+#                              resolution='1sec', aggregated=False)
+#
+# shark.add_column('time', extractor='sample_time', iskey=True,
+#                  label='Time', datatype='time')
+# shark.add_column('generic_bits', label='bits', iskey=False,
+#                  extractor='generic.bits', operation='sum', units='b')
+#
+# # Widgets can also be added to Section objects explicitly
+# section.add_widget(c3.TimeSeriesWidget, shark,
+#                    'Overall Bandwidth (Bits) at (1-second resolution)',
+#                    width=6)

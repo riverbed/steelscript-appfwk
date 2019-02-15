@@ -63,7 +63,7 @@ class Metric(models.Model):
                                       choices=list(zip(STATUS_CHOICES,
                                                   STATUS_CHOICES)))
 
-    def __unicode__(self):
+    def __str__(self):
         return "<%s (%s) %s>" % (self.__class__.__name__,
                                  self.schema, self.name)
 

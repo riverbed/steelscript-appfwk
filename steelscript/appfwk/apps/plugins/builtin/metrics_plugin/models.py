@@ -71,7 +71,7 @@ class NodeBase(models.Model):
 
     STATUS_CHOICES = ('Up', 'Down')
 
-    def __unicode__(self):
+    def __str__(self):
         return "<%s %s>" % (self.__class__, self.name)
 
     def __repr__(self):

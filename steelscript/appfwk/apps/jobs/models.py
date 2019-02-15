@@ -190,7 +190,7 @@ class Job(models.Model):
     # Manager class for additional .objects methods
     objects = JobManager()
 
-    def __unicode__(self):
+    def __str__(self):
         return "<Job %s (%8.8s) - t%s>" % (self.id, self.handle, self.table.id)
 
     def __repr__(self):
@@ -340,7 +340,9 @@ class Job(models.Model):
                 return
 
         if method is None:
-            method = self.table.queryclass.run
+            # cannot get unbound methods in py3, so lets instantiate
+            queryclass = self.table.queryclass(self)
+            method = queryclass.run
 
         # Create an task to do the work
         task = Task(self, Callable(method, method_args))
@@ -497,7 +499,7 @@ class Job(models.Model):
     @classmethod
     def _compute_handle(cls, table, criteria):
         h = hashlib.md5()
-        h.update(str(table.id))
+        h.update(str(table.id).encode())
 
         if table.cacheable and not criteria.ignore_cache:
             # XXXCJ - Drop ephemeral columns when computing the cache handle,
@@ -513,19 +515,19 @@ class Job(models.Model):
             # May want to dig in to this further and make sure this doesn't
             # pick up cache files when we don't want it to
             h.update('.'.join([c.name for c in
-                               table.get_columns()]))
+                               table.get_columns()]).encode())
 
             if table.criteria_handle_func:
                 criteria = table.criteria_handle_func(criteria)
 
             for k, v in criteria.items():
                 # logger.debug("Updating hash from %s -> %s" % (k,v))
-                h.update('%s:%s' % (k, v))
+                h.update(('%s:%s' % (k, v)).encode())
         else:
             # Table is not cacheable, instead use current time plus a random
             # value just to get a unique hash
-            h.update(str(datetime.datetime.now()))
-            h.update(str(random.randint(0, 10000000)))
+            h.update(str(datetime.datetime.now()).encode())
+            h.update(str(random.randint(0, 10000000)).encode())
 
         return h.hexdigest()
 

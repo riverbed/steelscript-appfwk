@@ -21,7 +21,7 @@ class ExistingIntervals(models.Model):
     intervals = PickledObjectField(null=True)
     tzinfo = PickledObjectField()
 
-    def __unicode__(self):
+    def __str__(self):
         return "<ExistingIntervals %s/%s - %s>" % (self.id, self.table_handle,
                                                    self.intervals)
 

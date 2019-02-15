@@ -135,7 +135,7 @@ class TableField(models.Model):
             obj.fields.add(field)
         return field
 
-    def __unicode__(self):
+    def __str__(self):
         return "<TableField %s (%s)>" % (self.keyword, self.id)
 
     def __repr__(self):
@@ -254,7 +254,7 @@ class Table(models.Model):
                               ref['name']))
             raise
 
-    def __unicode__(self):
+    def __str__(self):
         return "<Table %s (%s)>" % (str(self.id), self.name)
 
     def __repr__(self):
@@ -707,7 +707,7 @@ class DatasourceQuery(object):
         self.job = job
         self.table = self.job.table
 
-    def __unicode__(self):
+    def __str__(self):
         return "<%s %s>" % (self.__class__.__name__, self.job)
 
     def __str__(self):
@@ -811,7 +811,7 @@ class Column(models.Model):
     COLUMN_OPTIONS = {}
     POS_MAX = 0
 
-    def __unicode__(self):
+    def __str__(self):
         return "<Column %s (%s)>" % (str(self.id), self.name)
 
     def __repr__(self):

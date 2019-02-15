@@ -97,7 +97,7 @@ class Device(models.Model):
     class Meta:
         unique_together = (("host", "port"))
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s (%s:%s)' % (self.name, self.host, self.port)
 
     def save(self, *args, **kwargs):

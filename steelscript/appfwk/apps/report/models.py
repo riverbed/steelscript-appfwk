@@ -141,7 +141,7 @@ class Report(models.Model):
 
         super(Report, self).save(*args, **kwargs)
 
-    def __unicode__(self):
+    def __str__(self):
         return "<Report %s (%s)>" % (self.title, self.id)
 
     def __repr__(self):
@@ -333,7 +333,7 @@ class ReportHistory(models.Model):
         finally:
             return
 
-    def __unicode__(self):
+    def __str__(self):
         return ("<Report History %s %s/%s>"
                 % (self.id, self.namespace, self.slug))
 
@@ -471,7 +471,7 @@ class Section(models.Model):
     position = models.DecimalField(max_digits=7, decimal_places=3, default=10)
     fields = models.ManyToManyField(TableField)
 
-    def __unicode__(self):
+    def __str__(self):
         return '<Section %s (%s)>' % (self.title, self.id)
 
     def __repr__(self):
@@ -637,7 +637,7 @@ class Widget(models.Model):
     def __repr__(self):
         return '<Widget %s (%s)>' % (self.title, self.id)
 
-    def __unicode__(self):
+    def __str__(self):
         return '<Widget %s (%s)>' % (self.title, self.id)
 
     def save(self, *args, **kwargs):
@@ -758,7 +758,7 @@ class WidgetDataCache(models.Model):
     data = models.TextField(blank=False)
     created = models.DateTimeField()
 
-    def __unicode__(self):
+    def __str__(self):
         return "<WidgetDataCache %s/%s/%s>" % (self.id,
                                                self.report_widget_id[:10],
                                                self.created)
@@ -775,7 +775,7 @@ class WidgetJob(models.Model):
     widget = models.ForeignKey(Widget)
     job = models.ForeignKey(Job)
 
-    def __unicode__(self):
+    def __str__(self):
         return "<WidgetJob %s: widget %s, job %s>" % (self.id,
                                                       self.widget.id,
                                                       self.job.id)
@@ -797,7 +797,7 @@ class WidgetAuthToken(models.Model):
     touched = models.DateTimeField(auto_now=True,
                                    verbose_name='Last Time used')
 
-    def __unicode__(self):
+    def __str__(self):
         return ("<Token %s, User %s, pre_url %s>" %
                 (self.token, self.user, self.pre_url))
 

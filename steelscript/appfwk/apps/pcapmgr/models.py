@@ -76,7 +76,7 @@ class DataFileBase(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     file_type = models.CharField(max_length=255, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.description
 
 
@@ -94,7 +94,7 @@ class PcapDataFile(DataFileBase):
 
     SUPPORTED_FILES = PcapFileField.SUPPORTED_FILES
 
-    def __unicode__(self):
+    def __str__(self):
         s = '{dfile}({f_type}) - {desc} (saved:{at})'
         return s.format(dfile=self.datafile,
                         desc=self.description,

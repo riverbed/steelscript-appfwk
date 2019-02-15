@@ -89,7 +89,7 @@ class Results(object):
     def __str__(self):
         return "<Results items: %d keys: %s>" % (len(self._data), self._keys)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self)
 
     def __repr__(self):

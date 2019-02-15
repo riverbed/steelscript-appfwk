@@ -62,7 +62,7 @@ class BaseTask(object):
         self.callback = callback
         self.generic = generic
 
-    def __unicode__(self):
+    def __str__(self):
         return "<%s %s %s>" % (self.__class__, self.job, self.callback)
 
     def __str__(self):

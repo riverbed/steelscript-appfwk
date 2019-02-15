@@ -182,7 +182,7 @@ class Event(models.Model):
     context = PickledObjectField()
     trigger_result = PickledObjectField()
 
-    def __unicode__(self):
+    def __str__(self):
         return '<Event %s/%s (%s)>' % (self.id, self.eventid, self.timestamp)
 
     def __repr__(self):
@@ -218,7 +218,7 @@ class Alert(models.Model):
     options = PickledObjectField(blank=True, null=True)
     message = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         msg = self.message
         if len(msg) > 20:
             msg = '%s...' % msg[:20]
@@ -313,7 +313,7 @@ class Destination(models.Model):
     template = models.TextField(blank=True, null=True)
     template_func = FunctionField(null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         if self.options:
             return '<Destination %d/%s -> %s>' % (self.id, self.sender,
                                                   str(self.options))
@@ -373,7 +373,7 @@ class ErrorHandler(models.Model):
     destination = models.ForeignKey('Destination')
     allow_global = models.BooleanField(default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return '<ErrorHandler %d/%s>' % (self.id, self.name)
 
     @classmethod

@@ -21,7 +21,7 @@ class Location(models.Model):
     latitude = models.FloatField()
     longitude = models.FloatField()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 

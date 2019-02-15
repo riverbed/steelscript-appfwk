@@ -64,13 +64,13 @@ class Job(object):
 
     def values(self):
         return ', '.join('%s: %s' % (k, getattr(self, k))
-                         for k in list(job_resource_fields.keys()))
+                         for k in job_resource_fields.keys())
 
     def __repr__(self):
-        return '<Job (%s)>' % list(self.values())
+        return '<Job (%s)>' % (self.values())
 
     def str(self):
-        return list(self.values())
+        return (self.values())
 
     def update_links(self):
         """Update internal references to master/parent links"""

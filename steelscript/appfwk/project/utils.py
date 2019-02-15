@@ -170,7 +170,7 @@ class Importer(object):
         """
         if ignore_list is None:
             ignore_list = IGNORE_FILES
-        package = None
+
         rootpath = os.path.basename(root)
 
         for path, dirs, files in os.walk(root, followlinks=True):
@@ -194,7 +194,7 @@ class Importer(object):
 
                 if name.count('.') == 2:
                     parts = name.split('.')
-                    package = ('steelscript.{0}.appfwk.reports'
+                    package = ('reports.{0}'
                                ''.format(parts[1]))
                     name = '.' + parts[2]
                 elif name.count('.') == 1:

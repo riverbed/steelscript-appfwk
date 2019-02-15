@@ -53,7 +53,7 @@ class DataFileBase(models.Model):
     file_type = models.CharField(max_length=255, blank=True)
     file_bytes = models.IntegerField(blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.description
 
 
@@ -62,7 +62,7 @@ class DataFile(DataFileBase):
     datafile = DataFileField(storage=file_store,
                              upload_to=file_store.location)
 
-    def __unicode__(self):
+    def __str__(self):
         s = '{dfile}({f_type}) - {desc} (saved:{at})'
         return s.format(dfile=self.datafile,
                         desc=self.description,

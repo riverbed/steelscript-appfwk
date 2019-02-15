@@ -11,12 +11,10 @@ import importlib
 from copy import deepcopy
 from base64 import b64encode, b64decode
 from zlib import compress, decompress
-try:
-    from pickle import loads, dumps
-except ImportError:
-    from pickle import loads, dumps
+from pickle import loads, dumps
 
 from django.db import models
+from steelscript.common.datastructures import JsonDict
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +30,7 @@ class ClassError(Exception):
     pass
 
 
-class PickledObject(bytes):
+class PickledObject(str):
     """
     A subclass of string so it can be told whether a string is a pickled
     object or not (if the object is an instance of this class then it must
@@ -113,7 +111,7 @@ class PickledObjectField(models.Field, metaclass=models.SubfieldBase):
         # If the field doesn't have a default, then we punt to models.Field.
         return super(PickledObjectField, self).get_default()
 
-    def to_python(self, value):
+    def from_db_value(self, value, expression, connection, context):
         """
         B64decode and unpickle the object, optionally decompressing it.
 
@@ -126,6 +124,31 @@ class PickledObjectField(models.Field, metaclass=models.SubfieldBase):
         if value is not None:
 
             try:
+                if isinstance(value, str):
+                    value = value.strip("b'")
+                value = dbsafe_decode(value, self.compress)
+
+            except (AttributeError, SyntaxError, ImportError):
+                raise
+
+            except Exception as e:
+                # If the value is a definite pickle; and an error is raised in
+                # de-pickling it should be allowed to propagate.
+                if isinstance(value, PickledObject):
+                    raise
+
+        return value
+
+    def to_python(self, value):
+        """
+        B64decode and unpickle the object, if needed.
+        """
+
+        if value is not None:
+
+            try:
+                if isinstance(value, str):
+                    value = value.strip("b'")
                 value = dbsafe_decode(value, self.compress)
 
             except (AttributeError, SyntaxError, ImportError):
@@ -227,8 +250,22 @@ class FunctionField(PickledObjectField, metaclass=models.SubfieldBase):
             return value
 
         if isinstance(value, str):
-            value = value.encode()
-        value = super(FunctionField, self).to_python(value)
+            v = value.strip("b'")
+            value = dbsafe_decode(v)
+
+        if value is not None:
+            return Function.from_dict(value)
+        else:
+            return None
+
+    def from_db_value(self, value, expression, connection, context):
+        if value is None:
+            return value
+
+        if isinstance(value, str):
+            v = value.strip("b'")
+            value = dbsafe_decode(v)
+
         if value is not None:
             return Function.from_dict(value)
         else:
@@ -255,7 +292,7 @@ class Callable(object):
     """
     def __init__(self, callable=None, called_args=None, called_kwargs=None):
         if callable:
-            if hasattr(callable, 'im_func'):
+            if hasattr(callable, '__func__'):
                 # This is a class method
                 self.classname = callable.__self__.__class__.__name__
                 self.module = callable.__self__.__class__.__module__
