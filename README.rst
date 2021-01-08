@@ -4,7 +4,7 @@ Riverbed SteelScript Application Framework
 **Riverbed SteelScript** is a collection of libraries and scripts written in Python for interacting
 with Riverbed appliances and solutions, and other network infrastructure devices.
 
-As part of the Riverbed SteelScript the SteelScript Application Framework makes it easy to create a fully
+As part of the Riverbed SteelScript the **SteelScript Application Framework** makes it easy to create a fully
 custom web application that mashes up data from multiple sources.  It comes
 pre-configured with several reports for NetProfiler and NetShark.
 
